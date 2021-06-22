@@ -1,0 +1,23 @@
+syntax = "proto3";
+package geocube;
+option go_package = "./pb;geocube";
+
+message DataFormat{
+    enum Dtype{
+        UNDEFINED = 0; // Bool
+        UInt8     = 1;
+        UInt16    = 2;
+        UInt32    = 3;
+        //Int8      = 4;
+        Int16     = 5;
+        Int32     = 6;
+        Float32   = 7;
+        Float64   = 8;
+        Complex64 = 9;
+    }
+
+    Dtype  dtype     = 1;
+    double no_data   = 2;
+    double min_value = 3;
+    double max_value = 4;
+}

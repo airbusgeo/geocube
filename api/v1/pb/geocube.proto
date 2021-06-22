@@ -1,0 +1,71 @@
+syntax = "proto3";
+package geocube;
+option go_package = "./pb;geocube";
+
+import "google/api/annotations.proto";
+
+import "pb/catalog.proto";
+import "pb/records.proto";
+import "pb/variables.proto";
+import "pb/layouts.proto";
+import "pb/operations.proto";
+
+// ApiGW https://cloud.google.com/endpoints/docs/grpc-service-config/reference/rpc/google.api
+
+message GetVersionRequest{}
+message GetVersionResponse{
+    string Version = 1;
+}
+
+service Geocube {
+// Records
+    rpc ListRecords(ListRecordsRequest)     returns (stream ListRecordsResponseItem) {}
+    rpc CreateRecords(CreateRecordsRequest) returns (CreateRecordsResponse) {}
+    rpc DeleteRecords(DeleteRecordsRequest) returns (DeleteRecordsResponse) {} // Delete records iif no dataset has a reference on.
+    rpc AddRecordsTags(AddRecordsTagsRequest) returns (AddRecordsTagsResponse) {}
+    rpc RemoveRecordsTags(RemoveRecordsTagsRequest) returns (RemoveRecordsTagsResponse) {}
+    rpc CreateAOI(CreateAOIRequest) returns (CreateAOIResponse) {}
+    rpc GetAOI(GetAOIRequest)       returns (GetAOIResponse)    {}
+
+// Variables
+    rpc CreateVariable(CreateVariableRequest)           returns (CreateVariableResponse) {}
+    rpc InstantiateVariable(InstantiateVariableRequest) returns (InstantiateVariableResponse) {}
+    rpc GetVariable(GetVariableRequest)                 returns (GetVariableResponse) {}
+
+    rpc ListVariables(ListVariablesRequest)   returns (stream ListVariablesResponseItem){}
+    rpc UpdateVariable(UpdateVariableRequest) returns (UpdateVariableResponse) {}
+    rpc UpdateInstance(UpdateInstanceRequest) returns (UpdateInstanceResponse) {}
+    rpc DeleteVariable(DeleteVariableRequest) returns (DeleteVariableResponse) {}
+    rpc DeleteInstance(DeleteInstanceRequest) returns (DeleteInstanceResponse) {}
+
+    rpc CreatePalette(CreatePaletteRequest)returns (CreatePaletteResponse){}
+
+// Operations
+    rpc IndexDatasets(IndexDatasetsRequest)                   returns (IndexDatasetsResponse) {}
+    rpc IngestDatasets(IngestDatasetsRequest)                 returns (stream IngestDatasetsResponse){}
+    rpc ConfigConsolidation(ConfigConsolidationRequest)       returns (ConfigConsolidationResponse){}
+    rpc GetConsolidationParams(GetConsolidationParamsRequest) returns (GetConsolidationParamsResponse){}
+    rpc Consolidate(ConsolidateRequest)                       returns (ConsolidateResponse){}
+    rpc ListJobs(ListJobsRequest)                             returns (ListJobsResponse){}
+    rpc GetJob(GetJobRequest)                                 returns (GetJobResponse){}
+    rpc CleanJobs(CleanJobsRequest)                           returns (CleanJobsResponse){}
+    rpc RetryJob(RetryJobRequest)                             returns (RetryJobResponse){}
+    rpc CancelJob(CancelJobRequest)                           returns (CancelJobResponse){}
+
+// Catalog
+    rpc GetCube(GetCubeRequest)               returns (stream GetCubeResponse){}
+    rpc GetXYZTile(GetTileRequest)            returns (GetTileResponse){
+        option (google.api.http) = {
+            get: "/v1/catalog/mosaic/{instance_id}/{x}/{y}/{z}/png" //?records.ids=XXXXX&records.ids=YYYYYY...
+            response_body: "image.data"
+        };
+    }
+
+// Layout
+    rpc CreateLayout(CreateLayoutRequest)        returns (CreateLayoutResponse){}
+    rpc ListLayouts(ListLayoutsRequest)          returns (ListLayoutsResponse){}
+    rpc TileAOI(TileAOIRequest)                  returns (stream TileAOIResponse){}
+
+// Version
+    rpc Version(GetVersionRequest)               returns (GetVersionResponse){}
+}

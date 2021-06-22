@@ -1,0 +1,118 @@
+syntax = "proto3";
+package geocube;
+option go_package = "./pb;geocube";
+
+import "google/protobuf/timestamp.proto";
+
+
+message Coord{
+    float lon = 1;
+    float lat = 2;
+}
+
+message LinearRing{
+    repeated Coord points = 1;
+}
+
+message Polygon{
+    repeated LinearRing linearrings = 1;
+}
+
+message AOI{
+    repeated Polygon polygons = 1;
+}
+
+message Record {
+    string                    id     = 1;
+    string                    name   = 2;
+    google.protobuf.Timestamp time   = 3;
+    map<string,string>        tags   = 4;
+    string                    aoi_id = 5;
+    AOI                       aoi    = 6; // optional
+}
+
+message NewRecord{
+    string                    name   = 1;
+    google.protobuf.Timestamp time   = 2;
+    map<string,string>        tags   = 3;
+    string                    aoi_id = 4;
+}
+
+message CreateRecordsRequest {
+    repeated NewRecord records = 1;
+}
+
+message CreateRecordsResponse {
+    repeated string ids = 1;
+}
+
+message DeleteRecordsRequest {
+    repeated string ids = 1;
+}
+
+message DeleteRecordsResponse {
+    int64 nb = 1;
+}
+
+message AddRecordsTagsRequest {
+    repeated string ids = 1;
+    map<string, string>       tags       = 2;
+}
+
+message AddRecordsTagsResponse {
+    int64 nb = 1;
+}
+
+message RemoveRecordsTagsRequest {
+    repeated string ids = 1;
+    repeated string tagsKey = 2;
+}
+
+message RemoveRecordsTagsResponse {
+    int64 nb = 1;
+}
+
+message CreateAOIRequest {
+    AOI aoi = 1;
+}
+
+message CreateAOIResponse {
+    string id = 1;
+}
+
+message GetAOIRequest {
+    string id = 1;
+}
+
+message GetAOIResponse {
+    AOI aoi = 1;
+}
+
+message ListRecordsRequest {
+    string                    name       = 1;
+    map<string, string>       tags       = 3;
+    google.protobuf.Timestamp from_time  = 4;
+    google.protobuf.Timestamp to_time    = 5;
+    AOI                       aoi        = 8;
+    int32                     limit      = 6;
+    int32                     page       = 7;
+    bool                      with_aoi   = 9; // Also returns the AOI (may be big)
+}
+
+message ListRecordsResponseItem {
+    Record record = 1;
+}
+
+message RecordFilters {
+    map<string, string>       tags       = 1;
+    google.protobuf.Timestamp from_time  = 2;
+    google.protobuf.Timestamp to_time    = 3;
+}
+
+message RecordList {
+    repeated string ids = 1;
+}
+
+message GroupedRecordsList {
+    repeated RecordList records = 1;
+}

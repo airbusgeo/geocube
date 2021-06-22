@@ -1,0 +1,55 @@
+apiVersion: v1
+kind: ReplicationController
+metadata:
+  name: consolidater
+  labels:
+    app: consolidater
+spec:
+  replicas: 0
+  selector:
+    app: consolidater
+  template:
+    metadata:
+      labels:
+        app: consolidater
+    spec:
+      automountServiceAccountToken: true
+      terminationGracePeriodSeconds: 5
+      tolerations:
+        - key: "preemptible"
+          operator: "Equal"
+          value: "true"
+          effect: "NoSchedule"
+      volumes:
+        - name: "local-ssd"
+          hostPath:
+            path: "/mnt/disks/ssd0"
+      containers:
+        - name: consolidater
+          image: $(CONTAINER_REGISTRY)/consolidater:d4d8d196
+          imagePullPolicy: "Always"
+          ports:
+            - containerPort: 9000
+              protocol: TCP
+          env:
+            - name: PUBSUB_EMULATOR_HOST
+              value: 0.0.0.0:8085
+          resources:
+            requests:
+              cpu: 1900m
+              memory: 1500Mi
+            limits:
+              memory: 4Gi
+          command: ["/bin/sh","-c"]
+          args:
+            - |
+              UUID=`uuid`;
+              WORKDIR=/local-ssd/$UUID;
+              mkdir -p $WORKDIR;
+              /consolidater -eventTopic events -subscription consolidations -workdir $WORKDIR || true;
+              exitcode=$?;
+              rm -rf $WORKDIR;
+              exit $exitcode;
+          volumeMounts:
+            - mountPath: "/local-ssd"
+              name: "local-ssd"

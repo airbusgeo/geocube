@@ -1,0 +1,3 @@
+package svc
+
+var CsldPrepareOrdersNeedReconsolidation = csldPrepareOrdersNeedReconsolidation

@@ -1,0 +1,136 @@
+syntax = "proto3";
+package geocube;
+option go_package = "./pb;geocube";
+
+import "google/protobuf/wrappers.proto";
+import "pb/dataformat.proto";
+
+message Instance{
+    string              id       = 1; // Null at creation
+    string              name     = 2;
+    map<string, string> metadata = 3;
+}
+
+enum Resampling{
+    UNDEFINED   = 0;
+    NEAR        = 1;
+    BILINEAR    = 2;
+    CUBIC       = 3;
+    CUBICSPLINE = 4;
+    LANCZOS     = 5;
+    AVERAGE     = 6;
+    MODE        = 7;
+    MAX         = 8;
+    MIN         = 9;
+    MED         = 10;
+    Q1          = 11;
+    Q3          = 12;
+}
+
+message Variable {
+    string              id               = 1; // Ignored at creation
+    string              name             = 2;
+    string              unit             = 3;
+    string              description      = 4;
+    DataFormat          dformat          = 5;
+    repeated string     bands            = 6;
+    
+    string              palette          = 7; // enums ?
+    Resampling          resampling_alg   = 8;
+    repeated Instance   instances        = 9;
+}
+
+message CreateVariableRequest {
+    Variable variable = 1;
+}
+
+message CreateVariableResponse {
+    string id = 1;
+}
+
+message InstantiateVariableRequest {
+    string              variable_id       = 1;
+    string              instance_name     = 2;
+    map<string, string> instance_metadata = 3;
+}
+
+message InstantiateVariableResponse {
+    Instance            instance = 1;
+}
+
+message GetVariableRequest {
+    oneof identifier{
+        string  id          = 1;
+        string  name        = 2;
+        string  instance_id = 3;
+    }
+}
+
+message GetVariableResponse {
+    Variable variable = 1;
+}
+
+// For the future...
+message ListVariablesRequest {
+    string  name  = 1;
+    int32   limit = 3;
+    int32   page  = 4;
+}
+
+message ListVariablesResponseItem {
+    Variable variable = 1;
+}
+
+message UpdateVariableRequest{
+    string                      id             = 1;
+
+    google.protobuf.StringValue name           = 2; // Optional
+    google.protobuf.StringValue unit           = 3; // Optional
+    google.protobuf.StringValue description    = 4; // Optional
+    google.protobuf.StringValue palette        = 5; // Optional
+    Resampling                  resampling_alg = 6; // Optional
+}
+
+message UpdateVariableResponse {}
+
+message UpdateInstanceRequest{
+    string                      id                = 1;
+
+    google.protobuf.StringValue name              = 2; // Optional
+    map<string, string>         add_metadata      = 3; // New keys to be inserted or updated
+    repeated string             del_metadata_keys = 4; // Keys to be deleted
+}
+
+message UpdateInstanceResponse {}
+
+message DeleteVariableRequest {
+    string  id = 1;
+}
+
+message DeleteVariableResponse{}
+
+message DeleteInstanceRequest {
+    string  id = 1;
+}
+
+message DeleteInstanceResponse {}
+
+message colorPoint{
+    float  value = 1;
+    uint32 r     = 2;
+    uint32 g     = 3;
+    uint32 b     = 4;
+    uint32 a     = 5;
+}
+
+message Palette{
+    string              name   = 1;
+    repeated colorPoint colors = 2;
+}
+
+message CreatePaletteRequest{
+    Palette palette = 1;
+    bool    replace = 2; // Replace the current existing palette if exists
+}
+
+message CreatePaletteResponse{}

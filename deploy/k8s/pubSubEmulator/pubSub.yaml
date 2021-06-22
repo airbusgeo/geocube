@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pubsub-emulator
+  labels:
+    app: pubsub-emulator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pubsub-emulator
+  template:
+    metadata:
+      labels:
+        app: pubsub-emulator
+    spec:
+      containers:
+        - name: pubsub-emulator
+          image: $(CONTAINER_REGISTRY)/pubsub-emulator:v1
+          imagePullPolicy: Always
+          args: ["--host-port=0.0.0.0:8085"]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pubsub-emulator
+spec:
+  type: NodePort
+  ports:
+    - port: 8085
+  selector:
+    app: pubsub-emulator

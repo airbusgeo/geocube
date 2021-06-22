@@ -1,0 +1,29 @@
+ARG BASE_IMAGE=$(CONTAINER_REGISTRY)/geocube-base:latest
+FROM $BASE_IMAGE AS builder
+
+WORKDIR /build
+COPY go.* /build/
+COPY vendor vendor
+COPY internal internal
+COPY interface interface
+COPY *.go /build/
+COPY cmd/server server
+
+RUN cd server && go build -ldflags="-s -w" .
+
+FROM alpine:3
+ENTRYPOINT ["/server"]
+COPY --from=builder /usr/local/lib /usr/local/lib
+COPY --from=builder /usr/local/share /usr/local/share
+RUN apk add \
+        ca-certificates \
+        libcurl \
+        libgcc \
+        libjpeg-turbo \
+        libstdc++ \
+        libwebp \
+        sqlite-libs \
+	tiff \
+        zstd-libs &&\
+    ldconfig /usr/local/lib
+COPY --from=builder /build/server/server /

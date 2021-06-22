@@ -1,0 +1,353 @@
+package image
+
+import (
+	"bytes"
+	"errors"
+	"fmt"
+	"image"
+	"image/color"
+	"image/png"
+	"io/ioutil"
+	"math"
+
+	"github.com/airbusgeo/geocube/internal/geocube"
+	"github.com/airbusgeo/geocube/internal/utils/affine"
+	"github.com/airbusgeo/godal"
+	"github.com/google/uuid"
+)
+
+var ErrLoger = godal.ErrLogger(func(ec godal.ErrorCategory, code int, msg string) error {
+	if ec <= godal.CE_Warning {
+		return nil
+	}
+	return fmt.Errorf("GDAL %d: %s", code, msg)
+})
+
+type GdalDatasetDescriptor struct {
+	WktCRS        string
+	PixToCRS      *affine.Affine
+	Width, Height int
+	Bands         int
+	Resampling    geocube.Resampling
+	DataMapping   geocube.DataMapping
+	ValidPixPc    int // Minimum percentage of valid pixels (or image not found is returned)
+	Format        string
+	Palette       *geocube.Palette
+}
+
+var (
+	ErrNoCastToPerform = errors.New("no cast to perform")
+	ErrUnableToCast    = errors.New("unableToCast")
+)
+
+// CastDataset creates a new dataset and cast fromDFormat toDFormat
+// The caller is responsible to close the dataset
+// dstDS [optional] If empty, the dataset is stored in memory
+func CastDataset(ds *godal.Dataset, fromDFormat, toDFormat geocube.DataMapping, dstDS string) (*godal.Dataset, error) {
+	if fromDFormat.Equals(toDFormat) {
+		return nil, ErrNoCastToPerform
+	}
+
+	// Reminder : ve = f(vi) = RangeExt.Min + (RangeExt.Max - RangeExt.Min) * ((vi - Range.Min)/(Range.Max - Range.Min))^Exponent
+	// vinter = f(vfrom) = f(vto)
+	// In some cases the formula is very simple !
+	if toDFormat.Exponent == 1 {
+		/*
+			This is just a special case of the following
+			if toDFormat.Range == toDFormat.RangeExt {
+				return castDataset(ds, fromDFormat.Range, fromDFormat.Exponent, geocube.DataFormat{
+					DType:  toDFormat.DType,
+					Range:  fromDFormat.RangeExt,
+					NoData: toDFormat.NoData,
+				}, dstDS)
+			}
+		*/
+		f := toDFormat.Range.Interval() / toDFormat.RangeExt.Interval()
+		rangeEq := geocube.Range{Min: toDFormat.Range.Min + (fromDFormat.RangeExt.Min-toDFormat.RangeExt.Min)*f}
+		rangeEq.Max = fromDFormat.RangeExt.Interval()*f + rangeEq.Min
+		return castDataset(ds, fromDFormat.Range, fromDFormat.Exponent, geocube.DataFormat{
+			DType:  toDFormat.DType,
+			Range:  rangeEq,
+			NoData: toDFormat.NoData,
+		}, dstDS)
+	}
+	if fromDFormat.Exponent == 1 {
+		f := fromDFormat.Range.Interval() / fromDFormat.RangeExt.Interval()
+		rangeEq := geocube.Range{Min: fromDFormat.Range.Min + (toDFormat.RangeExt.Min-fromDFormat.RangeExt.Min)*f}
+		rangeEq.Max = toDFormat.RangeExt.Interval()*f + rangeEq.Min
+		return castDataset(ds, rangeEq, 1/toDFormat.Exponent, toDFormat.DataFormat, dstDS)
+	}
+
+	if fromDFormat.Exponent == toDFormat.Exponent {
+		if fromDFormat.RangeExt.Min == toDFormat.RangeExt.Min {
+			f := fromDFormat.RangeExt.Interval() / toDFormat.RangeExt.Interval()
+			rangeEq := geocube.Range{
+				Min: toDFormat.Range.Min,
+				Max: toDFormat.Range.Interval()*math.Pow(f, 1/toDFormat.Exponent) + toDFormat.Range.Min,
+			}
+			return castDataset(ds, fromDFormat.Range, 1, geocube.DataFormat{
+				DType:  toDFormat.DType,
+				Range:  rangeEq,
+				NoData: toDFormat.NoData,
+			}, dstDS)
+		}
+	}
+
+	return nil, fmt.Errorf(" Unable to cast %v to %v %w", fromDFormat, toDFormat, ErrUnableToCast)
+}
+
+// castDataset creates a new dataset with toDFormat and converts the ds.pixels fromRange toDFormat (using an non-linear mapping if exponent != 1)
+// The caller is responsible to close the dataset
+// dstDS [optional] If empty, the dataset is stored in memory
+func castDataset(ds *godal.Dataset, fromRange geocube.Range, exponent float64, toDFormat geocube.DataFormat, dstDS string) (*godal.Dataset, error) {
+	options := []string{
+		"-ot", toDFormat.DType.ToGDAL().String(),
+		"-scale", toS(fromRange.Min), toS(fromRange.Max), toS(toDFormat.Range.Min), toS(toDFormat.Range.Max),
+		"-a_nodata", toS(toDFormat.NoData),
+	}
+	if exponent != 1 {
+		options = append(options, "-exponent", toS(exponent))
+	}
+
+	var opts []godal.DatasetTranslateOption
+	if dstDS == "" {
+		opts = append(opts, godal.Memory)
+	}
+	outDs, err := ds.Translate(dstDS, options, opts...)
+	if err != nil {
+		return nil, fmt.Errorf("castDataset.Translate: %w", err)
+	}
+
+	return outDs, nil
+}
+
+// MergeDatasets merge the given datasets into one in the format defined by outDesc
+// The caller is responsible to close the output dataset
+func MergeDatasets(datasets []*geocube.Dataset, outDesc *GdalDatasetDescriptor) (*godal.Dataset, error) {
+
+	if len(datasets) == 0 {
+		return nil, fmt.Errorf("mergeDatasets: no dataset to merge")
+	}
+
+	// TODO mergeDatasets with different dformat, range or exponent
+	commonDMapping := datasets[0].DataMapping
+	for _, dataset := range datasets {
+		if !dataset.DataMapping.Equals(commonDMapping) {
+			return nil, fmt.Errorf("mergeDatasets cannot handle datasets with different internal format (%v != %v) (but will do...)", dataset.DataMapping, commonDMapping)
+		}
+	}
+
+	mergedDs, err := mergeGdalDatasets(datasets, outDesc, commonDMapping.DataFormat)
+	if err != nil {
+		return nil, fmt.Errorf("mergeGdalDatasets: %w", err)
+	}
+
+	// Test whether image has enough valid pixels
+	if outDesc.ValidPixPc >= 0 {
+		nb, err := countValidPix(mergedDs.Bands()[0])
+		if err != nil {
+			mergedDs.Close()
+			return nil, fmt.Errorf("countValidPix: %w", err)
+		}
+		if int(100*nb) <= outDesc.Width*outDesc.Height*outDesc.ValidPixPc {
+			mergedDs.Close()
+			return nil, geocube.NewEntityNotFound("", "", "", "Not enough valid pixels (skipped)")
+		}
+	}
+
+	// Convert dataset to outDesc.DataFormat
+	if !commonDMapping.Equals(outDesc.DataMapping) {
+		tmpDS := mergedDs
+		defer tmpDS.Close()
+		if mergedDs, err = CastDataset(tmpDS, commonDMapping, outDesc.DataMapping, ""); err != nil {
+			return nil, fmt.Errorf("CastDataset: %w", err)
+		}
+	}
+
+	return mergedDs, nil
+}
+
+func mergeGdalDatasets(datasets []*geocube.Dataset, outDesc *GdalDatasetDescriptor, commonDFormat geocube.DataFormat) (*godal.Dataset, error) {
+
+	listFile := make([]string, len(datasets))
+	gdatasets := make([]*godal.Dataset, len(datasets))
+	for i, dataset := range datasets {
+		var err error
+		listFile[i] = dataset.GDALOpenName()
+		gdatasets[i], err = godal.Open(dataset.GDALOpenName(), ErrLoger)
+		if err != nil {
+			return nil, fmt.Errorf("while opening %s: %w", dataset.GDALOpenName(), err)
+		}
+		defer gdatasets[i].Close()
+	}
+
+	options := []string{
+		"-t_srs", outDesc.WktCRS,
+		"-ts", toS(float64(outDesc.Width)), toS(float64(outDesc.Height)),
+		"-ovr", "AUTO", //TODO user-defined ?
+		"-wo", fmt.Sprintf("INIT_DEST=%f", commonDFormat.NoData),
+		"-wm", "2047",
+		"-ot", commonDFormat.DType.ToGDAL().String(),
+		"-r", outDesc.Resampling.String(),
+		"-srcnodata", toS(commonDFormat.NoData),
+		"-nomd",
+	}
+
+	if commonDFormat.NoDataDefined() {
+		options = append(options, "-dstnodata", toS(commonDFormat.NoData))
+	}
+
+	if outDesc.PixToCRS != nil {
+		xMin, yMax := outDesc.PixToCRS.Transform(0, 0)
+		xMax, yMin := outDesc.PixToCRS.Transform(float64(outDesc.Width), float64(outDesc.Height))
+		options = append(options, "-te", toS(xMin), toS(yMin), toS(xMax), toS(yMax))
+	}
+
+	outDs, err := godal.Warp("", gdatasets, options, godal.Memory, ErrLoger)
+	if err != nil {
+		if outDs != nil {
+			outDs.Close()
+		}
+		return nil, fmt.Errorf("failed to warp dataset: %w", err)
+	}
+
+	return outDs, nil
+}
+
+func countValidPix(band godal.Band) (uint64, error) {
+	// Histogram does not count nodata
+	histogram, err := band.Histogram(godal.Intervals(1, 0, 0), godal.IncludeOutOfRange(), godal.Approximate())
+	if err != nil {
+		return 0, fmt.Errorf("countValidPix: %w", err)
+	}
+	return histogram.Bucket(0).Count, nil
+}
+
+func toS(f float64) string {
+	return fmt.Sprintf("%f", f)
+}
+
+// colorTableFromPalette creates a gdal.ColorTable from a palette
+// The results must be Detroy() by the caller
+func colorTableFromPalette(palette *geocube.Palette) (*godal.ColorTable, error) {
+	if palette == nil {
+		return nil, nil
+	} else {
+		return nil, fmt.Errorf("palette not supported yet")
+	}
+	/*
+		colorTable := &godal.ColorTable{PaletteInterp: godal.PaletteInterp(godal.RGBPalette)}
+		pts := make([][4]int16, len(palette.Points))
+		for i, pt := range palette.Points {
+			pts[i] = [4]int16{int16(pt.R), int16(pt.G), int16(pt.B), int16(pt.A)}
+		}
+
+		// Create ColorTable
+		//colorTable.CreateColorRamp(0, 254, pts[0], pts[len(pts)-1])
+		for i := 1; i < len(pts)-1; i++ {
+			colorTable.Entries[int(palette.Points[i].Val*254)] = pts[i]
+		}
+
+		return colorTable, nil*/
+}
+
+// DatasetToPngAsBytes translates the dataset to a png and returns the byte representation
+// canInterpolateColor is true if dataset pixel value can be interpolated
+func DatasetToPngAsBytes(ds *godal.Dataset, fromDFormat geocube.DataMapping, palette *geocube.Palette, canInterpolateColor bool) ([]byte, error) {
+	var palette256 color.Palette
+	var virtualname string
+	toDformat := fromDFormat
+
+	if !canInterpolateColor {
+		if fromDFormat.Range.Min < 0 || fromDFormat.Range.Max > 255 || fromDFormat.NoData < 0 || fromDFormat.NoData > 255 {
+			return nil, fmt.Errorf("cannot create a png, because the color interpolation is forbidden")
+		}
+		if palette != nil {
+			palette256 = palette.PaletteN(256)
+		}
+	} else {
+		toDformat.DataFormat = geocube.DataFormat{
+			DType:  geocube.DTypeUINT8,
+			NoData: 255,
+			Range:  geocube.Range{Min: 0, Max: 254},
+		}
+		toDformat.Exponent = 1
+
+		if palette != nil {
+			palette256 = palette.PaletteN(255)
+			palette256 = append(palette256, color.RGBA{})
+		}
+	}
+
+	if palette256 == nil { // To cast non-paletted to png
+		virtualname = "/vsimem/" + uuid.New().String() + ".png"
+	}
+
+	// Cast to PNG
+	pngDs, err := CastDataset(ds, fromDFormat, toDformat, virtualname)
+	if err != nil {
+		return nil, fmt.Errorf("DatasetToPngAsBytes.%w", err)
+	}
+	defer pngDs.Close()
+
+	// Apply palette
+	if palette256 != nil {
+		bitmap, err := geocube.NewBitmapFromDataset(pngDs)
+		if err != nil {
+			return nil, fmt.Errorf("DatasetToPngAsBytes.%w", err)
+		}
+		paletted := image.NewPaletted(bitmap.Rect, palette256)
+		paletted.Pix = bitmap.Bytes
+		b := bytes.Buffer{}
+		if err = png.Encode(&b, paletted); err != nil {
+			return nil, fmt.Errorf("DatasetToPngAsBytes.PngEncode: %w", err)
+		}
+		return b.Bytes(), nil
+	}
+
+	// Returns byte representation of the PNG file
+	vsiFile, err := godal.VSIOpen(virtualname)
+	if err != nil {
+		return nil, fmt.Errorf("DatasetToPngAsBytes.%w", err)
+	}
+	defer vsiFile.Close()
+
+	return ioutil.ReadAll(vsiFile)
+}
+
+// DatasetToTiffAsBytes translates the dataset to a tiff and returns the byte representation
+func DatasetToTiffAsBytes(ds *godal.Dataset, fromDFormat geocube.DataMapping, tags map[string]string, palette *geocube.Palette) ([]byte, error) {
+	// Todo fromDFormat is not taken into account
+
+	// Prepare options
+	var options []string
+	for k, t := range tags {
+		options = append(options, "-mo", fmt.Sprintf("%s=%s", k, t))
+	}
+
+	// Translate to Tiff
+	virtualname := "/vsimem/" + uuid.New().String() + ".tif"
+	tifDs, err := ds.Translate(virtualname, options)
+	if err != nil {
+		return nil, fmt.Errorf("datasetToTiff.Translate: %w", err)
+	}
+	defer tifDs.Close()
+
+	// Apply palette
+	if palette != nil {
+		tifDs.Bands()[0].SetColorInterp(godal.CIPalette)
+		c, err := colorTableFromPalette(palette)
+		if err != nil {
+			return nil, fmt.Errorf("colorTableFromPalette: %w", err)
+		}
+		tifDs.Bands()[0].SetColorTable(*c)
+	}
+
+	// Returns byte representation of the TIFF file
+	vsiFile, err := godal.VSIOpen(virtualname)
+	if err != nil {
+		return nil, fmt.Errorf("datasetToTiff.%w", err)
+	}
+	defer vsiFile.Close()
+	return ioutil.ReadAll(vsiFile)
+}

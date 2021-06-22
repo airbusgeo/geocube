@@ -1,0 +1,44 @@
+ARG BASE_IMAGE=$(CONTAINER_REGISTRY)/geocube-base:latest
+FROM $BASE_IMAGE AS builder
+
+RUN apk update && apk add curl
+WORKDIR /build/upx
+RUN curl -sL https://github.com/upx/upx/releases/download/v3.95/upx-3.95-amd64_linux.tar.xz -o upx.tar.xz &&\
+		tar xf upx.tar.xz --strip-components 1 && mv upx /usr/local/go/bin/ && \
+	cd /build &&\
+	echo "cleaning build directory: `du -sh upx`" && \
+	rm -rf upx
+
+ENV GOFLAGS=-mod=vendor
+
+WORKDIR /consolidater
+COPY go.* /consolidater/
+COPY vendor vendor
+RUN cd vendor && go install -ldflags="-s -w" ./...
+COPY internal internal
+COPY interface interface
+COPY *.go /consolidater/
+COPY cmd/consolidater consolidater
+
+RUN cd consolidater && go install -ldflags="-s -w" .
+RUN upx -q /go/bin/consolidater
+
+#---------------------------------------------------------------------------------------------------------------
+
+FROM alpine:3
+COPY --from=builder /usr/local/lib /usr/local/lib
+COPY --from=builder /usr/local/share /usr/local/share
+RUN apk add \
+        ca-certificates \
+        libcurl \
+        libgcc \
+        libjpeg-turbo \
+        libstdc++ \
+        libwebp \
+        sqlite-libs \
+	tiff \
+        zstd-libs &&\
+    ldconfig /usr/local/lib
+RUN apk --no-cache add ossp-uuid --repository http://dl-3.alpinelinux.org/alpine/edge/testing/ --allow-untrusted
+EXPOSE 8080
+COPY --from=builder /go/bin/consolidater /

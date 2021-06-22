@@ -1,0 +1,5 @@
+FROM google/cloud-sdk
+
+EXPOSE 8085
+
+ENTRYPOINT ["gcloud", "beta", "emulators", "pubsub", "start"]

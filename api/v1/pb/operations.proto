@@ -1,0 +1,155 @@
+syntax = "proto3";
+package geocube;
+option go_package = "./pb;geocube";
+
+import "google/protobuf/timestamp.proto";
+
+import "pb/dataformat.proto";
+import "pb/variables.proto";
+import "pb/records.proto";
+
+enum StorageClass{
+    STANDARD    = 0;
+    INFREQUENT  = 1;
+    ARCHIVE     = 2;
+    DEEPARCHIVE = 3;
+}
+
+message Dataset {
+    message Bounds { // In geographic coordinates (crs)
+        double left   = 1;
+        double bottom = 2;
+        double right  = 3;
+        double top    = 4;
+    }
+    string         record_id        = 2;
+    string         instance_id      = 3;
+    string         container_subdir = 6;
+    repeated int64 bands            = 7;
+    DataFormat     dformat          = 8;  // Internal data format (DType can be Undefined)
+    double         real_min_value   = 9;  // Real min value (dformat.min_value maps to real_min_value)
+    double         real_max_value   = 10; // Real max value (dformat.max_value maps to real_max_value)
+    double         exponent         = 11; // 1: linear scaling (RealMax - RealMin) * pow( (Value - Min) / (Max - Min), Exponent) + RealMin
+}
+
+message Container{
+    string           uri           = 1;
+    bool             managed       = 2;
+    repeated Dataset datasets      = 3;
+}
+
+message Job {
+    string                    id               = 1;
+    string                    name             = 2;
+    string                    type             = 3;
+    string                    state            = 4;
+    google.protobuf.Timestamp creation_time    = 5;
+    google.protobuf.Timestamp last_update_time = 6;
+    repeated string           log              = 7;
+    int32                     active_tasks     = 8;
+    int32                     failed_tasks     = 9;
+}
+
+message IndexDatasetsRequest {
+    // TODO Index several containers: repeated ?
+    Container container = 1;
+}
+
+message IndexDatasetsResponse {}
+
+message IngestDatasetsRequest {
+    repeated Container container = 1;
+}
+
+message IngestDatasetsResponse{
+    repeated string job_ids = 1;
+}
+
+message ConsolidationParams{
+    enum Compression{
+        NO       = 0;
+        LOSSLESS = 1;
+        LOSSY    = 2;
+    }
+
+    DataFormat   dformat          = 1;
+    double       exponent         = 2; // 1: linear scaling (RealMax - RealMin) * pow( (Value - Min) / (Max - Min), Exponent) + RealMin
+    bool         create_overviews = 3;
+    Resampling   downsampling_alg = 4;
+    Compression  compression      = 5;
+    bool         bands_interleave = 6;
+    StorageClass storage_class    = 7;
+}
+
+message ConfigConsolidationRequest {
+    string              variable_id          = 1;
+    ConsolidationParams consolidation_params = 2;
+}
+
+message ConfigConsolidationResponse {
+}
+
+message GetConsolidationParamsRequest {
+    string              variable_id          = 1;
+}
+
+message GetConsolidationParamsResponse {
+    ConsolidationParams consolidation_params = 2;
+}
+
+message ConsolidateRequest {
+    string job_name    = 1;
+    string instance_id = 2;
+    string layout_id   = 3;
+
+    oneof records_lister{
+        RecordList    records = 4; // At least one
+        RecordFilters filters = 5;
+    }
+}
+
+message ConsolidateResponse{
+    string job_id = 1;
+}
+
+message ListJobsRequest{
+    string name_like = 1;
+}
+
+message ListJobsResponse {
+    repeated Job jobs = 1;
+}
+message GetJobRequest{
+    string id = 1;
+}
+
+message GetJobResponse {
+    Job job = 1;
+}
+
+/*
+ * Request for cleaning terminated jobs
+ */
+message CleanJobsRequest{
+    string name_like = 1; // Filter by name (support *, ? and (?i)-suffix for case-insensitivity)
+    string state     = 2; // Filter by terminated state (DONE, FAILED)
+}
+
+message CleanJobsResponse{
+    int32 count = 1;
+}
+
+message CancelJobRequest {
+    string id = 1;
+}
+
+message CancelJobResponse{
+}
+
+message RetryJobRequest {
+    string id              = 1;
+    bool   force_any_state = 2; // Force retry even when the job is not in a failed state (could corrupt the data)
+}
+
+message RetryJobResponse{
+}

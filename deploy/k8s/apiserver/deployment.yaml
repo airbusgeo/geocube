@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: apiserver
+  namespace: default
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  selector:
+    matchLabels:
+      app: apiserver
+  template:
+    metadata:
+      labels:
+        app: apiserver
+    spec:
+      automountServiceAccountToken: true
+      containers:
+        - args:
+            - -dbName=geocube
+            - -dbUser=apiserver
+            - -dbPassword=DB_PASSWD
+            - -dbHost=BD_HOST
+            - -eventsTopic=events
+            - -consolidationsTopic=consolidations
+            - -ingestionStorage=/tmp
+            - -maxConnectionAge=3600
+            - -workers=1
+            - -local=true
+          env:
+            - name: PUBSUB_EMULATOR_HOST
+              value: 0.0.0.0:8085
+          image: $(CONTAINER_REGISTRY)/geocube-go-server:v0.2.0
+          imagePullPolicy: Always
+          name: apiserver
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          resources: {}
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}

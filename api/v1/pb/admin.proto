@@ -1,0 +1,54 @@
+syntax = "proto3";
+package geocube;
+option go_package = "./pb;geocube";
+
+import "pb/dataformat.proto";
+
+message TidyDBRequest{
+    bool Simulate          = 1;
+    bool PendingAOIs       = 2;
+    bool PendingRecords    = 3;
+    bool PendingVariables  = 4;
+    bool PendingInstances  = 5;
+    bool PendingContainers = 6;
+    bool PendingParams     = 7;
+}
+
+message TidyDBResponse{
+    int64 NbAOIs       = 1;
+    int64 NbRecords    = 2;
+    int64 NbVariables  = 3;
+    int64 NbInstances  = 4;
+    int64 NbContainers = 5;
+    int64 NbParams     = 6;
+}
+
+message UpdateDatasetsRequest{
+    bool       simulate         = 1;
+    string     instance_id      = 2;
+
+    DataFormat dformat          = 8;  // Internal data format (DType can be Undefined)
+    double     real_min_value   = 9;  // Real min value (dformat.min_value maps to real_min_value)
+    double     real_max_value   = 10; // Real max value (dformat.max_value maps to real_max_value)
+    double     exponent         = 11; // 1: linear scaling (RealMax - RealMin) * pow( (Value - Min) / (Max - Min), Exponent) + RealMin
+}
+
+message UpdateDatasetsResponse{
+    map<string, int64> results = 1;
+}
+
+message DeleteDatasetsRequest{
+    bool            simulate     = 1;
+    repeated string records_id   = 2;
+    repeated string instances_id = 3;
+}
+
+message DeleteDatasetsResponse{
+    repeated string results = 1;
+}
+
+service Admin {
+    rpc TidyDB(TidyDBRequest) returns (TidyDBResponse){}
+    rpc UpdateDatasets(UpdateDatasetsRequest) returns (UpdateDatasetsResponse){}
+    rpc DeleteDatasets(DeleteDatasetsRequest) returns (DeleteDatasetsResponse){}
+}

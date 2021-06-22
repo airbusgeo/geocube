@@ -1,0 +1,67 @@
+syntax = "proto3";
+package geocube;
+option go_package = "./pb;geocube";
+
+import "pb/records.proto";
+
+message Size {
+    int32 width  = 1;
+    int32 height = 2;
+}
+
+// GDAL GeoTransform
+message GeoTransform {
+    double a = 1; // x offset
+    double b = 2; // x resolution
+    double c = 3;
+    double d = 4; // y offset
+    double e = 5;
+    double f = 6; // y resolution
+}
+
+message Tile{
+    GeoTransform transform  = 1;
+    Size         size_px    = 2;
+    string       crs        = 3;
+}
+
+message Layout{
+    string              id              = 1;
+    string              name            = 2;
+
+    // External layout: Grid:Cell (CRS)
+    repeated string     grid_flags      = 3;
+    map<string, string> grid_parameters = 4;
+
+    // Internal layout: Cell, Tile
+    int64               block_x_size    = 5;
+    int64               block_y_size    = 6;
+    int64               max_records     = 7;
+}
+
+message CreateLayoutRequest{
+    Layout layout = 1;
+}
+
+message CreateLayoutResponse{
+    string id = 1;
+}
+
+message ListLayoutsRequest{
+    string name_like = 1;
+}
+
+message ListLayoutsResponse{
+    repeated Layout layouts = 1;
+}
+
+message TileAOIRequest{
+    AOI    aoi        = 1;
+    string crs        = 2;
+    float  resolution = 3;
+    Size   size_px   = 4;
+}
+
+message TileAOIResponse{
+    repeated Tile tiles = 1;
+}

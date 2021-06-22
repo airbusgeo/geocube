@@ -1,0 +1,74 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgresql
+  labels:
+    app: postgresql
+spec:
+  type: NodePort
+  ports:
+    - port: 5432
+  selector:
+    app: postgresql
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: postgresql
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: postgresql
+    spec:
+      containers:
+        - name: postgresql
+          image: postgres:11
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 5432
+          volumeMounts:
+            - mountPath: /var/lib/postgresql/data
+              name: postgresql-pvc
+          env:
+            - name: POSTGRES_DB
+              value: <POSTGRES_DB>
+            - name: POSTGRES_USER
+              value: <POSTGRES_USER>
+            - name: POSTGRES_PASSWORD
+              value: <POSTGRES_PASSWORD>
+      volumes:
+        - name: postgresql-pvc
+          persistentVolumeClaim:
+            claimName: postgres-pv-claim
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: postgres-pv-claim
+  labels:
+    app: postgresql
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 5Gi
+---
+ind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: postgres-pv-volume
+  labels:
+    type: local
+    app: postgres
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteMany
+  hostPath:
+    path: "/mnt/data"
