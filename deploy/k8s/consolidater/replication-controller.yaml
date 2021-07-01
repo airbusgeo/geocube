@@ -26,14 +26,11 @@ spec:
             path: "/mnt/disks/ssd0"
       containers:
         - name: consolidater
-          image: $(CONTAINER_REGISTRY)/consolidater:d4d8d196
+          image: {{CONSOLIDATER_IMAGE}}
           imagePullPolicy: "Always"
           ports:
             - containerPort: 9000
               protocol: TCP
-          env:
-            - name: PUBSUB_EMULATOR_HOST
-              value: 0.0.0.0:8085
           resources:
             requests:
               cpu: 1900m
@@ -46,7 +43,7 @@ spec:
               UUID=`uuid`;
               WORKDIR=/local-ssd/$UUID;
               mkdir -p $WORKDIR;
-              /consolidater -eventTopic events -subscription consolidations -workdir $WORKDIR || true;
+              /consolidater -psEventTopic events -psSubscription consolidations -workdir $WORKDIR || true;
               exitcode=$?;
               rm -rf $WORKDIR;
               exit $exitcode;

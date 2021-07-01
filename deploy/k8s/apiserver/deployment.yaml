@@ -18,25 +18,27 @@ spec:
       containers:
         - args:
             - -dbName=geocube
-            - -dbUser=apiserver
-            - -dbPassword=DB_PASSWD
-            - -dbHost=BD_HOST
-            - -eventsTopic=events
-            - -consolidationsTopic=consolidations
-            - -ingestionStorage=/tmp
+            - -dbUser={{DB_USER}}
+            - -dbPassword={{DB_PASSWORD}}
+            - -dbHost={{BD_HOST}}
+            - -psEventsTopic=events
+            - -psConsolidationsTopic=consolidations
+            - -ingestionStorage={{INGESTION_STORAGE}}
             - -maxConnectionAge=3600
             - -workers=1
-            - -local=true
-          env:
-            - name: PUBSUB_EMULATOR_HOST
-              value: 0.0.0.0:8085
-          image: $(CONTAINER_REGISTRY)/geocube-go-server:v0.2.0
+          image: {{GEOCUBE_SERVER_IMAGE}}
           imagePullPolicy: Always
           name: apiserver
           ports:
             - containerPort: 8080
               protocol: TCP
+          volumeMounts:
+          - mountPath: /tmp
+            name: local-storage
           resources: {}
+      volumes:
+        - name: local-storage
+          emptyDir: {}
       restartPolicy: Always
       schedulerName: default-scheduler
       securityContext: {}

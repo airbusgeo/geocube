@@ -53,7 +53,7 @@ func (c *Client) UploadFile(ctx context.Context, uri string, data io.ReadCloser,
 }
 
 /*
-	UploadFile enables to delete file.
+	Delete enables to delete file.
 */
 func (c *Client) Delete(ctx context.Context, uri string, options ...Option) error {
 	return c.StorageStrategy.Delete(ctx, uri, options...)

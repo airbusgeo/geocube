@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: pubsub-emulator
-          image: $(CONTAINER_REGISTRY)/pubsub-emulator:v1
+          image: {{PUBSUB_EMULATOR_IMAGE}}
           imagePullPolicy: Always
           args: ["--host-port=0.0.0.0:8085"]
 ---

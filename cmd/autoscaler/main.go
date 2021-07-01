@@ -19,7 +19,7 @@ func main() {
 	var (
 		argupd      = flag.Duration("update", 30*time.Second, "time between updates")
 		argproject  = flag.String("project", "", "input job subscription project")
-		argsub      = flag.String("psSubscription", "", "input job subscription")
+		argsub      = flag.String("psSubscription", "", "input pubsub job subscription")
 		argrc       = flag.String("rc", "", "replication controller")
 		argns       = flag.String("ns", "default", "replication controller namespace")
 		argratio    = flag.Float64("ratio", 10.0, "job/worker ratio over which instances will be added")
@@ -32,11 +32,8 @@ func main() {
 	)
 
 	flag.Parse()
-	if *argproject == "" {
-		panic("missing subscription project")
-	}
 	if *argsub == "" {
-		panic("missing subscription")
+		panic("missing pubsub subscription")
 	}
 	if *argrc == "" {
 		panic("missing replication controller")

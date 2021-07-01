@@ -33,11 +33,11 @@ spec:
               name: postgresql-pvc
           env:
             - name: POSTGRES_DB
-              value: <POSTGRES_DB>
+              value: geocube
             - name: POSTGRES_USER
-              value: <POSTGRES_USER>
+              value: {{POSTGRES_USER}}
             - name: POSTGRES_PASSWORD
-              value: <POSTGRES_PASSWORD>
+              value: {{POSTGRES_PASSWORD}}
       volumes:
         - name: postgresql-pvc
           persistentVolumeClaim:
