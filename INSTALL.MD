@@ -76,7 +76,7 @@ The Geocube can be run locally or deployed in a cluster (currently supported Kub
 The Geocube Solution is composed of three parts:
 - Geocube Service : to access and manage the geo data. It’s the purpose of this documentation.
 - Geocube Ingester : to feed the Geocube with ARD images. An example of an ingester is available www.github.com/airbusgeo/geocube-ingester.
-- Geocube Client: to use the geocube in an application. An example of a python client is available : www.github.com/airbusgeo/geocube-python-client
+- Geocube Client: to use the geocube in an application. A [python client](www.github.com/airbusgeo/geocube-client-python) and a [go client](www.github.com/airbusgeo/geocube-client-go) are available as example. Clients (for another language) can be created from the [protobuf files](https://developers.google.com/protocol-buffers) using the automatically generated [GRPC](https://grpc.io/) interface (see [Tutorials](https://developers.google.com/protocol-buffers/docs/tutorials)).
 
 The Geocube Server is composed of the ApiServer, the Consolidater and an interface layer to integrate into the user environment.
 
