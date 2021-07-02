@@ -1,6 +1,8 @@
 package grid_test
 
 import (
+	"context"
+
 	. "github.com/airbusgeo/geocube/internal/utils/grid"
 	"github.com/airbusgeo/godal"
 	. "github.com/onsi/ginkgo"
@@ -10,6 +12,7 @@ import (
 
 var _ = Describe("SingleCellGrid", func() {
 	var (
+		ctx            = context.Background()
 		singleCellGrid Grid
 		geomAoi        *geom.MultiPolygon
 		crs            *godal.SpatialRef
@@ -41,7 +44,15 @@ var _ = Describe("SingleCellGrid", func() {
 		)
 
 		JustBeforeEach(func() {
-			returnedCover, returnedCoverErr = singleCellGrid.Covers(geomAoi)
+			covers, err := singleCellGrid.Covers(ctx, geomAoi)
+			returnedCover = nil
+			if err != nil {
+				returnedCoverErr = err
+			} else {
+				for c := range covers {
+					returnedCover = append(returnedCover, c)
+				}
+			}
 		})
 
 		var (

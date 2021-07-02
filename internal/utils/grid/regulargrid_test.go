@@ -1,6 +1,7 @@
 package grid_test
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"strconv"
@@ -24,19 +25,24 @@ func toMultiPolygon(c [][2]float64) *geom.MultiPolygon {
 	return g
 }
 
-func createRegularGrid(cellSize, resolution, ox, oy int) (grid.Grid, error) {
-	return grid.NewGrid([]string{}, map[string]string{
+func createRegularGrid(cellSize, resolution, ox, oy, memoryLimit int) (grid.Grid, error) {
+	params := map[string]string{
 		"grid":       "regular",
 		"crs":        "+proj=utm +zone=31",
 		"cell_size":  strconv.Itoa(cellSize),
 		"resolution": strconv.Itoa(resolution),
 		"ox":         strconv.Itoa(ox),
-		"oy":         strconv.Itoa(oy)})
+		"oy":         strconv.Itoa(oy)}
+	if memoryLimit > 0 {
+		params["memory_limit"] = strconv.Itoa(memoryLimit)
+	}
+	return grid.NewGrid([]string{}, params)
 }
 
 var _ = Describe("Regular Grid", func() {
 
 	var (
+		ctx           = context.Background()
 		returnedError error
 		cellsURIs     = [][]string{
 			{"23/-161", "23/-162", "23/-163", "24/-161", "24/-162", "24/-163", "25/-161", "25/-162", "25/-163"},
@@ -70,7 +76,15 @@ var _ = Describe("Regular Grid", func() {
 
 		JustBeforeEach(func() {
 			godal.RegisterAll()
-			cellsuri, returnedError = gr.Covers(aoi)
+			uris, err := gr.Covers(ctx, aoi)
+			cellsuri = nil
+			if err != nil {
+				returnedError = err
+			} else {
+				for uri := range uris {
+					cellsuri = append(cellsuri, uri)
+				}
+			}
 		})
 
 		for configuration := 0; configuration <= 2; configuration++ {
@@ -80,13 +94,13 @@ var _ = Describe("Regular Grid", func() {
 				BeforeEach(func() {
 					switch configuration {
 					case 0:
-						gr, _ = createRegularGrid(1024, 30, 0, 0)
+						gr, _ = createRegularGrid(1024, 30, 0, 0, -1)
 						aoi = toMultiPolygon([][2]float64{{5.8, 45.1}, {5.8, 44.5}, {6.6, 44.5}, {6.6, 45.1}, {5.8, 45.1}})
 					case 1:
-						gr, _ = createRegularGrid(1024, 30, 720298, 4997873)
+						gr, _ = createRegularGrid(1024, 30, 720298, 4997873, -1)
 						aoi = toMultiPolygon([][2]float64{{5.8, 45.1}, {5.8, 44.5}, {6.6, 44.5}, {6.6, 45.1}, {5.8, 45.1}})
 					case 2:
-						gr, _ = createRegularGrid(4096, 10, 0, 0)
+						gr, _ = createRegularGrid(4096, 10, 0, 0, -1)
 						ds, _ := godal.Open("test_data/france.geojson")
 						gwkb, _ := ds.Layers()[0].NextFeature().Geometry().WKB()
 						ds.Close()
@@ -106,7 +120,41 @@ var _ = Describe("Regular Grid", func() {
 			})
 		}
 	})
+	Describe("Cover with memory limit", func() {
+		var (
+			gr  grid.Grid
+			aoi *geom.MultiPolygon
+		)
 
+		JustBeforeEach(func() {
+			godal.RegisterAll()
+			_, returnedError = gr.Covers(ctx, aoi)
+		})
+
+		Describe("below requirements", func() {
+			BeforeEach(func() {
+				gr, _ = createRegularGrid(1024, 30, 0, 0, 10)
+				aoi = toMultiPolygon([][2]float64{{5.8, 45.1}, {5.8, 44.5}, {6.6, 44.5}, {6.6, 45.1}, {5.8, 45.1}})
+			})
+
+			Context("Fail", func() {
+				It("it should return an error", func() {
+					Expect(returnedError).NotTo(BeNil())
+				})
+			})
+		})
+
+		Describe("above requirements", func() {
+			BeforeEach(func() {
+				gr, _ = createRegularGrid(1024, 30, 0, 0, 60)
+				aoi = toMultiPolygon([][2]float64{{5.8, 45.1}, {5.8, 44.5}, {6.6, 44.5}, {6.6, 45.1}, {5.8, 45.1}})
+			})
+
+			Context("Success", func() {
+				itShouldNotReturnAnError()
+			})
+		})
+	})
 	Describe("Cell", func() {
 		var (
 			gr               grid.Grid
@@ -125,11 +173,11 @@ var _ = Describe("Regular Grid", func() {
 				BeforeEach(func() {
 					switch configuration {
 					case 0:
-						gr, _ = createRegularGrid(1024, 30, 0, 0)
+						gr, _ = createRegularGrid(1024, 30, 0, 0, -1)
 					case 1:
-						gr, _ = createRegularGrid(1024, 30, 720298, 4997873)
+						gr, _ = createRegularGrid(1024, 30, 720298, 4997873, -1)
 					case 2:
-						gr, _ = createRegularGrid(4096, 10, 0, 0)
+						gr, _ = createRegularGrid(4096, 10, 0, 0, -1)
 					}
 					cellsuri = cellsURIs[configuration]
 					jsonWanted = jsonWanteds[configuration]

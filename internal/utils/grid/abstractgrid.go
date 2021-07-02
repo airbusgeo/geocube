@@ -1,6 +1,7 @@
 package grid
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -24,7 +25,7 @@ type Cell struct {
 
 type Grid interface {
 	Cell(uri string) (*Cell, error)
-	Covers(aoi *geom.MultiPolygon) ([]string, error)
+	Covers(ctx context.Context, aoi *geom.MultiPolygon) (<-chan string, error)
 }
 
 // NewGrid creates a new grid from flag and parameters (proj4 format)

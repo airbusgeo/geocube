@@ -1,6 +1,7 @@
 package grid
 
 import (
+	"context"
 	"fmt"
 	"math"
 	"strconv"
@@ -44,7 +45,7 @@ type SingleCellGrid struct {
 }
 
 // Covers
-func (cg *SingleCellGrid) Covers(geomAOI *geom.MultiPolygon) ([]string, error) {
+func (cg *SingleCellGrid) Covers(ctx context.Context, geomAOI *geom.MultiPolygon) (<-chan string, error) {
 	if geomAOI.NumCoords() == 0 {
 		return nil, nil
 	}
@@ -72,7 +73,11 @@ func (cg *SingleCellGrid) Covers(geomAOI *geom.MultiPolygon) ([]string, error) {
 	width := math.Round(math.Abs(b.Min(0)-b.Max(0)) / math.Abs(cg.resolution))
 	height := math.Round(math.Abs(b.Min(1)-b.Max(1)) / math.Abs(cg.resolution))
 
-	return []string{fmt.Sprintf("%f/%f/%d/%d", originX, originY, int(width), int(height))}, nil
+	uris := make(chan string, 1)
+	uris <- fmt.Sprintf("%f/%f/%d/%d", originX, originY, int(width), int(height))
+	close(uris)
+
+	return uris, nil
 
 }
 

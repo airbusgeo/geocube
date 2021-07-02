@@ -178,8 +178,22 @@ func (svc *Service) csldPrepareOrders(ctx context.Context, job *geocube.Job) err
 		logger.Debugf("FindRecords (%d):%v\n", len(recordsTime), time.Since(start))
 		start = time.Now()
 
+		// Get Variable
+		variable, err := txn.ReadVariableFromInstanceID(ctx, job.Payload.InstanceID)
+		if err != nil {
+			return fmt.Errorf("csldPrepareOrders.%w", err)
+		}
+		variable.Clean(true)
+
+		// Get Consolidation parameters
+		params, err := txn.ReadConsolidationParams(ctx, job.Payload.ParamsID)
+		if err != nil {
+			return fmt.Errorf("csldPrepareOrders.%w", err)
+		}
+		params.Clean()
+
 		// Get all the cells in the layout covering all the datasets locked by the job
-		var cells []*grid.Cell
+		var cells <-chan *grid.Cell
 		var layout *geocube.Layout
 		{
 			// Get the union of geometries of all the datasets locked by the job
@@ -197,32 +211,18 @@ func (svc *Service) csldPrepareOrders(ctx context.Context, job *geocube.Job) err
 			}
 
 			// Get all the cells covering the AOI in the layout
-			cells, err = layout.Covers(aoi)
+			cells, err = layout.Covers(ctx, aoi)
 			if err != nil {
 				return fmt.Errorf("csldPrepareOrders.%w", err)
 			}
 			logger.Debugf("ReadAndCoverLayout (%d cells):%v\n", len(cells), time.Since(start))
 		}
 
-		// Get Variable
-		variable, err := txn.ReadVariableFromInstanceID(ctx, job.Payload.InstanceID)
-		if err != nil {
-			return fmt.Errorf("csldPrepareOrders.%w", err)
-		}
-		variable.Clean(true)
-
-		// Get Consolidation parameters
-		params, err := txn.ReadConsolidationParams(ctx, job.Payload.ParamsID)
-		if err != nil {
-			return fmt.Errorf("csldPrepareOrders.%w", err)
-		}
-		params.Clean()
-
 		start = time.Now()
 
 		// Create one task per cell
 		datasetsToBeConsolidated := utils.StringSet{}
-		for _, cell := range cells {
+		for cell := range cells {
 			// Retrieve the datasets to be consolidated
 			var datasets []*CsldDataset
 			uniqueDatasetsID := utils.StringSet{}

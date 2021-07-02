@@ -1,8 +1,10 @@
 package geocube
 
 import (
+	"context"
 	"fmt"
 
+	"github.com/airbusgeo/geocube/internal/log"
 	pb "github.com/airbusgeo/geocube/internal/pb"
 	gridlib "github.com/airbusgeo/geocube/internal/utils/grid"
 	"github.com/google/uuid"
@@ -62,22 +64,32 @@ func (l *Layout) ToProtobuf() *pb.Layout {
 }
 
 // Covers returns all the cells of the layout covered by the AOI
-func (l *Layout) Covers(aoi *geom.MultiPolygon) ([]*gridlib.Cell, error) {
+func (l *Layout) Covers(ctx context.Context, aoi *geom.MultiPolygon) (<-chan *gridlib.Cell, error) {
 	err := l.createGrid()
 	if err != nil {
 		return nil, fmt.Errorf("Covers.%w", err)
 	}
-	cellsuri, err := l.grid.Covers(aoi)
+	cellsuri, err := l.grid.Covers(ctx, aoi)
 	if err != nil {
 		return nil, err
 	}
-	cells := make([]*gridlib.Cell, len(cellsuri))
-	for i, celluri := range cellsuri {
-		cells[i], err = l.grid.Cell(celluri)
-		if err != nil {
-			return nil, err
+	cells := make(chan *gridlib.Cell)
+	go func() {
+		for celluri := range cellsuri {
+			cell, err := l.grid.Cell(celluri)
+			if err != nil {
+				break
+			}
+			select {
+			case <-ctx.Done():
+				log.Logger(ctx).Sugar().Errorf("Layout.Covers: %v", ctx.Err())
+			case cells <- cell:
+				continue
+			}
+			break
 		}
-	}
+		close(cells)
+	}()
 	return cells, nil
 }
 

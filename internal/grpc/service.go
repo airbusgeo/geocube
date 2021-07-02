@@ -70,7 +70,7 @@ type GeocubeService interface {
 
 	CreateLayout(ctx context.Context, layout *geocube.Layout) error
 	ListLayouts(ctx context.Context, nameLike string) ([]*geocube.Layout, error)
-	TileAOI(ctx context.Context, aoi *geocube.AOI, crs string, resolution float32, width, height int32) ([]*grid.Cell, error)
+	TileAOI(ctx context.Context, aoi *geocube.AOI, crs string, resolution float32, width, height int32) (<-chan *grid.Cell, error)
 
 	GetXYZTile(ctx context.Context, recordsID []string, instanceID string, a, b, z int) ([]byte, error)
 	GetCubeFromRecords(ctx context.Context, recordsID [][]string, instancesID []string, crs *godal.SpatialRef, pixToCRS *affine.Affine, width, height int, format string, headersOnly bool) (internal.CubeInfo, <-chan internal.CubeSlice, error)
@@ -967,13 +967,13 @@ func (svc *Service) TileAOI(req *pb.TileAOIRequest, stream pb.Geocube_TileAOISer
 	}
 
 	// Format response
-	tiles := make([]*pb.Tile, len(cells))
-	for i, c := range cells {
+	tiles := make([]*pb.Tile, 0, StreamTilesBatchSize)
+	for c := range cells {
 		crs, err := c.CRS.WKT()
 		if err != nil {
 			return formatError("backend.%w", err)
 		}
-		tiles[i] = &pb.Tile{
+		tiles = append(tiles, &pb.Tile{
 			Transform: &pb.GeoTransform{
 				A: c.PixelToCRS[0],
 				B: c.PixelToCRS[1],
@@ -987,16 +987,20 @@ func (svc *Service) TileAOI(req *pb.TileAOIRequest, stream pb.Geocube_TileAOISer
 				Height: int32(c.SizeY),
 			},
 			Crs: crs,
+		})
+
+		// Send tiles by batches
+		if len(tiles) == StreamTilesBatchSize {
+			if err := stream.Send(&pb.TileAOIResponse{Tiles: tiles}); err != nil {
+				return formatError("backend.TileAOI.send: %w", err)
+			}
+			tiles = tiles[:0]
 		}
 	}
 
-	// Format response
-	batches := (len(tiles)-1)/StreamTilesBatchSize + 1
-	for i := 0; i < batches; i++ {
-		lasti := utils.MinI((i+1)*StreamTilesBatchSize, len(tiles))
-		if err := stream.Send(&pb.TileAOIResponse{Tiles: tiles[i*StreamTilesBatchSize : lasti]}); err != nil {
-			return formatError("backend.TileAOI.send: %w", err)
-		}
+	// Send remaining
+	if err := stream.Send(&pb.TileAOIResponse{Tiles: tiles}); err != nil {
+		return formatError("backend.TileAOI.send: %w", err)
 	}
 
 	return nil

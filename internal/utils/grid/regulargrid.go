@@ -1,6 +1,7 @@
 package grid
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"image"
@@ -8,6 +9,7 @@ import (
 	"runtime"
 	"strconv"
 
+	"github.com/airbusgeo/geocube/internal/log"
 	"github.com/airbusgeo/geocube/internal/utils/affine"
 	"github.com/airbusgeo/geocube/internal/utils/proj"
 	"github.com/airbusgeo/godal"
@@ -24,6 +26,7 @@ const maxCellSize = 65536 // Arbitrarly defined for now
 // - "cell_size" or ("cell_x_size", "cell_y_size"): size of the cell
 // - "resolution" in crs unit
 // - "ox", "oy" origin in crs unit
+// - "memory_limit" to prevent crash when covering a large aoi
 type RegularGrid struct {
 	crs                  *godal.SpatialRef
 	srid                 int
@@ -31,6 +34,7 @@ type RegularGrid struct {
 	cellSizeX, cellSizeY int
 	lonLatToCRS          *godal.Transform
 	crsToLonLat          *godal.Transform
+	memoryLimit          int
 }
 
 func invalidError(desc string, args ...interface{}) error {
@@ -56,7 +60,7 @@ func initProjection(p **godal.Transform, crs *godal.SpatialRef, inverse bool) er
 }
 
 func newRegularGrid(flags []string, parameters map[string]string) (Grid, error) {
-	grid := RegularGrid{}
+	grid := RegularGrid{memoryLimit: 9223372036854775807}
 
 	// grid.CRS : Create and initialize the spatial reference from flags & parameters
 	var err error
@@ -118,6 +122,14 @@ func newRegularGrid(flags []string, parameters map[string]string) (Grid, error) 
 		grid.pixToCRS = affine.Translation(originX, originY).Multiply(affine.Scale(resolution, -resolution))
 	}
 
+	// Memory limit
+	// Resolution
+	if mem, ok := parameters["memory_limit"]; ok {
+		if grid.memoryLimit, err = strconv.Atoi(mem); err != nil {
+			return nil, invalidError("Memory limit[%s]: %w", mem, err)
+		}
+	}
+
 	return &grid, nil
 }
 
@@ -156,7 +168,7 @@ func createGeometryFromWKB(g *geom.MultiPolygon, crs *godal.SpatialRef) (*godal.
 }
 
 // Covers implements Grid
-func (rg *RegularGrid) Covers(geomAOI *geom.MultiPolygon) ([]string, error) {
+func (rg *RegularGrid) Covers(ctx context.Context, geomAOI *geom.MultiPolygon) (<-chan string, error) {
 	if geomAOI.NumCoords() == 0 {
 		return nil, nil
 	}
@@ -197,8 +209,10 @@ func (rg *RegularGrid) Covers(geomAOI *geom.MultiPolygon) ([]string, error) {
 
 	width := int(math.Abs(ulX-lrX) / math.Abs(cellToCRS.Rx()))
 	height := int(math.Abs(ulY-lrY) / math.Abs(cellToCRS.Ry()))
-
-	ds, err := godal.Create(godal.Memory, "", 1, godal.Float64, width, height)
+	if width*height*2 > rg.memoryLimit {
+		return nil, fmt.Errorf("Covers: Not enough memory (needed:%d, provided:%d)", width*height*2, rg.memoryLimit)
+	}
+	ds, err := godal.Create(godal.Memory, "", 1, godal.Byte, width, height)
 	if err != nil {
 		return nil, err
 	}
@@ -224,18 +238,30 @@ func (rg *RegularGrid) Covers(geomAOI *geom.MultiPolygon) ([]string, error) {
 	}
 
 	// Get the coordinates of non zero pixels
-	s := img.Rect.Size()
-	i0, j0 := int(i0f), int(j0f)
-	res := make([]string, 0, s.X*s.Y)
-	for j := 0; j < s.Y; j++ {
-		for i := 0; i < s.X; i++ {
-			if img.Pix[j*img.Stride+i] != 0 {
-				res = append(res, fmt.Sprintf("%d/%d", i+i0, j+j0))
+	uris := make(chan string)
+
+	go func() {
+		s := img.Rect.Size()
+		i0, j0 := int(i0f), int(j0f)
+		for j := 0; j < s.Y; j++ {
+			for i := 0; i < s.X; i++ {
+				if img.Pix[j*img.Stride+i] != 0 {
+					select {
+					case <-ctx.Done():
+						log.Logger(ctx).Sugar().Errorf("RegularGrid.Covers: %v", ctx.Err())
+					case uris <- fmt.Sprintf("%d/%d", i+i0, j+j0):
+						continue
+					}
+					// Exit the loop
+					j = s.Y
+					break
+				}
 			}
 		}
-	}
+		close(uris)
+	}()
 
-	return res, nil
+	return uris, nil
 }
 
 func (rg *RegularGrid) getGrayImage(d *godal.Dataset) (*image.Gray, error) {

@@ -463,22 +463,23 @@ func (svc *Service) ListLayouts(ctx context.Context, nameLike string) ([]*geocub
 }
 
 // TileAOI implements GeocubeService
-func (svc *Service) TileAOI(ctx context.Context, aoi *geocube.AOI, crsS string, resolution float32, width, height int32) ([]*grid.Cell, error) {
+func (svc *Service) TileAOI(ctx context.Context, aoi *geocube.AOI, crsS string, resolution float32, width, height int32) (<-chan *grid.Cell, error) {
 	// Create Layout with a regular grid
 	layout := geocube.Layout{
 		GridParameters: geocube.Metadata{
-			"grid":        "regular",
-			"crs":         crsS,
-			"cell_x_size": fmt.Sprintf("%d", width),
-			"cell_y_size": fmt.Sprintf("%d", height),
-			"resolution":  fmt.Sprintf("%f", resolution),
-			"ox":          "0",
-			"oy":          "0",
+			"grid":         "regular",
+			"crs":          crsS,
+			"cell_x_size":  fmt.Sprintf("%d", width),
+			"cell_y_size":  fmt.Sprintf("%d", height),
+			"resolution":   fmt.Sprintf("%f", resolution),
+			"ox":           "0",
+			"oy":           "0",
+			"memory_limit": fmt.Sprintf("%d", ramSize/10),
 		},
 	}
 
 	// Tile AOI
-	return layout.Covers((*geom.MultiPolygon)(aoi.Geometry.MultiPolygon))
+	return layout.Covers(ctx, (*geom.MultiPolygon)(aoi.Geometry.MultiPolygon))
 }
 
 // ListJobs implements GeocubeService
