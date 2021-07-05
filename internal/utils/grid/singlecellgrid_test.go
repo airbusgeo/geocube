@@ -58,7 +58,7 @@ var _ = Describe("SingleCellGrid", func() {
 		var (
 			itShouldReturnedRightCover = func() {
 				It("it should return right cover response", func() {
-					Expect(returnedCover).To(Equal([]string{"720298.429720/5000366.394350/6590/6914"}))
+					Expect(returnedCover).To(Equal([]string{"720298.4297198909/5000366.394349512/6590/6914"}))
 				})
 			}
 		)

@@ -6,6 +6,7 @@ import (
 	"math"
 	"strconv"
 
+	"github.com/airbusgeo/geocube/internal/utils"
 	"github.com/airbusgeo/geocube/internal/utils/affine"
 	"github.com/airbusgeo/geocube/internal/utils/proj"
 	"github.com/airbusgeo/godal"
@@ -74,7 +75,7 @@ func (cg *SingleCellGrid) Covers(ctx context.Context, geomAOI *geom.MultiPolygon
 	height := math.Round(math.Abs(b.Min(1)-b.Max(1)) / math.Abs(cg.resolution))
 
 	uris := make(chan string, 1)
-	uris <- fmt.Sprintf("%f/%f/%d/%d", originX, originY, int(width), int(height))
+	uris <- fmt.Sprintf("%s/%s/%d/%d", utils.F64ToS(originX), utils.F64ToS(originY), int(width), int(height))
 	close(uris)
 
 	return uris, nil

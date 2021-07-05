@@ -11,6 +11,7 @@ import (
 	"math"
 
 	"github.com/airbusgeo/geocube/internal/geocube"
+	"github.com/airbusgeo/geocube/internal/utils"
 	"github.com/airbusgeo/geocube/internal/utils/affine"
 	"github.com/airbusgeo/godal"
 	"github.com/google/uuid"
@@ -185,7 +186,7 @@ func mergeGdalDatasets(datasets []*geocube.Dataset, outDesc *GdalDatasetDescript
 		"-t_srs", outDesc.WktCRS,
 		"-ts", toS(float64(outDesc.Width)), toS(float64(outDesc.Height)),
 		"-ovr", "AUTO", //TODO user-defined ?
-		"-wo", fmt.Sprintf("INIT_DEST=%f", commonDFormat.NoData),
+		"-wo", "INIT_DEST=" + toS(commonDFormat.NoData),
 		"-wm", "2047",
 		"-ot", commonDFormat.DType.ToGDAL().String(),
 		"-r", outDesc.Resampling.String(),
@@ -224,7 +225,7 @@ func countValidPix(band godal.Band) (uint64, error) {
 }
 
 func toS(f float64) string {
-	return fmt.Sprintf("%f", f)
+	return utils.F64ToS(f)
 }
 
 // colorTableFromPalette creates a gdal.ColorTable from a palette

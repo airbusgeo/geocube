@@ -3,7 +3,13 @@ package utils
 import (
 	"fmt"
 	"regexp"
+	"strconv"
 )
+
+// F64ToS converts float to string using the maximum accuracy
+func F64ToS(f float64) string {
+	return strconv.FormatFloat(f, 'f', -1, 64)
+}
 
 // AverageElemF computes the mean value of vs.$
 // AverageElemF panics if len(vs) = 0

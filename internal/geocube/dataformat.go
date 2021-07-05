@@ -5,6 +5,7 @@ import (
 	"math"
 
 	pb "github.com/airbusgeo/geocube/internal/pb"
+	"github.com/airbusgeo/geocube/internal/utils"
 )
 
 // DataFormat describes the internal format of a raster
@@ -121,9 +122,9 @@ func (df DataFormat) validForPacking() bool {
 }
 
 func (df DataFormat) string() string {
-	return fmt.Sprintf("(%s %s, nodata:%f)", df.DType.String(), df.Range.string(), df.NoData)
+	return fmt.Sprintf("(%s %s, nodata:%s)", df.DType.String(), df.Range.string(), utils.F64ToS(df.NoData))
 }
 
 func (r Range) string() string {
-	return fmt.Sprintf("[%f -> %f]", r.Min, r.Max)
+	return fmt.Sprintf("[%s -> %s]", utils.F64ToS(r.Min), utils.F64ToS(r.Max))
 }
