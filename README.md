@@ -5,14 +5,14 @@ Geocube is a geo-spatial imagery database designed as a serverless service to se
 
 ## Installation
 
-Please read the [Installation guides](https://github.com/airbusgeo/geocube/INSTALL.MD).
+Please read the [Installation guides](https://github.com/airbusgeo/geocube/blob/main/INSTALL.MD).
 
 ## Quickstart
 
 After starting the server, two tutorials explained the basics of Geocube using the [Geocube Python Client Library](https://github.com/airbusgeo/geocube-client-python):
 
-- [Data Indexation Jupyter notebook](https://github.com/airbusgeo/geocube-client-python/Jupyter/Geocube-Client-DataIndexation.ipynb)
-- [Data Access Jupyter notebook](https://github.com/airbusgeo/geocube-client-python/Jupyter/Geocube-Client-DataAccess.ipynb)
+- [Data Indexation Jupyter notebook](https://github.com/airbusgeo/geocube-client-python/blob/main/Jupyter/Geocube-Client-DataIndexation.ipynb)
+- [Data Access Jupyter notebook](https://github.com/airbusgeo/geocube-client-python/blob/main/Jupyter/Geocube-Client-DataAccess.ipynb)
 
 ## Documentation
 
@@ -24,11 +24,11 @@ Geocube is under development. The API might evolve in backwards incompatible way
 
 ## Contributing
 
-Contributions are welcome. Please read the [contributing guidelines](https://github.com/airbusgeo/geocube/CONTRIBUTING.MD) before submitting fixes or enhancements.
+Contributions are welcome. Please read the [contributing guidelines](https://github.com/airbusgeo/geocube/blob/main/CONTRIBUTING.md) before submitting fixes or enhancements.
 
 ## Licensing
 
-Geocube is licensed under the Apache License, Version 2.0. See [LICENSE](https://github.com/airbusgeo/geocube/LICENSE) for the full license text.
+Geocube is licensed under the Apache License, Version 2.0. See [LICENSE](https://github.com/airbusgeo/geocube/blob/main/LICENSE) for the full license text.
 
 
 ## Credits
