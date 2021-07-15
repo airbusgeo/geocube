@@ -2,39 +2,54 @@ package image
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path"
 	"strings"
 
-	"golang.org/x/sync/errgroup"
-
 	"github.com/airbusgeo/geocube/interface/storage/uri"
 	"github.com/airbusgeo/geocube/internal/geocube"
 	"github.com/airbusgeo/geocube/internal/log"
 	"github.com/airbusgeo/geocube/internal/utils/affine"
-
 	"github.com/google/uuid"
+	"golang.org/x/sync/errgroup"
 )
+
+const (
+	TaskCancelledConsolidationError = ErrorConst("consolidation event is cancelled")
+)
+
+type ErrorConst string
+
+func (e ErrorConst) Error() string {
+	return string(e)
+}
 
 type Handler interface {
 	Consolidate(ctx context.Context, cEvent *geocube.ConsolidationEvent, workspace string) error
 }
 
 type handlerConsolidation struct {
-	cog   CogGenerator
-	mucog MucogGenerator
+	cog                  CogGenerator
+	mucog                MucogGenerator
+	cancelledJobsStorage string
 }
 
-func NewHandleConsolidation(c CogGenerator, m MucogGenerator) Handler {
+func NewHandleConsolidation(c CogGenerator, m MucogGenerator, cancelledJobsStorage string) Handler {
 	return &handlerConsolidation{
-		cog:   c,
-		mucog: m,
+		cog:                  c,
+		mucog:                m,
+		cancelledJobsStorage: cancelledJobsStorage,
 	}
 }
 
 // Consolidate generate MUCOG file from list of COG (Cloud Optimized Geotiff).
 func (h *handlerConsolidation) Consolidate(ctx context.Context, cEvent *geocube.ConsolidationEvent, workspace string) error {
+	if h.isCancelled(ctx, cEvent) {
+		return TaskCancelledConsolidationError
+	}
+
 	id := uuid.New()
 	workDir := path.Join(workspace, id.String())
 	if err := os.Mkdir(workDir, 0777); err != nil {
@@ -96,6 +111,10 @@ func (h *handlerConsolidation) Consolidate(ctx context.Context, cEvent *geocube.
 	}
 
 	log.Logger(ctx).Sugar().Infof("%d COGs have been generated", len(cogListFile))
+
+	if h.isCancelled(ctx, cEvent) {
+		return errors.New("consolidation event is cancelled")
+	}
 	if len(cogListFile) == 1 {
 		if err := h.uploadFile(ctx, cogListFile[0], cEvent.Container.URI); err != nil {
 			return fmt.Errorf("failed to upload file on: %s : %w", cEvent.Container.URI, err)
@@ -123,7 +142,7 @@ type FileToDownload struct {
 
 // getLocalRecordsDatasets download all records datasets in local filesystem.
 func (h *handlerConsolidation) getLocalRecordsDatasets(ctx context.Context, cEvent *geocube.ConsolidationEvent, workDir string) (map[string]recordDatasetT, error) {
-	// Prepare localdataset and list files to download
+	// Prepare local dataset and list files to download
 	recordDatasets := map[string]recordDatasetT{}
 	filesToDownload := map[string]string{}
 	for _, record := range cEvent.Records {
@@ -219,6 +238,23 @@ func (h *handlerConsolidation) cleanWorkspace(ctx context.Context, workspace str
 		return
 	}
 	log.Logger(ctx).Sugar().Infof("Workspace cleaned")
+}
+
+func (h *handlerConsolidation) isCancelled(ctx context.Context, event *geocube.ConsolidationEvent) bool {
+	path := h.cancelledJobsStorage + "/" + fmt.Sprintf("%s_%s", event.JobID, event.TaskID)
+	cancelledJobsURI, err := uri.ParseUri(path)
+	if err != nil {
+		log.Logger(ctx).Sugar().Errorf("failed to parse uri: %s: %s", path, err.Error())
+		return false
+	}
+
+	exist, err := cancelledJobsURI.Exist(ctx)
+	if err != nil {
+		log.Logger(ctx).Sugar().Errorf("failed to check uri existence: %s: %s", path, err.Error())
+		return false
+	}
+
+	return exist
 }
 
 type recordDatasetT []*geocube.Dataset

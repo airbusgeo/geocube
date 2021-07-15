@@ -24,21 +24,22 @@ var ramSize int
 
 // Service implements GeocubeService
 type Service struct {
-	db                     database.GeocubeDBBackend
-	eventPublisher         messaging.Publisher
-	consolidationPublisher messaging.Publisher
-	catalogWorkers         int
-	ingestionStoragePath   string
+	db                         database.GeocubeDBBackend
+	eventPublisher             messaging.Publisher
+	consolidationPublisher     messaging.Publisher
+	catalogWorkers             int
+	ingestionStoragePath       string
+	cancelledConsolidationPath string
 }
 
 // New returns a new business service
-func New(ctx context.Context, db database.GeocubeDBBackend, eventPublisher messaging.Publisher, consolidationPublisher messaging.Publisher, ingestionStoragePath string, catalogWorkers int) (*Service, error) {
+func New(ctx context.Context, db database.GeocubeDBBackend, eventPublisher messaging.Publisher, consolidationPublisher messaging.Publisher, ingestionStoragePath, cancelledConsolidationPath string, catalogWorkers int) (*Service, error) {
 	ramSize = int(C.sysconf(C._SC_PHYS_PAGES) * C.sysconf(C._SC_PAGE_SIZE))
 
 	if catalogWorkers <= 0 {
 		catalogWorkers = 1
 	}
-	return &Service{db: db, eventPublisher: eventPublisher, consolidationPublisher: consolidationPublisher, catalogWorkers: catalogWorkers, ingestionStoragePath: ingestionStoragePath}, nil
+	return &Service{db: db, eventPublisher: eventPublisher, consolidationPublisher: consolidationPublisher, catalogWorkers: catalogWorkers, ingestionStoragePath: ingestionStoragePath, cancelledConsolidationPath: cancelledConsolidationPath}, nil
 }
 
 // CreateAOI implements GeocubeService

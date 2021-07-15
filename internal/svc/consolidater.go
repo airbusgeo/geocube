@@ -57,6 +57,23 @@ func (svc *Service) handleJobEvt(ctx context.Context, evt geocube.JobEvent) erro
 }
 
 func (svc *Service) handleTaskEvt(ctx context.Context, evt geocube.TaskEvent) error {
+	switch evt.Status {
+	case geocube.TaskCancelled:
+		// manage task cancelled
+		return nil
+	case geocube.TaskSuccessful:
+		// manage tasks succeeded but job is cancelled (tasks are deleted)
+		job, err := svc.db.ReadJob(ctx, evt.JobID)
+		if err != nil {
+			return fmt.Errorf("handleTaskEvt(%s).%w", evt.TaskID, err)
+		}
+
+		if job.State == geocube.JobStateABORTED || job.State == geocube.JobStateFAILED {
+			return nil
+		}
+	default:
+	}
+
 	// Get Job with the task of the event
 	job, err := svc.db.ReadJobWithTask(ctx, evt.JobID, evt.TaskID)
 	if err != nil {
@@ -746,11 +763,35 @@ func (svc *Service) csldContactAdmin(ctx context.Context, job *geocube.Job) erro
 
 func (svc *Service) csldCancel(ctx context.Context, job *geocube.Job) error {
 	job.Log.Print("Cancel all tasks...")
-	// TODO Cancel consolidation tasks
+
 	if job.ActiveTasks == 0 {
 		return svc.publishEvent(ctx, geocube.CancellationDone, job, "")
 	}
-	return nil
+
+	var err error
+	if job.Tasks, err = svc.db.ReadTasks(ctx, job.ID, []geocube.TaskState{geocube.TaskStatePENDING}); err != nil {
+		return svc.publishEvent(ctx, geocube.CancellationFailed, job, err.Error())
+	}
+
+	for taskIndex, task := range job.Tasks {
+		job.CancelTask(taskIndex)
+
+		// Create cancelled file
+		path := svc.cancelledConsolidationPath + "/" + fmt.Sprintf("%s_%s", job.ID, task.ID)
+		cancelledJobsURI, err := uri.ParseUri(path)
+		if err != nil {
+			return svc.publishEvent(ctx, geocube.CancellationFailed, job, fmt.Sprintf("%s: %s", err.Error(), path))
+		}
+
+		if err := cancelledJobsURI.Upload(ctx, nil); err != nil {
+			return svc.publishEvent(ctx, geocube.CancellationFailed, job, err.Error())
+		}
+
+		if err = svc.saveJob(ctx, nil, job); err != nil {
+			return svc.publishEvent(ctx, geocube.CancellationFailed, job, err.Error())
+		}
+	}
+	return svc.publishEvent(ctx, geocube.CancellationDone, job, "")
 }
 
 func (svc *Service) csldRetry(ctx context.Context, job *geocube.Job) error {

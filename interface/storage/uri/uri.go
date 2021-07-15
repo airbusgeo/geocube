@@ -194,3 +194,11 @@ func (u DefaultUri) GetAttrs(ctx context.Context) (storage.Attrs, error) {
 
 	return strategy.GetAttrs(ctx, u.String())
 }
+
+func (u DefaultUri) Exist(ctx context.Context) (bool, error) {
+	strategy, err := u.getStrategy(ctx)
+	if err != nil {
+		return false, fmt.Errorf("failed to get storage strategy: %w", err)
+	}
+	return strategy.Exist(ctx, u.String())
+}

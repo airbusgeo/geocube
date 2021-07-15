@@ -138,7 +138,7 @@ func run(ctx context.Context) error {
 	}
 
 	// Create Geocube Service
-	svc, err := svc.New(ctx, db, eventPublisher, consolidationPublisher, serverConfig.IngestionStorage, serverConfig.CatalogWorkers)
+	svc, err := svc.New(ctx, db, eventPublisher, consolidationPublisher, serverConfig.IngestionStorage, serverConfig.CancelledConsolidationStorage, serverConfig.CatalogWorkers)
 	if err != nil {
 		return fmt.Errorf("svc.new: %w", err)
 	}
@@ -317,6 +317,7 @@ func newServerAppConfig() (*serverConfig, error) {
 	maxConnectionAge := flag.Int("maxConnectionAge", 0, "grpc max age connection")
 	ingestionStorage := flag.String("ingestionStorage", "", "ingestion storage strategy (local/gs)")
 	workers := flag.Int("workers", 1, "number of parallel workers per catalog request")
+	cancelledJobs := flag.String("cancelledJobs", "", "storage where cancelled jobs are referenced")
 
 	flag.Parse()
 
@@ -328,41 +329,47 @@ func newServerAppConfig() (*serverConfig, error) {
 		return nil, fmt.Errorf("failed to initialize ingestion storage flag")
 	}
 
+	if *cancelledJobs == "" {
+		return nil, fmt.Errorf("missing cancelled jobs storage flag")
+	}
+
 	return &serverConfig{
-		Local:                 *local,
-		AppPort:               *listenPort,
-		DbConnection:          *dbConnection,
-		DbName:                *dbName,
-		DbUser:                *dbUser,
-		DbHost:                *dbHost,
-		DbPassword:            *dbPassword,
-		DbSecretName:          *dbSecretName,
-		BearerAuthSecretName:  *baSecretName,
-		MaxConnectionAge:      *maxConnectionAge,
-		IngestionStorage:      *ingestionStorage,
-		Project:               *project,
-		PsEventsTopic:         *psEventsTopic,
-		PsConsolidationsTopic: *psConsolidationsTopic,
-		CatalogWorkers:        *workers,
+		Local:                         *local,
+		AppPort:                       *listenPort,
+		DbConnection:                  *dbConnection,
+		DbName:                        *dbName,
+		DbUser:                        *dbUser,
+		DbHost:                        *dbHost,
+		DbPassword:                    *dbPassword,
+		DbSecretName:                  *dbSecretName,
+		BearerAuthSecretName:          *baSecretName,
+		MaxConnectionAge:              *maxConnectionAge,
+		IngestionStorage:              *ingestionStorage,
+		CancelledConsolidationStorage: *cancelledJobs,
+		Project:                       *project,
+		PsEventsTopic:                 *psEventsTopic,
+		PsConsolidationsTopic:         *psConsolidationsTopic,
+		CatalogWorkers:                *workers,
 	}, nil
 }
 
 type serverConfig struct {
-	Project               string
-	PsEventsTopic         string
-	PsConsolidationsTopic string
-	Local                 bool
-	AppPort               string
-	DbConnection          string
-	DbName                string
-	DbUser                string
-	DbHost                string
-	DbPassword            string
-	MaxConnectionAge      int
-	DbSecretName          string
-	BearerAuthSecretName  string
-	IngestionStorage      string
-	CatalogWorkers        int
+	Project                       string
+	PsEventsTopic                 string
+	PsConsolidationsTopic         string
+	Local                         bool
+	AppPort                       string
+	DbConnection                  string
+	DbName                        string
+	DbUser                        string
+	DbHost                        string
+	DbPassword                    string
+	MaxConnectionAge              int
+	DbSecretName                  string
+	BearerAuthSecretName          string
+	IngestionStorage              string
+	CancelledConsolidationStorage string
+	CatalogWorkers                int
 }
 
 func PgConnString(ctx context.Context, serverConfig *serverConfig) (string, error) {

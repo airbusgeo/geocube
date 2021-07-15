@@ -1,6 +1,7 @@
 package image_test
 
 import (
+	"context"
 	"os"
 	"path"
 
@@ -15,6 +16,7 @@ import (
 var _ = Describe("CastDataset", func() {
 
 	var (
+		ctx                    = context.Background()
 		fromPath               string
 		fromDFormat, toDFormat geocube.DataMapping
 		fromDs, returnedDs     *godal.Dataset
@@ -29,7 +31,7 @@ var _ = Describe("CastDataset", func() {
 		pwd, _ := os.Getwd()
 		fromDs, returnedError = godal.Open(path.Join(pwd, fromPath))
 		Expect(returnedError).To(BeNil())
-		returnedDs, returnedError = image.CastDataset(fromDs, fromDFormat, toDFormat, path.Join(pwd, "test_data/image_castTMP.tif"))
+		returnedDs, returnedError = image.CastDataset(ctx, fromDs, fromDFormat, toDFormat, path.Join(pwd, "test_data/image_castTMP.tif"))
 	})
 
 	JustAfterEach(func() {

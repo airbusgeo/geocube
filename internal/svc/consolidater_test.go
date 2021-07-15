@@ -1,8 +1,6 @@
 package svc_test
 
 import (
-	"os"
-
 	"github.com/airbusgeo/geocube/internal/geocube"
 	"github.com/airbusgeo/geocube/internal/svc"
 	"github.com/airbusgeo/godal"
@@ -10,7 +8,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Consolidater : need consolidation", func() {
+var _ = Describe("Consolidater", func() {
 
 	var (
 		datasetsToUse  []*svc.CsldDataset
@@ -22,14 +20,6 @@ var _ = Describe("Consolidater : need consolidation", func() {
 
 	BeforeEach(func() {
 		godal.RegisterAll()
-	})
-
-	JustBeforeEach(func() {
-		returnedNeed, returnedDatasets = svc.CsldPrepareOrdersNeedReconsolidation(&datasetsToUse, &containerToUse)
-	})
-
-	AfterEach(func() {
-		os.Remove("test_data/mucog.tif")
 	})
 
 	var (
@@ -60,75 +50,82 @@ var _ = Describe("Consolidater : need consolidation", func() {
 		}
 	)
 
-	Context("one basic dataset", func() {
-		BeforeEach(func() {
-			datasetsToUse = datasetNotConsolidated
-			containerToUse = containerF_3_O
-		})
-		itShouldNeedConsolidation()
-		itShouldNotReturnDatasets()
-	})
+	Describe("CsldPrepareOrdersNeedReconsolidation", func() {
 
-	Context("one identical consolidated dataset with no overview", func() {
-		BeforeEach(func() {
-			datasetsToUse = datasetConsolidatedF_123_NO
-			containerToUse = containerF_3_O
+		JustBeforeEach(func() {
+			returnedNeed, returnedDatasets = svc.CsldPrepareOrdersNeedReconsolidation(&datasetsToUse, &containerToUse)
 		})
-		itShouldNeedConsolidation()
-		itShouldNotReturnDatasets()
-	})
 
-	Context("one identical consolidated dataset with another dataformat", func() {
-		BeforeEach(func() {
-			datasetsToUse = datasetConsolidatedI_123_O
-			containerToUse = containerF_3_O
+		Context("one basic dataset", func() {
+			BeforeEach(func() {
+				datasetsToUse = datasetNotConsolidated
+				containerToUse = containerF_3_O
+			})
+			itShouldNeedConsolidation()
+			itShouldNotReturnDatasets()
 		})
-		itShouldNeedConsolidation()
-		itShouldNotReturnDatasets()
-	})
 
-	Context("one identical consolidated dataset with other bands", func() {
-		BeforeEach(func() {
-			datasetsToUse = datasetConsolidatedF_234_O
-			containerToUse = containerF_3_O
+		Context("one identical consolidated dataset with no overview", func() {
+			BeforeEach(func() {
+				datasetsToUse = datasetConsolidatedF_123_NO
+				containerToUse = containerF_3_O
+			})
+			itShouldNeedConsolidation()
+			itShouldNotReturnDatasets()
 		})
-		itShouldNeedConsolidation()
-		itShouldNotReturnDatasets()
-	})
 
-	Context("one identical consolidated dataset", func() {
-		BeforeEach(func() {
-			datasetsToUse = datasetConsolidatedF_123_O
-			containerToUse = containerF_3_O
+		Context("one identical consolidated dataset with another dataformat", func() {
+			BeforeEach(func() {
+				datasetsToUse = datasetConsolidatedI_123_O
+				containerToUse = containerF_3_O
+			})
+			itShouldNeedConsolidation()
+			itShouldNotReturnDatasets()
 		})
-		itShouldNotNeedConsolidation()
-		itShouldReturnDataset(datasetConsolidatedF_123_O[0].Event.URI)
-	})
 
-	Context("several identical consolidated datasets", func() {
-		BeforeEach(func() {
-			datasetsToUse = datasetsConsolidatedF_123_O
-			containerToUse = containerF_3_O
+		Context("one identical consolidated dataset with other bands", func() {
+			BeforeEach(func() {
+				datasetsToUse = datasetConsolidatedF_234_O
+				containerToUse = containerF_3_O
+			})
+			itShouldNeedConsolidation()
+			itShouldNotReturnDatasets()
 		})
-		itShouldNotNeedConsolidation()
-		itShouldReturnDataset(datasetsConsolidatedF_123_O[0].Event.URI)
-	})
 
-	Context("several identical consolidated datasets in two containers", func() {
-		BeforeEach(func() {
-			datasetsToUse = datasetsConsolidatedF_123_O_2
-			containerToUse = containerF_3_O
+		Context("one identical consolidated dataset", func() {
+			BeforeEach(func() {
+				datasetsToUse = datasetConsolidatedF_123_O
+				containerToUse = containerF_3_O
+			})
+			itShouldNotNeedConsolidation()
+			itShouldReturnDataset(datasetConsolidatedF_123_O[0].Event.URI)
 		})
-		itShouldNotNeedConsolidation()
-		itShouldReturnNDatasets(2)
-	})
 
-	Context("several identical and different consolidated datasets in two containers", func() {
-		BeforeEach(func() {
-			datasetsToUse = datasetsConsolidatedF_123_O_3
-			containerToUse = containerF_3_O
+		Context("several identical consolidated datasets", func() {
+			BeforeEach(func() {
+				datasetsToUse = datasetsConsolidatedF_123_O
+				containerToUse = containerF_3_O
+			})
+			itShouldNotNeedConsolidation()
+			itShouldReturnDataset(datasetsConsolidatedF_123_O[0].Event.URI)
 		})
-		itShouldNeedConsolidation()
-		itShouldReturnNDatasets(2)
+
+		Context("several identical consolidated datasets in two containers", func() {
+			BeforeEach(func() {
+				datasetsToUse = datasetsConsolidatedF_123_O_2
+				containerToUse = containerF_3_O
+			})
+			itShouldNotNeedConsolidation()
+			itShouldReturnNDatasets(2)
+		})
+
+		Context("several identical and different consolidated datasets in two containers", func() {
+			BeforeEach(func() {
+				datasetsToUse = datasetsConsolidatedF_123_O_3
+				containerToUse = containerF_3_O
+			})
+			itShouldNeedConsolidation()
+			itShouldReturnNDatasets(2)
+		})
 	})
 })

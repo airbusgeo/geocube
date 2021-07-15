@@ -2,12 +2,12 @@ package image_test
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path"
 
 	"github.com/airbusgeo/geocube/internal/geocube"
 	"github.com/airbusgeo/geocube/internal/image"
-
 	"github.com/airbusgeo/godal"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -24,22 +24,16 @@ var _ = Describe("HandleConsolidation", func() {
 
 		returnedError error
 
-		cogGenerator        = image.NewCogGenerator()
-		mucogGenerator      = image.NewMucogGenerator()
-		handleConsolidation = image.NewHandleConsolidation(cogGenerator, mucogGenerator)
+		cogGenerator   = image.NewCogGenerator()
+		mucogGenerator = image.NewMucogGenerator()
+
+		handleConsolidation image.Handler
 	)
 
 	BeforeEach(func() {
 		godal.RegisterAll()
 		workspace = os.TempDir()
-	})
-
-	JustBeforeEach(func() {
-		returnedError = handleConsolidation.Consolidate(ctx, consolidationEventToUse, workspace)
-	})
-
-	AfterEach(func() {
-		os.Remove("test_data/mucog.tif")
+		handleConsolidation = image.NewHandleConsolidation(cogGenerator, mucogGenerator, os.TempDir())
 	})
 
 	var (
@@ -91,44 +85,76 @@ var _ = Describe("HandleConsolidation", func() {
 		}
 	)
 
-	Context("default with 1 record and 1 dataset", func() {
-		BeforeEach(func() {
-			consolidationEventToUse = ConsolidationEvent1Record
+	Describe("Consolidate", func() {
+
+		JustBeforeEach(func() {
+			returnedError = handleConsolidation.Consolidate(ctx, consolidationEventToUse, workspace)
 		})
-		itShouldNotReturnAnError()
-		itShouldCreateMucog()
+
+		AfterEach(func() {
+			os.Remove("test_data/mucog.tif")
+		})
+
+		Context("default with 1 record and 1 dataset", func() {
+			BeforeEach(func() {
+				consolidationEventToUse = ConsolidationEvent1Record
+			})
+			itShouldNotReturnAnError()
+			itShouldCreateMucog()
+		})
+
+		Context("default with 1 record and 2 datasets", func() {
+			BeforeEach(func() {
+				consolidationEventToUse = ConsolidationEvent1Record2dataset
+			})
+			itShouldNotReturnAnError()
+			itShouldCreateMucog()
+		})
+
+		Context("default with 2 records", func() {
+			BeforeEach(func() {
+				consolidationEventToUse = ConsolidationEvent2Record
+			})
+			itShouldNotReturnAnError()
+			itShouldCreateMucog()
+		})
+
+		Context("default with other data format output", func() {
+			BeforeEach(func() {
+				consolidationEventToUse = ConsolidationEvent1RecordOtherDataFormat
+			})
+			itShouldNotReturnAnError()
+			itShouldCreateMucog()
+		})
+
+		Context("when container URI is wrong", func() {
+			BeforeEach(func() {
+				consolidationEventToUse = ConsolidationEvent1Record
+				consolidationEventToUse.Container.URI = "geocube-26628b52/d0b9702d-34c1-4ba0-a812-71247ddeccf3/865846.230447/6326946.956167/12195/12185/dc3845d2-d473-4ed9-a916-7fc88d044966/1.tif"
+			})
+			itShouldReturnAnError("failed to upload file on: geocube-26628b52/d0b9702d-34c1-4ba0-a812-71247ddeccf3/865846.230447/6326946.956167/12195/12185/dc3845d2-d473-4ed9-a916-7fc88d044966/1.tif : failed to parse uri: badly formatted storage uri")
+			itShouldNotCreateMucog()
+		})
+
+		Context("when jobs is cancelled", func() {
+			var (
+				cancelledFilePath string
+			)
+			BeforeEach(func() {
+				cancelledFilePath = path.Join(os.TempDir(), fmt.Sprintf("%s_%s", consolidationEventToUse.JobID, consolidationEventToUse.TaskID))
+				if err := os.WriteFile(cancelledFilePath, []byte(""), 0777); err != nil {
+					panic(err)
+				}
+			})
+			itShouldReturnAnError("consolidation event is cancelled")
+			itShouldNotCreateMucog()
+
+			AfterEach(func() {
+				if err := os.Remove(cancelledFilePath); err != nil {
+					panic(err)
+				}
+			})
+		})
 	})
 
-	Context("default with 1 record and 2 datasets", func() {
-		BeforeEach(func() {
-			consolidationEventToUse = ConsolidationEvent1Record2dataset
-		})
-		itShouldNotReturnAnError()
-		itShouldCreateMucog()
-	})
-
-	Context("default with 2 records", func() {
-		BeforeEach(func() {
-			consolidationEventToUse = ConsolidationEvent2Record
-		})
-		itShouldNotReturnAnError()
-		itShouldCreateMucog()
-	})
-
-	Context("default with other data format output", func() {
-		BeforeEach(func() {
-			consolidationEventToUse = ConsolidationEvent1RecordOtherDataFormat
-		})
-		itShouldNotReturnAnError()
-		itShouldCreateMucog()
-	})
-
-	Context("when container URI is wrong", func() {
-		BeforeEach(func() {
-			consolidationEventToUse = ConsolidationEvent1Record
-			consolidationEventToUse.Container.URI = "geocube-26628b52/d0b9702d-34c1-4ba0-a812-71247ddeccf3/865846.230447/6326946.956167/12195/12185/dc3845d2-d473-4ed9-a916-7fc88d044966/1.tif"
-		})
-		itShouldReturnAnError("failed to upload file on: geocube-26628b52/d0b9702d-34c1-4ba0-a812-71247ddeccf3/865846.230447/6326946.956167/12195/12185/dc3845d2-d473-4ed9-a916-7fc88d044966/1.tif : failed to parse uri: badly formatted storage uri")
-		itShouldNotCreateMucog()
-	})
 })

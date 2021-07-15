@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"math/rand"
@@ -19,6 +20,11 @@ import (
 	"github.com/airbusgeo/geocube/internal/log"
 	"github.com/airbusgeo/geocube/internal/utils"
 	"go.uber.org/zap"
+)
+
+var (
+	eventPublisher messaging.Publisher
+	taskConsumer   messaging.Consumer
 )
 
 func main() {
@@ -67,8 +73,6 @@ func run(ctx context.Context) error {
 	}
 
 	// Create Messaging Service
-	var taskConsumer messaging.Consumer
-	var eventPublisher messaging.Publisher
 	{
 		// Connection to pubsub
 		if consolidaterConfig.PsSubscriptionName != "" {
@@ -96,7 +100,7 @@ func run(ctx context.Context) error {
 		return fmt.Errorf("missing configuration for eventPublisher")
 	}
 
-	handlerConsolidation := image.NewHandleConsolidation(image.NewCogGenerator(), image.NewMucogGenerator())
+	handlerConsolidation := image.NewHandleConsolidation(image.NewCogGenerator(), image.NewMucogGenerator(), consolidaterConfig.CancelledJobsStorage)
 	for {
 		err := taskConsumer.Pull(ctx, func(ctx context.Context, msg *messaging.Message) error {
 			jobStarted = time.Now()
@@ -110,27 +114,33 @@ func run(ctx context.Context) error {
 				return fmt.Errorf("got message id %s in workdir %s : unreadable (%d bytes): %w", msg.ID, consolidaterConfig.WorkDir, len(msg.Data), err)
 			}
 
-			log.Logger(ctx).Sugar().Infof("got message id %s in workdir %s : start consolidation of %d records into the container: %s", msg.ID, consolidaterConfig.WorkDir, len(evt.Records), evt.Container.URI)
-
 			var taskStatus geocube.TaskStatus
 			var taskErr error
 
-			if taskErr = handlerConsolidation.Consolidate(ctx, evt, consolidaterConfig.WorkDir); taskErr != nil {
+			if msg.TryCount > consolidaterConfig.RetryCount {
+				log.Logger(ctx).Sugar().Errorf("message have already been consumed")
+				taskErr = errors.New("message have already been consumed")
+				if err := notify(ctx, evt, geocube.TaskFailed, taskErr); err != nil {
+					return fmt.Errorf("failed to notify consolidation event: %w", err)
+				}
+				return nil
+			}
+
+			// Start consolidation
+			log.Logger(ctx).Sugar().Infof("got message id %s in workdir %s : start consolidation of %d records into the container: %s", msg.ID, consolidaterConfig.WorkDir, len(evt.Records), evt.Container.URI)
+			taskErr = handlerConsolidation.Consolidate(ctx, evt, consolidaterConfig.WorkDir)
+			switch {
+			case taskErr == nil:
+				taskStatus = geocube.TaskSuccessful
+			case taskErr == image.TaskCancelledConsolidationError:
+				taskStatus = geocube.TaskCancelled
+			default:
 				log.Logger(ctx).Sugar().Errorf("failed to consolidate: %s", taskErr.Error())
 				taskStatus = geocube.TaskFailed
-			} else {
-				taskStatus = geocube.TaskSuccessful
 			}
 
-			// Publish the result
-			taskEvt := geocube.NewTaskEvent(evt.JobID, evt.TaskID, taskStatus, taskErr)
-			data, err := geocube.MarshalEvent(*taskEvt)
-			if err != nil {
-				return utils.MakeTemporary(fmt.Errorf("MarshalTaskEvent: %w", err))
-			}
-
-			if err = eventPublisher.Publish(ctx, data); err != nil {
-				return utils.MakeTemporary(fmt.Errorf("PublishTaskEvent: %w", err))
+			if err = notify(ctx, evt, taskStatus, taskErr); err != nil {
+				return fmt.Errorf("failed to notify consolidation event: %w", err)
 			}
 
 			return nil
@@ -145,18 +155,26 @@ func newConsolidationAppConfig() (*consolidaterConfig, error) {
 	project := flag.String("project", "", "subscription project (gcp pubSub only)")
 	psSubscriptionName := flag.String("psSubscription", "", "pubsub subscription name")
 	psEventTopic := flag.String("psEventTopic", "", "pubsub events topic name")
-	workir := flag.String("workdir", "", "scratch work directory")
+	workdir := flag.String("workdir", "", "scratch work directory")
+	cancelledJobs := flag.String("cancelledJobs", "", "storage where cancelled jobs are referenced")
+	retryCount := flag.Int("retryCount", 1, "number of retries when consolidation job failed (default: 1)")
 
 	flag.Parse()
 
-	if *workir == "" {
+	if *workdir == "" {
 		return nil, fmt.Errorf("missing workdir config flag")
 	}
+	if *cancelledJobs == "" {
+		return nil, fmt.Errorf("missing cancelled jobs storage flag")
+	}
+
 	return &consolidaterConfig{
-		PsSubscriptionName: *psSubscriptionName,
-		WorkDir:            *workir,
-		Project:            *project,
-		PsEventsTopic:      *psEventTopic,
+		PsSubscriptionName:   *psSubscriptionName,
+		WorkDir:              *workdir,
+		Project:              *project,
+		PsEventsTopic:        *psEventTopic,
+		CancelledJobsStorage: *cancelledJobs,
+		RetryCount:           *retryCount,
 	}, nil
 }
 
@@ -166,4 +184,20 @@ type consolidaterConfig struct {
 	PsConsolidationsTopic string
 	WorkDir               string
 	PsSubscriptionName    string
+	CancelledJobsStorage  string
+	RetryCount            int
+}
+
+func notify(ctx context.Context, evt *geocube.ConsolidationEvent, taskStatus geocube.TaskStatus, taskError error) error {
+	taskEvt := geocube.NewTaskEvent(evt.JobID, evt.TaskID, taskStatus, taskError)
+	data, err := geocube.MarshalEvent(*taskEvt)
+	if err != nil {
+		return utils.MakeTemporary(fmt.Errorf("MarshalTaskEvent: %w", err))
+	}
+
+	if err = eventPublisher.Publish(ctx, data); err != nil {
+		return utils.MakeTemporary(fmt.Errorf("PublishTaskEvent: %w", err))
+	}
+
+	return nil
 }
