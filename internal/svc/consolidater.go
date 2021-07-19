@@ -232,7 +232,7 @@ func (svc *Service) csldPrepareOrders(ctx context.Context, job *geocube.Job) err
 			if err != nil {
 				return fmt.Errorf("csldPrepareOrders.%w", err)
 			}
-			logger.Debugf("ReadAndCoverLayout (%d cells):%v\n", len(cells), time.Since(start))
+			logger.Debugf("ReadAndCoverLayout:%v\n", time.Since(start))
 		}
 
 		start = time.Now()
@@ -298,7 +298,7 @@ func (svc *Service) csldPrepareOrders(ctx context.Context, job *geocube.Job) err
 			datasets = csldPrepareOrdersExcludeFullContainers(datasets, layout.MaxRecords)
 
 			// Check that datasets are available
-			checkAvailability := true
+			checkAvailability := false
 			if checkAvailability {
 				var errs []string
 				for _, dataset := range datasets {
