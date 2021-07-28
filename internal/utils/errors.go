@@ -41,7 +41,7 @@ func Temporary(err error) bool {
 	}
 	var gapiError *googleapi.Error
 	if errors.As(err, &gapiError) {
-		return gapiError.Code == 429 || gapiError.Code == 500
+		return gapiError.Code == 429 || (gapiError.Code >= 500 && gapiError.Code < 600)
 	}
 	if errors.Is(err, context.Canceled) {
 		return true
