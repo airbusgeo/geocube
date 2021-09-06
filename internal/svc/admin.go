@@ -105,7 +105,7 @@ func (svc *Service) DeleteDatasets(ctx context.Context, simulate bool, instances
 		}
 		var datasetsID []string
 		for _, dataset := range datasets {
-			results = append(results, dataset.ID+" (record:"+dataset.RecordID+", instance:"+dataset.InstanceID+")")
+			results = append(results, fmt.Sprintf("%s[%v] %s (record:%s, instance:%s)", dataset.GDALOpenName(), dataset.Bands, dataset.ID, dataset.RecordID, dataset.InstanceID))
 			datasetsID = append(datasetsID, dataset.ID)
 		}
 
