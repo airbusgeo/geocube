@@ -232,7 +232,7 @@ Usage of ./server:
   -psConsolidationsTopic string
         pubsub consolidations topic name
   -dbConnection string
-        database connection (ex: postgresql://postgres:password@localhost:5432/geocube)
+        database connection (ex: postgresql://user:password@localhost:5432/geocube)
   -dbHost string
         database host
   -dbName string
@@ -262,7 +262,7 @@ Usage of ./server:
 Example (run):
 
 ```bash
-$  ./server -ingestionStorage=/tmp -dbConnection=postgresql://postgres:password@localhost:5432/geocube -psEventsTopic events -psConsolidationsTopic consolidations -local
+$  ./server -ingestionStorage=/tmp -dbConnection=postgresql://user:password@localhost:5432/geocube -psEventsTopic events -psConsolidationsTopic consolidations -local
 {"severity":"info","timestamp":"2021-05-24T15:10:57.621+0200","message":"Geocube v0.2.0"}
 
 ```
