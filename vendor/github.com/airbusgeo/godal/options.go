@@ -1,3 +1,17 @@
+// Copyright 2021 Airbus Defence and Space
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package godal
 
 import "sort"
@@ -137,6 +151,51 @@ type BandIOOption interface {
 	setBandIOOpt(ro *bandIOOpts)
 }
 
+type fillnodataOpts struct {
+	mask *Band
+	//options      []string
+	maxDistance  int
+	iterations   int
+	errorHandler ErrorHandler
+}
+
+// FillNoDataOption is an option that can be passed to band.FillNoData
+//
+// Available FillNoDataOptions are:
+//
+// • MaxDistance(int): The maximum distance (in pixels) that the algorithm will
+// search out for values to interpolate. The default is 100 pixels.
+//
+// • SmoothIterations(int): The number of 3x3 average filter smoothing iterations
+// to run after the interpolation to dampen artifacts. The default is zero smoothing iterations.
+//
+// • Mask(band) to use given band as nodata mask. The default uses the internal nodata mask
+type FillNoDataOption interface {
+	setFillnodataOpt(ro *fillnodataOpts)
+}
+
+type sieveFilterOpts struct {
+	mask          *Band
+	dstBand       *Band
+	connectedness int
+	errorHandler  ErrorHandler
+}
+
+// SieveFilterOption is an option to modify the behavior of Band.SieveFilter
+//
+// Available SieveFilterOptions are:
+//
+// • EightConnected() to enable 8-connectivity. Leave out completely for 4-connectivity (default)
+//
+// • Mask(band) to use given band as nodata mask instead of the internal nodata mask
+//
+// • NoMask() to ignore the the source band's nodata value or mask band
+//
+// • Destination(band) where to output the sieved band, instead of updating in-place
+type SieveFilterOption interface {
+	setSieveFilterOpt(sfo *sieveFilterOpts)
+}
+
 type polygonizeOpts struct {
 	mask          *Band
 	options       []string
@@ -144,7 +203,7 @@ type polygonizeOpts struct {
 	errorHandler  ErrorHandler
 }
 
-// PolygonizeOption is an option to modify the default behavior of band.IO
+// PolygonizeOption is an option to modify the default behavior of band.Polygonize
 //
 // Available PolygonizeOptions are:
 //
@@ -800,11 +859,19 @@ type maskBandOpt struct {
 func (mbo maskBandOpt) setPolygonizeOpt(o *polygonizeOpts) {
 	o.mask = mbo.band
 }
+func (mbo maskBandOpt) setFillnodataOpt(o *fillnodataOpts) {
+	o.mask = mbo.band
+}
+func (mbo maskBandOpt) setSieveFilterOpt(sfo *sieveFilterOpts) {
+	sfo.mask = mbo.band
+}
 
-// Mask makes Polygonize use the given band as a nodata mask
+// Mask makes Polygonize or FillNoData use the given band as a nodata mask
 // instead of using the source band's nodata mask
 func Mask(band Band) interface {
 	PolygonizeOption
+	FillNoDataOption
+	SieveFilterOption
 } {
 	return maskBandOpt{&band}
 }
@@ -812,8 +879,56 @@ func Mask(band Band) interface {
 // NoMask makes Polygonize ignore band nodata mask
 func NoMask() interface {
 	PolygonizeOption
+	SieveFilterOption
 } {
 	return maskBandOpt{}
+}
+
+type dstBandOpt struct {
+	band *Band
+}
+
+func (dbo dstBandOpt) setSieveFilterOpt(sfo *sieveFilterOpts) {
+	sfo.dstBand = dbo.band
+}
+
+// Destination makes SieveFilter output its result to the given band, instead of updating in-place
+func Destination(band Band) interface {
+	SieveFilterOption
+} {
+	return dstBandOpt{&band}
+}
+
+type maxDistanceOpt struct {
+	d float64
+}
+
+func (mdo maxDistanceOpt) setFillnodataOpt(o *fillnodataOpts) {
+	o.maxDistance = int(mdo.d)
+}
+
+// MaxDistance is an option that can be passed to Band.FillNoData which sets the maximum number of
+// pixels to search in all directions to find values to interpolate from.
+func MaxDistance(d float64) interface {
+	FillNoDataOption
+} {
+	return maxDistanceOpt{d}
+}
+
+type smoothingIterationsOpt struct {
+	it int
+}
+
+func (sio smoothingIterationsOpt) setFillnodataOpt(o *fillnodataOpts) {
+	o.iterations = sio.it
+}
+
+// SmoothingIterations is an option that can be passed to Band.FillNoData which sets the number of
+// 3x3 smoothing filter passes to run (0 or more).
+func SmoothingIterations(iterations int) interface {
+	FillNoDataOption
+} {
+	return smoothingIterationsOpt{iterations}
 }
 
 type polyPixField struct {
@@ -835,12 +950,16 @@ func PixelValueFieldIndex(fld int) interface {
 type eightConnected struct{}
 
 func (ec eightConnected) setPolygonizeOpt(o *polygonizeOpts) {
-	o.options = append(o.options, "8CONNECTED=YES")
+	o.options = append(o.options, "8connected=yes")
+}
+func (ec eightConnected) setSieveFilterOpt(sfo *sieveFilterOpts) {
+	sfo.connectedness = 8
 }
 
 //EightConnected is an option that switches pixel connectivity from 4 to 8
 func EightConnected() interface {
 	PolygonizeOption
+	SieveFilterOption
 } {
 	return eightConnected{}
 }
@@ -999,6 +1118,7 @@ type BuildVRTOption interface {
 
 type vsiHandlerOpts struct {
 	bufferSize, cacheSize int
+	stripPrefix           bool
 	errorHandler          ErrorHandler
 }
 
@@ -1023,6 +1143,14 @@ func (b cacheSizeOpt) setVSIHandlerOpt(v *vsiHandlerOpts) {
 	v.cacheSize = b.b
 }
 
+type stripPrefixOpt struct {
+	v bool
+}
+
+func (sp stripPrefixOpt) setVSIHandlerOpt(v *vsiHandlerOpts) {
+	v.stripPrefix = sp.v
+}
+
 // VSIHandlerBufferSize sets the size of the gdal-native block size used for caching. Must be positive,
 // can be set to 0 to disable this behavior (not recommended).
 //
@@ -1035,4 +1163,10 @@ func VSIHandlerBufferSize(s int) VSIHandlerOption {
 // Defaults to 128Kb.
 func VSIHandlerCacheSize(s int) VSIHandlerOption {
 	return cacheSizeOpt{s}
+}
+
+// VSIHandlerStripPrefix allows to strip the prefix of the key when calling the underlying
+// VSIKeyReader.
+func VSIHandlerStripPrefix(v bool) VSIHandlerOption {
+	return stripPrefixOpt{v}
 }

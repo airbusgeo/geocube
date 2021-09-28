@@ -10,15 +10,15 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/airbusgeo/godal"
-	"github.com/airbusgeo/osio"
-
 	"github.com/airbusgeo/geocube/interface/messaging"
 	"github.com/airbusgeo/geocube/interface/messaging/pubsub"
 	"github.com/airbusgeo/geocube/internal/geocube"
 	"github.com/airbusgeo/geocube/internal/image"
 	"github.com/airbusgeo/geocube/internal/log"
 	"github.com/airbusgeo/geocube/internal/utils"
+	"github.com/airbusgeo/godal"
+	"github.com/airbusgeo/osio"
+	osioGcs "github.com/airbusgeo/osio/gcs"
 	"go.uber.org/zap"
 )
 
@@ -58,11 +58,11 @@ func run(ctx context.Context) error {
 
 	godal.RegisterAll()
 
-	gcs, err := osio.GCSHandle(ctx)
+	osioGCSHandle, err := osioGcs.Handle(ctx)
 	if err != nil {
 		return fmt.Errorf("gcshandler: %w", err)
 	}
-	gcsa, err := osio.NewAdapter(gcs,
+	gcsa, err := osio.NewAdapter(osioGCSHandle,
 		osio.BlockSize("1Mb"),
 		osio.NumCachedBlocks(500))
 	if err != nil {

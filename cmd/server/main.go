@@ -20,6 +20,7 @@ import (
 	"github.com/airbusgeo/geocube/interface/messaging/pubsub"
 	"github.com/airbusgeo/godal"
 	"github.com/airbusgeo/osio"
+	osioGcs "github.com/airbusgeo/osio/gcs"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"go.uber.org/zap"
 	"golang.org/x/net/http2"
@@ -89,13 +90,13 @@ func handleError(ctx context.Context, w http.ResponseWriter, req *http.Request, 
 }
 
 func run(ctx context.Context) error {
-	if err := initGDAL(ctx); err != nil {
-		return fmt.Errorf("init gdal: %w", err)
-	}
-
 	serverConfig, err := newServerAppConfig()
 	if err != nil {
 		return err
+	}
+
+	if err := initGDAL(ctx, serverConfig); err != nil {
+		return fmt.Errorf("init gdal: %w", err)
 	}
 
 	// Connect to database
@@ -227,20 +228,20 @@ func run(ctx context.Context) error {
 	return srv.Shutdown(sctx)
 }
 
-func initGDAL(ctx context.Context) error {
+func initGDAL(ctx context.Context, serverConfig *serverConfig) error {
 	os.Setenv("GDAL_DISABLE_READDIR_ON_OPEN", "EMPTY_DIR")
 
 	godal.RegisterAll()
 	if err := godal.RegisterRaster("PNG"); err != nil {
 		return err
 	}
-	gcs, err := osio.GCSHandle(ctx)
+	osioGCSHandle, err := osioGcs.Handle(ctx)
 	if err != nil {
 		return err
 	}
-	gcsa, err := osio.NewAdapter(gcs,
-		osio.BlockSize("1Mb"),
-		osio.NumCachedBlocks(500))
+	gcsa, err := osio.NewAdapter(osioGCSHandle,
+		osio.BlockSize(serverConfig.GdalBlockSize),
+		osio.NumCachedBlocks(serverConfig.GdalNumCachedBlocks))
 	if err != nil {
 		return err
 	}
@@ -317,6 +318,8 @@ func newServerAppConfig() (*serverConfig, error) {
 	maxConnectionAge := flag.Int("maxConnectionAge", 0, "grpc max age connection")
 	ingestionStorage := flag.String("ingestionStorage", "", "ingestion storage strategy (local/gs)")
 	workers := flag.Int("workers", 1, "number of parallel workers per catalog request")
+	gdalBlocksize := flag.String("gdalBlockSize", "1Mb", "gdal blocksize value (default 1Mb)")
+	gdalNumCachedBlocks := flag.Int("gdalNumCachedBlocks", 500, "gdal blockcache value (default 500)")
 	cancelledJobs := flag.String("cancelledJobs", "", "storage where cancelled jobs are referenced")
 
 	flag.Parse()
@@ -350,6 +353,8 @@ func newServerAppConfig() (*serverConfig, error) {
 		PsEventsTopic:                 *psEventsTopic,
 		PsConsolidationsTopic:         *psConsolidationsTopic,
 		CatalogWorkers:                *workers,
+		GdalBlockSize:                 *gdalBlocksize,
+		GdalNumCachedBlocks:           *gdalNumCachedBlocks,
 	}, nil
 }
 
@@ -370,6 +375,8 @@ type serverConfig struct {
 	IngestionStorage              string
 	CancelledConsolidationStorage string
 	CatalogWorkers                int
+	GdalBlockSize                 string
+	GdalNumCachedBlocks           int
 }
 
 func PgConnString(ctx context.Context, serverConfig *serverConfig) (string, error) {

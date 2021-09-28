@@ -111,6 +111,7 @@ type ifd struct {
 
 	ntags            uint64
 	ntilesx, ntilesy uint64
+	nplanes          uint64 //1 if PlanarConfiguration==1, SamplesPerPixel if PlanarConfiguration==2
 	tagsSize         uint64
 	strileSize       uint64
 	r                tiff.BReader
@@ -163,10 +164,11 @@ func (ifd *ifd) AddMask(msk *ifd) error {
 	return nil
 }
 
-func (ifd *ifd) structure(bigtiff bool) (tagCount, ifdSize, strileSize uint64) {
+func (ifd *ifd) structure(bigtiff bool) (tagCount, ifdSize, strileSize, planeCount uint64) {
 	cnt := uint64(0)
 	size := uint64(16) //8 for field count + 8 for next ifd offset
 	tagSize := uint64(20)
+	planeCount = 1
 	if !bigtiff {
 		size = 6 // 2 for field count + 4 for next ifd offset
 		tagSize = 12
@@ -208,6 +210,9 @@ func (ifd *ifd) structure(bigtiff bool) (tagCount, ifdSize, strileSize uint64) {
 	if ifd.PlanarConfiguration > 0 {
 		cnt++
 		size += tagSize
+	}
+	if ifd.PlanarConfiguration == 2 {
+		planeCount = uint64(ifd.SamplesPerPixel)
 	}
 	if len(ifd.DateTime) > 0 {
 		cnt++
@@ -295,7 +300,7 @@ func (ifd *ifd) structure(bigtiff bool) (tagCount, ifdSize, strileSize uint64) {
 		cnt++
 		size += arrayFieldSize(ifd.RPCs, bigtiff)
 	}
-	return cnt, size, strileSize
+	return cnt, size, strileSize, planeCount
 }
 
 type tagData struct {
@@ -318,6 +323,11 @@ func new() *cog {
 }
 
 func (cog *cog) writeHeader(w io.Writer) error {
+	glen := uint64(len(ghost))
+	if len(cog.ifd.masks) > 0 {
+		glen = uint64(len(ghostmask))
+	}
+	var err error
 	if cog.bigtiff {
 		buf := [16]byte{}
 		if cog.enc == binary.LittleEndian {
@@ -328,9 +338,8 @@ func (cog *cog) writeHeader(w io.Writer) error {
 		cog.enc.PutUint16(buf[2:], 43)
 		cog.enc.PutUint16(buf[4:], 8)
 		cog.enc.PutUint16(buf[6:], 0)
-		cog.enc.PutUint64(buf[8:], 16)
-		_, err := w.Write(buf[:])
-		return err
+		cog.enc.PutUint64(buf[8:], 16+glen)
+		_, err = w.Write(buf[:])
 	} else {
 		buf := [8]byte{}
 		if cog.enc == binary.LittleEndian {
@@ -339,10 +348,18 @@ func (cog *cog) writeHeader(w io.Writer) error {
 			copy(buf[0:], []byte("MM"))
 		}
 		cog.enc.PutUint16(buf[2:], 42)
-		cog.enc.PutUint32(buf[4:], 8)
-		_, err := w.Write(buf[:])
+		cog.enc.PutUint32(buf[4:], 8+uint32(glen))
+		_, err = w.Write(buf[:])
+	}
+	if err != nil {
 		return err
 	}
+	if len(cog.ifd.masks) > 0 {
+		_, err = w.Write([]byte(ghostmask))
+	} else {
+		_, err = w.Write([]byte(ghost))
+	}
+	return err
 }
 
 const (
@@ -366,13 +383,14 @@ const (
 func (cog *cog) computeStructure() {
 	ifd := cog.ifd
 	for ifd != nil {
-		ifd.ntags, ifd.tagsSize, ifd.strileSize = ifd.structure(cog.bigtiff)
+		ifd.ntags, ifd.tagsSize, ifd.strileSize, ifd.nplanes = ifd.structure(cog.bigtiff)
 		//ifd.ntilesx = uint64(math.Ceil(float64(ifd.ImageWidth) / float64(ifd.TileWidth)))
 		//ifd.ntilesy = uint64(math.Ceil(float64(ifd.ImageLength) / float64(ifd.TileLength)))
 		ifd.ntilesx = (ifd.ImageWidth + uint64(ifd.TileWidth) - 1) / uint64(ifd.TileWidth)
 		ifd.ntilesy = (ifd.ImageLength + uint64(ifd.TileLength) - 1) / uint64(ifd.TileLength)
+
 		for _, mifd := range ifd.masks {
-			mifd.ntags, mifd.tagsSize, mifd.strileSize = mifd.structure(cog.bigtiff)
+			mifd.ntags, mifd.tagsSize, mifd.strileSize, mifd.nplanes = mifd.structure(cog.bigtiff)
 			//	mifd.ntilesx = uint64(math.Ceil(float64(mifd.ImageWidth) / float64(mifd.TileWidth)))
 			//	mifd.ntilesy = uint64(math.Ceil(float64(mifd.ImageLength) / float64(mifd.TileLength)))
 			mifd.ntilesx = (mifd.ImageWidth + uint64(mifd.TileWidth) - 1) / uint64(mifd.TileWidth)
@@ -381,6 +399,23 @@ func (cog *cog) computeStructure() {
 		ifd = ifd.overview
 	}
 }
+
+const ghost = `GDAL_STRUCTURAL_METADATA_SIZE=000140 bytes
+LAYOUT=IFDS_BEFORE_DATA
+BLOCK_ORDER=ROW_MAJOR
+BLOCK_LEADER=SIZE_AS_UINT4
+BLOCK_TRAILER=LAST_4_BYTES_REPEATED
+KNOWN_INCOMPATIBLE_EDITION=NO
+  ` //2 spaces: 1 for the gdal spec, and one to ensure the actual start offset is on a word boundary
+
+const ghostmask = `GDAL_STRUCTURAL_METADATA_SIZE=000174 bytes
+LAYOUT=IFDS_BEFORE_DATA
+BLOCK_ORDER=ROW_MAJOR
+BLOCK_LEADER=SIZE_AS_UINT4
+BLOCK_TRAILER=LAST_4_BYTES_REPEATED
+KNOWN_INCOMPATIBLE_EDITION=NO
+ MASK_INTERLEAVED_WITH_IMAGERY=YES
+`
 
 func (cog *cog) computeImageryOffsets() error {
 	ifd := cog.ifd
@@ -412,6 +447,11 @@ func (cog *cog) computeImageryOffsets() error {
 	if !cog.bigtiff {
 		dataOffset = 8
 	}
+	if len(cog.ifd.masks) > 0 {
+		dataOffset += uint64(len(ghostmask)) + 4
+	} else {
+		dataOffset += uint64(len(ghost)) + 4
+	}
 
 	ifd = cog.ifd
 	for ifd != nil {
@@ -425,7 +465,7 @@ func (cog *cog) computeImageryOffsets() error {
 	datas := cog.dataInterlacing()
 	tiles := datas.tiles()
 	for tile := range tiles {
-		tileidx := tile.x + tile.y*tile.ifd.ntilesx
+		tileidx := (tile.x+tile.y*tile.ifd.ntilesx)*tile.ifd.nplanes + tile.plane
 		cnt := uint64(tile.ifd.TileByteCounts[tileidx])
 		if cnt > 0 {
 			if cog.bigtiff {
@@ -438,7 +478,7 @@ func (cog *cog) computeImageryOffsets() error {
 				}
 				tile.ifd.NewTileOffsets32[tileidx] = uint32(dataOffset)
 			}
-			dataOffset += uint64(tile.ifd.TileByteCounts[tileidx])
+			dataOffset += uint64(tile.ifd.TileByteCounts[tileidx]) + 8
 		} else {
 			if cog.bigtiff {
 				tile.ifd.NewTileOffsets64[tileidx] = 0
@@ -464,6 +504,11 @@ func (cog *cog) write(out io.Writer) error {
 	if !cog.bigtiff {
 		strileData.Offset = 8
 	}
+	if len(cog.ifd.masks) > 0 {
+		strileData.Offset += uint64(len(ghostmask))
+	} else {
+		strileData.Offset += uint64(len(ghost))
+	}
 
 	ifd := cog.ifd
 	for ifd != nil {
@@ -474,12 +519,16 @@ func (cog *cog) write(out io.Writer) error {
 		ifd = ifd.overview
 	}
 
+	glen := uint64(len(ghost))
+	if len(cog.ifd.masks) > 0 {
+		glen = uint64(len(ghostmask))
+	}
 	cog.writeHeader(out)
 
 	ifd = cog.ifd
-	off := uint64(16)
+	off := uint64(16 + glen)
 	if !cog.bigtiff {
-		off = 8
+		off = 8 + glen
 	}
 	for ifd != nil {
 		nmasks := len(ifd.masks)
@@ -505,19 +554,28 @@ func (cog *cog) write(out io.Writer) error {
 
 	datas := cog.dataInterlacing()
 	tiles := datas.tiles()
-	buf := &bytes.Buffer{}
+	data := []byte{}
 	for tile := range tiles {
-		buf.Reset()
-		idx := tile.x + tile.y*tile.ifd.ntilesx
-		if tile.ifd.TileByteCounts[idx] > 0 {
+		idx := (tile.x+tile.y*tile.ifd.ntilesx)*tile.ifd.nplanes + tile.plane
+		bc := tile.ifd.TileByteCounts[idx]
+		if bc > 0 {
 			_, err := tile.ifd.r.Seek(int64(tile.ifd.OriginalTileOffsets[idx]), io.SeekStart)
 			if err != nil {
 				return fmt.Errorf("seek to %d: %w", tile.ifd.OriginalTileOffsets[idx], err)
 			}
-			_, err = io.CopyN(out, tile.ifd.r, int64(tile.ifd.TileByteCounts[idx]))
+			if uint32(len(data)) < bc+8 {
+				data = make([]byte, (bc+8)*2)
+			}
+			binary.LittleEndian.PutUint32(data, bc) //header ghost: tile size
+			_, err = tile.ifd.r.Read(data[4 : 4+bc])
 			if err != nil {
-				return fmt.Errorf("copy %d from %d: %w",
-					tile.ifd.TileByteCounts[idx], tile.ifd.OriginalTileOffsets[idx], err)
+				return fmt.Errorf("read %d from %d: %w",
+					bc, tile.ifd.OriginalTileOffsets[idx], err)
+			}
+			copy(data[4+bc:8+bc], data[bc:4+bc]) //trailer ghost: repeat last 4 bytes
+			_, err = out.Write(data[0 : bc+8])
+			if err != nil {
+				return fmt.Errorf("write %d: %w", bc, err)
 			}
 		}
 	}
@@ -787,8 +845,9 @@ func (cog *cog) writeIFD(w io.Writer, ifd *ifd, offset uint64, striledata *tagDa
 }
 
 type tile struct {
-	ifd  *ifd
-	x, y uint64
+	ifd   *ifd
+	x, y  uint64
+	plane uint64
 }
 
 type datas [][]*ifd
@@ -805,9 +864,7 @@ func (cog *cog) dataInterlacing() datas {
 	ifdo = cog.ifd
 	for idx := count - 1; idx >= 0; idx-- {
 		ret[idx] = append(ret[idx], ifdo)
-		for _, mi := range ifdo.masks {
-			ret[idx] = append(ret[idx], mi)
-		}
+		ret[idx] = append(ret[idx], ifdo.masks...)
 		ifdo = ifdo.overview
 	}
 	return ret
@@ -822,10 +879,13 @@ func (d datas) tiles() chan tile {
 			for y := uint64(0); y < ovr[0].ntilesy; y++ {
 				for x := uint64(0); x < ovr[0].ntilesx; x++ {
 					for _, ifd := range ovr {
-						ch <- tile{
-							ifd: ifd,
-							x:   x,
-							y:   y,
+						for p := uint64(0); p < ifd.nplanes; p++ {
+							ch <- tile{
+								ifd:   ifd,
+								plane: p,
+								x:     x,
+								y:     y,
+							}
 						}
 					}
 				}
