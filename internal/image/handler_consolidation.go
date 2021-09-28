@@ -18,6 +18,7 @@ import (
 
 const (
 	TaskCancelledConsolidationError = ErrorConst("consolidation event is cancelled")
+	NotImplementedError             = ErrorConst("consolidation without interleave records is not supported")
 )
 
 type ErrorConst string
@@ -48,6 +49,10 @@ func NewHandleConsolidation(c CogGenerator, m MucogGenerator, cancelledJobsStora
 func (h *handlerConsolidation) Consolidate(ctx context.Context, cEvent *geocube.ConsolidationEvent, workspace string) error {
 	if h.isCancelled(ctx, cEvent) {
 		return TaskCancelledConsolidationError
+	}
+
+	if !cEvent.Container.InterleaveRecords {
+		return NotImplementedError
 	}
 
 	id := uuid.New()

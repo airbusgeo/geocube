@@ -134,6 +134,8 @@ func run(ctx context.Context) error {
 				taskStatus = geocube.TaskSuccessful
 			case taskErr == image.TaskCancelledConsolidationError:
 				taskStatus = geocube.TaskCancelled
+			case taskErr == image.NotImplementedError:
+				taskStatus = geocube.TaskIgnored
 			default:
 				log.Logger(ctx).Sugar().Errorf("failed to consolidate: %s", taskErr.Error())
 				taskStatus = geocube.TaskFailed
