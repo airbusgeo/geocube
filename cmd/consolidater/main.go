@@ -73,9 +73,11 @@ func run(ctx context.Context) error {
 	}
 
 	// Create Messaging Service
+	var logMessaging string
 	{
 		// Connection to pubsub
 		if consolidaterConfig.PsSubscriptionName != "" {
+			logMessaging += fmt.Sprintf(" pulling on %s/%s", consolidaterConfig.Project, consolidaterConfig.PsSubscriptionName)
 			consumer, err := pubsub.NewConsumer(consolidaterConfig.Project, consolidaterConfig.PsSubscriptionName)
 			if err != nil {
 				return fmt.Errorf("pubsub.new: %w", err)
@@ -85,6 +87,7 @@ func run(ctx context.Context) error {
 		}
 
 		if consolidaterConfig.PsEventsTopic != "" {
+			logMessaging += fmt.Sprintf(" pushing on %s/%s", consolidaterConfig.Project, consolidaterConfig.PsEventsTopic)
 			p, err := pubsub.NewPublisher(ctx, consolidaterConfig.Project, consolidaterConfig.PsEventsTopic)
 			if err != nil {
 				return fmt.Errorf("pubsub.newpublisher: %w", err)
@@ -101,6 +104,7 @@ func run(ctx context.Context) error {
 	}
 
 	handlerConsolidation := image.NewHandleConsolidation(image.NewCogGenerator(), image.NewMucogGenerator(), consolidaterConfig.CancelledJobsStorage)
+	log.Logger(ctx).Debug("consolidater starts " + logMessaging)
 	for {
 		err := taskConsumer.Pull(ctx, func(ctx context.Context, msg *messaging.Message) error {
 			jobStarted = time.Now()
@@ -164,10 +168,10 @@ func newConsolidationAppConfig() (*consolidaterConfig, error) {
 	flag.Parse()
 
 	if *workdir == "" {
-		return nil, fmt.Errorf("missing workdir config flag")
+		return nil, fmt.Errorf("missing --workdir config flag")
 	}
 	if *cancelledJobs == "" {
-		return nil, fmt.Errorf("missing cancelled jobs storage flag")
+		return nil, fmt.Errorf("missing --cancelledJobs storage flag")
 	}
 
 	return &consolidaterConfig{

@@ -107,7 +107,7 @@ func (h *handlerConsolidation) Consolidate(ctx context.Context, cEvent *geocube.
 	}
 
 	if len(cogListFile) != len(cEvent.Records) {
-		log.Logger(ctx).Sugar().Errorf("some cogs are not been generated (%d/%d)", len(cogListFile), len(cEvent.Records))
+		log.Logger(ctx).Sugar().Errorf("some cogs have not been generated (%d/%d)", len(cogListFile), len(cEvent.Records))
 	}
 
 	log.Logger(ctx).Sugar().Infof("%d COGs have been generated", len(cogListFile))
@@ -125,7 +125,7 @@ func (h *handlerConsolidation) Consolidate(ctx context.Context, cEvent *geocube.
 			return fmt.Errorf("failed to create mucog: %w", err)
 		}
 
-		log.Logger(ctx).Sugar().Infof("mucog have been generated : %s", mucogFilePath)
+		log.Logger(ctx).Sugar().Infof("mucog has been generated : %s", mucogFilePath)
 		if err := h.uploadFile(ctx, mucogFilePath, cEvent.Container.URI); err != nil {
 			return fmt.Errorf("failed to upload file on: %s : %w", cEvent.Container.URI, err)
 		}
@@ -237,7 +237,7 @@ func (h *handlerConsolidation) cleanWorkspace(ctx context.Context, workspace str
 }
 
 func (h *handlerConsolidation) isCancelled(ctx context.Context, event *geocube.ConsolidationEvent) bool {
-	path := h.cancelledJobsStorage + "/" + fmt.Sprintf("%s_%s", event.JobID, event.TaskID)
+	path := path.Join(h.cancelledJobsStorage, fmt.Sprintf("%s_%s", event.JobID, event.TaskID))
 	cancelledJobsURI, err := uri.ParseUri(path)
 	if err != nil {
 		log.Logger(ctx).Sugar().Errorf("failed to parse uri: %s: %s", path, err.Error())

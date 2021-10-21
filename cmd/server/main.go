@@ -325,15 +325,15 @@ func newServerAppConfig() (*serverConfig, error) {
 	flag.Parse()
 
 	if *listenPort == "" {
-		return nil, fmt.Errorf("failed to initialize port application flag")
+		return nil, fmt.Errorf("failed to initialize --port application flag")
 	}
 
 	if *ingestionStorage == "" {
-		return nil, fmt.Errorf("failed to initialize ingestion storage flag")
+		return nil, fmt.Errorf("failed to initialize --ingestionStorage flag")
 	}
 
 	if *cancelledJobs == "" {
-		return nil, fmt.Errorf("missing cancelled jobs storage flag")
+		return nil, fmt.Errorf("missing --cancelledJobs storage flag")
 	}
 
 	return &serverConfig{

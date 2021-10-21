@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	neturl "net/url"
+	"sync"
 	"syscall"
 
 	"google.golang.org/api/googleapi"
@@ -50,4 +51,34 @@ func Temporary(err error) bool {
 		return true
 	}
 	return false
+}
+
+// ErrWaitGroup is a collection of goroutines working on subtasks that are part of the same overall task.
+type ErrWaitGroup struct {
+	wg sync.WaitGroup
+
+	errMutex sync.Mutex
+	errs     []error
+}
+
+// Wait blocks until all function calls from the Go method have returned, then
+// returns all the non-nil error (if any) from them.
+func (g *ErrWaitGroup) Wait() []error {
+	g.wg.Wait()
+	return g.errs
+}
+
+// Go calls the given function in a new goroutine.
+func (g *ErrWaitGroup) Go(f func() error) {
+	g.wg.Add(1)
+
+	go func() {
+		defer g.wg.Done()
+
+		if err := f(); err != nil {
+			g.errMutex.Lock()
+			g.errs = append(g.errs, err)
+			g.errMutex.Unlock()
+		}
+	}()
 }
