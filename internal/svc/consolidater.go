@@ -627,14 +627,10 @@ func (svc *Service) csldDeleteDatasets(ctx context.Context, job *geocube.Job) er
 	job.Log.Print("Tidy job...")
 
 	errors, err := svc.csldSubFncDeleteJobDatasetsAndContainers(ctx, job, geocube.LockFlagTODELETE, geocube.DatasetStatusTODELETE)
-	if err != nil {
-		errors = append(errors, err)
-	}
-	if errors != nil {
-		for _, err := range errors {
-			job.Log.Printf(err.Error())
-		}
-		return svc.publishEvent(ctx, geocube.DeletionFailed, job, errors[0].Error())
+
+	if err = utils.MergeErrors(true, err, errors...); err != nil {
+		job.Log.Println(err.Error())
+		return svc.publishEvent(ctx, geocube.DeletionFailed, job, err.Error())
 	}
 
 	return svc.publishEvent(ctx, geocube.DeletionDone, job, "")
