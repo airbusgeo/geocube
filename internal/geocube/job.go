@@ -326,12 +326,12 @@ func (j *Job) triggerConsolidation(evt JobEvent) bool {
 		}
 	case JobStateCANCELLATIONFAILED:
 		switch evt.Status {
-		case RetryForced:
+		case ConsolidationRetried, RetryForced:
 			return j.changeState(JobStateCONSOLIDATIONCANCELLING)
 		}
 	case JobStateINITIALISATIONFAILED:
 		switch evt.Status {
-		case RetryForced:
+		case ConsolidationRetried, RetryForced:
 			return j.changeState(JobStateCREATED)
 		case CancelledByUser:
 			return j.changeState(JobStateABORTED)
