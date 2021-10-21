@@ -11,6 +11,7 @@ import (
 	"github.com/airbusgeo/geocube/interface/storage/uri"
 	"github.com/airbusgeo/geocube/internal/geocube"
 	"github.com/airbusgeo/geocube/internal/log"
+	"github.com/airbusgeo/geocube/internal/utils"
 	"github.com/airbusgeo/geocube/internal/utils/affine"
 	"github.com/google/uuid"
 	"golang.org/x/sync/errgroup"
@@ -237,7 +238,7 @@ func (h *handlerConsolidation) cleanWorkspace(ctx context.Context, workspace str
 }
 
 func (h *handlerConsolidation) isCancelled(ctx context.Context, event *geocube.ConsolidationEvent) bool {
-	path := path.Join(h.cancelledJobsStorage, fmt.Sprintf("%s_%s", event.JobID, event.TaskID))
+	path := utils.URLJoin(h.cancelledJobsStorage, fmt.Sprintf("%s_%s", event.JobID, event.TaskID))
 	cancelledJobsURI, err := uri.ParseUri(path)
 	if err != nil {
 		log.Logger(ctx).Sugar().Errorf("failed to parse uri: %s: %s", path, err.Error())

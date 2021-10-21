@@ -3,7 +3,6 @@ package svc
 import (
 	"context"
 	"fmt"
-	"path"
 	"sort"
 	"strconv"
 	"strings"
@@ -267,14 +266,7 @@ func (svc *Service) csldPrepareOrders(ctx context.Context, job *geocube.Job) err
 			}
 
 			// Create a basic ConsolidationContainer
-			var containerBaseName string
-			if strings.HasPrefix(svc.ingestionStoragePath, "gs://") {
-				gsContainerURI := uri.NewUri("gs", strings.Replace(svc.ingestionStoragePath, "gs://", "", -1), path.Join(layout.ID, cell.URI, job.Payload.InstanceID))
-				containerBaseName = gsContainerURI.String()
-			} else {
-				containerBaseName = path.Join(svc.ingestionStoragePath, layout.Name+layout.ID, cell.URI, job.Payload.InstanceID)
-			}
-
+			containerBaseName := utils.URLJoin(svc.ingestionStoragePath, layout.Name+layout.ID, cell.URI, job.Payload.InstanceID)
 			containerBase, err := geocube.NewConsolidationContainer(containerBaseName, variable, params, layout, cell)
 			if err != nil {
 				return fmt.Errorf("csldPrepareOrders.%w", err)

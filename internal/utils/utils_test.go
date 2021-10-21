@@ -141,3 +141,52 @@ var _ = Describe("Merge error", func() {
 		})
 	})
 })
+
+var _ = Describe("URLJoin", func() {
+	var path string
+
+	var itShouldEqual = func(expectedPath string) {
+		It("it should equal", func() {
+			Expect(path).To(Equal(expectedPath))
+		})
+	}
+	Describe("gs path", func() {
+		JustBeforeEach(func() {
+			path = utils.URLJoin("gs://my_bucket", "blob1", "blob2")
+		})
+
+		Context("", func() {
+			itShouldEqual("gs://my_bucket/blob1/blob2")
+		})
+	})
+
+	Describe("path with /", func() {
+		JustBeforeEach(func() {
+			path = utils.URLJoin("gs://my_bucket/", "blob1", "blob2")
+		})
+
+		Context("", func() {
+			itShouldEqual("gs://my_bucket/blob1/blob2")
+		})
+	})
+
+	Describe("local path with /", func() {
+		JustBeforeEach(func() {
+			path = utils.URLJoin("my_folder/", "blob1", "blob2")
+		})
+
+		Context("", func() {
+			itShouldEqual("my_folder/blob1/blob2")
+		})
+	})
+
+	Describe("local path with /", func() {
+		JustBeforeEach(func() {
+			path = utils.URLJoin("/my_folder/", "blob1", "blob2")
+		})
+
+		Context("", func() {
+			itShouldEqual("/my_folder/blob1/blob2")
+		})
+	})
+})
