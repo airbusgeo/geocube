@@ -23,7 +23,7 @@ CREATE TABLE geocube.aoi (
 	PRIMARY KEY (id), 
 	UNIQUE (hash)
 );
-CREATE INDEX "idx_aoi_geom" ON "geocube"."aoi" USING GIST ("geom");
+CREATE INDEX idx_aoi_geom ON geocube.aoi USING GIST (geom);
 
 CREATE TABLE geocube.records (
 	id UUID NOT NULL,
@@ -35,7 +35,7 @@ CREATE TABLE geocube.records (
     UNIQUE (name, tags, datetime),
 	FOREIGN KEY(aoi_id) REFERENCES geocube.aoi (id) MATCH FULL
 );
-CREATE INDEX record_name_idx ON geocube.records (lower(name) text_pattern_ops);
+CREATE INDEX idx_records_aoi ON geocube.records (aoi_id);
 
 CREATE TABLE geocube.palette (
 	name TEXT NOT NULL,
@@ -59,8 +59,6 @@ CREATE TABLE geocube.variable_definitions (
 	UNIQUE (name)
 );
 
-CREATE INDEX definition_name_idx ON geocube.variable_definitions (lower(name) text_pattern_ops);
-
 CREATE TABLE geocube.variable_instances (
 	id UUID NOT NULL,
 	name TEXT NOT NULL,
@@ -70,6 +68,7 @@ CREATE TABLE geocube.variable_instances (
 	UNIQUE (name, definition_id),
 	FOREIGN KEY(definition_id) REFERENCES geocube.variable_definitions (id) MATCH FULL ON DELETE NO ACTION ON UPDATE NO ACTION
 );
+CREATE INDEX idx_instance_definition ON geocube.variable_instances (definition_id);
 
 CREATE TABLE geocube.containers (
 	uri TEXT NOT NULL, 
@@ -102,8 +101,11 @@ CREATE TABLE geocube.datasets (
 	FOREIGN KEY(instance_id) REFERENCES geocube.variable_instances (id) MATCH FULL ON DELETE NO ACTION ON UPDATE NO ACTION, 
 	FOREIGN KEY(container_uri) REFERENCES geocube.containers (uri) MATCH FULL ON DELETE NO ACTION ON UPDATE NO ACTION
 );
-CREATE INDEX "idx_datasets_geog" ON geocube.datasets USING GIST ("geog");
-CREATE INDEX "idx_datasets_geom" ON geocube.datasets USING GIST ("geom");
+CREATE INDEX idx_datasets_geog ON geocube.datasets USING GIST (geog);
+CREATE INDEX idx_datasets_geom ON geocube.datasets USING GIST (geom);
+CREATE INDEX idx_datasets_container ON geocube.datasets (container_uri);
+CREATE INDEX idx_datasets_record ON geocube.datasets (record_id);
+CREATE INDEX idx_datasets_instance ON geocube.datasets (instance_id);
 
 CREATE TABLE geocube.layouts (
 	id UUID NOT NULL,
@@ -154,7 +156,7 @@ CREATE TABLE geocube.locked_datasets (
 	FOREIGN KEY(dataset_id) REFERENCES geocube.datasets (id) MATCH FULL ON DELETE NO ACTION ON UPDATE NO ACTION,
 	FOREIGN KEY(job_id) REFERENCES geocube.jobs (id) MATCH FULL ON DELETE CASCADE ON UPDATE NO ACTION
 );
-CREATE INDEX ix_geocube_locked_datasets_job_id ON geocube.locked_datasets (job_id);
+CREATE INDEX idx_geocube_locked_datasets_job_id ON geocube.locked_datasets (job_id);
 
 CREATE TABLE geocube.tasks (
 	id UUID NOT NULL,
@@ -164,6 +166,7 @@ CREATE TABLE geocube.tasks (
 	PRIMARY KEY (id),
 	FOREIGN KEY(job_id) REFERENCES geocube.jobs (id) MATCH FULL ON DELETE NO ACTION ON UPDATE NO ACTION
 );
+CREATE INDEX idx_tasks_job ON geocube.tasks (job_id);
 
 -- CREATE TABLE geocube.dataset_layouts (
 -- 	dataset_id UUID NOT NULL,
