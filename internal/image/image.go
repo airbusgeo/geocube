@@ -44,6 +44,7 @@ var (
 
 // CastDataset creates a new dataset and cast fromDFormat toDFormat
 // The caller is responsible to close the dataset
+// fromDFormat: NoData is ignored
 // dstDS [optional] If empty, the dataset is stored in memory
 func CastDataset(ctx context.Context, ds *godal.Dataset, fromDFormat, toDFormat geocube.DataMapping, dstDS string) (*godal.Dataset, error) {
 	if fromDFormat.Equals(toDFormat) {
@@ -123,6 +124,14 @@ func castDataset(ds *godal.Dataset, fromRange geocube.Range, exponent float64, t
 	return outDs, nil
 }
 
+func closeNonNilDatasets(datasets []*godal.Dataset) {
+	for _, ds := range datasets {
+		if ds != nil {
+			ds.Close()
+		}
+	}
+}
+
 // MergeDatasets merge the given datasets into one in the format defined by outDesc
 // The caller is responsible to close the output dataset
 func MergeDatasets(ctx context.Context, datasets []*geocube.Dataset, outDesc *GdalDatasetDescriptor) (*godal.Dataset, error) {
@@ -130,45 +139,86 @@ func MergeDatasets(ctx context.Context, datasets []*geocube.Dataset, outDesc *Gd
 		return nil, fmt.Errorf("mergeDatasets: no dataset to merge")
 	}
 
-	// TODO mergeDatasets with different dformat, range or exponent
-	commonDMapping := datasets[0].DataMapping
+	// Group datasets that share the same DataMapping
+	groupedDatasets := [][]*geocube.Dataset{}
 	for _, dataset := range datasets {
-		if !dataset.DataMapping.Equals(commonDMapping) {
-			return nil, fmt.Errorf("mergeDatasets cannot handle datasets with different internal format (%v != %v) (but will do...)", dataset.DataMapping, commonDMapping)
+		found := false
+		for i, groupeDs := range groupedDatasets {
+			if dataset.DataMapping.Equals(groupeDs[0].DataMapping) {
+				groupedDatasets[i] = append(groupedDatasets[i], dataset)
+				found = true
+				break
+			}
+		}
+		if !found {
+			groupedDatasets = append(groupedDatasets, []*geocube.Dataset{dataset})
 		}
 	}
 
-	mergedDs, err := mergeGdalDatasets(datasets, outDesc, commonDMapping.DataFormat)
-	if err != nil {
-		return nil, fmt.Errorf("mergeGdalDatasets: %w", err)
+	var rerr error
+	var mergedDatasets []*godal.Dataset
+	defer closeNonNilDatasets(mergedDatasets)
+
+	for _, groupedDs := range groupedDatasets {
+		// Merge Datasets that share the same DataMapping
+		commonDMapping := groupedDs[0].DataMapping
+		mergedDs, err := warpDatasets(groupedDs, outDesc.WktCRS, outDesc.PixToCRS, float64(outDesc.Width), float64(outDesc.Height), outDesc.Resampling, commonDMapping.DataFormat)
+		if rerr = err; rerr != nil {
+			return nil, fmt.Errorf("mergeDatasets: %w", err)
+		}
+
+		// Convert dataset to outDesc.DataFormat
+		if !commonDMapping.Equals(outDesc.DataMapping) {
+			tmpDS := mergedDs
+			defer tmpDS.Close()
+			if mergedDs, rerr = CastDataset(ctx, tmpDS, commonDMapping, outDesc.DataMapping, ""); rerr != nil {
+				return nil, fmt.Errorf("mergeDatasets: %w", err)
+			}
+		}
+		mergedDatasets = append(mergedDatasets, mergedDs)
+	}
+
+	// Merge all the datasets together
+	var mergedDs *godal.Dataset
+	if len(mergedDatasets) == 1 {
+		mergedDs = mergedDatasets[0]
+		mergedDatasets[0] = nil
+	} else if mergedDs, rerr = mosaicDatasets(mergedDatasets, outDesc.PixToCRS.Rx(), outDesc.PixToCRS.Ry()); rerr != nil {
+		return nil, fmt.Errorf("mergeDatasets.%w", rerr)
 	}
 
 	// Test whether image has enough valid pixels
 	if outDesc.ValidPixPc >= 0 {
-		nb, err := countValidPix(mergedDs.Bands()[0])
-		if err != nil {
+		if nb, err := countValidPix(mergedDs.Bands()[0]); err != nil || int(100*nb) <= outDesc.Width*outDesc.Height*outDesc.ValidPixPc {
 			mergedDs.Close()
-			return nil, fmt.Errorf("countValidPix: %w", err)
-		}
-		if int(100*nb) <= outDesc.Width*outDesc.Height*outDesc.ValidPixPc {
-			mergedDs.Close()
+			if rerr = err; rerr != nil {
+				return nil, fmt.Errorf("countValidPix: %w", rerr)
+			}
 			return nil, geocube.NewEntityNotFound("", "", "", "Not enough valid pixels (skipped)")
-		}
-	}
-
-	// Convert dataset to outDesc.DataFormat
-	if !commonDMapping.Equals(outDesc.DataMapping) {
-		tmpDS := mergedDs
-		defer tmpDS.Close()
-		if mergedDs, err = CastDataset(ctx, tmpDS, commonDMapping, outDesc.DataMapping, ""); err != nil {
-			return nil, fmt.Errorf("CastDataset: %w", err)
 		}
 	}
 
 	return mergedDs, nil
 }
 
-func mergeGdalDatasets(datasets []*geocube.Dataset, outDesc *GdalDatasetDescriptor, commonDFormat geocube.DataFormat) (*godal.Dataset, error) {
+// mosaicDatasets calls godal.Warp to merge all the datasets into one without reprojection
+// The caller is responsible to close the output dataset
+func mosaicDatasets(datasets []*godal.Dataset, rx, ry float64) (*godal.Dataset, error) {
+	outDs, err := godal.Warp("", datasets, []string{"-tr", toS(rx), toS(ry)}, godal.Memory, ErrLoger)
+	if err != nil {
+		if outDs != nil {
+			outDs.Close()
+		}
+		return nil, fmt.Errorf("failed to mosaic dataset: %w", err)
+	}
+
+	return outDs, nil
+
+}
+
+// warpDatasets calls godal.Warp on datasets, performing a reprojection
+// The caller is responsible to close the output dataset
+func warpDatasets(datasets []*geocube.Dataset, wktCRS string, transform *affine.Affine, width, height float64, resampling geocube.Resampling, commonDFormat geocube.DataFormat) (*godal.Dataset, error) {
 
 	listFile := make([]string, len(datasets))
 	gdatasets := make([]*godal.Dataset, len(datasets))
@@ -183,13 +233,13 @@ func mergeGdalDatasets(datasets []*geocube.Dataset, outDesc *GdalDatasetDescript
 	}
 
 	options := []string{
-		"-t_srs", outDesc.WktCRS,
-		"-ts", toS(float64(outDesc.Width)), toS(float64(outDesc.Height)),
+		"-t_srs", wktCRS,
+		"-ts", toS(width), toS(height),
 		"-ovr", "AUTO", //TODO user-defined ?
 		"-wo", "INIT_DEST=" + toS(commonDFormat.NoData),
 		"-wm", "2047",
 		"-ot", commonDFormat.DType.ToGDAL().String(),
-		"-r", outDesc.Resampling.String(),
+		"-r", resampling.String(),
 		"-srcnodata", toS(commonDFormat.NoData),
 		"-nomd",
 	}
@@ -198,9 +248,9 @@ func mergeGdalDatasets(datasets []*geocube.Dataset, outDesc *GdalDatasetDescript
 		options = append(options, "-dstnodata", toS(commonDFormat.NoData))
 	}
 
-	if outDesc.PixToCRS != nil {
-		xMin, yMax := outDesc.PixToCRS.Transform(0, 0)
-		xMax, yMin := outDesc.PixToCRS.Transform(float64(outDesc.Width), float64(outDesc.Height))
+	if transform != nil {
+		xMin, yMax := transform.Transform(0, 0)
+		xMax, yMin := transform.Transform(width, height)
 		options = append(options, "-te", toS(xMin), toS(yMin), toS(xMax), toS(yMax))
 	}
 
