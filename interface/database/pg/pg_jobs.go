@@ -16,7 +16,8 @@ func (b Backend) FindJobs(ctx context.Context, nameLike string) ([]*geocube.Job,
 		nameLike, operator := parseLike(nameLike)
 		wc.append(" name "+operator+" $%d", nameLike)
 	}
-	rows, err := b.pg.QueryContext(ctx, "SELECT id, name, type, creation_ts, last_update_ts, state, active_tasks, failed_tasks, payload FROM geocube.jobs"+wc.WhereClause(), wc.Parameters...)
+	rows, err := b.pg.QueryContext(ctx,
+		"SELECT id, name, type, creation_ts, last_update_ts, state, active_tasks, failed_tasks, payload, step_by_step, waiting FROM geocube.jobs"+wc.WhereClause(), wc.Parameters...)
 
 	if err != nil {
 		return nil, pqErrorFormat("FindJobs: %w", err)
@@ -26,7 +27,7 @@ func (b Backend) FindJobs(ctx context.Context, nameLike string) ([]*geocube.Job,
 	jobs := []*geocube.Job{}
 	for rows.Next() {
 		var j geocube.Job
-		if err := rows.Scan(&j.ID, &j.Name, &j.Type, &j.CreationTime, &j.LastUpdateTime, &j.State, &j.ActiveTasks, &j.FailedTasks, &j.Payload); err != nil {
+		if err := rows.Scan(&j.ID, &j.Name, &j.Type, &j.CreationTime, &j.LastUpdateTime, &j.State, &j.ActiveTasks, &j.FailedTasks, &j.Payload, &j.StepByStep, &j.Waiting); err != nil {
 			return nil, fmt.Errorf("FindJobs: %w", err)
 		}
 		jobs = append(jobs, &j)
@@ -38,8 +39,8 @@ func (b Backend) FindJobs(ctx context.Context, nameLike string) ([]*geocube.Job,
 func (b Backend) ReadJob(ctx context.Context, jobID string) (*geocube.Job, error) {
 	j := geocube.NewJob(jobID)
 	err := b.pg.QueryRowContext(ctx,
-		"SELECT name, type, creation_ts, last_update_ts, state, active_tasks, failed_tasks, payload FROM geocube.jobs WHERE id = $1", jobID).
-		Scan(&j.Name, &j.Type, &j.CreationTime, &j.LastUpdateTime, &j.State, &j.ActiveTasks, &j.FailedTasks, &j.Payload)
+		"SELECT name, type, creation_ts, last_update_ts, state, active_tasks, failed_tasks, payload, step_by_step, waiting FROM geocube.jobs WHERE id = $1", jobID).
+		Scan(&j.Name, &j.Type, &j.CreationTime, &j.LastUpdateTime, &j.State, &j.ActiveTasks, &j.FailedTasks, &j.Payload, &j.StepByStep, &j.Waiting)
 
 	switch {
 	case err == sql.ErrNoRows:
@@ -59,9 +60,9 @@ func (b Backend) ReadJobWithTask(ctx context.Context, jobID string, taskID strin
 
 	var t geocube.Task
 	err := b.pg.QueryRowContext(ctx,
-		"SELECT j.name, j.type, j.creation_ts, j.last_update_ts, j.state, j.active_tasks, j.failed_tasks, j.payload, t.id, t.state "+
+		"SELECT j.name, j.type, j.creation_ts, j.last_update_ts, j.state, j.active_tasks, j.failed_tasks, j.payload, j.step_by_step, j.waiting, t.id, t.state "+
 			"FROM geocube.jobs j JOIN geocube.tasks t ON j.id = t.job_id WHERE j.id = $1 AND t.id = $2", jobID, taskID).
-		Scan(&j.Name, &j.Type, &j.CreationTime, &j.LastUpdateTime, &j.State, &j.ActiveTasks, &j.FailedTasks, &j.Payload, &t.ID, &t.State)
+		Scan(&j.Name, &j.Type, &j.CreationTime, &j.LastUpdateTime, &j.State, &j.ActiveTasks, &j.FailedTasks, &j.Payload, &j.StepByStep, &j.Waiting, &t.ID, &t.State)
 
 	switch {
 	case err == sql.ErrNoRows:
@@ -79,9 +80,9 @@ func (b Backend) ReadJobWithTask(ctx context.Context, jobID string, taskID strin
 // CreateJob implements GeocubeBackend
 func (b Backend) CreateJob(ctx context.Context, job *geocube.Job) error {
 	_, err := b.pg.ExecContext(ctx,
-		"INSERT INTO geocube.jobs (id, name, type, creation_ts, last_update_ts, state, active_tasks, failed_tasks, payload)"+
-			" VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
-		job.ID, job.Name, job.Type, job.CreationTime, job.LastUpdateTime, job.State, job.ActiveTasks, job.FailedTasks, job.Payload)
+		"INSERT INTO geocube.jobs (id, name, type, creation_ts, last_update_ts, state, active_tasks, failed_tasks, payload, step_by_step)"+
+			" VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
+		job.ID, job.Name, job.Type, job.CreationTime, job.LastUpdateTime, job.State, job.ActiveTasks, job.FailedTasks, job.Payload, job.StepByStep)
 
 	switch pqErrorCode(err) {
 	case noError:
@@ -102,9 +103,9 @@ func (b Backend) DeleteJob(ctx context.Context, jobID string) error {
 // UpdateJob implements GeocubeBackend
 func (b Backend) UpdateJob(ctx context.Context, job *geocube.Job) error {
 	res, err := b.pg.ExecContext(ctx,
-		"UPDATE geocube.jobs SET last_update_ts = $1, state = $2, active_tasks = $3, failed_tasks = $4, payload = jsonb_set(cast(payload as jsonb), '{error}', to_jsonb($5::text), true)"+
-			" WHERE id = $6 AND last_update_ts = $7",
-		job.LastUpdateTime, job.State, job.ActiveTasks, job.FailedTasks, job.Payload.Err, job.ID, job.OCCTime())
+		"UPDATE geocube.jobs SET last_update_ts = $1, state = $2, active_tasks = $3, failed_tasks = $4, payload = jsonb_set(cast(payload as jsonb), '{error}', to_jsonb($5::text), true), waiting = $6"+
+			" WHERE id = $7 AND last_update_ts = $8",
+		job.LastUpdateTime, job.State, job.ActiveTasks, job.FailedTasks, job.Payload.Err, job.Waiting, job.ID, job.OCCTime())
 
 	switch pqErrorCode(err) {
 	case noError:

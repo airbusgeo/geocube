@@ -51,6 +51,7 @@ service Geocube {
     rpc CleanJobs(CleanJobsRequest)                           returns (CleanJobsResponse){}
     rpc RetryJob(RetryJobRequest)                             returns (RetryJobResponse){}
     rpc CancelJob(CancelJobRequest)                           returns (CancelJobResponse){}
+    rpc ContinueJob(ContinueJobRequest)                       returns (ContinueJobResponse){}
 
 // Catalog
     rpc GetCube(GetCubeRequest)               returns (stream GetCubeResponse){}

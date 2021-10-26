@@ -261,6 +261,7 @@ const (
 	RollbackFailed
 	RollbackDone
 	RetryForced
+	Continue
 )
 
 // JobEvent is the event sent during the job when one of the job steps is finished
@@ -348,6 +349,8 @@ func (s JobStatus) String() string {
 		return "RollbackDone"
 	case RetryForced:
 		return "RetryForced"
+	case Continue:
+		return "Continue"
 	}
 	panic("undefined status")
 }

@@ -103,7 +103,7 @@ func (h *handlerConsolidation) Consolidate(ctx context.Context, cEvent *geocube.
 			return fmt.Errorf("failed to merge source images: %w", err)
 		}
 
-		log.Logger(ctx).Sugar().Infof("add cog %s for record: %s (%d/%d)", cogDatasetPath, recordID, index+1, len(cEvent.Records))
+		log.Logger(ctx).Sugar().Debugf("add cog %s for record: %s (%d/%d)", cogDatasetPath, recordID, index+1, len(cEvent.Records))
 		cogListFile = append(cogListFile, cogDatasetPath)
 	}
 
@@ -126,7 +126,7 @@ func (h *handlerConsolidation) Consolidate(ctx context.Context, cEvent *geocube.
 			return fmt.Errorf("failed to create mucog: %w", err)
 		}
 
-		log.Logger(ctx).Sugar().Infof("mucog has been generated : %s", mucogFilePath)
+		log.Logger(ctx).Sugar().Debugf("mucog has been generated : %s", mucogFilePath)
 		if err := h.uploadFile(ctx, mucogFilePath, cEvent.Container.URI); err != nil {
 			return fmt.Errorf("failed to upload file on: %s : %w", cEvent.Container.URI, err)
 		}
@@ -166,7 +166,7 @@ func (h *handlerConsolidation) getLocalDatasetsByRecord(ctx context.Context, cEv
 	}
 
 	// Push download jobs
-	log.Logger(ctx).Sugar().Infof("downloading datasets")
+	log.Logger(ctx).Sugar().Debugf("downloading datasets")
 	files := make(chan FileToDownload, len(filesToDownload))
 	for uri, localUri := range filesToDownload {
 		files <- FileToDownload{URI: uri, LocalURI: localUri}
@@ -234,7 +234,7 @@ func (h *handlerConsolidation) cleanWorkspace(ctx context.Context, workspace str
 		log.Logger(ctx).Sugar().Errorf("failed to clean workspace: %s", err.Error())
 		return
 	}
-	log.Logger(ctx).Sugar().Infof("Workspace cleaned")
+	log.Logger(ctx).Sugar().Debugf("Workspace cleaned")
 }
 
 func (h *handlerConsolidation) isCancelled(ctx context.Context, event *geocube.ConsolidationEvent) bool {

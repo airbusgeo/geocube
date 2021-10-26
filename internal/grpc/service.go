@@ -60,12 +60,13 @@ type GeocubeService interface {
 	IndexExternalDatasets(ctx context.Context, container *geocube.Container, datasets []*geocube.Dataset) error
 	ConfigConsolidation(ctx context.Context, variableID string, params geocube.ConsolidationParams) error
 	GetConsolidationParams(ctx context.Context, ID string) (*geocube.ConsolidationParams, error)
-	ConsolidateFromRecords(ctx context.Context, jobName, instanceID, layoutID string, recordsID []string) (string, error)
-	ConsolidateFromFilters(ctx context.Context, jobName, instanceID, layoutID string, tags map[string]string, fromTime, toTime time.Time) (string, error)
+	ConsolidateFromRecords(ctx context.Context, job *geocube.Job, recordsID []string) error
+	ConsolidateFromFilters(ctx context.Context, job *geocube.Job, tags map[string]string, fromTime, toTime time.Time) error
 	ListJobs(ctx context.Context, nameLike string) ([]*geocube.Job, error)
 	GetJob(ctx context.Context, jobID string) (*geocube.Job, error)
 	RetryJob(ctx context.Context, jobID string, forceAnyState bool) error
 	CancelJob(ctx context.Context, jobID string) error
+	ContinueJob(ctx context.Context, jobID string) error
 	CleanJobs(ctx context.Context, nameLike string, state *geocube.JobState) (int, error)
 
 	CreateLayout(ctx context.Context, layout *geocube.Layout) error
@@ -550,28 +551,28 @@ func (svc *Service) Consolidate(ctx context.Context, req *pb.ConsolidateRequest)
 		return nil, newValidationError("Invalid Layout.uuid " + req.GetLayoutId() + ": " + err.Error())
 	}
 
+	// Create the job
+	job := geocube.NewConsolidationJob(req.GetJobName(), req.GetLayoutId(), req.GetInstanceId(), int(req.GetStepByStep()))
+
 	// Consolidate
-	var (
-		jobID string
-		err   error
-	)
+	var err error
 	if req.GetRecords() == nil {
 		filters := req.GetFilters()
 		// Convert times
 		fromTime := timeFromTimestamp(filters.GetFromTime())
 		toTime := timeFromTimestamp(filters.GetToTime())
-		jobID, err = svc.gsvc.ConsolidateFromFilters(ctx, req.GetJobName(), req.GetInstanceId(), req.GetLayoutId(), filters.GetTags(), fromTime, toTime)
+		err = svc.gsvc.ConsolidateFromFilters(ctx, job, filters.GetTags(), fromTime, toTime)
 	} else {
 		if len(req.GetRecords().GetIds()) == 0 {
 			return &pb.ConsolidateResponse{}, newValidationError("At least one record must be provided")
 		}
-		jobID, err = svc.gsvc.ConsolidateFromRecords(ctx, req.GetJobName(), req.GetInstanceId(), req.GetLayoutId(), req.GetRecords().GetIds())
+		err = svc.gsvc.ConsolidateFromRecords(ctx, job, req.GetRecords().GetIds())
 	}
 	if err != nil {
 		return nil, formatError("backend.%w", err)
 	}
 
-	return &pb.ConsolidateResponse{JobId: jobID}, nil
+	return &pb.ConsolidateResponse{JobId: job.ID}, nil
 }
 
 // CleanJobs remove all the finished job from the database
@@ -661,12 +662,27 @@ func (svc *Service) CancelJob(ctx context.Context, req *pb.CancelJobRequest) (*p
 		return nil, newValidationError("Invalid uuid: " + err.Error())
 	}
 
-	// Retry Job
+	// Cancel Job
 	if err := svc.gsvc.CancelJob(ctx, req.GetId()); err != nil {
-		return nil, formatError("backend.CancelJob.%w", err)
+		return nil, formatError("backend.%w", err)
 	}
 
 	return &pb.CancelJobResponse{}, nil
+}
+
+// ContinueJob continue a waiting job
+func (svc *Service) ContinueJob(ctx context.Context, req *pb.ContinueJobRequest) (*pb.ContinueJobResponse, error) {
+	// Convert request
+	if _, err := uuid.Parse(req.GetId()); err != nil {
+		return nil, newValidationError("Invalid uuid: " + err.Error())
+	}
+
+	// Continue Job
+	if err := svc.gsvc.ContinueJob(ctx, req.GetId()); err != nil {
+		return nil, formatError("backend.%w", err)
+	}
+
+	return &pb.ContinueJobResponse{}, nil
 }
 
 // GetCube retrieves, rescale and reproject datasets and serves them as a cube

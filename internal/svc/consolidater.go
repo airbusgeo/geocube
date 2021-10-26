@@ -49,9 +49,11 @@ func (svc *Service) handleJobEvt(ctx context.Context, evt geocube.JobEvent) erro
 	}
 
 	// Launch the commands associated to the state
-	start := time.Now()
-	err = svc.csldOnEnterNewState(ctx, job)
-	job.Log.Printf("  ... in %v", time.Since(start))
+	if !job.Waiting {
+		start := time.Now()
+		err = svc.csldOnEnterNewState(ctx, job)
+		job.Log.Printf("  ... in %v", time.Since(start))
+	}
 	return err
 }
 
@@ -144,7 +146,7 @@ func (svc *Service) csldOnEnterNewState(ctx context.Context, j *geocube.Job) err
 		return nil
 
 	case geocube.JobStateCONSOLIDATIONRETRYING:
-		return svc.csldRetry(ctx, j)
+		return svc.csldConsolidationRetry(ctx, j)
 
 	case geocube.JobStateABORTED:
 		return svc.csldRollback(ctx, j)
@@ -782,8 +784,8 @@ func (svc *Service) csldCancel(ctx context.Context, job *geocube.Job) error {
 	return svc.publishEvent(ctx, geocube.CancellationDone, job, "")
 }
 
-func (svc *Service) csldRetry(ctx context.Context, job *geocube.Job) error {
-	job.Log.Print("Retry...")
+func (svc *Service) csldConsolidationRetry(ctx context.Context, job *geocube.Job) error {
+	job.Log.Print("Retry consolidation...")
 
 	var err error
 	// Load tasks

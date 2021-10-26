@@ -129,6 +129,8 @@ CREATE TABLE geocube.jobs (
 	active_tasks INTEGER NOT NULL,
 	failed_tasks INTEGER NOT NULL,
 	type TEXT NOT NULL,
+	step_by_step INTEGER DEFAULT 0 NOT NULL,
+	waiting BOOLEAN DEFAULT FALSE NOT NULL,
 	PRIMARY KEY (id),
 	UNIQUE (name)
 );
