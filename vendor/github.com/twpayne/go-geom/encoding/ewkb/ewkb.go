@@ -50,7 +50,7 @@ func Read(r io.Reader) (geom.T, error) {
 	}
 	t := wkbcommon.Type(ewkbGeometryType)
 
-	layout := geom.NoLayout
+	var layout geom.Layout
 	switch t & (ewkbZ | ewkbM) {
 	case 0:
 		layout = geom.XY
@@ -78,7 +78,7 @@ func Read(r io.Reader) (geom.T, error) {
 		if err != nil {
 			return nil, err
 		}
-		return geom.NewPointFlat(layout, flatCoords).SetSRID(int(srid)), nil
+		return geom.NewPointFlatMaybeEmpty(layout, flatCoords).SetSRID(int(srid)), nil
 	case wkbcommon.LineStringID:
 		flatCoords, err := wkbcommon.ReadFlatCoords1(r, byteOrder, layout.Stride())
 		if err != nil {
@@ -178,6 +178,13 @@ func Read(r io.Reader) (geom.T, error) {
 				return nil, err
 			}
 		}
+		// If EMPTY, mark the collection with a fixed layout to differentiate
+		// GEOMETRYCOLLECTION EMPTY between 2D/Z/M/ZM.
+		if gc.Empty() && gc.NumGeoms() == 0 {
+			if err := gc.SetLayout(layout); err != nil {
+				return nil, err
+			}
+		}
 		return gc, nil
 	default:
 		return nil, wkbcommon.ErrUnsupportedType(ewkbGeometryType)
@@ -224,6 +231,11 @@ func Write(w io.Writer, byteOrder binary.ByteOrder, g geom.T) error {
 		return geom.ErrUnsupportedType{Value: g}
 	}
 	switch g.Layout() {
+	case geom.NoLayout:
+		// Special case for empty GeometryCollections
+		if _, ok := g.(*geom.GeometryCollection); !ok || !g.Empty() {
+			return geom.ErrUnsupportedLayout(g.Layout())
+		}
 	case geom.XY:
 	case geom.XYZ:
 		ewkbGeometryType |= ewkbZ
@@ -249,6 +261,9 @@ func Write(w io.Writer, byteOrder binary.ByteOrder, g geom.T) error {
 
 	switch g := g.(type) {
 	case *geom.Point:
+		if g.Empty() {
+			return wkbcommon.WriteEmptyPointAsNaN(w, byteOrder, g.Stride())
+		}
 		return wkbcommon.WriteFlatCoords0(w, byteOrder, g.FlatCoords())
 	case *geom.LineString:
 		return wkbcommon.WriteFlatCoords1(w, byteOrder, g.FlatCoords(), g.Stride())

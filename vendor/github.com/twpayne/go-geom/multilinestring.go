@@ -30,11 +30,6 @@ func (g *MultiLineString) Clone() *MultiLineString {
 	return deriveCloneMultiLineString(g)
 }
 
-// Empty returns true if the collection is empty.
-func (g *MultiLineString) Empty() bool {
-	return g.NumLineStrings() == 0
-}
-
 // Length returns the sum of the length of the LineStrings.
 func (g *MultiLineString) Length() float64 {
 	return length2(g.flatCoords, 0, g.ends, g.stride)
@@ -45,6 +40,9 @@ func (g *MultiLineString) LineString(i int) *LineString {
 	offset := 0
 	if i > 0 {
 		offset = g.ends[i-1]
+	}
+	if offset == g.ends[i] {
+		return NewLineString(g.layout)
 	}
 	return NewLineStringFlat(g.layout, g.flatCoords[offset:g.ends[i]])
 }

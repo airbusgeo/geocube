@@ -98,7 +98,7 @@ github.com/json-iterator/go
 github.com/jstemmer/go-junit-report
 github.com/jstemmer/go-junit-report/formatter
 github.com/jstemmer/go-junit-report/parser
-# github.com/lib/pq v1.3.0
+# github.com/lib/pq v1.8.0
 ## explicit
 github.com/lib/pq
 github.com/lib/pq/hstore
@@ -153,11 +153,12 @@ github.com/stretchr/objx
 ## explicit
 github.com/stretchr/testify/assert
 github.com/stretchr/testify/mock
-# github.com/twpayne/go-geom v1.0.5
+# github.com/twpayne/go-geom v1.4.0
 ## explicit
 github.com/twpayne/go-geom
 github.com/twpayne/go-geom/encoding/ewkb
 github.com/twpayne/go-geom/encoding/ewkbhex
+github.com/twpayne/go-geom/encoding/geojson
 github.com/twpayne/go-geom/encoding/wkb
 github.com/twpayne/go-geom/encoding/wkbcommon
 # github.com/vburenin/nsync v0.0.0-20160822015540-9a75d1c80410

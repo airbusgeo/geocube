@@ -18,12 +18,12 @@ require (
 	github.com/googleapis/gnostic v0.2.0 // indirect
 	github.com/gregjones/httpcache v0.0.0-20181110185634-c63ab54fda8f // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.4.0
-	github.com/lib/pq v1.3.0
+	github.com/lib/pq v1.8.0
 	github.com/onsi/ginkgo v1.12.0
 	github.com/onsi/gomega v1.9.0
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
 	github.com/stretchr/testify v1.7.0
-	github.com/twpayne/go-geom v1.0.5
+	github.com/twpayne/go-geom v1.4.0
 	go.uber.org/zap v1.16.0
 	golang.org/x/net v0.0.0-20210503060351-7fd8e65b6420
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c

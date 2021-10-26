@@ -18,15 +18,15 @@ import (
 type Layout int
 
 const (
-	// NoLayout is an unknown layout
+	// NoLayout is an unknown layout.
 	NoLayout Layout = iota
-	// XY is a 2D layout (X and Y)
+	// XY is a 2D layout (X and Y).
 	XY
-	// XYZ is 3D layout (X, Y, and Z)
+	// XYZ is 3D layout (X, Y, and Z).
 	XYZ
-	// XYM is a 2D layout with an M value
+	// XYM is a 2D layout with an M value.
 	XYM
-	// XYZM is a 3D layout with an M value
+	// XYZM is a 3D layout with an M value.
 	XYZM
 )
 
@@ -128,6 +128,7 @@ type T interface {
 	Ends() []int
 	Endss() [][]int
 	SRID() int
+	Empty() bool
 }
 
 // MIndex returns the index of the M dimension, or -1 if the l does not have an
@@ -190,6 +191,44 @@ func (l Layout) ZIndex() int {
 	default:
 		return 2
 	}
+}
+
+// SetSRID sets the SRID of an arbitrary geometry.
+func SetSRID(g T, srid int) (T, error) {
+	switch g := g.(type) {
+	case *Point:
+		return g.SetSRID(srid), nil
+	case *LineString:
+		return g.SetSRID(srid), nil
+	case *LinearRing:
+		return g.SetSRID(srid), nil
+	case *Polygon:
+		return g.SetSRID(srid), nil
+	case *MultiPoint:
+		return g.SetSRID(srid), nil
+	case *MultiLineString:
+		return g.SetSRID(srid), nil
+	case *MultiPolygon:
+		return g.SetSRID(srid), nil
+	case *GeometryCollection:
+		return g.SetSRID(srid), nil
+	default:
+		return g, &ErrUnsupportedType{
+			Value: g,
+		}
+	}
+}
+
+// TransformInPlace replaces all coordinates in g using f.
+func TransformInPlace(g T, f func(Coord)) T {
+	var (
+		flatCoords = g.FlatCoords()
+		stride     = g.Stride()
+	)
+	for i, n := 0, len(flatCoords); i < n; i += stride {
+		f(flatCoords[i : i+stride])
+	}
+	return g
 }
 
 // Must panics if err is not nil, otherwise it returns g.

@@ -32,11 +32,6 @@ func (g *Polygon) Clone() *Polygon {
 	return deriveClonePolygon(g)
 }
 
-// Empty returns false.
-func (g *Polygon) Empty() bool {
-	return false
-}
-
 // Length returns the perimter.
 func (g *Polygon) Length() float64 {
 	return length2(g.flatCoords, 0, g.ends, g.stride)
