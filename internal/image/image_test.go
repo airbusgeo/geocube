@@ -190,11 +190,11 @@ var _ = Describe("MergeDataset", func() {
 
 	JustBeforeEach(func() {
 		pwd, _ := os.Getwd()
-		var datasets []*geocube.Dataset
+		var datasets []*image.Dataset
 		for i, fromPath := range fromPaths {
-			datasets = append(datasets, &geocube.Dataset{
-				ContainerURI: path.Join(pwd, fromPath),
-				DataMapping:  fromDFormats[i],
+			datasets = append(datasets, &image.Dataset{
+				URI:         path.Join(pwd, fromPath),
+				DataMapping: fromDFormats[i],
 			})
 		}
 		returnedDs, returnedError = image.MergeDatasets(ctx, datasets, &outDesc)

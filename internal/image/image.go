@@ -18,6 +18,20 @@ import (
 	"github.com/google/uuid"
 )
 
+type Dataset struct {
+	URI         string
+	SubDir      string
+	Bands       []int64
+	DataMapping geocube.DataMapping
+}
+
+func (d Dataset) GDALURI() string {
+	if d.SubDir != "" {
+		return fmt.Sprintf("%s:%s", d.SubDir, d.URI)
+	}
+	return d.URI
+}
+
 var ErrLoger = godal.ErrLogger(func(ec godal.ErrorCategory, code int, msg string) error {
 	if ec <= godal.CE_Warning {
 		return nil
@@ -134,13 +148,14 @@ func closeNonNilDatasets(datasets []*godal.Dataset) {
 
 // MergeDatasets merge the given datasets into one in the format defined by outDesc
 // The caller is responsible to close the output dataset
-func MergeDatasets(ctx context.Context, datasets []*geocube.Dataset, outDesc *GdalDatasetDescriptor) (*godal.Dataset, error) {
+func MergeDatasets(ctx context.Context, datasets []*Dataset, outDesc *GdalDatasetDescriptor) (*godal.Dataset, error) {
+
 	if len(datasets) == 0 {
 		return nil, fmt.Errorf("mergeDatasets: no dataset to merge")
 	}
 
 	// Group datasets that share the same DataMapping
-	groupedDatasets := [][]*geocube.Dataset{}
+	groupedDatasets := [][]*Dataset{}
 	for _, dataset := range datasets {
 		found := false
 		for i, groupeDs := range groupedDatasets {
@@ -151,7 +166,7 @@ func MergeDatasets(ctx context.Context, datasets []*geocube.Dataset, outDesc *Gd
 			}
 		}
 		if !found {
-			groupedDatasets = append(groupedDatasets, []*geocube.Dataset{dataset})
+			groupedDatasets = append(groupedDatasets, []*Dataset{dataset})
 		}
 	}
 
@@ -218,16 +233,16 @@ func mosaicDatasets(datasets []*godal.Dataset, rx, ry float64) (*godal.Dataset, 
 
 // warpDatasets calls godal.Warp on datasets, performing a reprojection
 // The caller is responsible to close the output dataset
-func warpDatasets(datasets []*geocube.Dataset, wktCRS string, transform *affine.Affine, width, height float64, resampling geocube.Resampling, commonDFormat geocube.DataFormat) (*godal.Dataset, error) {
+func warpDatasets(datasets []*Dataset, wktCRS string, transform *affine.Affine, width, height float64, resampling geocube.Resampling, commonDFormat geocube.DataFormat) (*godal.Dataset, error) {
 
 	listFile := make([]string, len(datasets))
 	gdatasets := make([]*godal.Dataset, len(datasets))
 	for i, dataset := range datasets {
 		var err error
-		listFile[i] = dataset.GDALOpenName()
-		gdatasets[i], err = godal.Open(dataset.GDALOpenName(), ErrLoger)
+		listFile[i] = dataset.GDALURI()
+		gdatasets[i], err = godal.Open(dataset.GDALURI(), ErrLoger)
 		if err != nil {
-			return nil, fmt.Errorf("while opening %s: %w", dataset.GDALOpenName(), err)
+			return nil, fmt.Errorf("while opening %s: %w", dataset.GDALURI(), err)
 		}
 		defer gdatasets[i].Close()
 	}
