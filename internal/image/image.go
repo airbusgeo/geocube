@@ -2,6 +2,7 @@ package image
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"image"
@@ -44,7 +45,7 @@ var (
 // CastDataset creates a new dataset and cast fromDFormat toDFormat
 // The caller is responsible to close the dataset
 // dstDS [optional] If empty, the dataset is stored in memory
-func CastDataset(ds *godal.Dataset, fromDFormat, toDFormat geocube.DataMapping, dstDS string) (*godal.Dataset, error) {
+func CastDataset(ctx context.Context, ds *godal.Dataset, fromDFormat, toDFormat geocube.DataMapping, dstDS string) (*godal.Dataset, error) {
 	if fromDFormat.Equals(toDFormat) {
 		return nil, ErrNoCastToPerform
 	}
@@ -124,8 +125,7 @@ func castDataset(ds *godal.Dataset, fromRange geocube.Range, exponent float64, t
 
 // MergeDatasets merge the given datasets into one in the format defined by outDesc
 // The caller is responsible to close the output dataset
-func MergeDatasets(datasets []*geocube.Dataset, outDesc *GdalDatasetDescriptor) (*godal.Dataset, error) {
-
+func MergeDatasets(ctx context.Context, datasets []*geocube.Dataset, outDesc *GdalDatasetDescriptor) (*godal.Dataset, error) {
 	if len(datasets) == 0 {
 		return nil, fmt.Errorf("mergeDatasets: no dataset to merge")
 	}
@@ -160,7 +160,7 @@ func MergeDatasets(datasets []*geocube.Dataset, outDesc *GdalDatasetDescriptor) 
 	if !commonDMapping.Equals(outDesc.DataMapping) {
 		tmpDS := mergedDs
 		defer tmpDS.Close()
-		if mergedDs, err = CastDataset(tmpDS, commonDMapping, outDesc.DataMapping, ""); err != nil {
+		if mergedDs, err = CastDataset(ctx, tmpDS, commonDMapping, outDesc.DataMapping, ""); err != nil {
 			return nil, fmt.Errorf("CastDataset: %w", err)
 		}
 	}
@@ -254,7 +254,7 @@ func colorTableFromPalette(palette *geocube.Palette) (*godal.ColorTable, error) 
 
 // DatasetToPngAsBytes translates the dataset to a png and returns the byte representation
 // canInterpolateColor is true if dataset pixel value can be interpolated
-func DatasetToPngAsBytes(ds *godal.Dataset, fromDFormat geocube.DataMapping, palette *geocube.Palette, canInterpolateColor bool) ([]byte, error) {
+func DatasetToPngAsBytes(ctx context.Context, ds *godal.Dataset, fromDFormat geocube.DataMapping, palette *geocube.Palette, canInterpolateColor bool) ([]byte, error) {
 	var palette256 color.Palette
 	var virtualname string
 	toDformat := fromDFormat
@@ -285,7 +285,7 @@ func DatasetToPngAsBytes(ds *godal.Dataset, fromDFormat geocube.DataMapping, pal
 	}
 
 	// Cast to PNG
-	pngDs, err := CastDataset(ds, fromDFormat, toDformat, virtualname)
+	pngDs, err := CastDataset(ctx, ds, fromDFormat, toDformat, virtualname)
 	if err != nil {
 		return nil, fmt.Errorf("DatasetToPngAsBytes.%w", err)
 	}

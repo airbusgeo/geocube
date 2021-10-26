@@ -296,7 +296,7 @@ func (svc *Service) GetXYZTile(ctx context.Context, recordsID []string, instance
 	}
 
 	// Translate to PNG
-	bytes, err := internalImage.DatasetToPngAsBytes(ds, outDesc.DataMapping, palette, canInterpolateColors)
+	bytes, err := internalImage.DatasetToPngAsBytes(ctx, ds, outDesc.DataMapping, palette, canInterpolateColors)
 	if err != nil {
 		return nil, fmt.Errorf("GetMosaic.%w", err)
 	}
@@ -393,7 +393,7 @@ func (svc *Service) mergeDatasetsWorker(ctx context.Context, jobs <-chan mergeDa
 		// Run mergeDatasets
 		start := time.Now()
 		var bitmap *geocube.Bitmap
-		ds, err := internalImage.MergeDatasets(job.Datasets, job.OutDesc)
+		ds, err := internalImage.MergeDatasets(ctx, job.Datasets, job.OutDesc)
 		if err == nil {
 			// Convert to image
 			switch job.OutDesc.Format {
@@ -447,5 +447,5 @@ func (svc *Service) getMosaic(ctx context.Context, recordsID, instancesID []stri
 		RangeExt:   variable.DFormat.Range,
 		Exponent:   1,
 	}
-	return internalImage.MergeDatasets(datasets, outDesc)
+	return internalImage.MergeDatasets(ctx, datasets, outDesc)
 }

@@ -83,7 +83,7 @@ func (h *handlerConsolidation) Consolidate(ctx context.Context, cEvent *geocube.
 			cEvent.Container.Transform[5],
 		)
 
-		mergeDataset, err := MergeDatasets(localRecordDatasets, &GdalDatasetDescriptor{
+		mergeDataset, err := MergeDatasets(ctx, localRecordDatasets, &GdalDatasetDescriptor{
 			Height:      cEvent.Container.Height,
 			Width:       cEvent.Container.Width,
 			Bands:       cEvent.Container.BandsCount,
