@@ -26,6 +26,7 @@ spec:
             - -ingestionStorage={{INGESTION_STORAGE}}
             - -maxConnectionAge=3600
             - -workers=1
+            - -cancelledJobs={{CANCELLED_JOBS_STORAGE}}
           image: {{GEOCUBE_SERVER_IMAGE}}
           imagePullPolicy: Always
           name: apiserver
