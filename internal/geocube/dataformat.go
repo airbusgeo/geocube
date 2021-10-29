@@ -84,10 +84,6 @@ func (df DataFormat) validate() error {
 		return err
 	}
 
-	if !math.IsNaN(df.NoData) && df.NoData > df.Range.Min && df.NoData < df.Range.Max {
-		return fmt.Errorf("noData value cannot be strictly between min and max values")
-	}
-
 	if !math.IsNaN(df.NoData) && (df.NoData < minValue || df.NoData > maxValue) {
 		return fmt.Errorf("noData value (%f) is not supported by the data type (%s). If nodata is not defined, set it to NaN", df.NoData, df.DType.String())
 	}
