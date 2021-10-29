@@ -114,7 +114,7 @@ Delete(ctx context.Context, uri string, options ...Option) error
 // Exist checks if file exist
 Exist(ctx context.Context, uri string) (bool, error)
 // GetAttrs returns file attribute
-- GetAttrs(ctx context.Context, uri string) (Attrs, error)
+GetAttrs(ctx context.Context, uri string) (Attrs, error)
 ```
 
 The storage is infered from the prefix of the uri (protocol). The user can add an additionnal storage by implementing the interface and adding it in the `interface/storage/uri/` package.
@@ -257,12 +257,14 @@ Usage of ./server:
         project name (gcp only)
   -workers int
         number of parallel workers per catalog request (default 1)
+  -cancelledJobs string
+        storage where cancelled jobs are referenced
 ```
 
 Example (run):
 
 ```bash
-$  ./server -ingestionStorage=/tmp -dbConnection=postgresql://user:password@localhost:5432/geocube -psEventsTopic events -psConsolidationsTopic consolidations -local
+$  ./server -ingestionStorage=/tmp -dbConnection=postgresql://user:password@localhost:5432/geocube -psEventsTopic events -psConsolidationsTopic consolidations -local -cancelledJobs /tmp
 {"severity":"info","timestamp":"2021-05-24T15:10:57.621+0200","message":"Geocube v0.2.0"}
 
 ```
@@ -283,20 +285,22 @@ Some arguments are required in order to run this file.
 ```bash
 $ ./consolidater --help
 Usage of ./consolidater:
-  -psEventTopic string
+  -psEventsTopic string
         pubsub events topic name
   -project string
         subscription project (gcp pubSub only)
-  -psSubscription string
-        pubsub subscription name
+  -psConsolidationsSubscription string
+        pubsub consolidation subscription name
   -workdir string
         scratch work directory
+  -cancelledJobs string
+        storage where cancelled jobs are referenced
 ```
 
 Example (run):
 
 ```bash
-$  ./consolidater -workdir=/tmp -project geocube-emulator -psEventsTopic events -psConsolidationsTopic consolidations
+$  ./consolidater -workdir=/tmp -project geocube-emulator -psEventsTopic events -psConsolidationsTopic consolidations -cancelledJobs /tmp
 ```
 
 ## Messaging Broker
@@ -438,6 +442,7 @@ In order to start ApiServer, all the parameters between `{{}}` are to be defined
 2. Connection to the database `{{BD_HOST}}`, `{{DB_USER}}` and `{{DB_PASSWD}}`
 3. `{{INGESTION_STORAGE}}`: uri to store ingested datasets (local and gcs uris are supported)
 4. `{{PUBSUB_EMULATOR_HOST}}` environment variable can be added with pubSub emulator service IP (only if emulator is used)
+5. `{{CANCELLED_JOBS_STORAGE}}`: uri to store cancelled jobs (local and gcs uris are supported)
 
 Ex:
 ```kubernetes helm
@@ -452,6 +457,7 @@ containers:
       - -ingestionStorage=/geocube-datasets or gs://my-bucket/geocube-datasets
       - -maxConnectionAge=3600
       - -workers=1
+      - -cancelledJobs=/geocube-cancelled-jobs or gs://my-bucket/geocube-cancelled-jobs
     env:
       - name: PUBSUB_EMULATOR_HOST
         value: 0.0.0.0:8085
@@ -491,7 +497,7 @@ In order to start Autoscaler replication controller, you have to define some par
 
 1. `{{CONSOLIDATER_IMAGE}}`: Consolidater Docker Image (eg. `<container_registry>/consolidater:<tag>`).
 2. `{{PUBSUB_EMULATOR_HOST}}` environment variable could be added with pubSub emulator service IP (only if emulator is used).
-
+3. `{{CANCELLED_JOBS_STORAGE}}`: uri to store cancelled jobs (local and gcs uris are supported)
 
 Ex:
 ```kubernetes helm
@@ -504,7 +510,17 @@ containers:
         protocol: TCP
     env:
       - name: PUBSUB_EMULATOR_HOST
-        value: 0.0.0.0:8085
+        value: 0.0.0.0:8085       
+[...]
+    args:
+      - |
+        UUID=`uuid`;
+        WORKDIR=/local-ssd/$UUID;
+        mkdir -p $WORKDIR;
+        /consolidater -psEventTopic events -psSubscription consolidations -workdir $WORKDIR -cancelledJobs=/geocube-cancelled-jobs or gs://my-bucket/geocube-cancelled-jobs || true;
+        exitcode=$?;
+        rm -rf $WORKDIR;
+        exit $exitcode;
 ```
 
 ```bash

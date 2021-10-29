@@ -7,7 +7,6 @@ import (
 	"os"
 	"path"
 
-
 	"github.com/airbusgeo/geocube/interface/storage/uri"
 	"github.com/airbusgeo/geocube/internal/geocube"
 	"github.com/airbusgeo/geocube/internal/log"
@@ -253,4 +252,3 @@ func (h *handlerConsolidation) isCancelled(ctx context.Context, event *geocube.C
 
 	return exist
 }
-

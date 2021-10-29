@@ -76,9 +76,9 @@ func run(ctx context.Context) error {
 	var logMessaging string
 	{
 		// Connection to pubsub
-		if consolidaterConfig.PsSubscriptionName != "" {
-			logMessaging += fmt.Sprintf(" pulling on %s/%s", consolidaterConfig.Project, consolidaterConfig.PsSubscriptionName)
-			consumer, err := pubsub.NewConsumer(consolidaterConfig.Project, consolidaterConfig.PsSubscriptionName)
+		if consolidaterConfig.PsConsolidationsSubscription != "" {
+			logMessaging += fmt.Sprintf(" pulling on %s/%s", consolidaterConfig.Project, consolidaterConfig.PsConsolidationsSubscription)
+			consumer, err := pubsub.NewConsumer(consolidaterConfig.Project, consolidaterConfig.PsConsolidationsSubscription)
 			if err != nil {
 				return fmt.Errorf("pubsub.new: %w", err)
 			}
@@ -159,8 +159,8 @@ func run(ctx context.Context) error {
 
 func newConsolidationAppConfig() (*consolidaterConfig, error) {
 	project := flag.String("project", "", "subscription project (gcp pubSub only)")
-	psSubscriptionName := flag.String("psSubscription", "", "pubsub subscription name")
-	psEventTopic := flag.String("psEventTopic", "", "pubsub events topic name")
+	psConsolidationsSubscription := flag.String("psConsolidationsSubscription", "", "pubsub consolidation subscription name")
+	psEventsTopic := flag.String("psEventsTopic", "", "pubsub events topic name")
 	workdir := flag.String("workdir", "", "scratch work directory")
 	cancelledJobs := flag.String("cancelledJobs", "", "storage where cancelled jobs are referenced")
 	retryCount := flag.Int("retryCount", 1, "number of retries when consolidation job failed (default: 1)")
@@ -175,23 +175,22 @@ func newConsolidationAppConfig() (*consolidaterConfig, error) {
 	}
 
 	return &consolidaterConfig{
-		PsSubscriptionName:   *psSubscriptionName,
-		WorkDir:              *workdir,
-		Project:              *project,
-		PsEventsTopic:        *psEventTopic,
-		CancelledJobsStorage: *cancelledJobs,
-		RetryCount:           *retryCount,
+		PsConsolidationsSubscription: *psConsolidationsSubscription,
+		WorkDir:                      *workdir,
+		Project:                      *project,
+		PsEventsTopic:                *psEventsTopic,
+		CancelledJobsStorage:         *cancelledJobs,
+		RetryCount:                   *retryCount,
 	}, nil
 }
 
 type consolidaterConfig struct {
-	Project               string
-	PsEventsTopic         string
-	PsConsolidationsTopic string
-	WorkDir               string
-	PsSubscriptionName    string
-	CancelledJobsStorage  string
-	RetryCount            int
+	Project                      string
+	PsEventsTopic                string
+	WorkDir                      string
+	PsConsolidationsSubscription string
+	CancelledJobsStorage         string
+	RetryCount                   int
 }
 
 func notify(ctx context.Context, evt *geocube.ConsolidationEvent, taskStatus geocube.TaskStatus, taskError error) error {
