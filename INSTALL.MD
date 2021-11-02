@@ -36,6 +36,8 @@
   - [Pubsub Emulator](#pubsub-emulator-1)
   - [Apiserver](#apiserver-1)
   - [Consolidater](#consolidater-1)
+  - [Geocube Upgrade](#geocube-upgrade)
+    - [PostgreSQL database](#postgresql-database)
 
 ## Reference
 
@@ -166,11 +168,13 @@ It is used by the ApiServer as a parameter of the constructor of the service and
 
 Geocube currently supports a Postgresql database with the PostGIS extension (`interface/database/pg/`).
 Create a database and run the installation SQL script in order to create all tables, schemas and roles.
-This script is available in Geocube code source in `interface/database/pg/create_0.1.0.sql`
+This script is available in Geocube code source in `interface/database/pg/create.sql`
 
 ```bash
-$ psql -h <database_host> -d <database_name> -f interface/database/pg/create_0.1.0.sql
+$ psql -h <database_host> -d <database_name> -f interface/database/pg/create.sql
 ```
+
+For ugrade, see [Update PostgreSQL database](#postgresql-database)
 
 ## Autoscaler
 
@@ -553,4 +557,13 @@ containers:
 
 ```bash
 $ kubectl apply -f deploy/k8s/consolidater/autoscaler-deployment.yaml
+```
+
+
+## Geocube Upgrade
+### PostgreSQL database
+After upgrading the Geocube server, the database schema might need an update. Apply incrementally each `interface/database/pg/update_X.X.X.sql` with X.X.X corresponding to a Geocube Server version from your previous version to the current version.
+
+``bash
+$ psql -h <database_host> -d <database_name> -f interface/database/pg/update_X.X.X.sql
 ```

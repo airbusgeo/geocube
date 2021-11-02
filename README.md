@@ -1,15 +1,15 @@
 # Geocube
 
-Geocube is a geo-spatial imagery database designed as a serverless service to serve processing pipelines of satellites images at large scale.
+Geocube is a geo-spatial imagery database designed as a serverless service to serve processing pipelines of satellite images at large scale.
 
 
 ## Installation
 
-Please read the [Installation guides](https://github.com/airbusgeo/geocube/blob/main/INSTALL.MD).
+Please read the [Installation guide](https://github.com/airbusgeo/geocube/blob/main/INSTALL.MD).
 
 ## Quickstart
 
-After starting the server, two tutorials explained the basics of Geocube using the [Geocube Python Client Library](https://github.com/airbusgeo/geocube-client-python):
+After starting the server, two tutorials explain the basics of Geocube using the [Geocube Python Client Library](https://github.com/airbusgeo/geocube-client-python):
 
 - [Data Indexation Jupyter notebook](https://github.com/airbusgeo/geocube-client-python/blob/main/Jupyter/Geocube-Client-DataIndexation.ipynb)
 - [Data Access Jupyter notebook](https://github.com/airbusgeo/geocube-client-python/blob/main/Jupyter/Geocube-Client-DataAccess.ipynb)

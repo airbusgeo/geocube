@@ -17,10 +17,10 @@ CREATE TYPE geocube.color_point AS (
 
 
 CREATE TABLE geocube.aoi (
-	id UUID NOT NULL, 
-	hash TEXT, 
-	geom geometry(MULTIPOLYGON,4326), 
-	PRIMARY KEY (id), 
+	id UUID NOT NULL,
+	hash TEXT,
+	geom geometry(MULTIPOLYGON,4326),
+	PRIMARY KEY (id),
 	UNIQUE (hash)
 );
 CREATE INDEX idx_aoi_geom ON geocube.aoi USING GIST (geom);
@@ -44,8 +44,8 @@ CREATE TABLE geocube.palette (
 );
 
 CREATE TABLE geocube.variable_definitions (
-	id UUID NOT NULL, 
-	name TEXT NOT NULL, 
+	id UUID NOT NULL,
+	name TEXT NOT NULL,
 	unit TEXT NOT NULL,
 	description TEXT NOT NULL,
 	bands TEXT[],
@@ -55,7 +55,7 @@ CREATE TABLE geocube.variable_definitions (
 	max_value double precision NOT NULL,
 	palette TEXT REFERENCES geocube.palette,
 	resampling_alg geocube.resampling NOT NULL,
-	PRIMARY KEY (id), 
+	PRIMARY KEY (id),
 	UNIQUE (name)
 );
 
@@ -71,22 +71,22 @@ CREATE TABLE geocube.variable_instances (
 CREATE INDEX idx_instance_definition ON geocube.variable_instances (definition_id);
 
 CREATE TABLE geocube.containers (
-	uri TEXT NOT NULL, 
+	uri TEXT NOT NULL,
 	managed BOOLEAN NOT NULL,
 	storage_class geocube.storage_class,
 	PRIMARY KEY (uri)
 );
 
 CREATE TABLE geocube.datasets (
-	id UUID NOT NULL, 
-	record_id UUID NOT NULL, 
-	instance_id UUID NOT NULL, 
-	container_uri TEXT NOT NULL, 
+	id UUID NOT NULL,
+	record_id UUID NOT NULL,
+	instance_id UUID NOT NULL,
+	container_uri TEXT NOT NULL,
 	geog geography(POLYGON,0) NOT NULL,
 	geom geometry(POLYGON,4326) NOT NULL,
 	shape geometry(POLYGON,0) NOT NULL,
-	subdir TEXT NOT NULL, 
-	bands SMALLINT[] NOT NULL, 
+	subdir TEXT NOT NULL,
+	bands SMALLINT[] NOT NULL,
 	status geocube.dataset_status NOT NULL,
 	dtype geocube.data_types NOT NULL,
 	no_data double precision NOT NULL,
@@ -96,9 +96,9 @@ CREATE TABLE geocube.datasets (
 	real_max_value double precision NOT NULL,
 	exponent double precision not NULL,
 	overviews BOOLEAN NOT NULL,
-	PRIMARY KEY (id), 
-	FOREIGN KEY(record_id) REFERENCES geocube.records (id) MATCH FULL ON DELETE NO ACTION ON UPDATE NO ACTION, 
-	FOREIGN KEY(instance_id) REFERENCES geocube.variable_instances (id) MATCH FULL ON DELETE NO ACTION ON UPDATE NO ACTION, 
+	PRIMARY KEY (id),
+	FOREIGN KEY(record_id) REFERENCES geocube.records (id) MATCH FULL ON DELETE NO ACTION ON UPDATE NO ACTION,
+	FOREIGN KEY(instance_id) REFERENCES geocube.variable_instances (id) MATCH FULL ON DELETE NO ACTION ON UPDATE NO ACTION,
 	FOREIGN KEY(container_uri) REFERENCES geocube.containers (uri) MATCH FULL ON DELETE NO ACTION ON UPDATE NO ACTION
 );
 CREATE INDEX idx_datasets_geog ON geocube.datasets USING GIST (geog);
@@ -158,7 +158,7 @@ CREATE TABLE geocube.locked_datasets (
 	FOREIGN KEY(dataset_id) REFERENCES geocube.datasets (id) MATCH FULL ON DELETE NO ACTION ON UPDATE NO ACTION,
 	FOREIGN KEY(job_id) REFERENCES geocube.jobs (id) MATCH FULL ON DELETE CASCADE ON UPDATE NO ACTION
 );
-CREATE INDEX idx_geocube_locked_datasets_job_id ON geocube.locked_datasets (job_id);
+CREATE INDEX idx_locked_datasets_job_id ON geocube.locked_datasets (job_id);
 
 CREATE TABLE geocube.tasks (
 	id UUID NOT NULL,
