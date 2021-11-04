@@ -13,7 +13,6 @@ import (
 	"github.com/airbusgeo/geocube/internal/geocube"
 	"github.com/airbusgeo/geocube/internal/log"
 	"github.com/airbusgeo/geocube/internal/utils"
-	"github.com/airbusgeo/geocube/internal/utils/grid"
 )
 
 // HandleEvent handles TaskEvent and JobEvent for a job
@@ -211,11 +210,11 @@ func (svc *Service) csldPrepareOrders(ctx context.Context, job *geocube.Job) err
 		params.Clean()
 
 		// Get all the cells in the layout covering all the datasets locked by the job
-		var cells <-chan *grid.Cell
+		var cells <-chan geocube.StreamedCell
 		var layout *geocube.Layout
 		{
 			// Get the union of geometries of all the datasets locked by the job
-			aoi, err := txn.GetGeomUnionLockedDataset(ctx, job.ID)
+			aoi, err := txn.GetDatasetsGeometryUnion(ctx, job.ID)
 			if err != nil {
 				return fmt.Errorf("csldPrepareOrders.%w", err)
 			}
@@ -241,6 +240,9 @@ func (svc *Service) csldPrepareOrders(ctx context.Context, job *geocube.Job) err
 		// Create one task per cell
 		datasetsToBeConsolidated := utils.StringSet{}
 		for cell := range cells {
+			if cell.Error != nil {
+				return fmt.Errorf("csldPrepareOrders.%w", cell.Error)
+			}
 			// Retrieve the datasets to be consolidated
 			var datasets []*CsldDataset
 			uniqueDatasetsID := utils.StringSet{}
@@ -269,7 +271,7 @@ func (svc *Service) csldPrepareOrders(ctx context.Context, job *geocube.Job) err
 
 			// Create a basic ConsolidationContainer
 			containerBaseName := utils.URLJoin(svc.ingestionStoragePath, layout.Name+layout.ID, cell.URI, job.Payload.InstanceID)
-			containerBase, err := geocube.NewConsolidationContainer(containerBaseName, variable, params, layout, cell)
+			containerBase, err := geocube.NewConsolidationContainer(containerBaseName, variable, params, layout, cell.Cell)
 			if err != nil {
 				return fmt.Errorf("csldPrepareOrders.%w", err)
 			}
@@ -294,31 +296,22 @@ func (svc *Service) csldPrepareOrders(ctx context.Context, job *geocube.Job) err
 			// Check that datasets are available
 			checkAvailability := false
 			if checkAvailability {
-				var errs []string
+				var err error
 				for _, dataset := range datasets {
-					uri, err := uri.ParseUri(dataset.Event.URI)
-					if err != nil {
-						errs = append(errs, dataset.Event.URI+": "+err.Error())
+					uri, e := uri.ParseUri(dataset.Event.URI)
+					if e != nil {
+						err = utils.MergeErrors(true, err, fmt.Errorf(dataset.Event.URI+": %w", e))
 						continue
 					}
-					strategy, err := uri.NewStorageStrategy(ctx)
-					if err != nil {
-						errs = append(errs, dataset.Event.URI+": "+err.Error())
-						continue
-					}
-					exist, err := strategy.Exist(ctx, dataset.Event.URI)
-					if err != nil {
-						errs = append(errs, dataset.Event.URI+": "+err.Error())
-						continue
-					}
-					if !exist {
-						errs = append(errs, dataset.Event.URI+" does not exists")
+					if exist, e := uri.Exist(ctx); e != nil {
+						err = utils.MergeErrors(true, err, fmt.Errorf(dataset.Event.URI+": %w", e))
+					} else if !exist {
+						err = utils.MergeErrors(true, err, fmt.Errorf(dataset.Event.URI+" does not exists"))
 					}
 				}
-				if len(errs) > 0 {
-					return fmt.Errorf(strings.Join(errs, "\n"))
+				if err != nil {
+					return err
 				}
-
 			}
 
 			// Group datasets by records

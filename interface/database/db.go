@@ -149,8 +149,8 @@ type GeocubeBackend interface {
 	// order : by record.datetime (ascending) and record.id
 	FindDatasets(ctx context.Context, status geocube.DatasetStatus, containerURI, lockedByJobID string, instancesID, recordsID []string,
 		recordTags geocube.Metadata, fromTime, toTime time.Time, geog *proj.GeographicShape, refinedShape *proj.Shape, page, limit int, order bool) ([]*geocube.Dataset, error)
-	// GetGeomUnionLockedDataset returns the union of AOI of all the locked datasets
-	GetGeomUnionLockedDataset(ctx context.Context, lockedByJobID string) (*geom.MultiPolygon, error)
+	// GetDatasetsGeometryUnion returns the union of AOI of all the locked datasets
+	GetDatasetsGeometryUnion(ctx context.Context, lockedByJobID string) (*geom.MultiPolygon, error)
 
 	// UpdateDatasets given an instance id
 	UpdateDatasets(ctx context.Context, instanceID string, dmapping geocube.DataMapping) (map[string]int64, error)

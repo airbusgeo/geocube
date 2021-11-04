@@ -23,9 +23,18 @@ type Cell struct {
 	Ring           proj.Shape           // coordinates in the CRS
 }
 
+type StreamedURI struct {
+	URI   string
+	Error error
+}
+
 type Grid interface {
+	// Return the cell defined by the uris
 	Cell(uri string) (*Cell, error)
-	Covers(ctx context.Context, aoi *geom.MultiPolygon) (<-chan string, error)
+
+	// Covers streams uris of cells covering the AOI.
+	// The uris are unique, but the cells defined by the uris might overlap.
+	Covers(ctx context.Context, aoi *geom.MultiPolygon) (<-chan StreamedURI, error)
 }
 
 // NewGrid creates a new grid from flag and parameters (proj4 format)

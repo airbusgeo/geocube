@@ -46,7 +46,7 @@ type SingleCellGrid struct {
 }
 
 // Covers
-func (cg *SingleCellGrid) Covers(ctx context.Context, geomAOI *geom.MultiPolygon) (<-chan string, error) {
+func (cg *SingleCellGrid) Covers(ctx context.Context, geomAOI *geom.MultiPolygon) (<-chan StreamedURI, error) {
 	if geomAOI.NumCoords() == 0 {
 		return nil, nil
 	}
@@ -61,11 +61,11 @@ func (cg *SingleCellGrid) Covers(ctx context.Context, geomAOI *geom.MultiPolygon
 		return nil, fmt.Errorf("SingleCellGrid.Covers: failed to transform coord: %w", err)
 	}
 
-	// Get the bounds of the geographic AOI
-	geogAOI := geom.NewMultiPolygonFlat(geom.XY, proj.XYToFlatCoord(x, y), geomAOI.Endss())
-	b := geogAOI.Bounds()
+	// Get the bounds of the AOI in the crs
+	crsAOI := geom.NewMultiPolygonFlat(geom.XY, proj.XYToFlatCoord(x, y), geomAOI.Endss())
+	b := crsAOI.Bounds()
 	if b.IsEmpty() {
-		return nil, fmt.Errorf("SingleCellGrid.Covers: error in input geometry: the geographic bounds are empty")
+		return nil, fmt.Errorf("SingleCellGrid.Covers: error in input geometry: the bounds in the CRS of the grid are empty")
 	}
 
 	originX := b.Min(0)
@@ -74,8 +74,8 @@ func (cg *SingleCellGrid) Covers(ctx context.Context, geomAOI *geom.MultiPolygon
 	width := math.Round(math.Abs(b.Min(0)-b.Max(0)) / math.Abs(cg.resolution))
 	height := math.Round(math.Abs(b.Min(1)-b.Max(1)) / math.Abs(cg.resolution))
 
-	uris := make(chan string, 1)
-	uris <- fmt.Sprintf("%s/%s/%d/%d", utils.F64ToS(originX), utils.F64ToS(originY), int(width), int(height))
+	uris := make(chan StreamedURI, 1)
+	uris <- StreamedURI{URI: fmt.Sprintf("%s/%s/%d/%d", utils.F64ToS(originX), utils.F64ToS(originY), int(width), int(height))}
 	close(uris)
 
 	return uris, nil

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/airbusgeo/geocube/internal/log"
 	pb "github.com/airbusgeo/geocube/internal/pb"
 	gridlib "github.com/airbusgeo/geocube/internal/utils/grid"
 	"github.com/google/uuid"
@@ -63,8 +62,13 @@ func (l *Layout) ToProtobuf() *pb.Layout {
 	}
 }
 
+type StreamedCell struct {
+	*gridlib.Cell
+	Error error
+}
+
 // Covers returns all the cells of the layout covered by the AOI
-func (l *Layout) Covers(ctx context.Context, aoi *geom.MultiPolygon) (<-chan *gridlib.Cell, error) {
+func (l *Layout) Covers(ctx context.Context, aoi *geom.MultiPolygon) (<-chan StreamedCell, error) {
 	err := l.createGrid()
 	if err != nil {
 		return nil, fmt.Errorf("Covers.%w", err)
@@ -73,22 +77,22 @@ func (l *Layout) Covers(ctx context.Context, aoi *geom.MultiPolygon) (<-chan *gr
 	if err != nil {
 		return nil, err
 	}
-	cells := make(chan *gridlib.Cell)
+	cells := make(chan StreamedCell)
 	go func() {
+		defer close(cells)
 		for celluri := range cellsuri {
-			cell, err := l.grid.Cell(celluri)
+			cell, err := l.grid.Cell(celluri.URI)
 			if err != nil {
-				break
+				cells <- StreamedCell{Error: fmt.Errorf("Covers.%w", err)}
+				continue
 			}
 			select {
 			case <-ctx.Done():
-				log.Logger(ctx).Sugar().Errorf("Layout.Covers: %v", ctx.Err())
-			case cells <- cell:
-				continue
+				cells <- StreamedCell{Error: fmt.Errorf("Layout.Covers: %w", ctx.Err())}
+				return
+			case cells <- StreamedCell{Cell: cell}:
 			}
-			break
 		}
-		close(cells)
 	}()
 	return cells, nil
 }

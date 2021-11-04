@@ -198,7 +198,7 @@ func (_m *GeocubeBackend) FindDatasets(ctx context.Context, status geocube.Datas
 	panic("implement me")
 }
 
-func (_m *GeocubeBackend) GetGeomUnionLockedDataset(ctx context.Context, lockedByJobID string) (*geom.MultiPolygon, error) {
+func (_m *GeocubeBackend) GetDatasetsGeometryUnion(ctx context.Context, lockedByJobID string) (*geom.MultiPolygon, error) {
 	panic("implement me")
 }
 

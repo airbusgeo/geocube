@@ -9,7 +9,6 @@ import (
 	"runtime"
 	"strconv"
 
-	"github.com/airbusgeo/geocube/internal/log"
 	"github.com/airbusgeo/geocube/internal/utils/affine"
 	"github.com/airbusgeo/geocube/internal/utils/proj"
 	"github.com/airbusgeo/godal"
@@ -123,7 +122,6 @@ func newRegularGrid(flags []string, parameters map[string]string) (Grid, error) 
 	}
 
 	// Memory limit
-	// Resolution
 	if mem, ok := parameters["memory_limit"]; ok {
 		if grid.memoryLimit, err = strconv.Atoi(mem); err != nil {
 			return nil, invalidError("Memory limit[%s]: %w", mem, err)
@@ -168,7 +166,7 @@ func createGeometryFromWKB(g *geom.MultiPolygon, crs *godal.SpatialRef) (*godal.
 }
 
 // Covers implements Grid
-func (rg *RegularGrid) Covers(ctx context.Context, geomAOI *geom.MultiPolygon) (<-chan string, error) {
+func (rg *RegularGrid) Covers(ctx context.Context, geomAOI *geom.MultiPolygon) (<-chan StreamedURI, error) {
 	if geomAOI.NumCoords() == 0 {
 		return nil, nil
 	}
@@ -238,27 +236,25 @@ func (rg *RegularGrid) Covers(ctx context.Context, geomAOI *geom.MultiPolygon) (
 	}
 
 	// Get the coordinates of non zero pixels
-	uris := make(chan string)
+	uris := make(chan StreamedURI)
 
 	go func() {
+		defer close(uris)
 		s := img.Rect.Size()
 		i0, j0 := int(i0f), int(j0f)
 		for j := 0; j < s.Y; j++ {
 			for i := 0; i < s.X; i++ {
 				if img.Pix[j*img.Stride+i] != 0 {
-					select {
-					case <-ctx.Done():
-						log.Logger(ctx).Sugar().Errorf("RegularGrid.Covers: %v", ctx.Err())
-					case uris <- fmt.Sprintf("%d/%d", i+i0, j+j0):
-						continue
-					}
-					// Exit the loop
-					j = s.Y
-					break
+					uris <- StreamedURI{URI: fmt.Sprintf("%d/%d", i+i0, j+j0)}
 				}
 			}
+			select {
+			case <-ctx.Done():
+				uris <- StreamedURI{Error: fmt.Errorf("RegularGrid.Covers: %w", ctx.Err())}
+				return
+			default:
+			}
 		}
-		close(uris)
 	}()
 
 	return uris, nil

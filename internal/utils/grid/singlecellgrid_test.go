@@ -50,7 +50,7 @@ var _ = Describe("SingleCellGrid", func() {
 				returnedCoverErr = err
 			} else {
 				for c := range covers {
-					returnedCover = append(returnedCover, c)
+					returnedCover = append(returnedCover, c.URI)
 				}
 			}
 		})

@@ -84,7 +84,7 @@ var _ = Describe("Regular Grid", func() {
 				returnedError = err
 			} else {
 				for uri := range uris {
-					cellsuri = append(cellsuri, uri)
+					cellsuri = append(cellsuri, uri.URI)
 				}
 			}
 		})

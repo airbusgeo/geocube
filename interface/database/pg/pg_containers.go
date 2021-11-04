@@ -290,14 +290,14 @@ func (b Backend) ListActiveDatasetsID(ctx context.Context, instanceID string, re
 	return scanIdsAndClose(rows)
 }
 
-// GetGeomUnionLockedDataset implements GeocubeBackend
-func (b Backend) GetGeomUnionLockedDataset(ctx context.Context, lockedByJobID string) (*geom.MultiPolygon, error) {
+// GetDatasetsGeometryUnion implements GeocubeBackend
+func (b Backend) GetDatasetsGeometryUnion(ctx context.Context, lockedByJobID string) (*geom.MultiPolygon, error) {
 	var data []byte
 	err := b.pg.QueryRowContext(ctx,
 		"SELECT ST_AsBinary(ST_Union(d.geom)) FROM geocube.datasets d JOIN geocube.locked_datasets l ON l.dataset_id = d.id"+
 			" WHERE l.job_id=$1", lockedByJobID).Scan(&data)
 	if err != nil {
-		return nil, pqErrorFormat("GetGeomUnionLockedDataset.QueryRowContext: %w", err)
+		return nil, pqErrorFormat("GetDatasetsGeometryUnion.QueryRowContext: %w", err)
 	}
 
 	if data == nil {
@@ -306,7 +306,7 @@ func (b Backend) GetGeomUnionLockedDataset(ctx context.Context, lockedByJobID st
 
 	g, err := wkb.Unmarshal(data)
 	if err != nil {
-		return nil, pqErrorFormat("GetGeomUnionLockedDataset.Unmarshal: %w", err)
+		return nil, pqErrorFormat("GetDatasetsGeometryUnion.Unmarshal: %w", err)
 	}
 
 	switch union := g.(type) {

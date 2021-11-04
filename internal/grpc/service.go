@@ -24,7 +24,6 @@ import (
 	internal "github.com/airbusgeo/geocube/internal/svc"
 	"github.com/airbusgeo/geocube/internal/utils"
 	"github.com/airbusgeo/geocube/internal/utils/affine"
-	"github.com/airbusgeo/geocube/internal/utils/grid"
 	"github.com/airbusgeo/geocube/internal/utils/proj"
 )
 
@@ -71,7 +70,7 @@ type GeocubeService interface {
 
 	CreateLayout(ctx context.Context, layout *geocube.Layout) error
 	ListLayouts(ctx context.Context, nameLike string) ([]*geocube.Layout, error)
-	TileAOI(ctx context.Context, aoi *geocube.AOI, crs string, resolution float32, width, height int32) (<-chan *grid.Cell, error)
+	TileAOI(ctx context.Context, aoi *geocube.AOI, crs string, resolution float32, width, height int32) (<-chan geocube.StreamedCell, error)
 
 	GetXYZTile(ctx context.Context, recordsID []string, instanceID string, a, b, z int) ([]byte, error)
 	GetCubeFromRecords(ctx context.Context, recordsID [][]string, instancesID []string, crs *godal.SpatialRef, pixToCRS *affine.Affine, width, height int, format string, headersOnly bool) (internal.CubeInfo, <-chan internal.CubeSlice, error)
@@ -1049,6 +1048,9 @@ func (svc *Service) TileAOI(req *pb.TileAOIRequest, stream pb.Geocube_TileAOISer
 	// Format response
 	tiles := make([]*pb.Tile, 0, StreamTilesBatchSize)
 	for c := range cells {
+		if c.Error != nil {
+			return formatError("backend.%w", c.Error)
+		}
 		crs, err := c.CRS.WKT()
 		if err != nil {
 			return formatError("backend.%w", err)

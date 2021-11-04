@@ -15,7 +15,6 @@ import (
 	"github.com/airbusgeo/geocube/internal/geocube"
 	"github.com/airbusgeo/geocube/internal/image"
 	"github.com/airbusgeo/geocube/internal/log"
-	"github.com/airbusgeo/geocube/internal/utils/grid"
 	"github.com/airbusgeo/godal"
 	"github.com/twpayne/go-geom"
 )
@@ -461,7 +460,7 @@ func (svc *Service) ListLayouts(ctx context.Context, nameLike string) ([]*geocub
 }
 
 // TileAOI implements GeocubeService
-func (svc *Service) TileAOI(ctx context.Context, aoi *geocube.AOI, crsS string, resolution float32, width, height int32) (<-chan *grid.Cell, error) {
+func (svc *Service) TileAOI(ctx context.Context, aoi *geocube.AOI, crsS string, resolution float32, width, height int32) (<-chan geocube.StreamedCell, error) {
 	// Create Layout with a regular grid
 	layout := geocube.Layout{
 		GridParameters: geocube.Metadata{
