@@ -543,20 +543,46 @@ func (svc *Service) GetJob(ctx context.Context, jobID string) (*geocube.Job, err
 
 // RetryJob implements GeocubeService
 func (svc *Service) RetryJob(ctx context.Context, jobID string, forceAnyState bool) error {
-	if forceAnyState {
-		return svc.handleJobEvt(ctx, *geocube.NewJobEvent(jobID, geocube.RetryForced, ""))
+	job, err := svc.GetJob(ctx, jobID)
+	if err != nil {
+		return fmt.Errorf("RetryJob.%w", err)
 	}
-	return svc.handleJobEvt(ctx, *geocube.NewJobEvent(jobID, geocube.ConsolidationRetried, ""))
+	event := geocube.ConsolidationRetried
+	if forceAnyState {
+		event = geocube.RetryForced
+	}
+	// Check that the event can be triggered (job is not persisted)
+	if err := job.Trigger(*geocube.NewJobEvent(jobID, event, "")); err != nil {
+		return fmt.Errorf("RetryJob.%w", err)
+	}
+	return svc.publishEvent(ctx, event, job, "")
 }
 
 // CancelJob implements GeocubeService
 func (svc *Service) CancelJob(ctx context.Context, jobID string) error {
-	return svc.handleJobEvt(ctx, *geocube.NewJobEvent(jobID, geocube.CancelledByUser, ""))
+	job, err := svc.GetJob(ctx, jobID)
+	if err != nil {
+		return fmt.Errorf("CancelJob.%w", err)
+	}
+	// Check that the event can be triggered (job is not persisted)
+	if err := job.Trigger(*geocube.NewJobEvent(jobID, geocube.CancelledByUser, "")); err != nil {
+		return fmt.Errorf("CancelJob.%w", err)
+	}
+	return svc.publishEvent(ctx, geocube.CancelledByUser, job, "")
 }
 
 // ContinueJob implements GeocubeService
 func (svc *Service) ContinueJob(ctx context.Context, jobID string) error {
-	return svc.handleJobEvt(ctx, *geocube.NewJobEvent(jobID, geocube.Continue, ""))
+	job, err := svc.GetJob(ctx, jobID)
+	if err != nil {
+		return fmt.Errorf("ContinueJob.%w", err)
+	}
+	// Check that the event can be triggered (job is not persisted)
+	if err := job.Trigger(*geocube.NewJobEvent(jobID, geocube.Continue, "")); err != nil {
+		return fmt.Errorf("ContinueJob.%w", err)
+	}
+
+	return svc.publishEvent(ctx, geocube.Continue, job, "")
 }
 
 // CleanJobs implements GeocubeService
