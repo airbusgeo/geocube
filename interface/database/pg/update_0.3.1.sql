@@ -16,3 +16,6 @@ ALTER TABLE geocube.jobs ADD COLUMN waiting BOOLEAN DEFAULT FALSE NOT NULL;
 
 -- Commit: Add DeleteLayout, remove layout.id
 ALTER TABLE geocube.layouts DROP COLUMN id;
+
+-- Commit: ConsolidationParams: downsampling=>resampling
+ALTER TABLE geocube.consolidation_params RENAME COLUMN downsampling_alg TO resampling_alg;

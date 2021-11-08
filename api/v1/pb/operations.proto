@@ -77,7 +77,7 @@ message ConsolidationParams{
     DataFormat   dformat          = 1;
     double       exponent         = 2; // 1: linear scaling (RealMax - RealMin) * pow( (Value - Min) / (Max - Min), Exponent) + RealMin
     bool         create_overviews = 3;
-    Resampling   downsampling_alg = 4;
+    Resampling   resampling_alg   = 4;
     Compression  compression      = 5;
     bool         bands_interleave = 6;
     StorageClass storage_class    = 7;

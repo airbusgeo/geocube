@@ -23,7 +23,7 @@ type ConsolidationParams struct {
 	Exponent        float64
 	Compression     Compression
 	Overviews       bool
-	DownsamplingAlg Resampling
+	ResamplingAlg   Resampling
 	BandsInterleave bool
 	StorageClass    StorageClass
 }
@@ -33,8 +33,8 @@ type ConsolidationParams struct {
 func NewConsolidationParamsFromProtobuf(pbp *pb.ConsolidationParams) (*ConsolidationParams, error) {
 	dformat := NewDataFormatFromProtobuf(pbp.GetDformat())
 
-	if pbp.GetDownsamplingAlg() == pb.Resampling_UNDEFINED {
-		return nil, NewValidationError("Downsampling algorithm cannot be undefined")
+	if pbp.GetResamplingAlg() == pb.Resampling_UNDEFINED {
+		return nil, NewValidationError("Resampling algorithm cannot be undefined")
 	}
 
 	c := ConsolidationParams{
@@ -43,7 +43,7 @@ func NewConsolidationParamsFromProtobuf(pbp *pb.ConsolidationParams) (*Consolida
 		Exponent:         pbp.GetExponent(),
 		Compression:      Compression(pbp.GetCompression()),
 		Overviews:        pbp.GetCreateOverviews(),
-		DownsamplingAlg:  Resampling(pbp.GetDownsamplingAlg()),
+		ResamplingAlg:    Resampling(pbp.GetResamplingAlg()),
 		BandsInterleave:  pbp.GetBandsInterleave(),
 		StorageClass:     StorageClass(pbp.GetStorageClass()),
 	}
@@ -60,7 +60,7 @@ func (c *ConsolidationParams) ToProtobuf() *pb.ConsolidationParams {
 		Dformat:         c.DFormat.ToProtobuf(),
 		Exponent:        c.Exponent,
 		CreateOverviews: c.Overviews,
-		DownsamplingAlg: pb.Resampling(c.DownsamplingAlg),
+		ResamplingAlg:   pb.Resampling(c.ResamplingAlg),
 		Compression:     pb.ConsolidationParams_Compression(c.Compression),
 		BandsInterleave: c.BandsInterleave,
 		StorageClass:    pb.StorageClass(c.StorageClass),

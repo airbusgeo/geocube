@@ -164,7 +164,7 @@ func NewConsolidationContainer(URI string, variable *Variable, params *Consolida
 		InterleaveBands:   params.BandsInterleave,
 		InterleaveRecords: true,
 		CreateOverviews:   params.Overviews,
-		ResamplingAlg:     params.DownsamplingAlg,
+		ResamplingAlg:     params.ResamplingAlg,
 		Compression:       params.Compression,
 		StorageClass:      params.StorageClass,
 	}, nil
@@ -207,7 +207,7 @@ func (d *ConsolidationDataset) InGroupOfContainers(c *ConsolidationContainer) bo
 }
 
 // NeedsReconsolidation returns true if the dataset must be reconsolidated
-// Cannot check whether the compression, downsampling_alg or the band interleave changed
+// Cannot check whether the compression, resampling_alg or the band interleave changed
 func (d *ConsolidationDataset) NeedsReconsolidation(c *ConsolidationContainer) bool {
 	if !d.DatasetFormat.Equals(c.DatasetFormat) || d.Overviews != c.CreateOverviews {
 		return true
@@ -224,7 +224,7 @@ func (d *ConsolidationDataset) NeedsReconsolidation(c *ConsolidationContainer) b
 		str += ", the band interleave"
 	}
 	if d.Overviews {
-		str += ", the downsampling_alg"
+		str += ", the resampling_alg"
 	}
 	fmt.Println(str)
 	return false
