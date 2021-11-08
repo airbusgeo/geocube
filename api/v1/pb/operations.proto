@@ -102,7 +102,7 @@ message GetConsolidationParamsResponse {
 message ConsolidateRequest {
     string job_name     = 1;
     string instance_id  = 2;
-    string layout_id    = 3;
+    string layout_name  = 7;
     int32  step_by_step = 6;
 
     oneof records_lister{

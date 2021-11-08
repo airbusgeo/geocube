@@ -454,6 +454,13 @@ func (svc *Service) CreateLayout(ctx context.Context, layout *geocube.Layout) er
 	})
 }
 
+// DeleteLayout implements GeocubeService
+func (svc *Service) DeleteLayout(ctx context.Context, name string) error {
+	return svc.unitOfWork(ctx, func(txn database.GeocubeTxBackend) error {
+		return txn.DeleteLayout(ctx, name)
+	})
+}
+
 // ListLayouts implements GeocubeService
 func (svc *Service) ListLayouts(ctx context.Context, nameLike string) ([]*geocube.Layout, error) {
 	return svc.db.FindLayouts(ctx, nameLike)

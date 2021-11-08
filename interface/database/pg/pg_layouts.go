@@ -12,9 +12,9 @@ import (
 // CreateLayout implements GeocubeBackend
 func (b Backend) CreateLayout(ctx context.Context, layout *geocube.Layout) error {
 	_, err := b.pg.ExecContext(ctx,
-		"INSERT INTO geocube.layouts (id, name, grid_flags, grid_parameters, block_x_size, block_y_size, max_records)"+
-			" VALUES ($1, $2, $3, $4, $5, $6, $7)",
-		layout.ID, layout.Name, pq.Array(layout.GridFlags), layout.GridParameters, layout.BlockXSize, layout.BlockYSize, layout.MaxRecords)
+		"INSERT INTO geocube.layouts (name, grid_flags, grid_parameters, block_x_size, block_y_size, max_records)"+
+			" VALUES ($1, $2, $3, $4, $5, $6)",
+		layout.Name, pq.Array(layout.GridFlags), layout.GridParameters, layout.BlockXSize, layout.BlockYSize, layout.MaxRecords)
 
 	switch pqErrorCode(err) {
 	case noError:
@@ -28,24 +28,24 @@ func (b Backend) CreateLayout(ctx context.Context, layout *geocube.Layout) error
 }
 
 // DeleteLayout implements GeocubeBackend
-func (b Backend) DeleteLayout(ctx context.Context, layoutID string) error {
-	return b.delete(ctx, "layouts", "id", layoutID)
+func (b Backend) DeleteLayout(ctx context.Context, name string) error {
+	return b.delete(ctx, "layouts", "name", name)
 }
 
 // ReadLayout implements GeocubeBackend
-func (b Backend) ReadLayout(ctx context.Context, layoutID string) (*geocube.Layout, error) {
-	var l geocube.Layout
+func (b Backend) ReadLayout(ctx context.Context, name string) (*geocube.Layout, error) {
+	l := geocube.Layout{Name: name}
 
 	// Get Layout
 	err := b.pg.QueryRowContext(ctx,
-		"SELECT id, name, grid_flags, grid_parameters, block_x_size, block_y_size, max_records "+
-			"FROM geocube.layouts WHERE id = $1", layoutID).
-		Scan(&l.ID, &l.Name, pq.Array(l.GridFlags), &l.GridParameters, &l.BlockXSize, &l.BlockYSize, &l.MaxRecords)
+		"SELECT grid_flags, grid_parameters, block_x_size, block_y_size, max_records "+
+			"FROM geocube.layouts WHERE name = $1", name).
+		Scan(pq.Array(l.GridFlags), &l.GridParameters, &l.BlockXSize, &l.BlockYSize, &l.MaxRecords)
 
 	switch {
 	case err == sql.ErrNoRows:
 		// Layout has not been found
-		return nil, geocube.NewEntityNotFound("Layout", "id", layoutID, "")
+		return nil, geocube.NewEntityNotFound("Layout", "name", name, "")
 
 	case err != nil:
 		return nil, pqErrorFormat("ReadLayout: %w", err)
@@ -62,7 +62,7 @@ func (b Backend) FindLayouts(ctx context.Context, nameLike string) ([]*geocube.L
 		wc.append(" name "+operator+" $%d", nameLike)
 	}
 	rows, err := b.pg.QueryContext(ctx,
-		"SELECT id, name, grid_flags, grid_parameters, block_x_size, block_y_size, max_records FROM geocube.layouts"+wc.WhereClause(), wc.Parameters...)
+		"SELECT name, grid_flags, grid_parameters, block_x_size, block_y_size, max_records FROM geocube.layouts"+wc.WhereClause(), wc.Parameters...)
 
 	if err != nil {
 		return nil, pqErrorFormat("FindLayouts: %w", err)
@@ -72,7 +72,7 @@ func (b Backend) FindLayouts(ctx context.Context, nameLike string) ([]*geocube.L
 	layouts := []*geocube.Layout{}
 	for rows.Next() {
 		var l geocube.Layout
-		if err := rows.Scan(&l.ID, &l.Name, pq.Array(l.GridFlags), &l.GridParameters, &l.BlockXSize, &l.BlockYSize, &l.MaxRecords); err != nil {
+		if err := rows.Scan(&l.Name, pq.Array(l.GridFlags), &l.GridParameters, &l.BlockXSize, &l.BlockYSize, &l.MaxRecords); err != nil {
 			return nil, fmt.Errorf("FindLayouts: %w", err)
 		}
 		layouts = append(layouts, &l)

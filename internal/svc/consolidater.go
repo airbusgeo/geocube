@@ -222,7 +222,7 @@ func (svc *Service) csldPrepareOrders(ctx context.Context, job *geocube.Job) err
 			start = time.Now()
 
 			// Get the layout
-			layout, err = txn.ReadLayout(ctx, job.Payload.LayoutID)
+			layout, err = txn.ReadLayout(ctx, job.Payload.Layout)
 			if err != nil {
 				return fmt.Errorf("csldPrepareOrders.%w", err)
 			}
@@ -270,7 +270,7 @@ func (svc *Service) csldPrepareOrders(ctx context.Context, job *geocube.Job) err
 			}
 
 			// Create a basic ConsolidationContainer
-			containerBaseName := utils.URLJoin(svc.ingestionStoragePath, layout.Name+layout.ID, cell.URI, job.Payload.InstanceID)
+			containerBaseName := utils.URLJoin(svc.ingestionStoragePath, layout.Name, cell.URI, job.Payload.InstanceID)
 			containerBase, err := geocube.NewConsolidationContainer(containerBaseName, variable, params, layout, cell.Cell)
 			if err != nil {
 				return fmt.Errorf("csldPrepareOrders.%w", err)

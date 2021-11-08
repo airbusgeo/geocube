@@ -69,6 +69,7 @@ type GeocubeService interface {
 	CleanJobs(ctx context.Context, nameLike string, state *geocube.JobState) (int, error)
 
 	CreateLayout(ctx context.Context, layout *geocube.Layout) error
+	DeleteLayout(ctx context.Context, name string) error
 	ListLayouts(ctx context.Context, nameLike string) ([]*geocube.Layout, error)
 	TileAOI(ctx context.Context, aoi *geocube.AOI, crs string, resolution float32, width, height int32) (<-chan geocube.StreamedCell, error)
 
@@ -204,7 +205,7 @@ func (svc *Service) CreateRecords(ctx context.Context, req *pb.CreateRecordsRequ
 
 // DeleteRecords deletes a batch of records iif no dataset has a reference on
 func (svc *Service) DeleteRecords(ctx context.Context, req *pb.DeleteRecordsRequest) (*pb.DeleteRecordsResponse, error) {
-	// Test whether pb.ids are uuid
+	// Check that pb.ids are uuid
 	for _, id := range req.Ids {
 		if _, err := uuid.Parse(id); err != nil {
 			return nil, newValidationError("Invalid uuid: " + err.Error())
@@ -311,7 +312,7 @@ func (svc *Service) InstantiateVariable(ctx context.Context, req *pb.Instantiate
 		return nil, formatError("backend.%w", err)
 	}
 
-	// Test whether pb.id is uuid
+	// Check that pb.id is uuid
 	if _, err := uuid.Parse(req.GetVariableId()); err != nil {
 		return nil, newValidationError("Invalid uuid: " + err.Error())
 	}
@@ -391,7 +392,7 @@ func optionalString(value *wrappers.StringValue) *string {
 
 // UpdateVariable updates a variable
 func (svc *Service) UpdateVariable(ctx context.Context, req *pb.UpdateVariableRequest) (*pb.UpdateVariableResponse, error) {
-	// Test whether pb.id is uuid
+	// Check that pb.id is uuid
 	if _, err := uuid.Parse(req.GetId()); err != nil {
 		return nil, newValidationError("Invalid uuid: " + err.Error())
 	}
@@ -409,7 +410,7 @@ func (svc *Service) UpdateVariable(ctx context.Context, req *pb.UpdateVariableRe
 
 // UpdateInstance updates the name and metadata of the instance with the given id
 func (svc *Service) UpdateInstance(ctx context.Context, req *pb.UpdateInstanceRequest) (*pb.UpdateInstanceResponse, error) {
-	// Test whether pb.id is uuid
+	// Check that pb.id is uuid
 	if _, err := uuid.Parse(req.GetId()); err != nil {
 		return nil, newValidationError("Invalid uuid: " + err.Error())
 	}
@@ -425,7 +426,7 @@ func (svc *Service) UpdateInstance(ctx context.Context, req *pb.UpdateInstanceRe
 
 // DeleteVariable deletes the variable and all its instances iif not used anymore
 func (svc *Service) DeleteVariable(ctx context.Context, req *pb.DeleteVariableRequest) (*pb.DeleteVariableResponse, error) {
-	// Test whether pb.id is uuid
+	// Check that pb.id is uuid
 	if _, err := uuid.Parse(req.GetId()); err != nil {
 		return nil, newValidationError("Invalid uuid: " + err.Error())
 	}
@@ -441,7 +442,7 @@ func (svc *Service) DeleteVariable(ctx context.Context, req *pb.DeleteVariableRe
 
 // DeleteInstance deletes the instance if not used anymore
 func (svc *Service) DeleteInstance(ctx context.Context, req *pb.DeleteInstanceRequest) (*pb.DeleteInstanceResponse, error) {
-	// Test whether pb.id is uuid
+	// Check that pb.id is uuid
 	if _, err := uuid.Parse(req.GetId()); err != nil {
 		return nil, newValidationError("Invalid uuid: " + err.Error())
 	}
@@ -503,7 +504,7 @@ func (svc *Service) IngestDatasets(req *pb.IngestDatasetsRequest, stream pb.Geoc
 
 // GetConsolidationParams reads the configuration parameters associated to a variable
 func (svc *Service) GetConsolidationParams(ctx context.Context, req *pb.GetConsolidationParamsRequest) (*pb.GetConsolidationParamsResponse, error) {
-	// Test whether pb.Id is uuid
+	// Check that pb.Id is uuid
 	if _, err := uuid.Parse(req.VariableId); err != nil {
 		return nil, newValidationError("Invalid uuid " + req.VariableId + ": " + err.Error())
 	}
@@ -518,7 +519,7 @@ func (svc *Service) GetConsolidationParams(ctx context.Context, req *pb.GetConso
 
 // ConfigConsolidation configures the consolidation parameters associated to a variable
 func (svc *Service) ConfigConsolidation(ctx context.Context, req *pb.ConfigConsolidationRequest) (*pb.ConfigConsolidationResponse, error) {
-	// Test whether pb.variableId is uuid
+	// Check that pb.variableId is uuid
 	if _, err := uuid.Parse(req.GetVariableId()); err != nil {
 		return nil, newValidationError("Invalid uuid " + req.GetVariableId() + ": " + err.Error())
 	}
@@ -537,7 +538,7 @@ func (svc *Service) ConfigConsolidation(ctx context.Context, req *pb.ConfigConso
 
 // Consolidate starts a consolidation job
 func (svc *Service) Consolidate(ctx context.Context, req *pb.ConsolidateRequest) (*pb.ConsolidateResponse, error) {
-	// Test whether ids are uuid
+	// Check that ids are uuid
 	for _, id := range req.GetRecords().GetIds() {
 		if _, err := uuid.Parse(id); err != nil {
 			return nil, newValidationError("Invalid Record.uuid " + id + ": " + err.Error())
@@ -546,12 +547,9 @@ func (svc *Service) Consolidate(ctx context.Context, req *pb.ConsolidateRequest)
 	if _, err := uuid.Parse(req.GetInstanceId()); err != nil {
 		return nil, newValidationError("Invalid Instance.uuid " + req.GetInstanceId() + ": " + err.Error())
 	}
-	if _, err := uuid.Parse(req.GetLayoutId()); err != nil {
-		return nil, newValidationError("Invalid Layout.uuid " + req.GetLayoutId() + ": " + err.Error())
-	}
 
 	// Create the job
-	job := geocube.NewConsolidationJob(req.GetJobName(), req.GetLayoutId(), req.GetInstanceId(), int(req.GetStepByStep()))
+	job := geocube.NewConsolidationJob(req.GetJobName(), req.GetLayoutName(), req.GetInstanceId(), int(req.GetStepByStep()))
 
 	// Consolidate
 	var err error
@@ -699,7 +697,7 @@ func (svc *Service) prepareGetCube(req *pb.GetCubeRequest) (*cubeInfo, error) {
 	if len(req.GetInstancesId()) == 0 {
 		return nil, newValidationError("At least one instance must be provided")
 	}
-	// Test whether ids are uuid and convert to [][]string
+	// Check that ids are uuid and convert to [][]string
 	var gids [][]string
 	for _, id := range req.GetRecords().GetIds() {
 		gids = append(gids, []string{id})
@@ -967,7 +965,7 @@ func divideInChunks(header *pb.ImageHeader, image *geocube.Bitmap) []*pb.GetCube
 func (svc *Service) GetXYZTile(ctx context.Context, req *pb.GetTileRequest) (*pb.GetTileResponse, error) {
 	var err error
 
-	// Test whether ids are uuid
+	// Check that id is uuid
 	if _, err = uuid.Parse(req.GetInstanceId()); err != nil {
 		return nil, newValidationError("Invalid Instance.uuid " + req.GetInstanceId() + ": " + err.Error())
 	}
@@ -1009,7 +1007,17 @@ func (svc *Service) CreateLayout(ctx context.Context, req *pb.CreateLayoutReques
 	}
 
 	// Format response
-	return &pb.CreateLayoutResponse{Id: layout.ID}, nil
+	return &pb.CreateLayoutResponse{}, nil
+}
+
+// DeleteLayout
+func (svc *Service) DeleteLayout(ctx context.Context, req *pb.DeleteLayoutRequest) (*pb.DeleteLayoutResponse, error) {
+	if err := svc.gsvc.DeleteLayout(ctx, req.GetName()); err != nil {
+		return nil, formatError("backend.%w", err)
+	}
+
+	// Format response
+	return &pb.DeleteLayoutResponse{}, nil
 }
 
 // ListLayouts lists layouts with name like nameLike

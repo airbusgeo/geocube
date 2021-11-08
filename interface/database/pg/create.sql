@@ -108,15 +108,13 @@ CREATE INDEX idx_datasets_record ON geocube.datasets (record_id);
 CREATE INDEX idx_datasets_instance ON geocube.datasets (instance_id);
 
 CREATE TABLE geocube.layouts (
-	id UUID NOT NULL,
 	name TEXT NOT NULL,
 	grid_flags TEXT[],
 	grid_parameters HSTORE,
 	block_x_size INTEGER DEFAULT '256' NOT NULL,
 	block_y_size INTEGER DEFAULT '256' NOT NULL,
 	max_records INTEGER DEFAULT '1024' NOT NULL,
-	PRIMARY KEY (id),
-	UNIQUE (name)
+	PRIMARY KEY (name)
 );
 
 CREATE TABLE geocube.jobs (
@@ -172,11 +170,11 @@ CREATE INDEX idx_tasks_job ON geocube.tasks (job_id);
 
 -- CREATE TABLE geocube.dataset_layouts (
 -- 	dataset_id UUID NOT NULL,
--- 	layout_id UUID NOT NULL,
+-- 	layout_name TEXT NOT NULL,
 -- 	cell_id TEXT NOT NULL,
 -- 	PRIMARY KEY (dataset_id),
 -- 	FOREIGN KEY(dataset_id) REFERENCES geocube.datasets (id) MATCH FULL ON DELETE CASCADE ON UPDATE CASCADE,
--- 	FOREIGN KEY(layout_id) REFERENCES geocube.layouts (id) MATCH FULL ON DELETE NO ACTION ON UPDATE NO ACTION
+-- 	FOREIGN KEY(layout_name) REFERENCES geocube.layouts (name) MATCH FULL ON DELETE NO ACTION ON UPDATE NO ACTION
 -- );
 
 

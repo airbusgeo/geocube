@@ -159,9 +159,9 @@ type GeocubeBackend interface {
 	// CreateLayout creates the layout in the database
 	CreateLayout(ctx context.Context, layout *geocube.Layout) error
 	// DeleteLayout deletes the layout from the database
-	DeleteLayout(ctx context.Context, layoutID string) error
+	DeleteLayout(ctx context.Context, name string) error
 	// ReadLayout retrieve the layout
-	ReadLayout(ctx context.Context, layoutID string) (*geocube.Layout, error)
+	ReadLayout(ctx context.Context, name string) (*geocube.Layout, error)
 	// FindLayout retrieves the layouts (support "*?" and "(?i)" suffix for case insensitivity)
 	// Raise geocube.EntityNotFound
 	FindLayouts(ctx context.Context, nameLike string) ([]*geocube.Layout, error)

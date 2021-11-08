@@ -6,12 +6,10 @@ import (
 
 	pb "github.com/airbusgeo/geocube/internal/pb"
 	gridlib "github.com/airbusgeo/geocube/internal/utils/grid"
-	"github.com/google/uuid"
 	"github.com/twpayne/go-geom"
 )
 
 type Layout struct {
-	ID   string
 	Name string
 
 	// External layout: Grid:Cell (CRS)
@@ -28,7 +26,6 @@ type Layout struct {
 // Only returns validationError
 func NewLayoutFromProtobuf(pbl *pb.Layout) (*Layout, error) {
 	l := Layout{
-		ID:             uuid.New().String(),
 		Name:           pbl.GetName(),
 		GridFlags:      pbl.GetGridFlags(),
 		GridParameters: pbl.GetGridParameters(),
@@ -52,7 +49,6 @@ func NewLayoutFromProtobuf(pbl *pb.Layout) (*Layout, error) {
 // ToProtobuf converts a layout to protobuf
 func (l *Layout) ToProtobuf() *pb.Layout {
 	return &pb.Layout{
-		Id:             l.ID,
 		Name:           l.Name,
 		GridFlags:      l.GridFlags,
 		GridParameters: l.GridParameters,
@@ -99,14 +95,14 @@ func (l *Layout) Covers(ctx context.Context, aoi *geom.MultiPolygon) (<-chan Str
 
 // validate returns an error if layout has an invalid format
 func (l *Layout) validate() error {
-	if _, err := uuid.Parse(l.ID); err != nil {
-		return NewValidationError("Invalid uuid: " + l.ID)
+	if !isValidURN(l.Name) {
+		return NewValidationError("invalid name: " + l.Name)
 	}
 	if l.BlockXSize <= 0 || l.BlockYSize <= 0 {
-		return NewValidationError("Blocksize must be positive")
+		return NewValidationError("blocksize must be positive")
 	}
 	if l.MaxRecords <= 0 {
-		return NewValidationError("MaxRecords must be positive")
+		return NewValidationError("maxRecords must be positive")
 	}
 	return nil
 }
@@ -117,7 +113,7 @@ func (l *Layout) createGrid() error {
 		var err error
 		l.grid, err = gridlib.NewGrid(l.GridFlags, l.GridParameters)
 		if err != nil {
-			return NewValidationError("Invalid grid flags/parameters: " + err.Error())
+			return NewValidationError("invalid grid flags/parameters: " + err.Error())
 		}
 	}
 	return nil

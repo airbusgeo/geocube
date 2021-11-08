@@ -50,7 +50,7 @@ const (
 
 // JobPayload contains all the information to process a job
 type JobPayload struct {
-	LayoutID   string `json:"layout_id,omitempty"`
+	Layout     string `json:"layout,omitempty"`
 	InstanceID string `json:"instance_id,omitempty"`
 	ParamsID   string `json:"params_id,omitempty"`
 	Err        string `json:"error,omitempty"`
@@ -121,7 +121,7 @@ func NewJob(id string) *Job {
 }
 
 // NewConsolidationJob creates a new consolidation Job
-func NewConsolidationJob(jobName, layoutID, instanceID string, stepByStep int) *Job {
+func NewConsolidationJob(jobName, layout, instanceID string, stepByStep int) *Job {
 	id := uuid.New().String()
 	j := &Job{
 		persistenceState: persistenceStateNEW,
@@ -133,7 +133,7 @@ func NewConsolidationJob(jobName, layoutID, instanceID string, stepByStep int) *
 		ActiveTasks:      0,
 		FailedTasks:      0,
 		Payload: JobPayload{
-			LayoutID:   layoutID,
+			Layout:     layout,
 			InstanceID: instanceID,
 			ParamsID:   id, // By default ParamsID is JobID
 		},

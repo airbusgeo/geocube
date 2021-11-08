@@ -210,11 +210,11 @@ func (_m *GeocubeBackend) CreateLayout(ctx context.Context, layout *geocube.Layo
 	panic("implement me")
 }
 
-func (_m *GeocubeBackend) DeleteLayout(ctx context.Context, layoutID string) error {
+func (_m *GeocubeBackend) DeleteLayout(ctx context.Context, name string) error {
 	panic("implement me")
 }
 
-func (_m *GeocubeBackend) ReadLayout(ctx context.Context, layoutID string) (*geocube.Layout, error) {
+func (_m *GeocubeBackend) ReadLayout(ctx context.Context, name string) (*geocube.Layout, error) {
 	panic("implement me")
 }
 

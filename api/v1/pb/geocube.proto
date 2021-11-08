@@ -64,6 +64,7 @@ service Geocube {
 
 // Layout
     rpc CreateLayout(CreateLayoutRequest)        returns (CreateLayoutResponse){}
+    rpc DeleteLayout(DeleteLayoutRequest)        returns (DeleteLayoutResponse){}
     rpc ListLayouts(ListLayoutsRequest)          returns (ListLayoutsResponse){}
     rpc TileAOI(TileAOIRequest)                  returns (stream TileAOIResponse){}
 
