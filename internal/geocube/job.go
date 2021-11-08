@@ -390,7 +390,7 @@ func (j *Job) triggerConsolidation(evt JobEvent) bool {
 	case JobStateCONSOLIDATIONRETRYING:
 		switch evt.Status {
 		case ConsolidationRetryFailed:
-			return j.changeState(JobStateFAILED)
+			return j.changeState(JobStateCONSOLIDATIONFAILED)
 		case ConsolidationOrdersPrepared:
 			return j.changeState(JobStateCONSOLIDATIONINPROGRESS)
 		}
