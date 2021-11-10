@@ -5,6 +5,7 @@ option go_package = "./pb;geocube";
 import "pb/dataformat.proto";
 import "pb/records.proto";
 import "pb/layouts.proto";
+import "pb/datasetMeta.proto";
 
 message Shape{
     int32 dim1 = 1;
@@ -18,15 +19,16 @@ enum ByteOrder{
 }
 
 message ImageHeader{
-    Shape            shape       = 1;
-    DataFormat.Dtype dtype       = 2;
-    bytes            data        = 3;
-    int32            nb_parts    = 4;
-    int64            size        = 5;
-    ByteOrder        order       = 6;
-    bool             compression = 7; // Deflate compressed data format, described in RFC 1951
-    repeated Record  records     = 8;
-    string           error       = 9;
+    Shape                shape        = 1;
+    DataFormat.Dtype     dtype        = 2;
+    bytes                data         = 3;
+    int32                nb_parts     = 4;
+    int64                size         = 5;
+    ByteOrder            order        = 6;
+    bool                 compression  = 7; // Deflate compressed data format, described in RFC 1951
+    repeated Record      records      = 8;
+    DatasetMeta          dataset_meta = 10;
+    string               error        = 9;
 }
 
 message ImageChunk{
