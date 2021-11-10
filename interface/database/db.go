@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/airbusgeo/geocube/internal/utils/grid"
+
 	"github.com/airbusgeo/geocube/internal/geocube"
 	"github.com/airbusgeo/geocube/internal/utils/proj"
 	"github.com/twpayne/go-geom"
@@ -154,6 +156,9 @@ type GeocubeBackend interface {
 
 	// UpdateDatasets given an instance id
 	UpdateDatasets(ctx context.Context, instanceID string, dmapping geocube.DataMapping) (map[string]int64, error)
+
+	// ComputeValidShapeFromCell compute valid shape in right crs from cell ring
+	ComputeValidShapeFromCell(ctx context.Context, datasetIDS []string, cell *grid.Cell) (*proj.Shape, error)
 
 	/******************** Layouts *************************/
 	// CreateLayout creates the layout in the database

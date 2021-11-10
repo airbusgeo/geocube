@@ -7,6 +7,8 @@ import (
 	"io"
 	"strings"
 
+	"github.com/airbusgeo/geocube/internal/utils/proj"
+
 	"github.com/airbusgeo/geocube/internal/utils/grid"
 )
 
@@ -106,9 +108,10 @@ type ConsolidationEvent struct {
 
 // ConsolidationRecord contains the date and the list of datasets to consolidate
 type ConsolidationRecord struct {
-	ID       string
-	DateTime string //"2018-01-01 12:00:00"
-	Datasets []ConsolidationDataset
+	ID         string
+	DateTime   string //"2018-01-01 12:00:00"
+	Datasets   []ConsolidationDataset
+	ValidShape *proj.Shape
 }
 
 // ConsolidationDataset contains all the information on a dataset to consolidate it

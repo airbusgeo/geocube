@@ -257,6 +257,7 @@ func (svc *Service) csldPrepareOrders(ctx context.Context, job *geocube.Job) err
 				if len(ds) == 0 {
 					continue
 				}
+
 				// Create InputDatasets
 				datasets = make([]*CsldDataset, 0, len(ds))
 				for _, dataset := range ds {
@@ -317,11 +318,19 @@ func (svc *Service) csldPrepareOrders(ctx context.Context, job *geocube.Job) err
 			// Group datasets by records
 			records := make([]geocube.ConsolidationRecord, 0, len(datasets))
 			for i := 0; i < len(datasets); {
+				var datasetIDS []string
 				record := geocube.ConsolidationRecord{ID: datasets[i].RecordID, DateTime: recordsTime[datasets[i].RecordID]}
 				for ; i < len(datasets) && record.ID == datasets[i].RecordID; i++ {
 					record.Datasets = append(record.Datasets, datasets[i].Event)
+					datasetIDS = append(datasetIDS, datasets[i].ID)
 					datasetsToBeConsolidated.Push(datasets[i].ID)
 				}
+
+				recordValidShape, err := svc.db.ComputeValidShapeFromCell(ctx, datasetIDS, cell.Cell)
+				if err != nil {
+					return fmt.Errorf("failed to compute valid shape from cell: %w", err)
+				}
+				record.ValidShape = recordValidShape
 				records = append(records, record)
 			}
 
@@ -540,7 +549,7 @@ func (svc *Service) csldIndex(ctx context.Context, job *geocube.Job) (err error)
 			// Specialize incompleteDataset
 			newDatasets := make([]*geocube.Dataset, 0, len(records))
 			for i, r := range records {
-				newDataset, err := geocube.NewDatasetFromIncomplete(*incompleteDataset, r.ID, "GTIFF_DIR:"+strconv.Itoa(i+1))
+				newDataset, err := geocube.NewDatasetFromIncomplete(*incompleteDataset, r, "GTIFF_DIR:"+strconv.Itoa(i+1))
 				if err != nil {
 					return fmt.Errorf("csldIndex.%w", err)
 				}

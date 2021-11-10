@@ -2,7 +2,10 @@ package pg
 
 import (
 	"context"
+	"errors"
 	"time"
+
+	"github.com/airbusgeo/geocube/internal/utils/grid"
 
 	"github.com/airbusgeo/geocube/internal/geocube"
 	"github.com/airbusgeo/geocube/internal/utils/proj"
@@ -317,6 +320,42 @@ func (b Backend) GetDatasetsGeometryUnion(ctx context.Context, lockedByJobID str
 	default:
 		return nil, geocube.NewShouldNeverHappen("Wrong type for union of polygon")
 	}
+}
+
+func (b Backend) ComputeValidShapeFromCell(ctx context.Context, datasetIDS []string, cell *grid.Cell) (*proj.Shape, error) {
+	srid := proj.Srid(cell.CRS)
+
+	cellRingValue, err := cell.Ring.Value()
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := b.pg.QueryContext(ctx,
+		"SELECT ST_Intersection(ST_Union(ST_Transform(d.shape,$1::int)),$2) FROM geocube.datasets d  WHERE d.id = ANY($3)", srid, cellRingValue, pq.Array(datasetIDS))
+	if err != nil {
+		return nil, pqErrorFormat("ComputeValidShapeFromCell: %w", err)
+	}
+	defer func() {
+		if e := rows.Close(); e != nil && err == nil {
+			err = e
+		}
+	}()
+
+	// Parse rows
+	computeShape := proj.Shape{}
+	nbShapeReturned := 0
+	for rows.Next() {
+		if nbShapeReturned > 1 {
+			return nil, errors.New("more than one geometry was returned")
+		}
+		nbShapeReturned++
+		err := rows.Scan(&computeShape)
+		if err != nil {
+			return nil, pqErrorFormat("ComputeValidShapeFromCell.scan: %w", err)
+		}
+	}
+
+	return &computeShape, nil
 }
 
 // UpdateDatasets implements GeocubeBackend

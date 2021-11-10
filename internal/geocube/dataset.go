@@ -98,11 +98,15 @@ func IncompleteDatasetFromConsolidation(c *ConsolidationContainer, instanceID st
 
 // NewDatasetFromIncomplete creates a new dataset from dataset created by NewIncompleteDatasetFromConsolidation
 // Only returns ValidationError
-func NewDatasetFromIncomplete(d Dataset, recordID, subdir string) (*Dataset, error) {
+func NewDatasetFromIncomplete(d Dataset, consolidationRecord ConsolidationRecord, subdir string) (*Dataset, error) {
 	d.persistenceState = persistenceStateNEW
 	d.ID = uuid.New().String()
-	d.RecordID = recordID
+	d.RecordID = consolidationRecord.ID
 	d.ContainerSubDir = subdir
+
+	if consolidationRecord.ValidShape != nil {
+		d.Shape = *consolidationRecord.ValidShape
+	}
 
 	if err := d.validate(); err != nil {
 		return nil, err

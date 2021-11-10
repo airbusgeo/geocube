@@ -141,6 +141,25 @@ type Shape struct {
 	geom.Polygon
 }
 
+func (shape Shape) MarshalBinary() ([]byte, error) {
+	value, err := ewkbhex.Encode(&shape.Polygon, ewkbhex.NDR)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal shape as binary: %w", err)
+	}
+	return []byte(value), nil
+
+}
+
+func (shape *Shape) UnmarshalBinary(data []byte) error {
+	geom, err := ewkbhex.Decode(string(data))
+	if err != nil {
+		return fmt.Errorf("failed to decode binary data as geometry: %w", err)
+	}
+
+	*shape = NewShapeFlat(geom.SRID(), geom.FlatCoords())
+	return nil
+}
+
 // GeographicShape is a geographic polygon of lon/lat (following geodesic lines)
 type GeographicShape struct{ Shape }
 

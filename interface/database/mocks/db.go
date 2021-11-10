@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/airbusgeo/geocube/internal/utils/grid"
+
 	"github.com/airbusgeo/geocube/interface/database"
 	"github.com/airbusgeo/geocube/internal/geocube"
 	"github.com/airbusgeo/geocube/internal/utils/proj"
@@ -316,6 +318,26 @@ func (_m *GeocubeBackend) ReadTasks(ctx context.Context, jobID string, states []
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, []geocube.TaskState) error); ok {
 		r1 = rf(ctx, jobID, states)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+func (_m *GeocubeBackend) ComputeValidShapeFromCell(ctx context.Context, datasetIDS []string, cell *grid.Cell) (*proj.Shape, error) {
+	ret := _m.Called(ctx, datasetIDS, cell)
+
+	var r0 *proj.Shape
+	if rf, ok := ret.Get(0).(func(context.Context, []string, *grid.Cell) *proj.Shape); ok {
+		r0 = rf(ctx, datasetIDS, cell)
+	} else {
+		r0 = ret.Get(0).(*proj.Shape)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, []string, *grid.Cell) error); ok {
+		r1 = rf(ctx, datasetIDS, cell)
 	} else {
 		r1 = ret.Error(1)
 	}
