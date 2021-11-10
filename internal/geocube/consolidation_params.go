@@ -57,7 +57,7 @@ func NewConsolidationParamsFromProtobuf(pbp *pb.ConsolidationParams) (*Consolida
 // ToProtobuf converts a consolidationParams to protobuf
 func (c *ConsolidationParams) ToProtobuf() *pb.ConsolidationParams {
 	return &pb.ConsolidationParams{
-		Dformat:         c.DFormat.toProtobuf(),
+		Dformat:         c.DFormat.ToProtobuf(),
 		Exponent:        c.Exponent,
 		CreateOverviews: c.Overviews,
 		DownsamplingAlg: pb.Resampling(c.DownsamplingAlg),

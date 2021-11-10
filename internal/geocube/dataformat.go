@@ -41,7 +41,7 @@ func NewDataFormatFromProtobuf(pbdf *pb.DataFormat) *DataFormat {
 	}
 }
 
-func (df DataFormat) toProtobuf() *pb.DataFormat {
+func (df DataFormat) ToProtobuf() *pb.DataFormat {
 	return &pb.DataFormat{
 		Dtype:    pb.DataFormat_Dtype(df.DType),
 		NoData:   df.NoData,
