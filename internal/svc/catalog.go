@@ -18,10 +18,18 @@ import (
 
 // CubeSlice is a slice of a cube, an image corresponding to a group of record
 type CubeSlice struct {
-	Image    *geocube.Bitmap
-	Err      error
-	Records  []*geocube.Record
-	Metadata map[string]string
+	Image        *geocube.Bitmap
+	Err          error
+	Records      []*geocube.Record
+	Metadata     map[string]string
+	DatasetsMeta SliceMeta
+}
+
+// SliceMeta info to provide direct access to raw images
+type SliceMeta struct {
+	Resampling     geocube.Resampling
+	RefDataMapping geocube.DataMapping
+	Datasets       []*internalImage.Dataset
 }
 
 // CubeInfo stores various information about the Cube
@@ -204,12 +212,18 @@ func (svc *Service) getCubeStream(ctx context.Context, datasetsByRecord [][]*int
 	if headersOnly {
 		// Push the headers into a channel
 		headersOut := make(chan CubeSlice, len(grecords))
-		for _, records := range grecords {
+		for i, records := range grecords {
+			cubeMeta := SliceMeta{
+				Resampling:     outDesc.Resampling,
+				RefDataMapping: outDesc.DataMapping,
+				Datasets:       datasetsByRecord[i]}
+
 			headersOut <- CubeSlice{
-				Image:    geocube.NewBitmapHeader(image.Rect(0, 0, outDesc.Width, outDesc.Height), outDesc.DataMapping.DType, outDesc.Bands),
-				Err:      nil,
-				Records:  records,
-				Metadata: map[string]string{}}
+				Image:        geocube.NewBitmapHeader(image.Rect(0, 0, outDesc.Width, outDesc.Height), outDesc.DataMapping.DType, outDesc.Bands),
+				Err:          nil,
+				Records:      records,
+				Metadata:     map[string]string{},
+				DatasetsMeta: cubeMeta}
 		}
 		close(headersOut)
 
