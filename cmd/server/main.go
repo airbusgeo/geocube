@@ -20,7 +20,6 @@ import (
 	"github.com/airbusgeo/geocube/interface/messaging/pubsub"
 	"github.com/airbusgeo/godal"
 	"github.com/airbusgeo/osio"
-	osioGcs "github.com/airbusgeo/osio/gcs"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"go.uber.org/zap"
 	"golang.org/x/net/http2"
@@ -90,13 +89,13 @@ func handleError(ctx context.Context, w http.ResponseWriter, req *http.Request, 
 }
 
 func run(ctx context.Context) error {
+	if err := initGDAL(ctx); err != nil {
+		return fmt.Errorf("init gdal: %w", err)
+	}
+
 	serverConfig, err := newServerAppConfig()
 	if err != nil {
 		return err
-	}
-
-	if err := initGDAL(ctx, serverConfig); err != nil {
-		return fmt.Errorf("init gdal: %w", err)
 	}
 
 	// Connect to database
@@ -139,7 +138,7 @@ func run(ctx context.Context) error {
 	}
 
 	// Create Geocube Service
-	svc, err := svc.New(ctx, db, eventPublisher, consolidationPublisher, serverConfig.IngestionStorage, serverConfig.CancelledConsolidationStorage, serverConfig.CatalogWorkers)
+	svc, err := svc.New(ctx, db, eventPublisher, consolidationPublisher, serverConfig.IngestionStorage, serverConfig.CatalogWorkers)
 	if err != nil {
 		return fmt.Errorf("svc.new: %w", err)
 	}
@@ -228,20 +227,20 @@ func run(ctx context.Context) error {
 	return srv.Shutdown(sctx)
 }
 
-func initGDAL(ctx context.Context, serverConfig *serverConfig) error {
+func initGDAL(ctx context.Context) error {
 	os.Setenv("GDAL_DISABLE_READDIR_ON_OPEN", "EMPTY_DIR")
 
 	godal.RegisterAll()
 	if err := godal.RegisterRaster("PNG"); err != nil {
 		return err
 	}
-	osioGCSHandle, err := osioGcs.Handle(ctx)
+	gcs, err := osio.GCSHandle(ctx)
 	if err != nil {
 		return err
 	}
-	gcsa, err := osio.NewAdapter(osioGCSHandle,
-		osio.BlockSize(serverConfig.GdalBlockSize),
-		osio.NumCachedBlocks(serverConfig.GdalNumCachedBlocks))
+	gcsa, err := osio.NewAdapter(gcs,
+		osio.BlockSize("1Mb"),
+		osio.NumCachedBlocks(500))
 	if err != nil {
 		return err
 	}
@@ -318,65 +317,52 @@ func newServerAppConfig() (*serverConfig, error) {
 	maxConnectionAge := flag.Int("maxConnectionAge", 0, "grpc max age connection")
 	ingestionStorage := flag.String("ingestionStorage", "", "ingestion storage strategy (local/gs)")
 	workers := flag.Int("workers", 1, "number of parallel workers per catalog request")
-	gdalBlocksize := flag.String("gdalBlockSize", "1Mb", "gdal blocksize value (default 1Mb)")
-	gdalNumCachedBlocks := flag.Int("gdalNumCachedBlocks", 500, "gdal blockcache value (default 500)")
-	cancelledJobs := flag.String("cancelledJobs", "", "storage where cancelled jobs are referenced")
 
 	flag.Parse()
 
 	if *listenPort == "" {
-		return nil, fmt.Errorf("failed to initialize --port application flag")
+		return nil, fmt.Errorf("failed to initialize port application flag")
 	}
 
 	if *ingestionStorage == "" {
-		return nil, fmt.Errorf("failed to initialize --ingestionStorage flag")
-	}
-
-	if *cancelledJobs == "" {
-		return nil, fmt.Errorf("missing --cancelledJobs storage flag")
+		return nil, fmt.Errorf("failed to initialize ingestion storage flag")
 	}
 
 	return &serverConfig{
-		Local:                         *local,
-		AppPort:                       *listenPort,
-		DbConnection:                  *dbConnection,
-		DbName:                        *dbName,
-		DbUser:                        *dbUser,
-		DbHost:                        *dbHost,
-		DbPassword:                    *dbPassword,
-		DbSecretName:                  *dbSecretName,
-		BearerAuthSecretName:          *baSecretName,
-		MaxConnectionAge:              *maxConnectionAge,
-		IngestionStorage:              *ingestionStorage,
-		CancelledConsolidationStorage: *cancelledJobs,
-		Project:                       *project,
-		PsEventsTopic:                 *psEventsTopic,
-		PsConsolidationsTopic:         *psConsolidationsTopic,
-		CatalogWorkers:                *workers,
-		GdalBlockSize:                 *gdalBlocksize,
-		GdalNumCachedBlocks:           *gdalNumCachedBlocks,
+		Local:                 *local,
+		AppPort:               *listenPort,
+		DbConnection:          *dbConnection,
+		DbName:                *dbName,
+		DbUser:                *dbUser,
+		DbHost:                *dbHost,
+		DbPassword:            *dbPassword,
+		DbSecretName:          *dbSecretName,
+		BearerAuthSecretName:  *baSecretName,
+		MaxConnectionAge:      *maxConnectionAge,
+		IngestionStorage:      *ingestionStorage,
+		Project:               *project,
+		PsEventsTopic:         *psEventsTopic,
+		PsConsolidationsTopic: *psConsolidationsTopic,
+		CatalogWorkers:        *workers,
 	}, nil
 }
 
 type serverConfig struct {
-	Project                       string
-	PsEventsTopic                 string
-	PsConsolidationsTopic         string
-	Local                         bool
-	AppPort                       string
-	DbConnection                  string
-	DbName                        string
-	DbUser                        string
-	DbHost                        string
-	DbPassword                    string
-	MaxConnectionAge              int
-	DbSecretName                  string
-	BearerAuthSecretName          string
-	IngestionStorage              string
-	CancelledConsolidationStorage string
-	CatalogWorkers                int
-	GdalBlockSize                 string
-	GdalNumCachedBlocks           int
+	Project               string
+	PsEventsTopic         string
+	PsConsolidationsTopic string
+	Local                 bool
+	AppPort               string
+	DbConnection          string
+	DbName                string
+	DbUser                string
+	DbHost                string
+	DbPassword            string
+	MaxConnectionAge      int
+	DbSecretName          string
+	BearerAuthSecretName  string
+	IngestionStorage      string
+	CatalogWorkers        int
 }
 
 func PgConnString(ctx context.Context, serverConfig *serverConfig) (string, error) {

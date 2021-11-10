@@ -1,7 +1,6 @@
 package image_test
 
 import (
-	"context"
 	"os"
 	"path"
 
@@ -41,7 +40,6 @@ var DatasetEquals = func(ds *godal.Dataset, wantedDsPath string) {
 var _ = Describe("CastDataset", func() {
 
 	var (
-		ctx                    = context.Background()
 		fromPath               string
 		fromDFormat, toDFormat geocube.DataMapping
 		fromDs, returnedDs     *godal.Dataset
@@ -56,7 +54,7 @@ var _ = Describe("CastDataset", func() {
 		pwd, _ := os.Getwd()
 		fromDs, returnedError = godal.Open(path.Join(pwd, fromPath))
 		Expect(returnedError).To(BeNil())
-		returnedDs, returnedError = image.CastDataset(ctx, fromDs, fromDFormat, toDFormat, "")
+		returnedDs, returnedError = image.CastDataset(fromDs, fromDFormat, toDFormat, "")
 	})
 
 	JustAfterEach(func() {
@@ -176,7 +174,6 @@ var _ = Describe("CastDataset", func() {
 var _ = Describe("MergeDataset", func() {
 
 	var (
-		ctx           = context.Background()
 		fromPaths     []string
 		fromDFormats  []geocube.DataMapping
 		outDesc       image.GdalDatasetDescriptor
@@ -190,14 +187,14 @@ var _ = Describe("MergeDataset", func() {
 
 	JustBeforeEach(func() {
 		pwd, _ := os.Getwd()
-		var datasets []*image.Dataset
+		var datasets []*geocube.Dataset
 		for i, fromPath := range fromPaths {
-			datasets = append(datasets, &image.Dataset{
-				URI:         path.Join(pwd, fromPath),
-				DataMapping: fromDFormats[i],
+			datasets = append(datasets, &geocube.Dataset{
+				ContainerURI: path.Join(pwd, fromPath),
+				DataMapping:  fromDFormats[i],
 			})
 		}
-		returnedDs, returnedError = image.MergeDatasets(ctx, datasets, &outDesc)
+		returnedDs, returnedError = image.MergeDatasets(datasets, &outDesc)
 		Expect(returnedError).To(BeNil())
 	})
 

@@ -340,50 +340,34 @@ func (svc *Service) deleteEmptyContainers(ctx context.Context, emptyContainers [
 		return nil, nil
 	}
 
-	// Delete containers
+	// Delete container one by one
 	var errors []error
-	containersURI := []string{}
-	if err := svc.unitOfWork(ctx, func(txn database.GeocubeTxBackend) error {
-		for _, container := range emptyContainers {
+	for _, container := range emptyContainers {
+		if err := svc.unitOfWork(ctx, func(txn database.GeocubeTxBackend) error {
 			managed := container.Managed
 
 			// Unmanaged the container to flag it "toDelete"
 			container.Managed = false
 			if err := container.Delete(); err != nil {
-				errors = append(errors, err)
-				continue
+				return err
+			}
+
+			// Delete the remote container
+			if managed {
+				containerURI, err := uri.ParseUri(container.URI)
+				if err != nil {
+					return err
+				}
+				if err := containerURI.Delete(ctx); err != nil {
+					return err
+				}
 			}
 
 			// Persist the container
-			if err := svc.saveContainer(ctx, txn, container); err != nil {
-				errors = append(errors, err)
-				continue
-			}
-
-			// Store the uri to delete it later
-			if managed {
-				containersURI = append(containersURI, container.URI)
-			}
+			return svc.saveContainer(ctx, txn, container)
+		}); err != nil {
+			errors = append(errors, err)
 		}
-		return nil
-	}); err != nil {
-		errors = append(errors, err)
 	}
-
-	// Delete the remote containers
-	wg := utils.ErrWaitGroup{}
-	for _, containerURI := range containersURI {
-		containerURI := containerURI
-		wg.Go(func() error {
-			containerURI, err := uri.ParseUri(containerURI)
-			if err != nil {
-				return err
-			}
-			return containerURI.Delete(ctx)
-		})
-	}
-
-	errors = append(errors, wg.Wait()...)
-
 	return errors, nil
 }

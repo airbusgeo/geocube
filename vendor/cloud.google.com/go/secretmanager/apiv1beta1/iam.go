@@ -22,8 +22,5 @@ import (
 // indicated by the given resource path. Name should be of the format
 // `projects/my-project/secrets/my-secret`.
 func (c *Client) IAM(name string) *iam.Handle {
-	if grpcClient, ok := c.internalClient.(*gRPCClient); ok {
-		return iam.InternalNewHandleGRPCClient(grpcClient.client, name)
-	}
-	return iam.InternalNewHandleGRPCClient(nil, name)
+	return iam.InternalNewHandleGRPCClient(c.client, name)
 }

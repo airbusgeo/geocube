@@ -22,6 +22,7 @@ import (
 	"math"
 	"net/url"
 
+	"github.com/golang/protobuf/proto"
 	gax "github.com/googleapis/gax-go/v2"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
@@ -30,7 +31,6 @@ import (
 	monitoringpb "google.golang.org/genproto/googleapis/monitoring/v3"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
-	"google.golang.org/protobuf/proto"
 )
 
 var newQueryClientHook clientHook
@@ -40,13 +40,12 @@ type QueryCallOptions struct {
 	QueryTimeSeries []gax.CallOption
 }
 
-func defaultQueryGRPCClientOptions() []option.ClientOption {
+func defaultQueryClientOptions() []option.ClientOption {
 	return []option.ClientOption{
 		internaloption.WithDefaultEndpoint("monitoring.googleapis.com:443"),
 		internaloption.WithDefaultMTLSEndpoint("monitoring.mtls.googleapis.com:443"),
 		internaloption.WithDefaultAudience("https://monitoring.googleapis.com/"),
 		internaloption.WithDefaultScopes(DefaultAuthScopes()...),
-		internaloption.EnableJwtWithScope(),
 		option.WithGRPCDialOption(grpc.WithDisableServiceConfig()),
 		option.WithGRPCDialOption(grpc.WithDefaultCallOptions(
 			grpc.MaxCallRecvMsgSize(math.MaxInt32))),
@@ -59,83 +58,34 @@ func defaultQueryCallOptions() *QueryCallOptions {
 	}
 }
 
-// internalQueryClient is an interface that defines the methods availaible from Cloud Monitoring API.
-type internalQueryClient interface {
-	Close() error
-	setGoogleClientInfo(...string)
-	Connection() *grpc.ClientConn
-	QueryTimeSeries(context.Context, *monitoringpb.QueryTimeSeriesRequest, ...gax.CallOption) *TimeSeriesDataIterator
-}
-
 // QueryClient is a client for interacting with Cloud Monitoring API.
-// Methods, except Close, may be called concurrently. However, fields must not be modified concurrently with method calls.
 //
-// The QueryService API is used to manage time series data in Stackdriver
-// Monitoring. Time series data is a collection of data points that describes
-// the time-varying values of a metric.
+// Methods, except Close, may be called concurrently. However, fields must not be modified concurrently with method calls.
 type QueryClient struct {
-	// The internal transport-dependent client.
-	internalClient internalQueryClient
-
-	// The call options for this service.
-	CallOptions *QueryCallOptions
-}
-
-// Wrapper methods routed to the internal client.
-
-// Close closes the connection to the API service. The user should invoke this when
-// the client is no longer required.
-func (c *QueryClient) Close() error {
-	return c.internalClient.Close()
-}
-
-// setGoogleClientInfo sets the name and version of the application in
-// the `x-goog-api-client` header passed on each request. Intended for
-// use by Google-written clients.
-func (c *QueryClient) setGoogleClientInfo(keyval ...string) {
-	c.internalClient.setGoogleClientInfo(keyval...)
-}
-
-// Connection returns a connection to the API service.
-//
-// Deprecated.
-func (c *QueryClient) Connection() *grpc.ClientConn {
-	return c.internalClient.Connection()
-}
-
-// QueryTimeSeries queries time series using Monitoring Query Language. This method does not require a Workspace.
-func (c *QueryClient) QueryTimeSeries(ctx context.Context, req *monitoringpb.QueryTimeSeriesRequest, opts ...gax.CallOption) *TimeSeriesDataIterator {
-	return c.internalClient.QueryTimeSeries(ctx, req, opts...)
-}
-
-// queryGRPCClient is a client for interacting with Cloud Monitoring API over gRPC transport.
-//
-// Methods, except Close, may be called concurrently. However, fields must not be modified concurrently with method calls.
-type queryGRPCClient struct {
 	// Connection pool of gRPC connections to the service.
 	connPool gtransport.ConnPool
 
 	// flag to opt out of default deadlines via GOOGLE_API_GO_EXPERIMENTAL_DISABLE_DEFAULT_DEADLINE
 	disableDeadlines bool
 
-	// Points back to the CallOptions field of the containing QueryClient
-	CallOptions **QueryCallOptions
-
 	// The gRPC API client.
 	queryClient monitoringpb.QueryServiceClient
+
+	// The call options for this service.
+	CallOptions *QueryCallOptions
 
 	// The x-goog-* metadata to be sent with each request.
 	xGoogMetadata metadata.MD
 }
 
-// NewQueryClient creates a new query service client based on gRPC.
-// The returned client must be Closed when it is done being used to clean up its underlying connections.
+// NewQueryClient creates a new query service client.
 //
 // The QueryService API is used to manage time series data in Stackdriver
 // Monitoring. Time series data is a collection of data points that describes
 // the time-varying values of a metric.
 func NewQueryClient(ctx context.Context, opts ...option.ClientOption) (*QueryClient, error) {
-	clientOpts := defaultQueryGRPCClientOptions()
+	clientOpts := defaultQueryClientOptions()
+
 	if newQueryClientHook != nil {
 		hookOpts, err := newQueryClientHook(ctx, clientHookParams{})
 		if err != nil {
@@ -153,57 +103,53 @@ func NewQueryClient(ctx context.Context, opts ...option.ClientOption) (*QueryCli
 	if err != nil {
 		return nil, err
 	}
-	client := QueryClient{CallOptions: defaultQueryCallOptions()}
-
-	c := &queryGRPCClient{
+	c := &QueryClient{
 		connPool:         connPool,
 		disableDeadlines: disableDeadlines,
-		queryClient:      monitoringpb.NewQueryServiceClient(connPool),
-		CallOptions:      &client.CallOptions,
+		CallOptions:      defaultQueryCallOptions(),
+
+		queryClient: monitoringpb.NewQueryServiceClient(connPool),
 	}
 	c.setGoogleClientInfo()
 
-	client.internalClient = c
-
-	return &client, nil
+	return c, nil
 }
 
 // Connection returns a connection to the API service.
 //
 // Deprecated.
-func (c *queryGRPCClient) Connection() *grpc.ClientConn {
+func (c *QueryClient) Connection() *grpc.ClientConn {
 	return c.connPool.Conn()
+}
+
+// Close closes the connection to the API service. The user should invoke this when
+// the client is no longer required.
+func (c *QueryClient) Close() error {
+	return c.connPool.Close()
 }
 
 // setGoogleClientInfo sets the name and version of the application in
 // the `x-goog-api-client` header passed on each request. Intended for
 // use by Google-written clients.
-func (c *queryGRPCClient) setGoogleClientInfo(keyval ...string) {
+func (c *QueryClient) setGoogleClientInfo(keyval ...string) {
 	kv := append([]string{"gl-go", versionGo()}, keyval...)
 	kv = append(kv, "gapic", versionClient, "gax", gax.Version, "grpc", grpc.Version)
 	c.xGoogMetadata = metadata.Pairs("x-goog-api-client", gax.XGoogHeader(kv...))
 }
 
-// Close closes the connection to the API service. The user should invoke this when
-// the client is no longer required.
-func (c *queryGRPCClient) Close() error {
-	return c.connPool.Close()
-}
-
-func (c *queryGRPCClient) QueryTimeSeries(ctx context.Context, req *monitoringpb.QueryTimeSeriesRequest, opts ...gax.CallOption) *TimeSeriesDataIterator {
+// QueryTimeSeries queries time series using Monitoring Query Language. This method does not require a Workspace.
+func (c *QueryClient) QueryTimeSeries(ctx context.Context, req *monitoringpb.QueryTimeSeriesRequest, opts ...gax.CallOption) *TimeSeriesDataIterator {
 	md := metadata.Pairs("x-goog-request-params", fmt.Sprintf("%s=%v", "name", url.QueryEscape(req.GetName())))
 	ctx = insertMetadata(ctx, c.xGoogMetadata, md)
-	opts = append((*c.CallOptions).QueryTimeSeries[0:len((*c.CallOptions).QueryTimeSeries):len((*c.CallOptions).QueryTimeSeries)], opts...)
+	opts = append(c.CallOptions.QueryTimeSeries[0:len(c.CallOptions.QueryTimeSeries):len(c.CallOptions.QueryTimeSeries)], opts...)
 	it := &TimeSeriesDataIterator{}
 	req = proto.Clone(req).(*monitoringpb.QueryTimeSeriesRequest)
 	it.InternalFetch = func(pageSize int, pageToken string) ([]*monitoringpb.TimeSeriesData, string, error) {
-		resp := &monitoringpb.QueryTimeSeriesResponse{}
-		if pageToken != "" {
-			req.PageToken = pageToken
-		}
+		var resp *monitoringpb.QueryTimeSeriesResponse
+		req.PageToken = pageToken
 		if pageSize > math.MaxInt32 {
 			req.PageSize = math.MaxInt32
-		} else if pageSize != 0 {
+		} else {
 			req.PageSize = int32(pageSize)
 		}
 		err := gax.Invoke(ctx, func(ctx context.Context, settings gax.CallSettings) error {
@@ -226,11 +172,9 @@ func (c *queryGRPCClient) QueryTimeSeries(ctx context.Context, req *monitoringpb
 		it.items = append(it.items, items...)
 		return nextPageToken, nil
 	}
-
 	it.pageInfo, it.nextFunc = iterator.NewPageInfo(fetch, it.bufLen, it.takeBuf)
 	it.pageInfo.MaxSize = int(req.GetPageSize())
 	it.pageInfo.Token = req.GetPageToken()
-
 	return it
 }
 

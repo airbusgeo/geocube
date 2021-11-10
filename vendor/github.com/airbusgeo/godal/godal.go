@@ -19,7 +19,6 @@ package godal
 #include <stdlib.h>
 
 #cgo pkg-config: gdal
-#cgo CXXFLAGS: -std=c++11
 #cgo LDFLAGS: -ldl
 */
 import "C"
@@ -329,50 +328,6 @@ func (band Band) Polygonize(dstLayer Layer, opts ...PolygonizeOption) error {
 	return cgc.close()
 }
 
-//FillNoData wraps GDALFillNodata()
-func (band Band) FillNoData(opts ...FillNoDataOption) error {
-	popt := fillnodataOpts{
-		maxDistance: 100,
-		iterations:  0,
-	}
-
-	for _, opt := range opts {
-		opt.setFillnodataOpt(&popt)
-	}
-	//copts := sliceToCStringArray(popt.options)
-	//defer copts.free()
-	var cMaskBand C.GDALRasterBandH = nil
-	if popt.mask != nil {
-		cMaskBand = popt.mask.handle()
-	}
-
-	cgc := createCGOContext(nil, popt.errorHandler)
-	C.godalFillNoData(cgc.cPointer(), band.handle(), cMaskBand, C.int(popt.maxDistance), C.int(popt.iterations), nil)
-	return cgc.close()
-}
-
-// SieveFilter wraps GDALSieveFilter
-func (band Band) SieveFilter(sizeThreshold int, opts ...SieveFilterOption) error {
-	sfopt := sieveFilterOpts{
-		dstBand:       &band,
-		connectedness: 4,
-	}
-	maskBand := band.MaskBand()
-	sfopt.mask = &maskBand
-
-	for _, opt := range opts {
-		opt.setSieveFilterOpt(&sfopt)
-	}
-	var cMaskBand C.GDALRasterBandH = nil
-	if sfopt.mask != nil {
-		cMaskBand = sfopt.mask.handle()
-	}
-	cgc := createCGOContext(nil, sfopt.errorHandler)
-	C.godalSieveFilter(cgc.cPointer(), band.handle(), cMaskBand, sfopt.dstBand.handle(),
-		C.int(sizeThreshold), C.int(sfopt.connectedness))
-	return cgc.close()
-}
-
 //Overviews returns all overviews of band
 func (band Band) Overviews() []Band {
 	cbands := C.godalBandOverviews(band.handle())
@@ -437,37 +392,31 @@ func cDoubleArray(in []float64) *C.double {
 	return (*C.double)(unsafe.Pointer(&ret[0]))
 }
 
-type cStringArray struct {
-	arr **C.char
-	l   int
-}
+type cStringArray []*C.char
 
 func (ca cStringArray) free() {
-	if ca.l > 0 {
-		garr := (*[1 << 30]*C.char)(unsafe.Pointer(ca.arr))[0:ca.l:ca.l]
-		for i := 0; i < ca.l-1; i++ {
-			C.free(unsafe.Pointer(garr[i]))
-		}
-		C.free(unsafe.Pointer(ca.arr))
+	for _, str := range ca {
+		C.free(unsafe.Pointer(str))
 	}
 }
 
 func (ca cStringArray) cPointer() **C.char {
-	return ca.arr
+	if len(ca) <= 1 { //nil terminated, must be at least len==2 to be not empty
+		return nil
+	}
+	return (**C.char)(unsafe.Pointer(&ca[0]))
 }
 
 func sliceToCStringArray(in []string) cStringArray {
 	if len(in) > 0 {
-		csa := cStringArray{l: len(in) + 1}
-		csa.arr = (**C.char)(C.malloc(C.size_t(csa.l) * C.size_t(unsafe.Sizeof((*C.char)(nil)))))
-		garr := (*[1 << 30]*C.char)(unsafe.Pointer(csa.arr))[0:csa.l:csa.l]
+		arr := make([]*C.char, len(in)+1)
 		for i := range in {
-			garr[i] = C.CString(in[i])
+			arr[i] = C.CString(in[i])
 		}
-		garr[len(in)] = nil
-		return csa
+		arr[len(in)] = nil
+		return arr
 	}
-	return cStringArray{}
+	return nil
 }
 
 func cStringArrayToSlice(in **C.char) []string {
@@ -1337,7 +1286,7 @@ func goErrorHandler(loggerID C.int, ec C.int, code C.int, msg *C.char) C.int {
 	lfn := getErrorHandler(int(loggerID))
 	err := lfn.fn(ErrorCategory(ec), int(code), C.GoString(msg))
 	if err != nil {
-		lfn.err = combine(lfn.err, err)
+		lfn.errors = append(lfn.errors, err)
 		return 1
 	}
 	return 0
@@ -2745,7 +2694,7 @@ func getGoGDALReader(ckey *C.char, errorString **C.char) VSIReader {
 	key := C.GoString(ckey)
 	for prefix, handler := range handlers {
 		if strings.HasPrefix(key, prefix) {
-			hndl, err := handler.VSIReader(key)
+			hndl, err := handler.VSIReader(key[len(prefix):])
 			if err != nil {
 				*errorString = C.CString(err.Error())
 				return nil
@@ -2765,15 +2714,6 @@ func (ga osioAdapterWrapper) VSIReader(key string) (VSIReader, error) {
 	return ga.Reader(key)
 }
 
-type stripPrefixWrapper struct {
-	VSIKeyReader
-	prefix string
-}
-
-func (sp stripPrefixWrapper) VSIReader(key string) (VSIReader, error) {
-	return sp.VSIKeyReader.VSIReader(key[len(sp.prefix):])
-}
-
 func RegisterVSIAdapter(prefix string, keyReader *osio.Adapter, opts ...VSIHandlerOption) error {
 	return RegisterVSIHandler(prefix, osioAdapterWrapper{keyReader}, opts...)
 }
@@ -2785,9 +2725,8 @@ func RegisterVSIAdapter(prefix string, keyReader *osio.Adapter, opts ...VSIHandl
 //  VSIKeyReader("myfile.txt").ReadAt(buf,offset)
 func RegisterVSIHandler(prefix string, keyReader VSIKeyReader, opts ...VSIHandlerOption) error {
 	opt := vsiHandlerOpts{
-		bufferSize:  64 * 1024,
-		cacheSize:   2 * 64 * 1024,
-		stripPrefix: false,
+		bufferSize: 64 * 1024,
+		cacheSize:  2 * 64 * 1024,
 	}
 	for _, o := range opts {
 		o.setVSIHandlerOpt(&opt)
@@ -2803,11 +2742,7 @@ func RegisterVSIHandler(prefix string, keyReader VSIKeyReader, opts ...VSIHandle
 	if err := cgc.close(); err != nil {
 		return err
 	}
-	if opt.stripPrefix {
-		handlers[prefix] = stripPrefixWrapper{keyReader, prefix}
-	} else {
-		handlers[prefix] = keyReader
-	}
+	handlers[prefix] = keyReader
 	return nil
 }
 
@@ -2883,7 +2818,18 @@ func (cgc cgoContext) close() error {
 	}
 	if cgc.cctx.handlerIdx != 0 {
 		defer unregisterErrorHandler(int(cgc.cctx.handlerIdx))
-		return getErrorHandler(int(cgc.cctx.handlerIdx)).err
+		errs := getErrorHandler(int(cgc.cctx.handlerIdx)).errors
+		if errs != nil {
+			if len(errs) == 1 {
+				return errs[0]
+			} else {
+				msgs := []string{errs[0].Error()}
+				for i := 1; i < len(errs); i++ {
+					msgs = append(msgs, errs[i].Error())
+				}
+				return errors.New(strings.Join(msgs, "\n"))
+			}
+		}
 	}
 	return nil
 }

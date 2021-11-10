@@ -31,6 +31,11 @@ func (g *LineString) Clone() *LineString {
 	return deriveCloneLineString(g)
 }
 
+// Empty returns false.
+func (g *LineString) Empty() bool {
+	return false
+}
+
 // Interpolate returns the index and delta of val in dimension dim.
 func (g *LineString) Interpolate(val float64, dim int) (int, float64) {
 	n := len(g.flatCoords)

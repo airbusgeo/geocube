@@ -24,22 +24,21 @@ var ramSize int
 
 // Service implements GeocubeService
 type Service struct {
-	db                         database.GeocubeDBBackend
-	eventPublisher             messaging.Publisher
-	consolidationPublisher     messaging.Publisher
-	catalogWorkers             int
-	ingestionStoragePath       string
-	cancelledConsolidationPath string
+	db                     database.GeocubeDBBackend
+	eventPublisher         messaging.Publisher
+	consolidationPublisher messaging.Publisher
+	catalogWorkers         int
+	ingestionStoragePath   string
 }
 
 // New returns a new business service
-func New(ctx context.Context, db database.GeocubeDBBackend, eventPublisher messaging.Publisher, consolidationPublisher messaging.Publisher, ingestionStoragePath, cancelledConsolidationPath string, catalogWorkers int) (*Service, error) {
+func New(ctx context.Context, db database.GeocubeDBBackend, eventPublisher messaging.Publisher, consolidationPublisher messaging.Publisher, ingestionStoragePath string, catalogWorkers int) (*Service, error) {
 	ramSize = int(C.sysconf(C._SC_PHYS_PAGES) * C.sysconf(C._SC_PAGE_SIZE))
 
 	if catalogWorkers <= 0 {
 		catalogWorkers = 1
 	}
-	return &Service{db: db, eventPublisher: eventPublisher, consolidationPublisher: consolidationPublisher, catalogWorkers: catalogWorkers, ingestionStoragePath: ingestionStoragePath, cancelledConsolidationPath: cancelledConsolidationPath}, nil
+	return &Service{db: db, eventPublisher: eventPublisher, consolidationPublisher: consolidationPublisher, catalogWorkers: catalogWorkers, ingestionStoragePath: ingestionStoragePath}, nil
 }
 
 // CreateAOI implements GeocubeService
@@ -379,43 +378,45 @@ func (svc *Service) ConfigConsolidation(ctx context.Context, variableID string, 
 }
 
 // ConsolidateFromRecords implements GeocubeService
-func (svc *Service) ConsolidateFromRecords(ctx context.Context, job *geocube.Job, recordsID []string) error {
+func (svc *Service) ConsolidateFromRecords(ctx context.Context, jobName, instanceID, layoutID string, recordsID []string) (string, error) {
 	// Get the list of datasets for the instanceID and the records provided
 	// TODO check that ListActiveDatasetsID does not take too long
 	start := time.Now()
-	datasetsID, err := svc.db.ListActiveDatasetsID(ctx, job.Payload.InstanceID, recordsID, nil, time.Time{}, time.Time{})
+	datasetsID, err := svc.db.ListActiveDatasetsID(ctx, instanceID, recordsID, nil, time.Time{}, time.Time{})
 	if err != nil {
-		return fmt.Errorf("ConsolidateFromRecords.%w", err)
+		return "", fmt.Errorf("ConsolidateFromRecords.%w", err)
 	}
 	fmt.Printf("ListActiveDatasetsID: %v\n", time.Since(start))
 
-	return svc.consolidate(ctx, job, datasetsID)
+	return svc.consolidate(ctx, jobName, instanceID, layoutID, datasetsID)
 }
 
 // ConsolidateFromFilters implements GeocubeService
-func (svc *Service) ConsolidateFromFilters(ctx context.Context, job *geocube.Job, tags map[string]string, fromTime, toTime time.Time) error {
+func (svc *Service) ConsolidateFromFilters(ctx context.Context, jobName, instanceID, layoutID string, tags map[string]string, fromTime, toTime time.Time) (string, error) {
 	// Get the list of datasets for the instanceID and the filters provided
 	// TODO check that ListActiveDatasetsID does not take too long
 	start := time.Now()
-	datasetsID, err := svc.db.ListActiveDatasetsID(ctx, job.Payload.InstanceID, nil, tags, fromTime, toTime)
+	datasetsID, err := svc.db.ListActiveDatasetsID(ctx, instanceID, nil, tags, fromTime, toTime)
 	if err != nil {
-		return fmt.Errorf("ConsolidateFromFilters.%w", err)
+		return "", fmt.Errorf("ConsolidateFromFilters.%w", err)
 	}
 	fmt.Printf("ListActiveDatasetsID: %v\n", time.Since(start))
 
-	return svc.consolidate(ctx, job, datasetsID)
+	return svc.consolidate(ctx, jobName, instanceID, layoutID, datasetsID)
 }
 
-func (svc Service) consolidate(ctx context.Context, job *geocube.Job, datasetsID []string) error {
+func (svc Service) consolidate(ctx context.Context, jobName, instanceID, layoutID string, datasetsID []string) (string, error) {
 	if len(datasetsID) == 0 {
-		return geocube.NewEntityNotFound("", "", "", "No dataset found for theses records and instances")
+		return "", geocube.NewEntityNotFound("", "", "", "No dataset found for theses records and instances")
 	}
 
-	return svc.unitOfWork(ctx, func(txn database.GeocubeTxBackend) error {
+	var job *geocube.Job
+
+	err := svc.unitOfWork(ctx, func(txn database.GeocubeTxBackend) error {
 		// Check and get consolidation parameters
 		var params *geocube.ConsolidationParams
 		{
-			variable, err := txn.ReadVariableFromInstanceID(ctx, job.Payload.InstanceID)
+			variable, err := txn.ReadVariableFromInstanceID(ctx, instanceID)
 			if err != nil {
 				return fmt.Errorf("consolidate.%w", err)
 			}
@@ -423,14 +424,9 @@ func (svc Service) consolidate(ctx context.Context, job *geocube.Job, datasetsID
 			if err != nil {
 				return fmt.Errorf("consolidate.%w", err)
 			}
-			params.Clean()
-			if err := job.SetParams(*params); err != nil {
-				return fmt.Errorf("consolidate.%w", err)
-			}
 		}
-
-		// Lock datasets
-		job.LockDatasets(datasetsID, geocube.LockFlagINIT)
+		// Create a job
+		job = geocube.NewConsolidationJob(jobName, layoutID, instanceID, *params, datasetsID)
 
 		// Persist the job
 		start := time.Now()
@@ -446,6 +442,12 @@ func (svc Service) consolidate(ctx context.Context, job *geocube.Job, datasetsID
 		}
 		return nil
 	})
+
+	if err != nil {
+		return "", err
+	}
+
+	return job.ID, nil
 }
 
 // CreateLayout implements GeocubeService
@@ -517,11 +519,6 @@ func (svc *Service) RetryJob(ctx context.Context, jobID string, forceAnyState bo
 // CancelJob implements GeocubeService
 func (svc *Service) CancelJob(ctx context.Context, jobID string) error {
 	return svc.handleJobEvt(ctx, *geocube.NewJobEvent(jobID, geocube.CancelledByUser, ""))
-}
-
-// ContinueJob implements GeocubeService
-func (svc *Service) ContinueJob(ctx context.Context, jobID string) error {
-	return svc.handleJobEvt(ctx, *geocube.NewJobEvent(jobID, geocube.Continue, ""))
 }
 
 // CleanJobs implements GeocubeService

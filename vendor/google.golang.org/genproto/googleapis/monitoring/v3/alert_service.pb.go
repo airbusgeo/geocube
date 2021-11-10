@@ -48,8 +48,7 @@ type CreateAlertPolicyRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Required. The [project](https://cloud.google.com/monitoring/api/v3#project_name) in
-	// which to create the alerting policy. The format is:
+	// Required. The project in which to create the alerting policy. The format is:
 	//
 	//     projects/[PROJECT_ID_OR_NUMBER]
 	//
@@ -170,8 +169,7 @@ type ListAlertPoliciesRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Required. The [project](https://cloud.google.com/monitoring/api/v3#project_name)
-	// whose alert policies are to be listed. The format is:
+	// Required. The project whose alert policies are to be listed. The format is:
 	//
 	//     projects/[PROJECT_ID_OR_NUMBER]
 	//

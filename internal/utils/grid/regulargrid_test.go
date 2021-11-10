@@ -2,7 +2,6 @@ package grid_test
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"sort"
 	"strconv"
@@ -13,7 +12,6 @@ import (
 
 	"github.com/airbusgeo/godal"
 	"github.com/twpayne/go-geom"
-	geomGeojson "github.com/twpayne/go-geom/encoding/geojson"
 	"github.com/twpayne/go-geom/encoding/wkb"
 )
 
@@ -159,13 +157,13 @@ var _ = Describe("Regular Grid", func() {
 	})
 	Describe("Cell", func() {
 		var (
-			gr                       grid.Grid
-			cellsuri                 []string
-			returnedJson, jsonWanted string
+			gr               grid.Grid
+			cellsuri         []string
+			json, jsonWanted string
 		)
 
 		JustBeforeEach(func() {
-			returnedJson, returnedError = grid.CellsToJSON(gr, cellsuri)
+			json, returnedError = grid.CellsToJSON(gr, cellsuri)
 		})
 
 		for configuration := 0; configuration <= 2; configuration++ {
@@ -188,28 +186,7 @@ var _ = Describe("Regular Grid", func() {
 				Context("Return Json", func() {
 					itShouldNotReturnAnError()
 					It("it should match the json", func() {
-						returnedJSONFeature := `{"type":"Feature","properties":{},"geometry":` + returnedJson + `}`
-						var inputFeature geomGeojson.Feature
-						if err := json.Unmarshal([]byte(returnedJSONFeature), &inputFeature); err != nil {
-							panic(err)
-						}
-
-						wantedJSONFeature := `{"type":"Feature","properties":{},"geometry":` + jsonWanted + `}`
-						var wantedFeature geomGeojson.Feature
-						if err := json.Unmarshal([]byte(wantedJSONFeature), &wantedFeature); err != nil {
-							panic(err)
-						}
-
-						inputBEncoded, err := geomGeojson.Marshal(inputFeature.Geometry, geomGeojson.EncodeGeometryWithMaxDecimalDigits(10))
-						if err != nil {
-							panic(err)
-						}
-						wantedEncoded, err := geomGeojson.Marshal(wantedFeature.Geometry, geomGeojson.EncodeGeometryWithMaxDecimalDigits(10))
-						if err != nil {
-							panic(err)
-						}
-
-						Expect(string(inputBEncoded)).To(MatchJSON(string(wantedEncoded)))
+						Expect(json).To(MatchJSON(jsonWanted))
 					})
 				})
 			})

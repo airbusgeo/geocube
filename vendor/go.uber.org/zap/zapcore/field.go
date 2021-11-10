@@ -92,10 +92,6 @@ const (
 	ErrorType
 	// SkipType indicates that the field is a no-op.
 	SkipType
-
-	// InlineMarshalerType indicates that the field carries an ObjectMarshaler
-	// that should be inlined.
-	InlineMarshalerType
 )
 
 // A Field is a marshaling operation used to add a key-value pair to a logger's
@@ -119,8 +115,6 @@ func (f Field) AddTo(enc ObjectEncoder) {
 		err = enc.AddArray(f.Key, f.Interface.(ArrayMarshaler))
 	case ObjectMarshalerType:
 		err = enc.AddObject(f.Key, f.Interface.(ObjectMarshaler))
-	case InlineMarshalerType:
-		err = f.Interface.(ObjectMarshaler).MarshalLogObject(enc)
 	case BinaryType:
 		enc.AddBinary(f.Key, f.Interface.([]byte))
 	case BoolType:
@@ -173,7 +167,7 @@ func (f Field) AddTo(enc ObjectEncoder) {
 	case StringerType:
 		err = encodeStringer(f.Key, f.Interface, enc)
 	case ErrorType:
-		err = encodeError(f.Key, f.Interface.(error), enc)
+		encodeError(f.Key, f.Interface.(error), enc)
 	case SkipType:
 		break
 	default:

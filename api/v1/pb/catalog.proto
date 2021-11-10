@@ -5,6 +5,7 @@ option go_package = "./pb;geocube";
 import "pb/dataformat.proto";
 import "pb/records.proto";
 import "pb/layouts.proto";
+import "pb/datasetMeta.proto";
 
 message Shape{
     int32 dim1 = 1;
@@ -18,15 +19,16 @@ enum ByteOrder{
 }
 
 message ImageHeader{
-    Shape            shape       = 1;
-    DataFormat.Dtype dtype       = 2;
-    bytes            data        = 3;
-    int32            nb_parts    = 4;
-    int64            size        = 5;
-    ByteOrder        order       = 6;
-    bool             compression = 7; // Deflate compressed data format, described in RFC 1951
-    repeated Record  records     = 8;
-    string           error       = 9;
+  Shape                shape         = 1;
+  DataFormat.Dtype     dtype         = 2;
+  bytes                data          = 3;
+  int32                nb_parts      = 4;
+  int64                size          = 5;
+  ByteOrder            order         = 6;
+  bool                 compression   = 7; // Deflate compressed data format, described in RFC 1951
+  repeated Record      records       = 8;
+  DatasetMeta          datasets_meta = 9;
+  string               error         = 10;
 }
 
 message ImageChunk{
@@ -39,37 +41,37 @@ message ImageFile{
 }
 
 enum FileFormat{
-    Raw   = 0; // raw bitmap
-    GTiff = 1;
+  Raw   = 0; // raw bitmap
+  GTiff = 1;
 }
 
 message GetCubeRequest {
     oneof records_lister{
-        RecordList         records  = 1; // At least one
-        RecordFilters      filters  = 2;
-        GroupedRecordsList grecords = 10;
+      RecordList         records  = 1; // At least one
+      RecordFilters      filters  = 2;
+      GroupedRecordsList grecords = 10;
     }
 
-    repeated string instances_id      = 3; // At least one, and all must be instance of the same variable. Only one is actually supported
-    string          crs               = 4;
-    GeoTransform    pix_to_crs        = 5;
-    Size            size              = 6;
-    int32           compression_level = 7; // -1 to 10 (-1:default, 0: no compression, 1->9: level of compression from the fastest to the best compression)
-    bool            headers_only      = 8; // Only returns headers
-    FileFormat      format            = 9;
+  repeated string instances_id      = 3; // At least one, and all must be instance of the same variable. Only one is actually supported
+  string          crs               = 4;
+  GeoTransform    pix_to_crs        = 5;
+  Size            size              = 6;
+  int32           compression_level = 7; // -1 to 10 (-1:default, 0: no compression, 1->9: level of compression from the fastest to the best compression)
+  bool            headers_only      = 8; // Only returns headers
+  FileFormat      format            = 9;
 }
 
 message GetCubeResponseHeader{
-    int64 count       = 1;
-    int64 nb_datasets = 2;
+  int64 count       = 1;
+  int64 nb_datasets = 2;
 }
 
 message GetCubeResponse {
-    oneof response{
-        GetCubeResponseHeader global_header = 3;
-        ImageHeader           header        = 1;
-        ImageChunk            chunk         = 2;
-    }
+  oneof response{
+    GetCubeResponseHeader global_header = 3;
+    ImageHeader           header        = 1;
+    ImageChunk            chunk         = 2;
+  }
 }
 
 message GetTileRequest {

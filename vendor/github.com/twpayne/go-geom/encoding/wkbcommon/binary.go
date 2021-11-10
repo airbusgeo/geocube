@@ -5,8 +5,6 @@ import (
 	"encoding/binary"
 	"io"
 	"math"
-
-	"github.com/twpayne/go-geom"
 )
 
 func readFloat(buf []byte, byteOrder binary.ByteOrder) float64 {
@@ -74,13 +72,4 @@ func WriteByte(w io.Writer, value byte) error {
 	buf[0] = value
 	_, err := w.Write(buf[:])
 	return err
-}
-
-// WriteEmptyPointAsNaN outputs EmptyPoint as NaN values.
-func WriteEmptyPointAsNaN(w io.Writer, byteOrder binary.ByteOrder, numCoords int) error {
-	coords := make([]float64, numCoords)
-	for i := 0; i < numCoords; i++ {
-		coords[i] = geom.PointEmptyCoord()
-	}
-	return WriteFlatCoords0(w, byteOrder, coords)
 }

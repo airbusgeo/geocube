@@ -8,7 +8,8 @@ import (
 	"github.com/google/tiff"
 )
 
-func loadMultipleTIFFs(tifs []tiff.TIFF) ([]*ifd, error) {
+func loadMultipleTIFFs(tifs []tiff.TIFF) (*cog, error) {
+	cog := new()
 	ifds := make([]*ifd, 0)
 	for it, tif := range tifs {
 		tifds := tif.IFDs()
@@ -17,22 +18,41 @@ func loadMultipleTIFFs(tifs []tiff.TIFF) ([]*ifd, error) {
 			if err != nil {
 				return nil, err
 			}
+			if ifd.SubfileType&subfileTypeReducedImage == subfileTypeReducedImage {
+				return nil, fmt.Errorf("cannot load multiple tifs if they contain overviews")
+			}
 			if it != 0 {
-				//check that the additional files are smaller than the first, i.e. that they represent an overview
-				if ifd.ImageLength >= ifds[0].ImageLength || ifd.ImageWidth >= ifds[0].ImageWidth {
-					return nil, fmt.Errorf("provided tiff %d size %dx%d is larger than first tiff size %dx%d. when using multiple files, the subsequent ones must be overviews of the first one",
-						it, ifd.ImageWidth, ifd.ImageLength, ifds[0].ImageWidth, ifds[0].ImageLength)
-				}
-				//force to overview
 				ifd.SubfileType |= subfileTypeReducedImage
 			}
 			ifds = append(ifds, ifd)
 		}
 	}
-	return ifds, nil
+	sort.Slice(ifds, func(i, j int) bool {
+		//return in order: fullres, fullresmasks, ovr1, ovr1masks, ovr2, ....
+		if ifds[i].ImageLength != ifds[j].ImageLength {
+			return ifds[i].ImageLength > ifds[j].ImageLength
+		}
+		return ifds[i].SubfileType < ifds[j].SubfileType
+	})
+	if ifds[0].SubfileType != 0 {
+		return nil, fmt.Errorf("failed sort: first px=%d type=%d", ifds[0].ImageLength, ifds[0].SubfileType)
+	}
+	cog.ifd = ifds[0]
+	curOvr := cog.ifd
+	l := curOvr.ImageLength
+	for _, ci := range ifds[1:] {
+		if ci.ImageLength == l {
+			curOvr.AddMask(ci)
+		} else {
+			curOvr.AddOverview(ci)
+			curOvr = ci
+			l = curOvr.ImageLength
+		}
+	}
+	return cog, nil
 }
-
-func loadSingleTIFF(tif tiff.TIFF) ([]*ifd, error) {
+func loadSingleTIFF(tif tiff.TIFF) (*cog, error) {
+	cog := new()
 	tifds := tif.IFDs()
 	ifds := make([]*ifd, len(tifds))
 	var err error
@@ -42,7 +62,29 @@ func loadSingleTIFF(tif tiff.TIFF) ([]*ifd, error) {
 			return nil, err
 		}
 	}
-	return ifds, nil
+	sort.Slice(ifds, func(i, j int) bool {
+		//return in order: fullres, fullresmasks, ovr1, ovr1masks, ovr2, ....
+		if ifds[i].ImageLength != ifds[j].ImageLength {
+			return ifds[i].ImageLength > ifds[j].ImageLength
+		}
+		return ifds[i].SubfileType < ifds[j].SubfileType
+	})
+	if ifds[0].SubfileType != 0 {
+		return nil, fmt.Errorf("failed sort: first px=%d type=%d", ifds[0].ImageLength, ifds[0].SubfileType)
+	}
+	cog.ifd = ifds[0]
+	curOvr := cog.ifd
+	l := curOvr.ImageLength
+	for _, ci := range ifds[1:] {
+		if ci.ImageLength == l {
+			curOvr.AddMask(ci)
+		} else {
+			curOvr.AddOverview(ci)
+			curOvr = ci
+			l = curOvr.ImageLength
+		}
+	}
+	return cog, nil
 }
 
 func loadIFD(r tiff.BReader, tifd tiff.IFD) (*ifd, error) {
@@ -61,8 +103,6 @@ func loadIFD(r tiff.BReader, tifd tiff.IFD) (*ifd, error) {
 	return ifd, nil
 }
 
-// Rewrite reshuffles the tiff bytes provided as readers into a COG output
-// to out
 func Rewrite(out io.Writer, readers ...tiff.ReadAtReadSeeker) error {
 	tiffs := []tiff.TIFF{}
 	if len(readers) == 0 {
@@ -79,45 +119,18 @@ func Rewrite(out io.Writer, readers ...tiff.ReadAtReadSeeker) error {
 	if err != nil {
 		return fmt.Errorf("consistency check: %w", err)
 	}
-	var ifds []*ifd
+	var cog *cog
 	if len(tiffs) > 1 {
-		ifds, err = loadMultipleTIFFs(tiffs)
+		cog, err = loadMultipleTIFFs(tiffs)
 		if err != nil {
 			return fmt.Errorf("load: %w", err)
 		}
 	} else {
-		ifds, err = loadSingleTIFF(tiffs[0])
+		cog, err = loadSingleTIFF(tiffs[0])
 		if err != nil {
 			return fmt.Errorf("load: %w", err)
 		}
 	}
-	sort.Slice(ifds, func(i, j int) bool {
-		//return in order: fullres, fullresmasks, ovr1, ovr1masks, ovr2, ....
-		if ifds[i].ImageLength != ifds[j].ImageLength {
-			return ifds[i].ImageLength > ifds[j].ImageLength
-		}
-		return ifds[i].SubfileType < ifds[j].SubfileType
-	})
-	if ifds[0].SubfileType != 0 {
-		return fmt.Errorf("failed sort: first px=%d type=%d", ifds[0].ImageLength, ifds[0].SubfileType)
-	}
-	cog := new()
-	cog.ifd = ifds[0]
-	curOvr := cog.ifd
-	l := curOvr.ImageLength
-	for _, ci := range ifds[1:] {
-		if ci.ImageLength == l {
-			err = curOvr.AddMask(ci)
-			if err != nil {
-				return err
-			}
-		} else {
-			curOvr.AddOverview(ci)
-			curOvr = ci
-			l = curOvr.ImageLength
-		}
-	}
-
 	err = cog.write(out)
 	if err != nil {
 		return fmt.Errorf("mucog write: %w", err)

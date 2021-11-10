@@ -29,27 +29,16 @@ type Writer interface {
 	io.Writer
 }
 
-var retriableOAuth2Errors = []string{
-	"cannot assign requested address",
-	"connection refused",
-	"connection reset",
-	"timeout",
-	"broken pipe",
-	"client connection force closed",
-}
-
 func gsError(err error) error {
 	if err == nil {
 		return nil
 	}
 	// grpc & oauth2 does not transfer the temporary status of error
-	// see ./vendor/golang.org/x/oauth2/oauth2/jwt/jwt.go func (js jwtSource) Token()
-	// see ./vendor/google.golang.org/grpc/internal/transport/http2_client.go func (t *http2Client) getTrAuthData
+	// see /home/varoquaux/geocube/sar/vendor/golang.org/x/oauth2/oauth2.go func (js jwtSource) Token()
+	// see /home/varoquaux/geocube/sar/vendor/google.golang.org/grpc/internal/transport/http2_client.go func (t *http2Client) getTrAuthData
 	if strings.Contains(err.Error(), "oauth2: cannot fetch token:") {
-		for _, e := range retriableOAuth2Errors {
-			if strings.Contains(err.Error(), e) {
-				return utils.MakeTemporary(err)
-			}
+		if strings.Contains(err.Error(), "read: connection refused") || strings.Contains(err.Error(), "dial tcp: i/o timeout") {
+			return utils.MakeTemporary(err)
 		}
 	}
 
@@ -238,20 +227,22 @@ func (s gsStrategy) downloadObjectTo(ctx context.Context, bucket, path string, w
 		var n int64
 		n, err = io.Copy(w, r)
 		r.Close()
-		if err == nil {
-			return nil
-		}
-		err = gsError(err)
-		if !utils.Temporary(err) {
-			return fmt.Errorf("copy: %w", err)
+		if err != nil {
+			err = gsError(err)
+			if utils.Temporary(err) {
+				curOffset += n
+				if bytesRemaining > 0 {
+					bytesRemaining -= n
+				}
+				continue
+			} else {
+				return fmt.Errorf("copy: %w", err)
+			}
 		}
 
-		curOffset += n
-		if bytesRemaining > 0 {
-			bytesRemaining -= n
-		}
+		break //err==nil
 	}
-	return fmt.Errorf("failed after %d retries: %w", op.MaxTries, err)
+	return err
 }
 
 func (s gsStrategy) uploadObject(ctx context.Context, bucket, object string, data []byte, opts ...geocubeStorage.Option) error {
@@ -293,15 +284,18 @@ func (s gsStrategy) uploadObjectFrom(ctx context.Context, bucket, object string,
 				return fmt.Errorf("copy: %w", err)
 			}
 		}
-		err = gsError(w.Close())
-		if err == nil {
-			return nil
+		err = w.Close()
+		if err != nil {
+			err = gsError(err)
+			if utils.Temporary(err) {
+				continue
+			} else {
+				return fmt.Errorf("w.close: %w", err)
+			}
 		}
-		if !utils.Temporary(err) {
-			return fmt.Errorf("w.close: %w", err)
-		}
+		break //err==nil
 	}
-	return fmt.Errorf("failed after %d retries: %w", op.MaxTries, err)
+	return err
 }
 
 func (s gsStrategy) deleteObject(ctx context.Context, bucket, object string, opts ...geocubeStorage.Option) error {
@@ -313,13 +307,17 @@ func (s gsStrategy) deleteObject(ctx context.Context, bucket, object string, opt
 			time.Sleep(d)
 			d *= 2
 		}
-		err = gsError(s.gsClient.Bucket(bucket).Object(object).Delete(ctx))
-		if err == nil {
-			return nil
+		err = s.gsClient.Bucket(bucket).Object(object).Delete(ctx)
+		if err != nil {
+			err = gsError(err)
+			if utils.Temporary(err) {
+				continue
+			} else {
+				return fmt.Errorf("w.close: %w", err)
+			}
 		}
-		if !utils.Temporary(err) {
-			return fmt.Errorf("w.close: %w", err)
-		}
+
+		break //err==nil
 	}
-	return fmt.Errorf("failed after %d retries: %w", op.MaxTries, err)
+	return err
 }

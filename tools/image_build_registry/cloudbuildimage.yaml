@@ -1,0 +1,58 @@
+timeout: 3601s
+options:
+  machineType: 'N1_HIGHCPU_8'
+substitutions:
+  _BASE_TAG: "v1"
+  _KANIKO_IMAGE: gcr.io/kaniko-project/executor:v1.0.0
+  _REGISTRY: eu.gcr.io
+  _PROJECT: d-gcb-geocuberd
+
+steps:
+  - name: $_KANIKO_IMAGE
+    id: base-image
+    args:
+      - --destination=$_REGISTRY/$_PROJECT/geocube-base:$_BASE_TAG
+      - --reproducible
+      - --cache=true
+      - --cache-ttl=168h
+      - --use-new-run
+      - --snapshotMode=redo
+      - --dockerfile=docker/Dockerfile.base-image
+  - name: $_KANIKO_IMAGE
+    id: autoscaler
+    waitFor: ['-']
+    args:
+      - --destination=$_REGISTRY/$_PROJECT/autoscaler:$_BASE_TAG
+      - --reproducible
+      - --cache=true
+      - --cache-ttl=168h
+      - --dockerfile=docker/Dockerfile.autoscaler
+  - name: $_KANIKO_IMAGE
+    id: apiserver
+    waitFor: ['base-image']
+    args:
+      - --destination=$_REGISTRY/$_PROJECT/geocube-go-server:$_BASE_TAG
+      - --reproducible
+      - --cache=true
+      - --cache-ttl=168h
+      - --build-arg=BASE_IMAGE=$_REGISTRY/$_PROJECT/geocube-base:$_BASE_TAG
+      - --dockerfile=docker/Dockerfile.server
+  - name: $_KANIKO_IMAGE
+    id: consolidater
+    waitFor: ['base-image']
+    args:
+      - --destination=$_REGISTRY/$_PROJECT/consolidater:$_BASE_TAG
+      - --reproducible
+      - --cache=true
+      - --cache-ttl=168h
+      - --build-arg=BASE_IMAGE=$_REGISTRY/$_PROJECT/geocube-base:$_BASE_TAG
+      - --dockerfile=docker/Dockerfile.consolidater
+  - name: $_KANIKO_IMAGE
+    id: pubsub-emulator
+    args:
+      - --destination=$_REGISTRY/$_PROJECT/pubsub-emulator:$_BASE_TAG
+      - --reproducible
+      - --cache=true
+      - --cache-ttl=168h
+      - --build-arg=BASE_IMAGE=$_REGISTRY/$_PROJECT/pubsub-emulator:$_BASE_TAG
+      - --dockerfile=docker/Dockerfile.pubsub-emulator

@@ -3,6 +3,7 @@ package svc
 import (
 	"context"
 	"fmt"
+	"path"
 	"sort"
 	"strconv"
 	"strings"
@@ -49,32 +50,13 @@ func (svc *Service) handleJobEvt(ctx context.Context, evt geocube.JobEvent) erro
 	}
 
 	// Launch the commands associated to the state
-	if !job.Waiting {
-		start := time.Now()
-		err = svc.csldOnEnterNewState(ctx, job)
-		job.Log.Printf("  ... in %v", time.Since(start))
-	}
+	start := time.Now()
+	err = svc.csldOnEnterNewState(ctx, job)
+	job.Log.Printf("  ... in %v", time.Since(start))
 	return err
 }
 
 func (svc *Service) handleTaskEvt(ctx context.Context, evt geocube.TaskEvent) error {
-	switch evt.Status {
-	case geocube.TaskCancelled:
-		// manage task cancelled
-		return nil
-	case geocube.TaskSuccessful:
-		// manage tasks succeeded but job is cancelled (tasks are deleted)
-		job, err := svc.db.ReadJob(ctx, evt.JobID)
-		if err != nil {
-			return fmt.Errorf("handleTaskEvt(%s).%w", evt.TaskID, err)
-		}
-
-		if job.State == geocube.JobStateABORTED || job.State == geocube.JobStateFAILED {
-			return nil
-		}
-	default:
-	}
-
 	// Get Job with the task of the event
 	job, err := svc.db.ReadJobWithTask(ctx, evt.JobID, evt.TaskID)
 	if err != nil {
@@ -146,7 +128,7 @@ func (svc *Service) csldOnEnterNewState(ctx context.Context, j *geocube.Job) err
 		return nil
 
 	case geocube.JobStateCONSOLIDATIONRETRYING:
-		return svc.csldConsolidationRetry(ctx, j)
+		return svc.csldRetry(ctx, j)
 
 	case geocube.JobStateABORTED:
 		return svc.csldRollback(ctx, j)
@@ -233,7 +215,7 @@ func (svc *Service) csldPrepareOrders(ctx context.Context, job *geocube.Job) err
 			if err != nil {
 				return fmt.Errorf("csldPrepareOrders.%w", err)
 			}
-			logger.Debugf("ReadAndCoverLayout:%v\n", time.Since(start))
+			logger.Debugf("ReadAndCoverLayout (%d cells):%v\n", len(cells), time.Since(start))
 		}
 
 		start = time.Now()
@@ -268,7 +250,14 @@ func (svc *Service) csldPrepareOrders(ctx context.Context, job *geocube.Job) err
 			}
 
 			// Create a basic ConsolidationContainer
-			containerBaseName := utils.URLJoin(svc.ingestionStoragePath, layout.Name+layout.ID, cell.URI, job.Payload.InstanceID)
+			var containerBaseName string
+			if strings.HasPrefix(svc.ingestionStoragePath, "gs://") {
+				gsContainerURI := uri.NewUri("gs", strings.Replace(svc.ingestionStoragePath, "gs://", "", -1), path.Join(layout.ID, cell.URI, job.Payload.InstanceID))
+				containerBaseName = gsContainerURI.String()
+			} else {
+				containerBaseName = path.Join(svc.ingestionStoragePath, layout.Name+layout.ID, cell.URI, job.Payload.InstanceID)
+			}
+
 			containerBase, err := geocube.NewConsolidationContainer(containerBaseName, variable, params, layout, cell)
 			if err != nil {
 				return fmt.Errorf("csldPrepareOrders.%w", err)
@@ -292,7 +281,7 @@ func (svc *Service) csldPrepareOrders(ctx context.Context, job *geocube.Job) err
 			datasets = csldPrepareOrdersExcludeFullContainers(datasets, layout.MaxRecords)
 
 			// Check that datasets are available
-			checkAvailability := false
+			checkAvailability := true
 			if checkAvailability {
 				var errs []string
 				for _, dataset := range datasets {
@@ -621,10 +610,14 @@ func (svc *Service) csldDeleteDatasets(ctx context.Context, job *geocube.Job) er
 	job.Log.Print("Tidy job...")
 
 	errors, err := svc.csldSubFncDeleteJobDatasetsAndContainers(ctx, job, geocube.LockFlagTODELETE, geocube.DatasetStatusTODELETE)
-
-	if err = utils.MergeErrors(true, err, errors...); err != nil {
-		job.Log.Println(err.Error())
-		return svc.publishEvent(ctx, geocube.DeletionFailed, job, err.Error())
+	if err != nil {
+		errors = append(errors, err)
+	}
+	if errors != nil {
+		for _, err := range errors {
+			job.Log.Printf(err.Error())
+		}
+		return svc.publishEvent(ctx, geocube.DeletionFailed, job, errors[0].Error())
 	}
 
 	return svc.publishEvent(ctx, geocube.DeletionDone, job, "")
@@ -753,39 +746,15 @@ func (svc *Service) csldContactAdmin(ctx context.Context, job *geocube.Job) erro
 
 func (svc *Service) csldCancel(ctx context.Context, job *geocube.Job) error {
 	job.Log.Print("Cancel all tasks...")
-
+	// TODO Cancel consolidation tasks
 	if job.ActiveTasks == 0 {
 		return svc.publishEvent(ctx, geocube.CancellationDone, job, "")
 	}
-
-	var err error
-	if job.Tasks, err = svc.db.ReadTasks(ctx, job.ID, []geocube.TaskState{geocube.TaskStatePENDING}); err != nil {
-		return svc.publishEvent(ctx, geocube.CancellationFailed, job, err.Error())
-	}
-
-	for taskIndex, task := range job.Tasks {
-		job.CancelTask(taskIndex)
-
-		// Create cancelled file
-		path := svc.cancelledConsolidationPath + "/" + fmt.Sprintf("%s_%s", job.ID, task.ID)
-		cancelledJobsURI, err := uri.ParseUri(path)
-		if err != nil {
-			return svc.publishEvent(ctx, geocube.CancellationFailed, job, fmt.Sprintf("%s: %s", err.Error(), path))
-		}
-
-		if err := cancelledJobsURI.Upload(ctx, nil); err != nil {
-			return svc.publishEvent(ctx, geocube.CancellationFailed, job, err.Error())
-		}
-
-		if err = svc.saveJob(ctx, nil, job); err != nil {
-			return svc.publishEvent(ctx, geocube.CancellationFailed, job, err.Error())
-		}
-	}
-	return svc.publishEvent(ctx, geocube.CancellationDone, job, "")
+	return nil
 }
 
-func (svc *Service) csldConsolidationRetry(ctx context.Context, job *geocube.Job) error {
-	job.Log.Print("Retry consolidation...")
+func (svc *Service) csldRetry(ctx context.Context, job *geocube.Job) error {
+	job.Log.Print("Retry...")
 
 	var err error
 	// Load tasks

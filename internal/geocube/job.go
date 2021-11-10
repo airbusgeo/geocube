@@ -64,16 +64,6 @@ type JobParams interface {
 	Clean()
 }
 
-type StepByStepLevel int32
-
-// StepByStepLevel
-const (
-	StepByStepNone StepByStepLevel = iota
-	StepByStepCritical
-	StepByStepMajor
-	StepByStepAll
-)
-
 type LockFlag int32
 
 // LockFlag to state why the dataset is locked
@@ -102,8 +92,6 @@ type Job struct {
 	Payload        JobPayload
 	ActiveTasks    int
 	FailedTasks    int
-	StepByStep     int
-	Waiting        bool
 
 	// These following fields may not be loaded
 	Tasks  []*Task
@@ -121,7 +109,8 @@ func NewJob(id string) *Job {
 }
 
 // NewConsolidationJob creates a new consolidation Job
-func NewConsolidationJob(jobName, layoutID, instanceID string, stepByStep int) *Job {
+func NewConsolidationJob(jobName, layoutID, instanceID string, params ConsolidationParams, datasetsID []string) *Job {
+	params.persistenceState = persistenceStateNEW
 	id := uuid.New().String()
 	j := &Job{
 		persistenceState: persistenceStateNEW,
@@ -138,20 +127,11 @@ func NewConsolidationJob(jobName, layoutID, instanceID string, stepByStep int) *
 			ParamsID:   id, // By default ParamsID is JobID
 		},
 
-		StepByStep: stepByStep,
-		Waiting:    false,
+		Params: &params,
 	}
+	j.LockDatasets(datasetsID, LockFlagINIT)
 	j.setLogger()
 	return j
-}
-
-func (j *Job) SetParams(params ConsolidationParams) error {
-	if !j.IsNew() {
-		return fmt.Errorf("job.setParams: cannot set params to a job that is not new")
-	}
-	j.Params = &params
-	params.persistenceState = persistenceStateNEW // Job copies the params and takes ownership
-	return nil
 }
 
 func (j *Job) setLogger() {
@@ -178,8 +158,6 @@ func (j *Job) ToProtobuf() (*pb.Job, error) {
 		Log:            strings.Split(j.Payload.Err, "\n"),
 		ActiveTasks:    int32(j.ActiveTasks),
 		FailedTasks:    int32(j.FailedTasks),
-		StepByStep:     int32(j.StepByStep),
-		Waiting:        j.Waiting,
 	}, nil
 }
 
@@ -258,14 +236,6 @@ func (j *Job) Trigger(evt JobEvent) error {
 }
 
 func (j *Job) triggerConsolidation(evt JobEvent) bool {
-	if evt.Status == Continue {
-		if j.Waiting {
-			j.Waiting = false
-			j.dirty()
-			return true
-		}
-	}
-
 	switch j.State {
 	case JobStateNEW:
 		switch evt.Status {
@@ -278,8 +248,6 @@ func (j *Job) triggerConsolidation(evt JobEvent) bool {
 		}
 	case JobStateCREATED:
 		switch evt.Status {
-		case CancelledByUser:
-			return j.changeState(JobStateABORTED)
 		case RetryForced:
 			return true
 		case PrepareConsolidationOrdersFailed:
@@ -308,8 +276,6 @@ func (j *Job) triggerConsolidation(evt JobEvent) bool {
 		switch evt.Status {
 		case RetryForced:
 			return true
-		case CancelledByUser:
-			return j.changeState(JobStateABORTED)
 		case ConsolidationIndexingFailed:
 			j.logErr(evt.Error)
 			return j.changeState(JobStateCONSOLIDATIONFAILED)
@@ -320,8 +286,6 @@ func (j *Job) triggerConsolidation(evt JobEvent) bool {
 		switch evt.Status {
 		case RetryForced:
 			return true
-		case CancelledByUser:
-			return j.changeState(JobStateABORTED)
 		case SwapDatasetsFailed:
 			j.logErr(evt.Error)
 			return j.changeState(JobStateCONSOLIDATIONFAILED)
@@ -362,12 +326,12 @@ func (j *Job) triggerConsolidation(evt JobEvent) bool {
 		}
 	case JobStateCANCELLATIONFAILED:
 		switch evt.Status {
-		case ConsolidationRetried, RetryForced:
+		case RetryForced:
 			return j.changeState(JobStateCONSOLIDATIONCANCELLING)
 		}
 	case JobStateINITIALISATIONFAILED:
 		switch evt.Status {
-		case ConsolidationRetried, RetryForced:
+		case RetryForced:
 			return j.changeState(JobStateCREATED)
 		case CancelledByUser:
 			return j.changeState(JobStateABORTED)
@@ -413,18 +377,6 @@ func (j *Job) triggerIngestion(evt JobEvent) bool {
 
 func (j *Job) changeState(newState JobState) bool {
 	j.State = newState
-	switch j.State {
-	case JobStateCONSOLIDATIONINPROGRESS, JobStateCONSOLIDATIONEFFECTIVE, JobStateABORTED:
-		// Before consolidation, before deletion, before rollback
-		j.Waiting = j.StepByStep >= int(StepByStepCritical)
-
-	case JobStateCREATED, JobStateCONSOLIDATIONDONE, JobStateCONSOLIDATIONCANCELLING, JobStateCONSOLIDATIONRETRYING:
-		j.Waiting = j.StepByStep >= int(StepByStepMajor)
-
-	default:
-		// JobStateNEW, JobStateCONSOLIDATIONINDEXED, JobStateDONE, JobStateDONEBUTUNTIDY, JobStateCONSOLIDATIONFAILED, JobStateINITIALISATIONFAILED, JobStateCANCELLATIONFAILED, JobStateFAILED:
-		j.Waiting = j.StepByStep >= int(StepByStepAll)
-	}
 	j.dirty()
 	return true
 }

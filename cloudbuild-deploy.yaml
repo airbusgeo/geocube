@@ -1,0 +1,28 @@
+timeout: 3601s
+substitutions:
+  _REGISTRY: eu.gcr.io
+
+steps:
+- name: "gcr.io/cloud-builders/docker"
+  #check images are pushed
+  entrypoint: /bin/bash
+  args:
+    - -c
+    - set -e;
+      docker pull $_REGISTRY/$PROJECT_ID/autoscaler:$SHORT_SHA;
+      docker pull $_REGISTRY/$PROJECT_ID/consolidater:$SHORT_SHA;
+      docker pull $_REGISTRY/$PROJECT_ID/geocube-go-server:$SHORT_SHA;
+      #docker pull $_REGISTRY/$PROJECT_ID/workflow-server:$SHORT_SHA;
+      #docker pull $_REGISTRY/$PROJECT_ID/apigw:$SHORT_SHA;
+      #docker pull $_REGISTRY/$PROJECT_ID/pgbouncer:$SHORT_SHA;
+
+- name: hashicorp/terraform:light
+  id: terraform
+  dir: deploy/infra/terraform
+  entrypoint: /bin/sh
+  args:
+    - -c
+    - set -e;
+      terraform init -backend-config=bucket=geocube-tf-state -backend-config=prefix=dev;
+      terraform plan -out planfile -var="project-id=$PROJECT_ID" -var "short-sha=$SHORT_SHA" -var "registry=$_REGISTRY";
+      terraform apply planfile;

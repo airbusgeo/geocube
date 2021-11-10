@@ -48,8 +48,7 @@ type CreateServiceRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Required. Resource [name](https://cloud.google.com/monitoring/api/v3#project_name) of
-	// the parent workspace. The format is:
+	// Required. Resource name of the parent workspace. The format is:
 	//
 	//     projects/[PROJECT_ID_OR_NUMBER]
 	Parent string `protobuf:"bytes,1,opt,name=parent,proto3" json:"parent,omitempty"`
@@ -171,8 +170,7 @@ type ListServicesRequest struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Required. Resource name of the parent containing the listed services, either a
-	// [project](https://cloud.google.com/monitoring/api/v3#project_name) or a
-	// Monitoring Workspace. The formats are:
+	// project or a Monitoring Workspace. The formats are:
 	//
 	//     projects/[PROJECT_ID_OR_NUMBER]
 	//     workspaces/[HOST_PROJECT_ID_OR_NUMBER]

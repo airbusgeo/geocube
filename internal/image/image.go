@@ -2,7 +2,6 @@ package image
 
 import (
 	"bytes"
-	"context"
 	"errors"
 	"fmt"
 	"image"
@@ -17,20 +16,6 @@ import (
 	"github.com/airbusgeo/godal"
 	"github.com/google/uuid"
 )
-
-type Dataset struct {
-	URI         string
-	SubDir      string
-	Bands       []int64
-	DataMapping geocube.DataMapping
-}
-
-func (d Dataset) GDALURI() string {
-	if d.SubDir != "" {
-		return fmt.Sprintf("%s:%s", d.SubDir, d.URI)
-	}
-	return d.URI
-}
 
 var ErrLoger = godal.ErrLogger(func(ec godal.ErrorCategory, code int, msg string) error {
 	if ec <= godal.CE_Warning {
@@ -60,7 +45,7 @@ var (
 // The caller is responsible to close the dataset
 // fromDFormat: NoData is ignored
 // dstDS [optional] If empty, the dataset is stored in memory
-func CastDataset(ctx context.Context, ds *godal.Dataset, fromDFormat, toDFormat geocube.DataMapping, dstDS string) (*godal.Dataset, error) {
+func CastDataset(ds *godal.Dataset, fromDFormat, toDFormat geocube.DataMapping, dstDS string) (*godal.Dataset, error) {
 	if fromDFormat.Equals(toDFormat) {
 		return nil, ErrNoCastToPerform
 	}
@@ -148,14 +133,14 @@ func closeNonNilDatasets(datasets []*godal.Dataset) {
 
 // MergeDatasets merge the given datasets into one in the format defined by outDesc
 // The caller is responsible to close the output dataset
-func MergeDatasets(ctx context.Context, datasets []*Dataset, outDesc *GdalDatasetDescriptor) (*godal.Dataset, error) {
+func MergeDatasets(datasets []*geocube.Dataset, outDesc *GdalDatasetDescriptor) (*godal.Dataset, error) {
 
 	if len(datasets) == 0 {
 		return nil, fmt.Errorf("mergeDatasets: no dataset to merge")
 	}
 
 	// Group datasets that share the same DataMapping
-	groupedDatasets := [][]*Dataset{}
+	groupedDatasets := [][]*geocube.Dataset{}
 	for _, dataset := range datasets {
 		found := false
 		for i, groupeDs := range groupedDatasets {
@@ -166,7 +151,7 @@ func MergeDatasets(ctx context.Context, datasets []*Dataset, outDesc *GdalDatase
 			}
 		}
 		if !found {
-			groupedDatasets = append(groupedDatasets, []*Dataset{dataset})
+			groupedDatasets = append(groupedDatasets, []*geocube.Dataset{dataset})
 		}
 	}
 
@@ -186,7 +171,7 @@ func MergeDatasets(ctx context.Context, datasets []*Dataset, outDesc *GdalDatase
 		if !commonDMapping.Equals(outDesc.DataMapping) {
 			tmpDS := mergedDs
 			defer tmpDS.Close()
-			if mergedDs, rerr = CastDataset(ctx, tmpDS, commonDMapping, outDesc.DataMapping, ""); rerr != nil {
+			if mergedDs, rerr = CastDataset(tmpDS, commonDMapping, outDesc.DataMapping, ""); rerr != nil {
 				return nil, fmt.Errorf("mergeDatasets: %w", err)
 			}
 		}
@@ -233,16 +218,16 @@ func mosaicDatasets(datasets []*godal.Dataset, rx, ry float64) (*godal.Dataset, 
 
 // warpDatasets calls godal.Warp on datasets, performing a reprojection
 // The caller is responsible to close the output dataset
-func warpDatasets(datasets []*Dataset, wktCRS string, transform *affine.Affine, width, height float64, resampling geocube.Resampling, commonDFormat geocube.DataFormat) (*godal.Dataset, error) {
+func warpDatasets(datasets []*geocube.Dataset, wktCRS string, transform *affine.Affine, width, height float64, resampling geocube.Resampling, commonDFormat geocube.DataFormat) (*godal.Dataset, error) {
 
 	listFile := make([]string, len(datasets))
 	gdatasets := make([]*godal.Dataset, len(datasets))
 	for i, dataset := range datasets {
 		var err error
-		listFile[i] = dataset.GDALURI()
-		gdatasets[i], err = godal.Open(dataset.GDALURI(), ErrLoger)
+		listFile[i] = dataset.GDALOpenName()
+		gdatasets[i], err = godal.Open(dataset.GDALOpenName(), ErrLoger)
 		if err != nil {
-			return nil, fmt.Errorf("while opening %s: %w", dataset.GDALURI(), err)
+			return nil, fmt.Errorf("while opening %s: %w", dataset.GDALOpenName(), err)
 		}
 		defer gdatasets[i].Close()
 	}
@@ -319,7 +304,7 @@ func colorTableFromPalette(palette *geocube.Palette) (*godal.ColorTable, error) 
 
 // DatasetToPngAsBytes translates the dataset to a png and returns the byte representation
 // canInterpolateColor is true if dataset pixel value can be interpolated
-func DatasetToPngAsBytes(ctx context.Context, ds *godal.Dataset, fromDFormat geocube.DataMapping, palette *geocube.Palette, canInterpolateColor bool) ([]byte, error) {
+func DatasetToPngAsBytes(ds *godal.Dataset, fromDFormat geocube.DataMapping, palette *geocube.Palette, canInterpolateColor bool) ([]byte, error) {
 	var palette256 color.Palette
 	var virtualname string
 	toDformat := fromDFormat
@@ -350,7 +335,7 @@ func DatasetToPngAsBytes(ctx context.Context, ds *godal.Dataset, fromDFormat geo
 	}
 
 	// Cast to PNG
-	pngDs, err := CastDataset(ctx, ds, fromDFormat, toDformat, virtualname)
+	pngDs, err := CastDataset(ds, fromDFormat, toDformat, virtualname)
 	if err != nil {
 		return nil, fmt.Errorf("DatasetToPngAsBytes.%w", err)
 	}

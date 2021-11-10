@@ -582,24 +582,6 @@ void godalPolygonize(cctx *ctx, GDALRasterBandH in, GDALRasterBandH mask, OGRLay
 	godalUnwrap();
 }
 
-void godalSieveFilter(cctx *ctx, GDALRasterBandH bnd, GDALRasterBandH mask, GDALRasterBandH dst, int sizeThreshold, int connectedNess) {
-	godalWrap(ctx);
-	CPLErr ret = GDALSieveFilter(bnd,mask,dst,sizeThreshold,connectedNess,nullptr,nullptr,nullptr);
-	if(ret!=0){
-		forceCPLError(ctx,ret);
-	}
-	godalUnwrap();
-}
-
-void godalFillNoData(cctx *ctx, GDALRasterBandH in, GDALRasterBandH mask, int maxDistance, int iterations, char **opts) {
-	godalWrap(ctx);
-	CPLErr ret = GDALFillNodata(in,mask,maxDistance,0,iterations,opts,nullptr,nullptr);
-	if(ret!=0){
-		forceCPLError(ctx,ret);
-	}
-	godalUnwrap();
-}
-
 GDALDatasetH godalRasterize(cctx *ctx, char *dstName, GDALDatasetH ds, char **switches) {
 	godalWrap(ctx);
 	GDALRasterizeOptions *ropts = GDALRasterizeOptionsNew(switches,nullptr);
@@ -1224,19 +1206,19 @@ namespace cpl
             strchr(pszAccess, '+') != NULL)
         {
             CPLError(CE_Failure, CPLE_AppDefined, "Only read-only mode is supported");
-            return nullptr;
+            return NULL;
         }
         char *err = nullptr;
         long long s = _gogdalSizeCallback((char *)pszFilename, &err);
 
         if (s == -1)
         {
-            if (err != nullptr && bSetError)
+            if (err != nullptr)
             {
-                VSIError(VSIE_FileError, "%s", err);
+                CPLError(CE_Failure, CPLE_AppDefined, "%s", err);
             }
             errno = ENOENT;
-            return nullptr;
+            return NULL;
         }
         if (m_buffer == 0)
         {

@@ -3,9 +3,7 @@ package utils
 import (
 	"context"
 	"errors"
-	"fmt"
 	neturl "net/url"
-	"sync"
 	"syscall"
 
 	"google.golang.org/api/googleapi"
@@ -43,7 +41,7 @@ func Temporary(err error) bool {
 	}
 	var gapiError *googleapi.Error
 	if errors.As(err, &gapiError) {
-		return gapiError.Code == 429 || (gapiError.Code >= 500 && gapiError.Code < 600)
+		return gapiError.Code == 429 || gapiError.Code == 500
 	}
 	if errors.Is(err, context.Canceled) {
 		return true
@@ -52,57 +50,4 @@ func Temporary(err error) bool {
 		return true
 	}
 	return false
-}
-
-// ErrWaitGroup is a collection of goroutines working on subtasks that are part of the same overall task.
-type ErrWaitGroup struct {
-	wg sync.WaitGroup
-
-	errMutex sync.Mutex
-	errs     []error
-}
-
-// Wait blocks until all function calls from the Go method have returned, then
-// returns all the non-nil error (if any) from them.
-func (g *ErrWaitGroup) Wait() []error {
-	g.wg.Wait()
-	return g.errs
-}
-
-// Go calls the given function in a new goroutine.
-func (g *ErrWaitGroup) Go(f func() error) {
-	g.wg.Add(1)
-
-	go func() {
-		defer g.wg.Done()
-
-		if err := f(); err != nil {
-			g.errMutex.Lock()
-			g.errs = append(g.errs, err)
-			g.errMutex.Unlock()
-		}
-	}()
-}
-
-// MergeErrors, appending texts
-// if priorityToErr is true, priority to the fatal error then to the temporary
-// else, priority to no error, then to the temporary and finally to the fatal error.
-func MergeErrors(priorityToError bool, err error, newErrs ...error) error {
-	if len(newErrs) == 0 {
-		return err
-	}
-	newErr := newErrs[0]
-
-	if err == nil {
-		err = newErr
-	} else if newErr == nil {
-		if !priorityToError {
-			err = nil
-		}
-	} else if priorityToError != Temporary(newErr) {
-		err = fmt.Errorf("%w\n %v", newErr, err)
-	} else {
-		err = fmt.Errorf("%w\n %v", err, newErr)
-	}
-	return MergeErrors(priorityToError, err, newErrs[1:]...)
 }

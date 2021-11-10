@@ -1,9 +1,9 @@
 package ewkb
 
 import (
+	"bytes"
 	"database/sql/driver"
 	"fmt"
-	"strings"
 
 	"github.com/twpayne/go-geom"
 	"github.com/twpayne/go-geom/encoding/wkbcommon"
@@ -306,9 +306,9 @@ func (gc *GeometryCollection) Value() (driver.Value, error) {
 }
 
 func value(g geom.T) (driver.Value, error) {
-	sb := &strings.Builder{}
-	if err := Write(sb, NDR, g); err != nil {
+	b := &bytes.Buffer{}
+	if err := Write(b, NDR, g); err != nil {
 		return nil, err
 	}
-	return []byte(sb.String()), nil
+	return b.Bytes(), nil
 }

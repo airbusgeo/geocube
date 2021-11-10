@@ -1,0 +1,85 @@
+timeout: 3601s
+options:
+  machineType: 'N1_HIGHCPU_8'
+substitutions:
+  _BASE_TAG: "20200204"
+  _KANIKO_IMAGE: gcr.io/kaniko-project/executor:v1.0.0
+  _REGISTRY: eu.gcr.io
+
+steps:
+- name: $_KANIKO_IMAGE
+  id: base-image
+  args:
+    - --destination=$_REGISTRY/$PROJECT_ID/geocube-base:$_BASE_TAG
+    - --reproducible
+    - --cache=true
+    - --cache-ttl=168h
+    - --use-new-run
+    - --snapshotMode=redo
+    - --dockerfile=docker/Dockerfile.base-image
+- name: $_KANIKO_IMAGE
+  id: autoscaler
+  waitFor: ['-']
+  args:
+    - --destination=$_REGISTRY/$PROJECT_ID/autoscaler:$SHORT_SHA
+    - --reproducible
+    - --cache=true
+    - --cache-ttl=168h
+    - --dockerfile=docker/Dockerfile.autoscaler
+#- name: $_KANIKO_IMAGE
+#  id: pgbouncer
+#  waitFor: ['-']
+#  args:
+#    - --destination=$_REGISTRY/$PROJECT_ID/pgbouncer:$SHORT_SHA
+#    - --reproducible
+#    - --cache=true
+#    - --cache-ttl=168h
+#    - --dockerfile=pgbouncer/Dockerfile
+#- name: $_KANIKO_IMAGE
+#  id: apigw
+#  waitFor: ['-']
+#  args:
+#    - --destination=$_REGISTRY/$PROJECT_ID/apigw:$SHORT_SHA
+#    - --reproducible
+#    - --cache=true
+#    - --cache-ttl=168h
+#    - --dockerfile=docker/Dockerfile.apigw
+- name: $_KANIKO_IMAGE
+  id: apiserver
+  waitFor: ['base-image']
+  args:
+    - --destination=$_REGISTRY/$PROJECT_ID/geocube-go-server:$SHORT_SHA
+    - --reproducible
+    - --cache=true
+    - --cache-ttl=168h
+    - --build-arg=BASE_IMAGE=$_REGISTRY/$PROJECT_ID/geocube-base:$_BASE_TAG
+    - --dockerfile=docker/Dockerfile.server
+#- name: $_KANIKO_IMAGE
+#  id: workflow-server
+#  waitFor: ['base-image']
+#  args:
+#    - --destination=$_REGISTRY/$PROJECT_ID/workflow-server:$SHORT_SHA
+#    - --reproducible
+#    - --cache=true
+#    - --cache-ttl=168h
+#    - --build-arg=BASE_IMAGE=$_REGISTRY/$PROJECT_ID/geocube-base:$_BASE_TAG
+#    - --dockerfile=docker/Dockerfile.workflow-server
+- name: $_KANIKO_IMAGE
+  id: consolidater
+  waitFor: ['base-image']
+  args:
+    - --destination=$_REGISTRY/$PROJECT_ID/consolidater:$SHORT_SHA
+    - --reproducible
+    - --cache=true
+    - --cache-ttl=168h
+    - --build-arg=BASE_IMAGE=$_REGISTRY/$PROJECT_ID/geocube-base:$_BASE_TAG
+    - --dockerfile=docker/Dockerfile.consolidater
+- name: hashicorp/terraform:light
+  id: terraform
+  dir: deploy/infra/terraform
+  entrypoint: /bin/sh
+  args:
+    - -c
+    - set -e;
+      terraform init -backend-config=bucket=geocube-tf-state -backend-config=prefix=dev;
+      terraform plan -var="project-id=$PROJECT_ID" -var "short-sha=$SHORT_SHA" -var "registry=$_REGISTRY";

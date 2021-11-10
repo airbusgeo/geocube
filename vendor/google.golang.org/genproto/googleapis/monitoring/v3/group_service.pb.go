@@ -48,8 +48,7 @@ type ListGroupsRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Required. The [project](https://cloud.google.com/monitoring/api/v3#project_name)
-	// whose groups are to be listed. The format is:
+	// Required. The project whose groups are to be listed. The format is:
 	//
 	//     projects/[PROJECT_ID_OR_NUMBER]
 	Name string `protobuf:"bytes,7,opt,name=name,proto3" json:"name,omitempty"`
@@ -311,8 +310,7 @@ type CreateGroupRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Required. The [project](https://cloud.google.com/monitoring/api/v3#project_name) in
-	// which to create the group. The format is:
+	// Required. The project in which to create the group. The format is:
 	//
 	//     projects/[PROJECT_ID_OR_NUMBER]
 	Name string `protobuf:"bytes,4,opt,name=name,proto3" json:"name,omitempty"`

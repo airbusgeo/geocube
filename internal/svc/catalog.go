@@ -10,6 +10,7 @@ import (
 
 	"github.com/airbusgeo/geocube/internal/geocube"
 	internalImage "github.com/airbusgeo/geocube/internal/image"
+	pb "github.com/airbusgeo/geocube/internal/pb"
 	"github.com/airbusgeo/geocube/internal/utils"
 	"github.com/airbusgeo/geocube/internal/utils/affine"
 	"github.com/airbusgeo/geocube/internal/utils/proj"
@@ -18,10 +19,25 @@ import (
 
 // CubeSlice is a slice of a cube, an image corresponding to a group of record
 type CubeSlice struct {
-	Image    *geocube.Bitmap
-	Err      error
-	Records  []*geocube.Record
-	Metadata map[string]string
+	Image        *geocube.Bitmap
+	Err          error
+	Records      []*geocube.Record
+	Metadata     map[string]string
+	DatasetsMeta CubeMeta
+}
+
+// Datasets info to provide direct access to raw images
+type CubeMeta struct {
+	Resampling     geocube.Resampling
+	RefDataMapping geocube.DataMapping
+	Internals      []*InternalMeta
+}
+
+type InternalMeta struct {
+	ContainerURI    string
+	ContainerSubDir string
+	Bands           []int64
+	DataMapping     geocube.DataMapping
 }
 
 // CubeInfo stores various information about the Cube
@@ -30,11 +46,31 @@ type CubeInfo struct {
 	NbDatasets int
 }
 
+func (i *InternalMeta) ToProtobuf() *pb.InternalMeta {
+	df := &pb.DataFormat{Dtype: pb.DataFormat_Dtype(i.DataMapping.DType),
+		NoData:   i.DataMapping.NoData,
+		MinValue: i.DataMapping.Range.Min,
+		MaxValue: i.DataMapping.Range.Max,
+	}
+
+	prtb := pb.InternalMeta{
+		ContainerUri:    i.ContainerURI,
+		ContainerSubdir: i.ContainerSubDir,
+		Bands:           i.Bands,
+		Dformat:         df,
+		RangeMin:        i.DataMapping.RangeExt.Min,
+		RangeMax:        i.DataMapping.RangeExt.Max,
+		Exponent:        i.DataMapping.Exponent,
+	}
+	return &prtb
+}
+
 // GetCubeFromRecords implements GeocubeService
 // panics if instancesID is empty
 func (svc *Service) GetCubeFromRecords(ctx context.Context, grecordsID [][]string, instancesID []string, crs *godal.SpatialRef, pixToCRS *affine.Affine,
 	width, height int, format string, headersOnly bool) (CubeInfo, <-chan CubeSlice, error) {
 	// Prepare the request
+
 	outDesc, geogAOI, err := svc.getCubePrepare(ctx, instancesID, crs, pixToCRS, width, height, format)
 	if err != nil {
 		return CubeInfo{}, nil, err
@@ -115,7 +151,6 @@ func (svc *Service) getCubePrepare(ctx context.Context, instancesID []string, cr
 			return internalImage.GdalDatasetDescriptor{}, nil, fmt.Errorf("getCubePrepare.%w", err)
 		}
 	}
-
 	// Describe the output
 	outDesc := internalImage.GdalDatasetDescriptor{
 		PixToCRS:   pixToCRS,
@@ -131,6 +166,7 @@ func (svc *Service) getCubePrepare(ctx context.Context, instancesID []string, cr
 		ValidPixPc: 0, // Only exclude empty image
 		Format:     format,
 	}
+
 	outDesc.WktCRS, err = crs.WKT()
 	if err != nil {
 		return internalImage.GdalDatasetDescriptor{}, nil, fmt.Errorf("getCubePrepare.ToWKT: %w", err)
@@ -152,7 +188,7 @@ func (svc *Service) getCubePrepare(ctx context.Context, instancesID []string, cr
 }
 
 // getCubeGroupByRecordsGroup groups datasets and records by the number given by recordsGrp[record.ID]
-func getCubeGroupByRecordsGroup(datasetsByRecord [][]*internalImage.Dataset, records []*geocube.Record, recordsGrp map[string]int) ([][]*internalImage.Dataset, [][]*geocube.Record) {
+func getCubeGroupByRecordsGroup(datasetsByRecord [][]*geocube.Dataset, records []*geocube.Record, recordsGrp map[string]int) ([][]*geocube.Dataset, [][]*geocube.Record) {
 	var grecords [][]*geocube.Record
 	mapGrp := map[int]int{}
 	for i, record := range records {
@@ -171,27 +207,18 @@ func getCubeGroupByRecordsGroup(datasetsByRecord [][]*internalImage.Dataset, rec
 }
 
 // getCubeGroupByRecords groups datasets by record.ID
-func (svc *Service) getCubeGroupByRecords(ctx context.Context, datasets []*geocube.Dataset) ([][]*internalImage.Dataset, []*geocube.Record, error) {
+func (svc *Service) getCubeGroupByRecords(ctx context.Context, datasets []*geocube.Dataset) (datasetsByRecord [][]*geocube.Dataset, records []*geocube.Record, err error) {
 	// Group datasets by records
 	var recordsID []string
-	var datasetsByRecord [][]*internalImage.Dataset
-	for i := 0; i < len(datasets); {
+	for ii, i := 0, 0; i < len(datasets); ii = i {
 		// Get the range of datasets with same RecordID
-		var ds []*internalImage.Dataset
-		recordID := datasets[i].RecordID
-		for ; i < len(datasets) && datasets[i].RecordID == recordID; i++ {
-			ds = append(ds, &internalImage.Dataset{
-				URI:         datasets[i].ContainerURI,
-				SubDir:      datasets[i].ContainerSubDir,
-				Bands:       datasets[i].Bands,
-				DataMapping: datasets[i].DataMapping,
-			})
+		for ; i < len(datasets) && datasets[i].RecordID == datasets[ii].RecordID; i++ {
 		}
-		datasetsByRecord = append(datasetsByRecord, ds)
-		recordsID = append(recordsID, recordID)
+		datasetsByRecord = append(datasetsByRecord, datasets[ii:i])
+		recordsID = append(recordsID, datasets[ii].RecordID)
 	}
 	// Fetch records
-	records, err := svc.db.ReadRecords(ctx, recordsID)
+	records, err = svc.db.ReadRecords(ctx, recordsID)
 	return datasetsByRecord, records, err
 }
 
@@ -200,19 +227,33 @@ func getNumberOfWorkers(memoryUsageBytes int) int {
 	return utils.MinI(10, utils.MaxI(1, ramSize/memoryUsageBytes))
 }
 
-func (svc *Service) getCubeStream(ctx context.Context, datasetsByRecord [][]*internalImage.Dataset, grecords [][]*geocube.Record, outDesc internalImage.GdalDatasetDescriptor, headersOnly bool) (<-chan CubeSlice, error) {
+func (svc *Service) getCubeStream(ctx context.Context, datasetsByRecord [][]*geocube.Dataset, grecords [][]*geocube.Record, outDesc internalImage.GdalDatasetDescriptor, headersOnly bool) (<-chan CubeSlice, error) {
+
 	if headersOnly {
 		// Push the headers into a channel
 		headersOut := make(chan CubeSlice, len(grecords))
-		for _, records := range grecords {
+		for i, records := range grecords {
+			var internalsMeta []*InternalMeta
+			for _, element := range datasetsByRecord[i] {
+
+				internal := InternalMeta{ContainerURI: element.ContainerURI,
+					ContainerSubDir: element.ContainerSubDir,
+					Bands:           element.Bands,
+					DataMapping:     element.DataMapping}
+				internalsMeta = append(internalsMeta, &internal)
+			}
+			cubeMeta := CubeMeta{Resampling: outDesc.Resampling,
+				RefDataMapping: outDesc.DataMapping,
+				Internals:      internalsMeta}
+
 			headersOut <- CubeSlice{
-				Image:    geocube.NewBitmapHeader(image.Rect(0, 0, outDesc.Width, outDesc.Height), outDesc.DataMapping.DType, outDesc.Bands),
-				Err:      nil,
-				Records:  records,
-				Metadata: map[string]string{}}
+				Image:        geocube.NewBitmapHeader(image.Rect(0, 0, outDesc.Width, outDesc.Height), outDesc.DataMapping.DType, outDesc.Bands),
+				Err:          nil,
+				Records:      records,
+				Metadata:     map[string]string{},
+				DatasetsMeta: cubeMeta}
 		}
 		close(headersOut)
-
 		return headersOut, nil
 	}
 
@@ -305,7 +346,7 @@ func (svc *Service) GetXYZTile(ctx context.Context, recordsID []string, instance
 	}
 
 	// Translate to PNG
-	bytes, err := internalImage.DatasetToPngAsBytes(ctx, ds, outDesc.DataMapping, palette, canInterpolateColors)
+	bytes, err := internalImage.DatasetToPngAsBytes(ds, outDesc.DataMapping, palette, canInterpolateColors)
 	if err != nil {
 		return nil, fmt.Errorf("GetMosaic.%w", err)
 	}
@@ -361,7 +402,7 @@ func orderResults(ctx context.Context, unordered []chan CubeSlice, ordered chan<
 
 type mergeDatasetJob struct {
 	ID       int
-	Datasets []*internalImage.Dataset
+	Datasets []*geocube.Dataset
 	Records  []*geocube.Record
 	OutDesc  *internalImage.GdalDatasetDescriptor
 }
@@ -398,11 +439,10 @@ func (svc *Service) mergeDatasetsWorker(ctx context.Context, jobs <-chan mergeDa
 			return
 		default:
 		}
-
 		// Run mergeDatasets
 		start := time.Now()
 		var bitmap *geocube.Bitmap
-		ds, err := internalImage.MergeDatasets(ctx, job.Datasets, job.OutDesc)
+		ds, err := internalImage.MergeDatasets(job.Datasets, job.OutDesc)
 		if err == nil {
 			// Convert to image
 			switch job.OutDesc.Format {
@@ -456,15 +496,5 @@ func (svc *Service) getMosaic(ctx context.Context, recordsID, instancesID []stri
 		RangeExt:   variable.DFormat.Range,
 		Exponent:   1,
 	}
-	ds := make([]*internalImage.Dataset, len(datasets))
-	for i, d := range datasets {
-		ds[i] = &internalImage.Dataset{
-			URI:         d.ContainerURI,
-			SubDir:      d.ContainerSubDir,
-			Bands:       d.Bands,
-			DataMapping: d.DataMapping,
-		}
-	}
-
-	return internalImage.MergeDatasets(ctx, ds, outDesc)
+	return internalImage.MergeDatasets(datasets, outDesc)
 }

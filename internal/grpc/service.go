@@ -60,13 +60,12 @@ type GeocubeService interface {
 	IndexExternalDatasets(ctx context.Context, container *geocube.Container, datasets []*geocube.Dataset) error
 	ConfigConsolidation(ctx context.Context, variableID string, params geocube.ConsolidationParams) error
 	GetConsolidationParams(ctx context.Context, ID string) (*geocube.ConsolidationParams, error)
-	ConsolidateFromRecords(ctx context.Context, job *geocube.Job, recordsID []string) error
-	ConsolidateFromFilters(ctx context.Context, job *geocube.Job, tags map[string]string, fromTime, toTime time.Time) error
+	ConsolidateFromRecords(ctx context.Context, jobName, instanceID, layoutID string, recordsID []string) (string, error)
+	ConsolidateFromFilters(ctx context.Context, jobName, instanceID, layoutID string, tags map[string]string, fromTime, toTime time.Time) (string, error)
 	ListJobs(ctx context.Context, nameLike string) ([]*geocube.Job, error)
 	GetJob(ctx context.Context, jobID string) (*geocube.Job, error)
 	RetryJob(ctx context.Context, jobID string, forceAnyState bool) error
 	CancelJob(ctx context.Context, jobID string) error
-	ContinueJob(ctx context.Context, jobID string) error
 	CleanJobs(ctx context.Context, nameLike string, state *geocube.JobState) (int, error)
 
 	CreateLayout(ctx context.Context, layout *geocube.Layout) error
@@ -82,6 +81,15 @@ type GeocubeService interface {
 type Service struct {
 	gsvc             GeocubeService
 	maxConnectionAge time.Duration
+}
+
+type initGetCube struct {
+	gids     [][]string
+	pixToCRS *affine.Affine
+	crs      *godal.SpatialRef
+	width    int
+	height   int
+	deflater *flate.Writer
 }
 
 var _ pb.GeocubeServer = &Service{}
@@ -551,28 +559,28 @@ func (svc *Service) Consolidate(ctx context.Context, req *pb.ConsolidateRequest)
 		return nil, newValidationError("Invalid Layout.uuid " + req.GetLayoutId() + ": " + err.Error())
 	}
 
-	// Create the job
-	job := geocube.NewConsolidationJob(req.GetJobName(), req.GetLayoutId(), req.GetInstanceId(), int(req.GetStepByStep()))
-
 	// Consolidate
-	var err error
+	var (
+		jobID string
+		err   error
+	)
 	if req.GetRecords() == nil {
 		filters := req.GetFilters()
 		// Convert times
 		fromTime := timeFromTimestamp(filters.GetFromTime())
 		toTime := timeFromTimestamp(filters.GetToTime())
-		err = svc.gsvc.ConsolidateFromFilters(ctx, job, filters.GetTags(), fromTime, toTime)
+		jobID, err = svc.gsvc.ConsolidateFromFilters(ctx, req.GetJobName(), req.GetInstanceId(), req.GetLayoutId(), filters.GetTags(), fromTime, toTime)
 	} else {
 		if len(req.GetRecords().GetIds()) == 0 {
 			return &pb.ConsolidateResponse{}, newValidationError("At least one record must be provided")
 		}
-		err = svc.gsvc.ConsolidateFromRecords(ctx, job, req.GetRecords().GetIds())
+		jobID, err = svc.gsvc.ConsolidateFromRecords(ctx, req.GetJobName(), req.GetInstanceId(), req.GetLayoutId(), req.GetRecords().GetIds())
 	}
 	if err != nil {
 		return nil, formatError("backend.%w", err)
 	}
 
-	return &pb.ConsolidateResponse{JobId: job.ID}, nil
+	return &pb.ConsolidateResponse{JobId: jobID}, nil
 }
 
 // CleanJobs remove all the finished job from the database
@@ -662,27 +670,77 @@ func (svc *Service) CancelJob(ctx context.Context, req *pb.CancelJobRequest) (*p
 		return nil, newValidationError("Invalid uuid: " + err.Error())
 	}
 
-	// Cancel Job
+	// Retry Job
 	if err := svc.gsvc.CancelJob(ctx, req.GetId()); err != nil {
-		return nil, formatError("backend.%w", err)
+		return nil, formatError("backend.CancelJob.%w", err)
 	}
 
 	return &pb.CancelJobResponse{}, nil
 }
 
-// ContinueJob continue a waiting job
-func (svc *Service) ContinueJob(ctx context.Context, req *pb.ContinueJobRequest) (*pb.ContinueJobResponse, error) {
-	// Convert request
-	if _, err := uuid.Parse(req.GetId()); err != nil {
-		return nil, newValidationError("Invalid uuid: " + err.Error())
+func (svc *Service) prepareGetCube(req *pb.GetCubeRequest) (*initGetCube, error) {
+
+	// Validate
+	if len(req.GetInstancesId()) == 0 {
+		return nil, newValidationError("At least one instance must be provided")
+	}
+	// Test whether ids are uuid and convert to [][]string
+	var gids [][]string
+	for _, id := range req.GetRecords().GetIds() {
+		gids = append(gids, []string{id})
+		if _, err := uuid.Parse(id); err != nil {
+			return nil, newValidationError("Invalid Record.uuid " + id + ": " + err.Error())
+		}
+	}
+	for _, records := range req.GetGrecords().GetRecords() {
+		ids := make([]string, len(records.GetIds()))
+		for i, id := range records.GetIds() {
+			ids[i] = id
+			if _, err := uuid.Parse(id); err != nil {
+				return nil, newValidationError("Invalid Record.uuid " + id + ": " + err.Error())
+			}
+		}
+		gids = append(gids, ids)
+	}
+	for _, id := range req.GetInstancesId() {
+		if _, err := uuid.Parse(id); err != nil {
+			return nil, newValidationError("Invalid Instance.uuid " + id + ": " + err.Error())
+		}
 	}
 
-	// Continue Job
-	if err := svc.gsvc.ContinueJob(ctx, req.GetId()); err != nil {
-		return nil, formatError("backend.%w", err)
+	// Get the transform
+	t := req.GetPixToCrs()
+	pixToCRS := affine.NewAffine(t.GetA(), t.GetB(), t.GetC(), t.GetD(), t.GetE(), t.GetF())
+	if !pixToCRS.IsInvertible() {
+		return nil, newValidationError("Invalid pixToCRS transform: not invertible")
 	}
 
-	return &pb.ContinueJobResponse{}, nil
+	// Get the CRS
+	crs, _, err := proj.CRSFromUserInput(req.GetCrs())
+	if err != nil {
+		return nil, newValidationError(fmt.Sprintf("Invalid crs: %s (%v)", req.GetCrs(), err))
+	}
+
+	// Get the shape
+	width, height := int(req.GetSize().GetWidth()), int(req.GetSize().GetHeight())
+	if width <= 0 || height <= 0 {
+		return nil, newValidationError(fmt.Sprintf("Invalid shape: %dx%d", width, height))
+	}
+
+	// Get the level of compression
+	deflater, err := flate.NewWriter(nil, int(req.GetCompressionLevel()))
+	if err != nil {
+		return nil, newValidationError(err.Error())
+	}
+	init := initGetCube{
+		gids:     gids,
+		pixToCRS: pixToCRS,
+		crs:      crs,
+		width:    width,
+		height:   height,
+		deflater: deflater,
+	}
+	return &init, nil
 }
 
 // GetCube retrieves, rescale and reproject datasets and serves them as a cube
@@ -694,61 +752,13 @@ func (svc *Service) GetCube(req *pb.GetCubeRequest, stream pb.Geocube_GetCubeSer
 		cancel()
 	}()
 
-	// Validate
-	if len(req.GetInstancesId()) == 0 {
-		return newValidationError("At least one instance must be provided")
-	}
-	// Test whether ids are uuid and convert to [][]string
-	var gids [][]string
-	for _, id := range req.GetRecords().GetIds() {
-		gids = append(gids, []string{id})
-		if _, err := uuid.Parse(id); err != nil {
-			return newValidationError("Invalid Record.uuid " + id + ": " + err.Error())
-		}
-	}
-	for _, records := range req.GetGrecords().GetRecords() {
-		ids := make([]string, len(records.GetIds()))
-		for i, id := range records.GetIds() {
-			ids[i] = id
-			if _, err := uuid.Parse(id); err != nil {
-				return newValidationError("Invalid Record.uuid " + id + ": " + err.Error())
-			}
-		}
-		gids = append(gids, ids)
-	}
-	for _, id := range req.GetInstancesId() {
-		if _, err := uuid.Parse(id); err != nil {
-			return newValidationError("Invalid Instance.uuid " + id + ": " + err.Error())
-		}
-	}
-
-	// Get the transform
-	t := req.GetPixToCrs()
-	pixToCRS := affine.NewAffine(t.GetA(), t.GetB(), t.GetC(), t.GetD(), t.GetE(), t.GetF())
-	if !pixToCRS.IsInvertible() {
-		return newValidationError("Invalid pixToCRS transform: not invertible")
-	}
-
-	// Get the CRS
-	crs, _, err := proj.CRSFromUserInput(req.GetCrs())
+	initCube, err := svc.prepareGetCube(req)
 	if err != nil {
-		return newValidationError(fmt.Sprintf("Invalid crs: %s (%v)", req.GetCrs(), err))
+		return err
 	}
+	defer initCube.crs.Close()
 
-	defer crs.Close()
-
-	// Get the shape
-	width, height := int(req.GetSize().GetWidth()), int(req.GetSize().GetHeight())
-	if width <= 0 || height <= 0 {
-		return newValidationError(fmt.Sprintf("Invalid shape: %dx%d", width, height))
-	}
-
-	// Get the level of compression
 	var compressed bytes.Buffer
-	deflater, err := flate.NewWriter(nil, int(req.GetCompressionLevel()))
-	if err != nil {
-		return newValidationError(err.Error())
-	}
 
 	// Get the cube
 	var slicesQueue <-chan internal.CubeSlice
@@ -758,16 +768,34 @@ func (svc *Service) GetCube(req *pb.GetCubeRequest, stream pb.Geocube_GetCubeSer
 		// Convert times
 		fromTime := timeFromTimestamp(filters.GetFromTime())
 		toTime := timeFromTimestamp(filters.GetToTime())
-		info, slicesQueue, err = svc.gsvc.GetCubeFromFilters(ctx, filters.GetTags(), fromTime, toTime, req.GetInstancesId(), crs, pixToCRS, width, height, req.Format.String(), req.HeadersOnly)
+		info, slicesQueue, err = svc.gsvc.GetCubeFromFilters(ctx,
+			filters.GetTags(),
+			fromTime,
+			toTime,
+			req.GetInstancesId(),
+			initCube.crs,
+			initCube.pixToCRS,
+			initCube.width,
+			initCube.height,
+			req.Format.String(),
+			req.HeadersOnly)
 		if err != nil {
 			return formatError("backend.%w", err)
 		}
 	} else {
-		if len(gids) == 0 || len(gids[0]) == 0 {
+		if len(initCube.gids) == 0 || len(initCube.gids[0]) == 0 {
 			return newValidationError("At least one record must be provided")
 		}
 
-		info, slicesQueue, err = svc.gsvc.GetCubeFromRecords(ctx, gids, req.InstancesId, crs, pixToCRS, width, height, req.Format.String(), req.HeadersOnly)
+		info, slicesQueue, err = svc.gsvc.GetCubeFromRecords(ctx,
+			initCube.gids,
+			req.InstancesId,
+			initCube.crs,
+			initCube.pixToCRS,
+			initCube.width,
+			initCube.height,
+			req.Format.String(),
+			req.HeadersOnly)
 		if err != nil {
 			return formatError("backend.%w", err)
 		}
@@ -789,17 +817,31 @@ func (svc *Service) GetCube(req *pb.GetCubeRequest, stream pb.Geocube_GetCubeSer
 
 	// Start the compression routine
 	compressedSlicesQueue := make(chan internal.CubeSlice)
-	go compressSlicesQueue(slicesQueue, compressedSlicesQueue, deflater, compressed)
+	go compressSlicesQueue(slicesQueue, compressedSlicesQueue, initCube.deflater, compressed)
 
 	// If context close, compressedSlicesQueue is automatically closed
 	n := 1
 	for res := range compressedSlicesQueue {
 		// Create the header
-		header := &pb.ImageHeader{Records: make([]*pb.Record, len(res.Records))}
+		internalsMeta := make([]*pb.InternalMeta, len(res.DatasetsMeta.Internals))
+		refDf := &pb.DataFormat{Dtype: pb.DataFormat_Dtype(res.DatasetsMeta.RefDataMapping.DType),
+			NoData:   res.DatasetsMeta.RefDataMapping.NoData,
+			MinValue: res.DatasetsMeta.RefDataMapping.Range.Min,
+			MaxValue: res.DatasetsMeta.RefDataMapping.Range.Max}
+		datasetMeta := &pb.DatasetMeta{RefDformat: refDf,
+			ResamplingAlg: pb.Resampling(res.DatasetsMeta.Resampling),
+			InternalsMeta: internalsMeta}
+		header := &pb.ImageHeader{Records: make([]*pb.Record, len(res.Records)),
+			DatasetsMeta: datasetMeta}
+
+		//populate the datasetMeta part of the header
 		for i, r := range res.Records {
 			header.Records[i] = r.ToProtobuf(false)
 		}
 
+		for i, d := range res.DatasetsMeta.Internals {
+			header.DatasetsMeta.InternalsMeta[i] = d.ToProtobuf()
+		}
 		var chunks []*pb.GetCubeResponse
 		if res.Err != nil {
 			// Only send a header with the error
@@ -809,7 +851,6 @@ func (svc *Service) GetCube(req *pb.GetCubeRequest, stream pb.Geocube_GetCubeSer
 			// Send the image in chunks
 			chunks = divideInChunks(header, res.Image)
 		}
-
 		getCubeLog(ctx, res, header, req.GetHeadersOnly(), n)
 		n++
 
@@ -820,7 +861,6 @@ func (svc *Service) GetCube(req *pb.GetCubeRequest, stream pb.Geocube_GetCubeSer
 			}
 		}
 	}
-
 	return ctx.Err()
 }
 
@@ -878,12 +918,15 @@ func divideInChunks(header *pb.ImageHeader, image *geocube.Bitmap) []*pb.GetCube
 	reader := bytes.NewBuffer(image.Bytes)
 
 	// Image header
-	header.Shape = &pb.Shape{Dim1: int32(image.Bands), Dim2: int32(image.SizeX()), Dim3: int32(image.SizeY())}
+	header.Shape = &pb.Shape{Dim1: int32(image.Bands),
+		Dim2: int32(image.SizeX()),
+		Dim3: int32(image.SizeY())}
 	header.Dtype = pb.DataFormat_Dtype(image.DType)
 	header.NbParts = int32(nbParts)
 	header.Size = int64(len(image.Bytes))
 	header.Order = order
 	header.Data = reader.Next(chunkSize)
+	// header.DatasetMeta = &pb.DatasetMeta{}
 
 	// Image chunks
 	for part := 1; part < nbParts; part++ {
