@@ -33,6 +33,11 @@ type Service struct {
 
 // New returns a new business service
 func New(ctx context.Context, db database.GeocubeDBBackend, eventPublisher messaging.Publisher, consolidationPublisher messaging.Publisher, ingestionStoragePath, cancelledConsolidationPath string, catalogWorkers int) (*Service, error) {
+	// Check parameters
+	if (ingestionStoragePath == "") != (consolidationPublisher == nil) {
+		return nil, fmt.Errorf("invalid arguments: to define the service to be able to handle consolidation, ingestionStoragePath and consolidationPublisher must be defined")
+	}
+
 	ramSize = int(C.sysconf(C._SC_PHYS_PAGES) * C.sysconf(C._SC_PAGE_SIZE))
 
 	if catalogWorkers <= 0 {

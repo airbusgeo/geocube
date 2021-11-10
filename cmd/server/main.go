@@ -306,17 +306,17 @@ func newServerAppConfig() (*serverConfig, error) {
 	local := flag.Bool("local", false, "execute geocube in local environment")
 	listenPort := flag.String("port", "8080", "geocube port to use")
 	dbConnection := flag.String("dbConnection", "", "database connection (ex: postgresql://postgres:1234@localhost:5432/geocube)")
-	dbName := flag.String("dbName", "", "database name")
-	dbUser := flag.String("dbUser", "", "database user")
-	dbHost := flag.String("dbHost", "", "database host")
-	dbPassword := flag.String("dbPassword", "", "database password")
+	dbName := flag.String("dbName", "", "database name (to connect with User, Host & Password)")
+	dbUser := flag.String("dbUser", "", "database user (see dbName)")
+	dbHost := flag.String("dbHost", "", "database host (see dbName)")
+	dbPassword := flag.String("dbPassword", "", "database password (see dbName)")
 	project := flag.String("project", "", "project name (gcp only/not required in local usage)")
-	dbSecretName := flag.String("dbSecretName", "", "database secret name")
-	baSecretName := flag.String("baSecretName", "", "bearer authentication secret name")
-	psEventsTopic := flag.String("psEventsTopic", "", "pubsub events topic name")
-	psConsolidationsTopic := flag.String("psConsolidationsTopic", "", "pubsub consolidations topic name")
+	dbSecretName := flag.String("dbSecretName", "", "name of the secret that stores credentials to connect to the database (gcp only)")
+	baSecretName := flag.String("baSecretName", "", "name of the secret that stores the bearer authentication (admin & user) (gcp only)")
+	psEventsTopic := flag.String("psEventsTopic", "", "name of the topic to send the consolidation events (pubsub only)")
+	psConsolidationsTopic := flag.String("psConsolidationsTopic", "", "name of the topic to send the consolidation orders (pubsub only)")
 	maxConnectionAge := flag.Int("maxConnectionAge", 0, "grpc max age connection")
-	ingestionStorage := flag.String("ingestionStorage", "", "ingestion storage strategy (local/gs)")
+	ingestionStorage := flag.String("ingestionStorage", "", "path to the storage where ingested and consolidated datasets will be stored (local/gs)")
 	workers := flag.Int("workers", 1, "number of parallel workers per catalog request")
 	gdalBlocksize := flag.String("gdalBlockSize", "1Mb", "gdal blocksize value (default 1Mb)")
 	gdalNumCachedBlocks := flag.Int("gdalNumCachedBlocks", 500, "gdal blockcache value (default 500)")
@@ -326,10 +326,6 @@ func newServerAppConfig() (*serverConfig, error) {
 
 	if *listenPort == "" {
 		return nil, fmt.Errorf("failed to initialize --port application flag")
-	}
-
-	if *ingestionStorage == "" {
-		return nil, fmt.Errorf("failed to initialize --ingestionStorage flag")
 	}
 
 	if *cancelledJobs == "" {

@@ -4,8 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"os"
 	"path"
+	"strings"
 
 	"github.com/airbusgeo/geocube/interface/storage"
 
@@ -76,6 +78,12 @@ func (h *handlerConsolidation) Consolidate(ctx context.Context, cEvent *geocube.
 		recordID := record.ID
 		localDatasetsByRecords := datasetsByRecords[recordID]
 
+		cogFile, ok := h.isAlreadyUsableCOG(ctx, localDatasetsByRecords, cEvent.Container, recordID, workDir)
+		if ok {
+			cogListFile = append(cogListFile, cogFile)
+			continue
+		}
+
 		pixToCRS := affine.NewAffine(
 			cEvent.Container.Transform[0],
 			cEvent.Container.Transform[1],
@@ -121,16 +129,19 @@ func (h *handlerConsolidation) Consolidate(ctx context.Context, cEvent *geocube.
 		if err := h.uploadFile(ctx, cogListFile[0], cEvent.Container.URI); err != nil {
 			return fmt.Errorf("failed to upload file on: %s : %w", cEvent.Container.URI, err)
 		}
-	} else {
-		mucogFilePath, err := h.mucog.Create(workDir, cogListFile)
-		if err != nil {
-			return fmt.Errorf("failed to create mucog: %w", err)
-		}
 
-		log.Logger(ctx).Sugar().Debugf("mucog has been generated : %s", mucogFilePath)
-		if err := h.uploadFile(ctx, mucogFilePath, cEvent.Container.URI); err != nil {
-			return fmt.Errorf("failed to upload file on: %s : %w", cEvent.Container.URI, err)
-		}
+		log.Logger(ctx).Sugar().Infof("Upload cog on : %s", cEvent.Container.URI)
+		return nil
+	}
+
+	mucogFilePath, err := h.mucog.Create(workDir, cogListFile)
+	if err != nil {
+		return fmt.Errorf("failed to create mucog: %w", err)
+	}
+
+	log.Logger(ctx).Sugar().Debugf("mucog has been generated : %s", mucogFilePath)
+	if err := h.uploadFile(ctx, mucogFilePath, cEvent.Container.URI); err != nil {
+		return fmt.Errorf("failed to upload file on: %s : %w", cEvent.Container.URI, err)
 	}
 
 	log.Logger(ctx).Sugar().Infof("Upload mucog on : %s", cEvent.Container.URI)
@@ -256,4 +267,101 @@ func (h *handlerConsolidation) isCancelled(ctx context.Context, event *geocube.C
 	}
 
 	return exist
+}
+
+/*
+	isAlreadyUsableCOG return boolean
+	true is returned if file is already a Cloud Optimized Geotiff and internal structure is similar that container, otherwise false.
+*/
+func (h *handlerConsolidation) isAlreadyUsableCOG(ctx context.Context, records []*Dataset, container geocube.ConsolidationContainer, recordID, workDir string) (string, bool) {
+	if len(records) > 1 {
+		return "", false
+	}
+
+	isMucogDataset := records[0].SubDir != ""
+	var localFilePath string
+	if isMucogDataset {
+		localFilePath = fmt.Sprintf("%s:%s", records[0].SubDir, records[0].URI)
+	} else {
+		localFilePath = records[0].URI
+	}
+
+	isCog, ds := h.cog.IsCog(ctx, localFilePath)
+	if !isCog {
+		log.Logger(ctx).Sugar().Debugf("file is not a cog")
+		return "", false
+	}
+
+	defer ds.Close()
+
+	var errors []string
+	if ds.Structure().BlockSizeX != container.BlockXSize || ds.Structure().BlockSizeY != container.BlockYSize {
+		errors = append(errors, "cog blockSize is different than container target blockSize")
+	}
+
+	if ds.Structure().NBands != container.BandsCount {
+		errors = append(errors, "cog number of bands is different than container target number of bands")
+	}
+
+	if ds.Structure().DataType != container.DatasetFormat.DType.ToGDAL() {
+		errors = append(errors, "cog dataType is different than container target dataType")
+	}
+
+	band := ds.Bands()[0]
+	ovrCount := len(band.Overviews())
+	if ovrCount == 0 && container.CreateOverviews {
+		errors = append(errors, "cog has not overviews (required by container)")
+	}
+
+	srWKT, err := ds.SpatialRef().WKT()
+	if err != nil {
+		errors = append(errors, err.Error())
+	}
+	if !strings.EqualFold(srWKT, container.CRS) {
+		errors = append(errors, "cog crs is different than container target crs")
+	}
+
+	geoTransform, err := ds.GeoTransform()
+	if err != nil {
+		errors = append(errors, err.Error())
+	}
+	if !h.isSameGeoTransForm(geoTransform, container.Transform) {
+		errors = append(errors, "cog geoTransform is different than container target geoTransform")
+	}
+
+	if len(errors) != 0 {
+		log.Logger(ctx).Sugar().Debugf("cog is not reusable in state: " + strings.Join(errors, ", "))
+		return "", false
+	}
+
+	if isMucogDataset {
+		newCogFilePath, err := h.cog.Create(ds, container, recordID, workDir)
+		if err != nil {
+			return "", false
+		}
+
+		return newCogFilePath, true
+
+	}
+
+	return localFilePath, true
+
+}
+
+/*
+	isSameGeoTransForm compare two geoTransfrom with fix tolerance (10^-8)
+*/
+func (h *handlerConsolidation) isSameGeoTransForm(gt1 [6]float64, gt2 [6]float64) bool {
+	if len(gt1) != len(gt2) {
+		return false
+	}
+
+	tolerance := math.Pow(10, -8)
+	for i := range gt1 {
+		if diff := math.Abs(gt1[i] - gt2[i]); diff < tolerance {
+			continue
+		}
+		return false
+	}
+	return true
 }

@@ -155,6 +155,14 @@ var _ = Describe("HandleConsolidation", func() {
 				}
 			})
 		})
+
+		Context("when cogs is already usable", func() {
+			BeforeEach(func() {
+				consolidationEventToUse = ConsolidationEvent
+			})
+			itShouldNotReturnAnError()
+			itShouldCreateMucog()
+		})
 	})
 
 })
