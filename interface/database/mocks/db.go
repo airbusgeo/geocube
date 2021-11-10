@@ -53,7 +53,23 @@ func (_m *GeocubeBackend) DeleteRecords(ctx context.Context, ids []string) (int6
 }
 
 func (_m *GeocubeBackend) FindRecords(ctx context.Context, namelike string, tags geocube.Metadata, fromTime, toTime time.Time, jobID string, aoi *geocube.AOI, page, limit int, order, loadAOI bool) ([]*geocube.Record, error) {
-	panic("implement me")
+	ret := _m.Called(ctx, namelike, tags, fromTime, toTime, jobID, aoi, page, limit, order, loadAOI)
+
+	var r0 []*geocube.Record
+	if rf, ok := ret.Get(0).(func(context.Context, string, geocube.Metadata, time.Time, time.Time, string, *geocube.AOI, int, int, bool, bool) []*geocube.Record); ok {
+		r0 = rf(ctx, namelike, tags, fromTime, toTime, jobID, aoi, page, limit, order, loadAOI)
+	} else {
+		r0 = ret.Get(0).([]*geocube.Record)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, geocube.Metadata, time.Time, time.Time, string, *geocube.AOI, int, int, bool, bool) error); ok {
+		r1 = rf(ctx, namelike, tags, fromTime, toTime, jobID, aoi, page, limit, order, loadAOI)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 func (_m *GeocubeBackend) AddRecordsTags(ctx context.Context, ids []string, tags geocube.Metadata) (int64, error) {
@@ -121,7 +137,23 @@ func (_m *GeocubeBackend) ReadVariable(ctx context.Context, variableID string) (
 }
 
 func (_m *GeocubeBackend) ReadVariableFromInstanceID(ctx context.Context, instanceID string) (*geocube.Variable, error) {
-	panic("implement me")
+	ret := _m.Called(ctx, instanceID)
+
+	var r0 *geocube.Variable
+	if rf, ok := ret.Get(0).(func(context.Context, string) *geocube.Variable); ok {
+		r0 = rf(ctx, instanceID)
+	} else {
+		r0 = ret.Get(0).(*geocube.Variable)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, instanceID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 func (_m *GeocubeBackend) ReadVariableFromName(ctx context.Context, variableName string) (*geocube.Variable, error) {
@@ -133,7 +165,16 @@ func (_m *GeocubeBackend) FindVariables(ctx context.Context, namelike string, pa
 }
 
 func (_m *GeocubeBackend) CreateConsolidationParams(ctx context.Context, id string, consolidationParams geocube.ConsolidationParams) error {
-	panic("implement me")
+	ret := _m.Called(ctx, id, consolidationParams)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, geocube.ConsolidationParams) error); ok {
+		r0 = rf(ctx, id, consolidationParams)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }
 
 func (_m *GeocubeBackend) ReadConsolidationParams(ctx context.Context, id string) (*geocube.ConsolidationParams, error) {
@@ -193,15 +234,63 @@ func (_m *GeocubeBackend) DeleteDatasets(ctx context.Context, datasetsID []strin
 }
 
 func (_m *GeocubeBackend) ListActiveDatasetsID(ctx context.Context, instanceID string, recordsID []string, recordTags geocube.Metadata, fromTime, toTime time.Time) ([]string, error) {
-	panic("implement me")
+	ret := _m.Called(ctx, instanceID, recordsID, recordTags, fromTime, toTime)
+
+	var r0 []string
+	if rf, ok := ret.Get(0).(func(context.Context, string, []string, geocube.Metadata, time.Time, time.Time) []string); ok {
+		r0 = rf(ctx, instanceID, recordsID, recordTags, fromTime, toTime)
+	} else {
+		r0 = ret.Get(0).([]string)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, []string, geocube.Metadata, time.Time, time.Time) error); ok {
+		r1 = rf(ctx, instanceID, recordsID, recordTags, fromTime, toTime)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 func (_m *GeocubeBackend) FindDatasets(ctx context.Context, status geocube.DatasetStatus, containerURI, lockedByJobID string, instancesID, recordsID []string, recordTags geocube.Metadata, fromTime, toTime time.Time, geog *proj.GeographicShape, refinedShape *proj.Shape, page, limit int, order bool) ([]*geocube.Dataset, error) {
-	panic("implement me")
+	ret := _m.Called(ctx, status, containerURI, lockedByJobID, instancesID, recordsID, recordTags, fromTime, toTime, geog, refinedShape, page, limit, order)
+
+	var r0 []*geocube.Dataset
+	if rf, ok := ret.Get(0).(func(context.Context, geocube.DatasetStatus, string, string, []string, []string, geocube.Metadata, time.Time, time.Time, *proj.GeographicShape, *proj.Shape, int, int, bool) []*geocube.Dataset); ok {
+		r0 = rf(ctx, status, containerURI, lockedByJobID, instancesID, recordsID, recordTags, fromTime, toTime, geog, refinedShape, page, limit, order)
+	} else {
+		r0 = ret.Get(0).([]*geocube.Dataset)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, geocube.DatasetStatus, string, string, []string, []string, geocube.Metadata, time.Time, time.Time, *proj.GeographicShape, *proj.Shape, int, int, bool) error); ok {
+		r1 = rf(ctx, status, containerURI, lockedByJobID, instancesID, recordsID, recordTags, fromTime, toTime, geog, refinedShape, page, limit, order)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 func (_m *GeocubeBackend) GetDatasetsGeometryUnion(ctx context.Context, lockedByJobID string) (*geom.MultiPolygon, error) {
-	panic("implement me")
+	ret := _m.Called(ctx, lockedByJobID)
+
+	var r0 *geom.MultiPolygon
+	if rf, ok := ret.Get(0).(func(context.Context, string) *geom.MultiPolygon); ok {
+		r0 = rf(ctx, lockedByJobID)
+	} else {
+		r0 = ret.Get(0).(*geom.MultiPolygon)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, lockedByJobID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 func (_m *GeocubeBackend) UpdateDatasets(ctx context.Context, instanceID string, dmapping geocube.DataMapping) (map[string]int64, error) {
@@ -216,8 +305,24 @@ func (_m *GeocubeBackend) DeleteLayout(ctx context.Context, name string) error {
 	panic("implement me")
 }
 
-func (_m *GeocubeBackend) ReadLayout(ctx context.Context, name string) (*geocube.Layout, error) {
-	panic("implement me")
+func (_m *GeocubeBackend) ReadLayout(ctx context.Context, layoutID string) (*geocube.Layout, error) {
+	ret := _m.Called(ctx, layoutID)
+
+	var r0 *geocube.Layout
+	if rf, ok := ret.Get(0).(func(context.Context, string) *geocube.Layout); ok {
+		r0 = rf(ctx, layoutID)
+	} else {
+		r0 = ret.Get(0).(*geocube.Layout)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, layoutID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 func (_m *GeocubeBackend) FindLayouts(ctx context.Context, nameLike string) ([]*geocube.Layout, error) {
@@ -225,7 +330,16 @@ func (_m *GeocubeBackend) FindLayouts(ctx context.Context, nameLike string) ([]*
 }
 
 func (_m *GeocubeBackend) CreateJob(ctx context.Context, job *geocube.Job) error {
-	panic("implement me")
+	ret := _m.Called(ctx, job)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *geocube.Job) error); ok {
+		r0 = rf(ctx, job)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }
 
 func (_m *GeocubeBackend) FindJobs(ctx context.Context, nameLike string) ([]*geocube.Job, error) {
@@ -294,11 +408,29 @@ func (_m *GeocubeBackend) ListJobsID(ctx context.Context, nameLike string, state
 }
 
 func (_m *GeocubeBackend) LockDatasets(ctx context.Context, jobID string, datasetsID []string, flag int) error {
-	panic("implement me")
+	ret := _m.Called(ctx, jobID, datasetsID, flag)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, []string, int) error); ok {
+		r0 = rf(ctx, jobID, datasetsID, flag)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }
 
 func (_m *GeocubeBackend) ReleaseDatasets(ctx context.Context, jobID string, flag int) error {
-	panic("implement me")
+	ret := _m.Called(ctx, jobID, flag)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, int) error); ok {
+		r0 = rf(ctx, jobID, flag)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }
 
 func (_m *GeocubeBackend) CreateTasks(ctx context.Context, jobID string, tasks []*geocube.Task) error {
@@ -395,4 +527,176 @@ func (_m *GeocubeTxBackend) Rollback() error {
 	}
 
 	return r1
+}
+
+func (_m *GeocubeTxBackend) ReadVariableFromInstanceID(ctx context.Context, instanceID string) (*geocube.Variable, error) {
+	ret := _m.Called(ctx, instanceID)
+
+	var r0 *geocube.Variable
+	if rf, ok := ret.Get(0).(func(context.Context, string) *geocube.Variable); ok {
+		r0 = rf(ctx, instanceID)
+	} else {
+		r0 = ret.Get(0).(*geocube.Variable)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, instanceID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+func (_m *GeocubeTxBackend) ReadConsolidationParams(ctx context.Context, id string) (*geocube.ConsolidationParams, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 *geocube.ConsolidationParams
+	if rf, ok := ret.Get(0).(func(context.Context, string) *geocube.ConsolidationParams); ok {
+		r0 = rf(ctx, id)
+	} else {
+		r0 = ret.Get(0).(*geocube.ConsolidationParams)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+func (_m *GeocubeTxBackend) CreateJob(ctx context.Context, job *geocube.Job) error {
+	ret := _m.Called(ctx, job)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *geocube.Job) error); ok {
+		r0 = rf(ctx, job)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+func (_m *GeocubeTxBackend) CreateConsolidationParams(ctx context.Context, id string, consolidationParams geocube.ConsolidationParams) error {
+	ret := _m.Called(ctx, id, consolidationParams)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, geocube.ConsolidationParams) error); ok {
+		r0 = rf(ctx, id, consolidationParams)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+func (_m *GeocubeTxBackend) LockDatasets(ctx context.Context, jobID string, datasetsID []string, flag int) error {
+	ret := _m.Called(ctx, jobID, datasetsID, flag)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, []string, int) error); ok {
+		r0 = rf(ctx, jobID, datasetsID, flag)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+func (_m *GeocubeTxBackend) FindRecords(ctx context.Context, namelike string, tags geocube.Metadata, fromTime, toTime time.Time, jobID string, aoi *geocube.AOI, page, limit int, order, loadAOI bool) ([]*geocube.Record, error) {
+	ret := _m.Called(ctx, namelike, tags, fromTime, toTime, jobID, aoi, page, limit, order, loadAOI)
+
+	var r0 []*geocube.Record
+	if rf, ok := ret.Get(0).(func(context.Context, string, geocube.Metadata, time.Time, time.Time, string, *geocube.AOI, int, int, bool, bool) []*geocube.Record); ok {
+		r0 = rf(ctx, namelike, tags, fromTime, toTime, jobID, aoi, page, limit, order, loadAOI)
+	} else {
+		r0 = ret.Get(0).([]*geocube.Record)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, geocube.Metadata, time.Time, time.Time, string, *geocube.AOI, int, int, bool, bool) error); ok {
+		r1 = rf(ctx, namelike, tags, fromTime, toTime, jobID, aoi, page, limit, order, loadAOI)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+func (_m *GeocubeTxBackend) GetDatasetsGeometryUnion(ctx context.Context, lockedByJobID string) (*geom.MultiPolygon, error) {
+	ret := _m.Called(ctx, lockedByJobID)
+
+	var r0 *geom.MultiPolygon
+	if rf, ok := ret.Get(0).(func(context.Context, string) *geom.MultiPolygon); ok {
+		r0 = rf(ctx, lockedByJobID)
+	} else {
+		r0 = ret.Get(0).(*geom.MultiPolygon)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, lockedByJobID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+func (_m *GeocubeTxBackend) ReadLayout(ctx context.Context, layoutID string) (*geocube.Layout, error) {
+	ret := _m.Called(ctx, layoutID)
+
+	var r0 *geocube.Layout
+	if rf, ok := ret.Get(0).(func(context.Context, string) *geocube.Layout); ok {
+		r0 = rf(ctx, layoutID)
+	} else {
+		r0 = ret.Get(0).(*geocube.Layout)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, layoutID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+func (_m *GeocubeTxBackend) FindDatasets(ctx context.Context, status geocube.DatasetStatus, containerURI, lockedByJobID string, instancesID, recordsID []string, recordTags geocube.Metadata, fromTime, toTime time.Time, geog *proj.GeographicShape, refinedShape *proj.Shape, page, limit int, order bool) ([]*geocube.Dataset, error) {
+	ret := _m.Called(ctx, status, containerURI, lockedByJobID, instancesID, recordsID, recordTags, fromTime, toTime, geog, refinedShape, page, limit, order)
+
+	var r0 []*geocube.Dataset
+	if rf, ok := ret.Get(0).(func(context.Context, geocube.DatasetStatus, string, string, []string, []string, geocube.Metadata, time.Time, time.Time, *proj.GeographicShape, *proj.Shape, int, int, bool) []*geocube.Dataset); ok {
+		r0 = rf(ctx, status, containerURI, lockedByJobID, instancesID, recordsID, recordTags, fromTime, toTime, geog, refinedShape, page, limit, order)
+	} else {
+		r0 = ret.Get(0).([]*geocube.Dataset)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, geocube.DatasetStatus, string, string, []string, []string, geocube.Metadata, time.Time, time.Time, *proj.GeographicShape, *proj.Shape, int, int, bool) error); ok {
+		r1 = rf(ctx, status, containerURI, lockedByJobID, instancesID, recordsID, recordTags, fromTime, toTime, geog, refinedShape, page, limit, order)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+func (_m *GeocubeTxBackend) ReleaseDatasets(ctx context.Context, jobID string, flag int) error {
+	ret := _m.Called(ctx, jobID, flag)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, int) error); ok {
+		r0 = rf(ctx, jobID, flag)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }

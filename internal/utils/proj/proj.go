@@ -147,7 +147,6 @@ func (shape Shape) MarshalBinary() ([]byte, error) {
 		return nil, fmt.Errorf("failed to marshal shape as binary: %w", err)
 	}
 	return []byte(value), nil
-
 }
 
 func (shape *Shape) UnmarshalBinary(data []byte) error {

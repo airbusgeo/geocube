@@ -2,17 +2,17 @@ package svc_test
 
 import (
 	"context"
-	mocksDB "github.com/airbusgeo/geocube/interface/database/mocks"
-	mocksMessaging "github.com/airbusgeo/geocube/interface/messaging/mocks"
-	"github.com/airbusgeo/geocube/internal/geocube"
-	"github.com/stretchr/testify/mock"
 	"log"
 	"os"
 	"path"
 
+	mocksDB "github.com/airbusgeo/geocube/interface/database/mocks"
+	mocksMessaging "github.com/airbusgeo/geocube/interface/messaging/mocks"
+	"github.com/airbusgeo/geocube/internal/geocube"
 	"github.com/airbusgeo/geocube/internal/svc"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/mock"
 )
 
 var _ = Describe("csldCancel", func() {
