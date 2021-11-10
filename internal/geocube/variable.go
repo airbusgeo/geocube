@@ -152,7 +152,7 @@ func (v *Variable) ToProtobuf() *pb.Variable {
 		Name:          v.Name,
 		Unit:          v.Unit,
 		Description:   v.Description,
-		Dformat:       v.DFormat.toProtobuf(),
+		Dformat:       v.DFormat.ToProtobuf(),
 		Bands:         v.Bands,
 		Palette:       v.Palette,
 		ResamplingAlg: pb.Resampling(v.Resampling),
