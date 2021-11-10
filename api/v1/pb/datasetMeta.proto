@@ -1,0 +1,23 @@
+syntax = "proto3";
+package geocube;
+option go_package = "./pb;geocube";
+
+import "pb/dataformat.proto";
+import "pb/variables.proto";
+
+
+message DatasetMeta{
+  DataFormat             ref_dformat    = 1;
+  Resampling             resampling_alg = 2;
+  repeated InternalMeta  internalsMeta  = 3;
+}
+
+message InternalMeta{
+  string         container_uri    = 1;
+  string         container_subdir = 2;
+  repeated int64 bands            = 3;
+  DataFormat     dformat          = 4;
+  double         range_min        = 5;
+  double         range_max        = 6;
+  double         exponent         = 7;
+}
