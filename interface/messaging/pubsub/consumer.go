@@ -124,7 +124,6 @@ type processOptions struct {
 	ReturnImmediately    bool
 	OnErrorRetryDelay    time.Duration
 	ExitOnExtensionError bool
-	MaxTries             int
 }
 
 type ProcessOption func(o *processOptions)
@@ -175,12 +174,6 @@ func ExitOnExtensionError() ProcessOption {
 	}
 }
 
-func MaxTries(n int) ProcessOption {
-	return func(o *processOptions) {
-		o.MaxTries = n
-	}
-}
-
 func (c *Client) SetProcessOption(opts ...ProcessOption) {
 	for _, o := range opts {
 		o(&c.processOpts)
@@ -210,7 +203,6 @@ func (c *Client) Process(ctx context.Context, cb messaging.Callback) error {
 		ReturnImmediately: c.processOpts.ReturnImmediately,
 	}
 
-	tryCount := 0
 	var res *pubsubpb.PullResponse
 	var err error
 	for {
@@ -228,21 +220,6 @@ func (c *Client) Process(ctx context.Context, cb messaging.Callback) error {
 		}
 		if len(res.ReceivedMessages) > 1 {
 			return fmt.Errorf("pull returned %d!=1 messages", len(res.ReceivedMessages))
-		}
-		tryCount = int(res.ReceivedMessages[0].DeliveryAttempt)
-		if c.processOpts.MaxTries > 0 && tryCount > c.processOpts.MaxTries {
-			log.Logger(ctx).Warn("deleting task with too many tries",
-				zap.String("messageID", res.ReceivedMessages[0].Message.MessageId),
-				zap.Int("tries", tryCount))
-			req := pubsubpb.AcknowledgeRequest{
-				Subscription: sub,
-				AckIds:       []string{res.ReceivedMessages[0].AckId},
-			}
-			err := c.ps.Acknowledge(ctx, &req)
-			if err != nil {
-				return fmt.Errorf("failed to ack msg with too many tries: %w", err)
-			}
-			continue
 		}
 		break
 	}
@@ -266,14 +243,14 @@ func (c *Client) Process(ctx context.Context, cb messaging.Callback) error {
 				return
 			case err := <-errChan:
 				if err == nil {
-					// Acknownledgement
+					// Acknowledgement
 					req := pubsubpb.AcknowledgeRequest{
 						Subscription: sub,
 						AckIds:       []string{res.ReceivedMessages[0].AckId},
 					}
 					keepAliveError <- c.ps.Acknowledge(ctx, &req)
 				} else if !utils.Temporary(err) {
-					// Fatal error : acknownledgement
+					// Fatal error : acknowledgement
 					log.Logger(ctx).Error(err.Error())
 					req := pubsubpb.AcknowledgeRequest{
 						Subscription: sub,
@@ -283,19 +260,7 @@ func (c *Client) Process(ctx context.Context, cb messaging.Callback) error {
 				} else {
 					// Temporary error : retry
 					log.Logger(ctx).Warn("Temporary error:" + err.Error())
-					if c.processOpts.MaxTries > 0 && tryCount >= c.processOpts.MaxTries {
-						log.Logger(ctx).Warn("deleting errored task with too many tries",
-							zap.String("messageID", res.ReceivedMessages[0].Message.MessageId),
-							zap.Int("tries", tryCount))
-						req := pubsubpb.AcknowledgeRequest{
-							Subscription: sub,
-							AckIds:       []string{res.ReceivedMessages[0].AckId},
-						}
-						err := c.ps.Acknowledge(ctx, &req)
-						if err != nil {
-							keepAliveError <- fmt.Errorf("failed to ack msg with too many tries: %w", err)
-						}
-					} else if c.processOpts.OnErrorRetryDelay >= 0 {
+					if c.processOpts.OnErrorRetryDelay >= 0 {
 						keepAliveError <- c.ps.ModifyAckDeadline(ctx, &pubsubpb.ModifyAckDeadlineRequest{
 							Subscription:       sub,
 							AckIds:             []string{res.ReceivedMessages[0].AckId},

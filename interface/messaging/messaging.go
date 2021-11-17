@@ -25,6 +25,7 @@ type Callback func(ctx context.Context, m *Message) error
 // Consumer is an interface to consume messages
 type Consumer interface {
 	// Pull the next message, call callback and return
+	// If callback returns a temporary error, the message must be rescheduled, increasing its trycount
 	Pull(ctx context.Context, cb Callback) error
 
 	// Consume the request, call callback and return http code (pushing mode)

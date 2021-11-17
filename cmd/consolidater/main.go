@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"context"
-	"errors"
 	"flag"
 	"fmt"
 	"math/rand"
@@ -82,7 +81,7 @@ func run(ctx context.Context) error {
 			if err != nil {
 				return fmt.Errorf("pubsub.new: %w", err)
 			}
-			consumer.SetProcessOption(pubsub.MaxTries(1))
+			consumer.SetProcessOption(pubsub.OnErrorRetryDelay(60 * time.Second))
 			taskConsumer = consumer
 		}
 
@@ -118,21 +117,24 @@ func run(ctx context.Context) error {
 				return fmt.Errorf("got message id %s in workdir %s : unreadable (%d bytes): %w", msg.ID, consolidaterConfig.WorkDir, len(msg.Data), err)
 			}
 
-			var taskStatus geocube.TaskStatus
-			var taskErr error
-
 			if msg.TryCount > consolidaterConfig.RetryCount {
-				log.Logger(ctx).Sugar().Errorf("message have already been consumed")
-				taskErr = errors.New("message have already been consumed")
-				if err := notify(ctx, evt, geocube.TaskFailed, taskErr); err != nil {
+				log.Logger(ctx).Sugar().Errorf("too many tries")
+				if err := notify(ctx, evt, geocube.TaskFailed, fmt.Errorf("too many tries")); err != nil {
 					return fmt.Errorf("failed to notify consolidation event: %w", err)
 				}
 				return nil
 			}
 
 			// Start consolidation
+			var taskStatus geocube.TaskStatus
 			log.Logger(ctx).Sugar().Infof("got message id %s in workdir %s : start consolidation of %d records into the container: %s", msg.ID, consolidaterConfig.WorkDir, len(evt.Records), evt.Container.URI)
-			taskErr = handlerConsolidation.Consolidate(ctx, evt, consolidaterConfig.WorkDir)
+			taskErr := handlerConsolidation.Consolidate(ctx, evt, consolidaterConfig.WorkDir)
+
+			if taskErr != nil && utils.Temporary(taskErr) && msg.TryCount < consolidaterConfig.RetryCount {
+				log.Logger(ctx).Sugar().Errorf("temporary error: %s", taskErr.Error())
+				return taskErr
+			}
+
 			switch {
 			case taskErr == nil:
 				taskStatus = geocube.TaskSuccessful
@@ -163,7 +165,7 @@ func newConsolidationAppConfig() (*consolidaterConfig, error) {
 	psEventsTopic := flag.String("psEventsTopic", "", "pubsub events topic name")
 	workdir := flag.String("workdir", "", "scratch work directory")
 	cancelledJobs := flag.String("cancelledJobs", "", "storage where cancelled jobs are referenced")
-	retryCount := flag.Int("retryCount", 1, "number of retries when consolidation job failed (default: 1)")
+	retryCount := flag.Int("retryCount", 1, "number of retries when consolidation job failed with a temporary error")
 
 	flag.Parse()
 
