@@ -517,7 +517,7 @@ containers:
         UUID=`uuid`;
         WORKDIR=/local-ssd/$UUID;
         mkdir -p $WORKDIR;
-        /consolidater -psEventTopic events -psSubscription consolidations -workdir $WORKDIR -cancelledJobs=/geocube-cancelled-jobs or gs://my-bucket/geocube-cancelled-jobs || true;
+        /consolidater -psEventsTopic events -psConsolidationsSubscription consolidations -workdir $WORKDIR -cancelledJobs=/geocube-cancelled-jobs or gs://my-bucket/geocube-cancelled-jobs || true;
         exitcode=$?;
         rm -rf $WORKDIR;
         exit $exitcode;
