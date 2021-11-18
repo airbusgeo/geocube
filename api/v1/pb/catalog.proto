@@ -6,18 +6,28 @@ import "pb/dataformat.proto";
 import "pb/records.proto";
 import "pb/layouts.proto";
 import "pb/datasetMeta.proto";
+import "pb/variables.proto";
 
+/**
+  * Shape of an image width x height x channels
+  */
 message Shape{
     int32 dim1 = 1;
     int32 dim2 = 2;
     int32 dim3 = 3;
 }
 
+/**
+  * ByteOrder for the conversion between data type and byte.
+  */
 enum ByteOrder{
     LittleEndian = 0;
     BigEndian = 1;
 }
 
+/**
+  *
+  */
 message ImageHeader{
     Shape                shape        = 1;
     DataFormat.Dtype     dtype        = 2;
@@ -31,41 +41,61 @@ message ImageHeader{
     string               error        = 9;
 }
 
+/**
+  *
+  */
 message ImageChunk{
     int32 part = 1;
     bytes data = 2;
 }
 
+/**
+  *
+  */
 message ImageFile{
     bytes data = 1;
 }
 
+/**
+  *
+  */
 enum FileFormat{
     Raw   = 0; // raw bitmap
     GTiff = 1;
 }
 
+/**
+  * Request a cube of data
+  */
 message GetCubeRequest {
     oneof records_lister{
-        RecordList         records  = 1; // At least one
-        RecordFilters      filters  = 2;
-        GroupedRecordsList grecords = 10;
+        RecordList         records  = 1;   // List of records id requested. At least one. One image will be returned by record (if not empty)
+        RecordFilters      filters  = 2;   // Filters to list the records that will be used to create the cube
+        GroupedRecordsList grecords = 10;  // List of group of records id requested. At least one. One image will be returned by group of records (if not empty). All the datasets of a group of records will be merged together using the latest first.
     }
 
-    repeated string instances_id      = 3; // At least one, and all must be instance of the same variable. Only one is actually supported
-    string          crs               = 4;
-    GeoTransform    pix_to_crs        = 5;
-    Size            size              = 6;
-    int32           compression_level = 7; // -1 to 10 (-1:default, 0: no compression, 1->9: level of compression from the fastest to the best compression)
-    bool            headers_only      = 8; // Only returns headers
-    FileFormat      format            = 9;
+    repeated string instances_id      = 3; // Instances of a variable defining the kind of images requested. At least one, and all must be instance of the same variable. Only one is actually supported
+    string          crs               = 4; // Coordinates Reference System of the output images (images will be reprojected on the fly if necessary)
+    GeoTransform    pix_to_crs        = 5; // GeoTransform of the requested cube (images will be rescaled on the fly if necessary)
+    Size            size              = 6; // Shape of the output images
+    int32           compression_level = 7; // Define a level of compression to speed up the transfer, values: -2 to 9 (-2: Huffman only, -1:default, 0: no compression, 1->9: level of compression from the fastest to the best compression). The data is compressed by the server and decompressed by the Client. Use -2 or 0 if the bandwidth is not limited.
+    bool            headers_only      = 8; // Only returns headers (including all metadatas on datasets)
+    FileFormat      format            = 9; // Format of the output images
 }
 
+/**
+  * Return global information on the requested cube
+  */
 message GetCubeResponseHeader{
     int64 count       = 1;
     int64 nb_datasets = 2;
+    DataFormat ref_dformat    = 3; // Output dataformat
+    Resampling resampling_alg = 4; // Resampling algorithm to use for reprojection
 }
 
+/**
+  * Return either information on the cube, information on an image or a chunk of an image
+  */
 message GetCubeResponse {
     oneof response{
         GetCubeResponseHeader global_header = 3;
@@ -86,6 +116,9 @@ message GetTileRequest {
     }
 }
 
+/**
+  *
+  */
 message GetTileResponse {
     ImageFile image = 1;
 }

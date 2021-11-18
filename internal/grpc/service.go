@@ -798,7 +798,6 @@ func (svc *Service) GetCube(req *pb.GetCubeRequest, stream pb.Geocube_GetCubeSer
 		if len(cubeInfo.groupedRecordsID) == 0 || len(cubeInfo.groupedRecordsID[0]) == 0 {
 			return newValidationError("At least one record must be provided")
 		}
-
 		info, slicesQueue, err = svc.gsvc.GetCubeFromRecords(ctx,
 			cubeInfo.groupedRecordsID,
 			cubeInfo.instancesID,
@@ -812,11 +811,12 @@ func (svc *Service) GetCube(req *pb.GetCubeRequest, stream pb.Geocube_GetCubeSer
 			return formatError("backend.%w", err)
 		}
 	}
-
-	// Return header
+	// Return global header
 	if err := stream.Send(&pb.GetCubeResponse{Response: &pb.GetCubeResponse_GlobalHeader{GlobalHeader: &pb.GetCubeResponseHeader{
-		Count:      int64(info.NbImages),
-		NbDatasets: int64(info.NbDatasets),
+		Count:         int64(info.NbImages),
+		NbDatasets:    int64(info.NbDatasets),
+		ResamplingAlg: pb.Resampling(info.Resampling),
+		RefDformat:    info.RefDataFormat.ToProtobuf(),
 	}}}); err != nil {
 		return formatError("backend.GetCube.%w", err)
 	}
@@ -834,49 +834,20 @@ func (svc *Service) GetCube(req *pb.GetCubeRequest, stream pb.Geocube_GetCubeSer
 
 	// If context close, compressedSlicesQueue is automatically closed
 	n := 1
-	for res := range compressedSlicesQueue {
-		// Create the header
-		header := &pb.ImageHeader{
-			Records: make([]*pb.Record, len(res.Records)),
-			DatasetMeta: &pb.DatasetMeta{
-				RefDformat:    res.DatasetsMeta.RefDataMapping.DataFormat.ToProtobuf(),
-				ResamplingAlg: pb.Resampling(res.DatasetsMeta.Resampling),
-				InternalsMeta: make([]*pb.InternalMeta, len(res.DatasetsMeta.Datasets)),
-			},
-		}
+	for slice := range compressedSlicesQueue {
+		header, chunks := getCubeCreateResponses(&slice)
 
-		for i, r := range res.Records {
-			header.Records[i] = r.ToProtobuf(false)
-		}
-
-		//populate the datasetMeta part of the header
-		for i, d := range res.DatasetsMeta.Datasets {
-			header.DatasetMeta.InternalsMeta[i] = &pb.InternalMeta{
-				ContainerUri:    d.URI,
-				ContainerSubdir: d.SubDir,
-				Bands:           d.Bands,
-				Dformat:         d.DataMapping.DataFormat.ToProtobuf(),
-				RangeMin:        d.DataMapping.RangeExt.Min,
-				RangeMax:        d.DataMapping.RangeExt.Max,
-				Exponent:        d.DataMapping.Exponent,
-			}
-		}
-		var chunks []*pb.GetCubeResponse
-		if res.Err != nil {
-			// Only send a header with the error
-			header.Error = formatError("backend.GetCube.%w", res.Err).Error()
-			chunks = []*pb.GetCubeResponse{{Response: &pb.GetCubeResponse_Header{Header: header}}}
-		} else {
-			// Send the image in chunks
-			chunks = divideInChunks(header, res.Image)
-		}
-
-		getCubeLog(ctx, res, header, req.GetHeadersOnly(), n)
+		getCubeLog(ctx, slice, header, req.GetHeadersOnly(), n)
 		n++
 
-		// Send chunks
+		response := []*pb.GetCubeResponse{{Response: &pb.GetCubeResponse_Header{Header: header}}}
 		for _, c := range chunks {
-			if err := stream.Send(c); err != nil {
+			response = append(response, &pb.GetCubeResponse{Response: &pb.GetCubeResponse_Chunk{Chunk: c}})
+		}
+
+		// Send response
+		for _, r := range response {
+			if err := stream.Send(r); err != nil {
 				return formatError("backend.GetCube.%w", err)
 			}
 		}
@@ -924,41 +895,63 @@ func compressSlicesQueue(sliceQueue <-chan internal.CubeSlice, compressedSliceQu
 	}
 }
 
-func divideInChunks(header *pb.ImageHeader, image *geocube.Bitmap) []*pb.GetCubeResponse {
+func getCubeCreateResponses(slice *internal.CubeSlice) (*pb.ImageHeader, []*pb.ImageChunk) {
 	chunkSize := 64 * 1024 // 1Mo/4Mo maximum
 
-	chunks := []*pb.GetCubeResponse{{Response: &pb.GetCubeResponse_Header{Header: header}}}
+	// Create the header
+	header := &pb.ImageHeader{
+		Records: make([]*pb.Record, len(slice.Records)),
+		DatasetMeta: &pb.DatasetMeta{
+			InternalsMeta: make([]*pb.InternalMeta, len(slice.DatasetsMeta.Datasets)),
+		},
+	}
+
+	// Append records
+	for i, r := range slice.Records {
+		header.Records[i] = r.ToProtobuf(false)
+	}
+
+	// Populate the datasetMeta part of the header
+	for i, d := range slice.DatasetsMeta.Datasets {
+		header.DatasetMeta.InternalsMeta[i] = &pb.InternalMeta{
+			ContainerUri:    d.URI,
+			ContainerSubdir: d.SubDir,
+			Bands:           d.Bands,
+			Dformat:         d.DataMapping.DataFormat.ToProtobuf(),
+			RangeMin:        d.DataMapping.RangeExt.Min,
+			RangeMax:        d.DataMapping.RangeExt.Max,
+			Exponent:        d.DataMapping.Exponent,
+		}
+	}
 
 	// Split the image into chunks
-	nbParts := (len(image.Bytes) + chunkSize - 1) / chunkSize
-	order := pb.ByteOrder_LittleEndian
-	if image.ByteOrder == binary.BigEndian {
-		order = pb.ByteOrder_BigEndian
+	var chunks []*pb.ImageChunk
+	if slice.Err != nil {
+		// Only send a header with the error
+		header.Error = formatError("backend.GetCube.%w", slice.Err).Error()
+	} else {
+		// Image header
+		header.Shape = &pb.Shape{Dim1: int32(slice.Image.Bands), Dim2: int32(slice.Image.SizeX()), Dim3: int32(slice.Image.SizeY())}
+		header.Dtype = pb.DataFormat_Dtype(slice.Image.DType)
+		header.NbParts = int32((len(slice.Image.Bytes) + chunkSize - 1) / chunkSize)
+		header.Size = int64(len(slice.Image.Bytes))
+		header.Order = pb.ByteOrder_LittleEndian
+		if slice.Image.ByteOrder == binary.BigEndian {
+			header.Order = pb.ByteOrder_BigEndian
+		}
+
+		// Image chunks
+		reader := bytes.NewBuffer(slice.Image.Bytes)
+		header.Data = reader.Next(chunkSize)
+		for part := int32(1); part < header.NbParts; part++ {
+			chunks = append(chunks, &pb.ImageChunk{
+				Part: int32(part),
+				Data: reader.Next(chunkSize),
+			})
+		}
 	}
 
-	reader := bytes.NewBuffer(image.Bytes)
-
-	// Image header
-	header.Shape = &pb.Shape{Dim1: int32(image.Bands), Dim2: int32(image.SizeX()), Dim3: int32(image.SizeY())}
-	header.Dtype = pb.DataFormat_Dtype(image.DType)
-	header.NbParts = int32(nbParts)
-	header.Size = int64(len(image.Bytes))
-	header.Order = order
-	header.Data = reader.Next(chunkSize)
-
-	// Image chunks
-	for part := 1; part < nbParts; part++ {
-		chunks = append(chunks, &pb.GetCubeResponse{
-			Response: &pb.GetCubeResponse_Chunk{
-				Chunk: &pb.ImageChunk{
-					Part: int32(part),
-					Data: reader.Next(chunkSize),
-				},
-			},
-		})
-	}
-
-	return chunks
+	return header, chunks
 }
 
 // GetXYZTile TODO

@@ -3,21 +3,24 @@ package geocube;
 option go_package = "./pb;geocube";
 
 import "pb/dataformat.proto";
-import "pb/variables.proto";
 
 
+/**
+  * DatasetMeta contains all the metadata on files and fileformats to download and generate a slice of a cube
+  */
 message DatasetMeta{
-  DataFormat             ref_dformat    = 1;
-  Resampling             resampling_alg = 2;
-  repeated InternalMeta  internalsMeta  = 3;
+    repeated InternalMeta  internalsMeta  = 3; // Information on the images composing the slice
 }
 
+/**
+  * InternalMeta contains all the metadata on a file to download it and to map its internal values to the external range.
+  */
 message InternalMeta{
-  string         container_uri    = 1;
-  string         container_subdir = 2;
-  repeated int64 bands            = 3;
-  DataFormat     dformat          = 4;
-  double         range_min        = 5;
-  double         range_max        = 6;
-  double         exponent         = 7;
+    string         container_uri    = 1;  // URI of the file storing the data
+    string         container_subdir = 2;  // Subdir of the file storing the data
+    repeated int64 bands            = 3;  // Subbands of the file requested
+    DataFormat     dformat          = 4;  // Internal dataformat of the data
+    double         range_min        = 5;  // dformat.RangeMin will be mapped to this value
+    double         range_max        = 6;  // dformat.RangeMax will be mapped to this value
+    double         exponent         = 7;  // Exponent used to map the value from dformat to [RangeMin, RangeMax]
 }
