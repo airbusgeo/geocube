@@ -37,6 +37,7 @@ spec:
           - mountPath: /tmp
             name: local-storage
           resources: {}
+      terminationGracePeriodSeconds: 120
       volumes:
         - name: local-storage
           emptyDir: {}

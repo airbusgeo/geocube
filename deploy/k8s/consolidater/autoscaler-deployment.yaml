@@ -33,3 +33,4 @@ spec:
             requests:
               cpu: 1m
               memory: 30Mi
+      terminationGracePeriodSeconds: 120
