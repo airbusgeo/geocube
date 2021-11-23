@@ -112,7 +112,7 @@ func (s fileSystemStrategy) Delete(ctx context.Context, uri string, options ...g
 func (s fileSystemStrategy) Exist(ctx context.Context, uri string) (bool, error) {
 	if _, err := os.Stat(uri); err != nil {
 		if os.IsNotExist(err) {
-			return false, fmt.Errorf("file does not exist: %w", err)
+			return false, geocubeStorage.ErrFileNotFound
 		}
 	}
 	return true, nil

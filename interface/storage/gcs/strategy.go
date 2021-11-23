@@ -13,12 +13,6 @@ import (
 	"cloud.google.com/go/storage"
 	geocubeStorage "github.com/airbusgeo/geocube/interface/storage"
 	"github.com/airbusgeo/geocube/internal/utils"
-
-	"errors"
-)
-
-var (
-	ErrFileNotFound = errors.New("file not found")
 )
 
 type gsStrategy struct {
@@ -178,7 +172,7 @@ func (s gsStrategy) Exist(ctx context.Context, uri string) (bool, error) {
 		case storage.ErrBucketNotExist:
 			return false, fmt.Errorf("bucket not exist: %w", err)
 		case storage.ErrObjectNotExist:
-			return false, fmt.Errorf("object not exist: %w", err)
+			return false, geocubeStorage.ErrFileNotFound
 		default:
 			return false, fmt.Errorf("failed to check if file exist on storage: %w", gsError(err))
 		}
@@ -195,7 +189,7 @@ func (s gsStrategy) GetAttrs(ctx context.Context, uri string) (geocubeStorage.At
 
 	attrs, err := s.gsClient.Bucket(bucket).Object(path).Attrs(ctx)
 	if err == storage.ErrObjectNotExist {
-		return geocubeStorage.Attrs{}, ErrFileNotFound
+		return geocubeStorage.Attrs{}, geocubeStorage.ErrFileNotFound
 	} else if err != nil {
 		return geocubeStorage.Attrs{}, fmt.Errorf("failed to get file attributes from GCS : %w", gsError(err))
 	}

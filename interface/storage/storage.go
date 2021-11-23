@@ -2,8 +2,13 @@ package storage
 
 import (
 	"context"
+	"errors"
 	"io"
 	"time"
+)
+
+var (
+	ErrFileNotFound = errors.New("file not found")
 )
 
 type Strategy interface {

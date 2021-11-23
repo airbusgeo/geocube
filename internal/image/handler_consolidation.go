@@ -7,6 +7,8 @@ import (
 	"os"
 	"path"
 
+	"github.com/airbusgeo/geocube/interface/storage"
+
 	"github.com/airbusgeo/geocube/interface/storage/uri"
 	"github.com/airbusgeo/geocube/internal/geocube"
 	"github.com/airbusgeo/geocube/internal/log"
@@ -245,7 +247,10 @@ func (h *handlerConsolidation) isCancelled(ctx context.Context, event *geocube.C
 	}
 
 	exist, err := cancelledJobsURI.Exist(ctx)
-	if err != nil {
+	switch err {
+	case nil:
+	case storage.ErrFileNotFound:
+	default:
 		log.Logger(ctx).Sugar().Errorf("failed to check uri existence: %s: %s", path, err.Error())
 		return false
 	}
