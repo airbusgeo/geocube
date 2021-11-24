@@ -26,7 +26,7 @@ const (
 func CreateLonLatProj(crs *godal.SpatialRef, inverse bool) (*godal.Transform, error) {
 	lonlatCRS, err := CRSFromEPSG(4326)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("CreateLonLatProj.%w", err)
 	}
 
 	var tr *godal.Transform
@@ -83,7 +83,7 @@ func CRSFromEPSG(epsg int) (*godal.SpatialRef, error) {
 	var err error
 	crsEPSG[epsg], err = godal.NewSpatialRefFromEPSG(epsg)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("CRSFromEPSG: %w", err)
 	}
 	runtime.SetFinalizer(crsEPSG[epsg], func(crs *godal.SpatialRef) { crs.Close() })
 	return crsEPSG[epsg], nil
@@ -135,14 +135,21 @@ func XYToFlatCoord(x []float64, y []float64) []float64 {
 /*                            SHAPES                               */
 /*******************************************************************/
 
-// Shape is a XY-polygon implementing Scan & Value
+// Shape is a XY-Multipolygon implementing Scan & Value
 // Warning: SRID is not reliable
 type Shape struct {
-	geom.Polygon
+	geom.MultiPolygon
+}
+
+// NewShape create a new shape
+func NewShape(srid int, mp *geom.MultiPolygon) Shape {
+	p := mp.Clone()
+	p.SetSRID(srid)
+	return Shape{*p}
 }
 
 func (shape Shape) MarshalBinary() ([]byte, error) {
-	value, err := ewkbhex.Encode(&shape.Polygon, ewkbhex.NDR)
+	value, err := ewkbhex.Encode(&shape.MultiPolygon, ewkbhex.NDR)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal shape as binary: %w", err)
 	}
@@ -150,12 +157,15 @@ func (shape Shape) MarshalBinary() ([]byte, error) {
 }
 
 func (shape *Shape) UnmarshalBinary(data []byte) error {
-	geom, err := ewkbhex.Decode(string(data))
+	g, err := ewkbhex.Decode(string(data))
 	if err != nil {
 		return fmt.Errorf("failed to decode binary data as geometry: %w", err)
 	}
-
-	*shape = NewShapeFlat(geom.SRID(), geom.FlatCoords())
+	geom, ok := g.(*geom.MultiPolygon)
+	if !ok {
+		return fmt.Errorf("shape.UnmarshalBinary: data is not a multipolygon")
+	}
+	shape.MultiPolygon = *geom
 	return nil
 }
 
@@ -164,20 +174,6 @@ type GeographicShape struct{ Shape }
 
 // GeometricShape is a polygon of lon/lat (4326)
 type GeometricShape struct{ Shape }
-
-// NewShape create a new shape
-func NewShape(srid int, polygon *geom.Polygon) Shape {
-	p := polygon.Clone()
-	p.SetSRID(srid)
-	return Shape{*p}
-}
-
-// NewShapeFlat create a new shape
-func NewShapeFlat(srid int, flatCoords []float64) Shape {
-	p := geom.NewPolygonFlat(geom.XY, flatCoords, []int{len(flatCoords)})
-	p.SetSRID(srid)
-	return Shape{*p}
-}
 
 // Scan implements the sql.Scanner interface.
 func (shape *Shape) Scan(src interface{}) error {
@@ -192,7 +188,11 @@ func (shape *Shape) Scan(src interface{}) error {
 		if err != nil {
 			return err
 		}
-		shape.Polygon = *g.(*geom.Polygon)
+		geom, ok := g.(*geom.MultiPolygon)
+		if !ok {
+			return fmt.Errorf("shape.Scan: data is not a multipolygon")
+		}
+		shape.MultiPolygon = *geom
 		return nil
 	}
 
@@ -201,12 +201,114 @@ func (shape *Shape) Scan(src interface{}) error {
 
 // Value implements the driver.Valuer interface.
 func (shape *Shape) Value() (driver.Value, error) {
-	return ewkbhex.Encode(&shape.Polygon, ewkbhex.NDR)
+	return ewkbhex.Encode(&shape.MultiPolygon, ewkbhex.NDR)
 }
 
 // Equal returns true if the shapes have the same SRID and the same FlatCoords
 func (shape *Shape) Equal(shape2 *Shape) bool {
 	return shape.SRID() == shape2.SRID() && utils.SliceFloat64Equal(shape.FlatCoords(), shape2.FlatCoords())
+}
+
+// NewGeometricShapeFromShape creates a shape in 4326 lon/lat coordinates that covers the shape in planar crs
+func NewGeometricShapeFromShape(shape Shape, crs *godal.SpatialRef) (g GeometricShape, err error) {
+	p, err := shape.cloneTo4326(crs, false)
+	if err != nil {
+		return GeometricShape{}, fmt.Errorf("NewGeometricShapeFromShape.%w", err)
+	}
+	return GeometricShape{*p}, nil
+}
+
+// NewGeographicShapeFromShape creates a shape in geographic coordinates that covers the shape in planar crs
+func NewGeographicShapeFromShape(shape Shape, crs *godal.SpatialRef) (GeographicShape, error) {
+	p, err := shape.cloneTo4326(crs, true)
+	if err != nil {
+		return GeographicShape{}, fmt.Errorf("NewGeographicShapeFromShape.%w", err)
+	}
+	return GeographicShape{*p}, nil
+}
+
+/*******************************************************************/
+/*                            RINGS                                */
+/*******************************************************************/
+
+type Ring struct {
+	geom.LinearRing
+}
+
+// GeographicShape is a geographic polygon of lon/lat (following geodesic lines)
+type GeographicRing struct{ Ring }
+
+// GeometricShape is a polygon of lon/lat (4326)
+type GeometricRing struct{ Ring }
+
+// Equal returns true if the shapes have the same SRID and the same FlatCoords
+func (ring *Ring) Equal(ring2 *Ring) bool {
+	return ring.SRID() == ring2.SRID() && utils.SliceFloat64Equal(ring.FlatCoords(), ring2.FlatCoords())
+}
+
+// NewRingFlat create a new ring
+func NewRingFlat(srid int, flatCoords []float64) Ring {
+	r := geom.NewLinearRingFlat(geom.XY, flatCoords)
+	r.SetSRID(srid)
+	return Ring{*r}
+}
+
+// Value implements the driver.Valuer interface.
+func (ring *Ring) Value() (driver.Value, error) {
+	polygon := geom.NewPolygonFlat(ring.Layout(), ring.FlatCoords(), []int{len(ring.FlatCoords())})
+	polygon.SetSRID(ring.SRID())
+	return ewkbhex.Encode(polygon, ewkbhex.NDR)
+}
+
+// NewGeographicRingFromExtent creates a ring in geographic coordinates that covers the geometric extent in planar crs
+func NewGeographicRingFromExtent(pixToCrs *affine.Affine, width, height int, crs *godal.SpatialRef) (GeographicRing, error) {
+	ring, err := NewRingFromExtent(pixToCrs, width, height, 0).cloneTo4326(crs, true)
+	if err != nil {
+		return GeographicRing{}, fmt.Errorf("NewGeographicRingFromExtent.%w", err)
+	}
+	return GeographicRing{*ring}, nil
+}
+
+// NewRingFromExtent returns the ring corresponding to the extent
+func NewRingFromExtent(pixToCrs *affine.Affine, width, height, srid int) Ring {
+	return NewRingFlat(srid, NewPolygonFromExtent(pixToCrs, width, height).FlatCoords())
+}
+
+// NewPolygonFromExtent returns the polygon corresponding to the extent
+func NewPolygonFromExtent(pixToCrs *affine.Affine, width, height int) *geom.Polygon {
+	xMin, yMin := pixToCrs.Transform(0, 0)
+	xMax, yMax := pixToCrs.Transform(float64(width), float64(height))
+	if xMin > xMax {
+		xMin, xMax = xMax, xMin
+	}
+	if yMin > yMax {
+		yMin, yMax = yMax, yMin
+	}
+	bounds := geom.NewBounds(geom.XY)
+	bounds.SetCoords([]float64{xMin, yMin}, []float64{xMax, yMax})
+	return bounds.Polygon()
+}
+
+// cloneTo4326 creates a multipolygon in 4326 coordinates that covers the shape in planar crs
+// geodetic: output either geographicCoordinates (edges follow geodetic lines) or geometricCoordinates
+func (s Shape) cloneTo4326(crs *godal.SpatialRef, geodetic bool) (*Shape, error) {
+	g := geom.NewMultiPolygon(geom.XY)
+
+	for i := 0; i < s.NumPolygons(); i++ {
+		p := s.Polygon(i)
+		gp := geom.NewPolygon(geom.XY)
+		for j := 0; j < p.NumLinearRings(); j++ {
+			r, err := Ring{*p.LinearRing(j)}.cloneTo4326(crs, geodetic)
+			if err != nil {
+				return nil, fmt.Errorf("cloneTo4326.%w", err)
+			}
+			gp.Push(&r.LinearRing)
+		}
+		g.Push(gp)
+	}
+	g.SetSRID(4326)
+
+	return &Shape{*g}, nil
 }
 
 func relativeAccuracy(project *godal.Transform, x, y, lon, lat []float64) []float64 {
@@ -226,60 +328,23 @@ func relativeAccuracy(project *godal.Transform, x, y, lon, lat []float64) []floa
 	return acc
 }
 
-// NewGeometricShapeFromShape creates a shape in 4326 lon/lat coordinates that covers the shape in planar crs
-func NewGeometricShapeFromShape(crs *godal.SpatialRef, shape Shape) (g GeometricShape, err error) {
-	p, err := lonLatPolygonFromShape(crs, shape, true)
-	if err != nil {
-		return GeometricShape{}, fmt.Errorf("NewGeometricShapeFromShape.%w", err)
-	}
-	return GeometricShape{NewShape(4326, p)}, nil
-}
-
-// NewGeometricShapeFromExtent creates a shape in 4326 lon/lat coordinates that covers the geometric extent in planar crs
-func NewGeometricShapeFromExtent(crs *godal.SpatialRef, pixToCrs *affine.Affine, width, height int) (GeometricShape, error) {
-	shape := shapeFromExtent(pixToCrs, width, height)
-	return NewGeometricShapeFromShape(crs, shape)
-}
-
-// NewGeographicShapeFromShape creates a shape in geographic coordinates that covers the shape in planar crs
-func NewGeographicShapeFromShape(crs *godal.SpatialRef, shape Shape) (GeographicShape, error) {
-	p, err := lonLatPolygonFromShape(crs, shape, true)
-	if err != nil {
-		return GeographicShape{}, fmt.Errorf("NewGeographicShapeFromShape.%w", err)
-	}
-	return GeographicShape{NewShape(4326, p)}, nil
-}
-
-// NewGeographicShapeFromExtent creates a shape in geographic coordinates that covers the geometric extent in planar crs
-func NewGeographicShapeFromExtent(crs *godal.SpatialRef, pixToCrs *affine.Affine, width, height int) (GeographicShape, error) {
-	shape := shapeFromExtent(pixToCrs, width, height)
-	return NewGeographicShapeFromShape(crs, shape)
-}
-
-// shapeFromExtent returns the shape given an extent
-// SRID is not set
-func shapeFromExtent(pixToCrs *affine.Affine, width, height int) Shape {
-	xMin, yMin := pixToCrs.Transform(0, 0)
-	xMax, yMax := pixToCrs.Transform(float64(width), float64(height))
-	return NewShapeFlat(0, []float64{xMin, yMin, xMax, yMin, xMax, yMax, xMin, yMax, xMin, yMin})
-}
-
-// lonLatPolygonFromShape creates a polygon in 4326 coordinates that covers the shape in planar crs
-func lonLatPolygonFromShape(crs *godal.SpatialRef, shape Shape, geodetic bool) (*geom.Polygon, error) {
+// cloneTo4326 creates a ring in 4326 coordinates that covers the ring in planar crs
+// geodetic: output either geographicCoordinates (edges follow geodetic lines) or geometricCoordinates
+func (r Ring) cloneTo4326(crs *godal.SpatialRef, geodetic bool) (*Ring, error) {
 	// Create the 4326 projection
 	crsToLonLat, err := CreateLonLatProj(crs, true)
 	if err != nil {
-		return nil, fmt.Errorf("lonLatShapeFromShape.crsToLonLat: %w", err)
+		return nil, fmt.Errorf("cloneTo4326.%w", err)
 	}
 	defer crsToLonLat.Close()
 	projCrsToLonLat := projFromTransform(crsToLonLat)
 
 	// Project the shape in lon/lat
-	lon, lat := FlatCoordToXY(shape.LinearRing(0).FlatCoords())
+	lon, lat := FlatCoordToXY(r.FlatCoords())
 	crsToLonLat.TransformEx(lon, lat, make([]float64, len(lon)), nil)
 
 	// Estimate accuracy
-	x, y := FlatCoordToXY(shape.LinearRing(0).FlatCoords())
+	x, y := FlatCoordToXY(r.FlatCoords())
 	accuracyInMeter := relativeAccuracy(crsToLonLat, x, y, lon, lat)
 
 	// Densify projection
@@ -292,10 +357,10 @@ func lonLatPolygonFromShape(crs *godal.SpatialRef, shape Shape, geodetic bool) (
 	pts = append(pts, lon[0], lat[0])
 
 	// Return a geometric shape
-	p := geom.NewPolygonFlat(geom.XY, pts, []int{len(pts)})
+	p := geom.NewLinearRingFlat(geom.XY, pts)
 	p.SetSRID(4326)
 
-	return p, nil
+	return &Ring{*p}, nil
 }
 
 // lonLatDistance returns the approximate distances in meter between two lon/lat points

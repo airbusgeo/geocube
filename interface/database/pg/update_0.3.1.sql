@@ -19,3 +19,8 @@ ALTER TABLE geocube.layouts DROP COLUMN id;
 
 -- Commit: ConsolidationParams: downsampling=>resampling
 ALTER TABLE geocube.consolidation_params RENAME COLUMN downsampling_alg TO resampling_alg;
+
+-- update geometry type
+ALTER TABLE geocube.datasets ALTER COLUMN geog TYPE geography(MULTIPOLYGON,0) USING ST_Multi(geog::geometry)::geography;
+ALTER TABLE geocube.datasets ALTER COLUMN geom TYPE geometry(MULTIPOLYGON,4326) USING ST_MULTI(geom);
+ALTER TABLE geocube.datasets ALTER COLUMN shape TYPE geometry(MULTIPOLYGON,0) USING ST_MULTI(shape);

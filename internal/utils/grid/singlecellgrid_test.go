@@ -81,7 +81,7 @@ var _ = Describe("SingleCellGrid", func() {
 
 		var (
 			itShouldReturnedRightCell = func() {
-				It("it should return right cover response", func() {
+				It("it should return the right cover", func() {
 					Expect(returnedCell.SizeX).To(Equal(6590))
 					Expect(returnedCell.SizeY).To(Equal(6914))
 					Expect(returnedCell.CRS.IsSame(crs)).To(BeTrue())
@@ -89,7 +89,7 @@ var _ = Describe("SingleCellGrid", func() {
 
 					json, err := CellsToJSON(singleCellGrid, []string{"720298.429720/5000366.394350/6590/6914"})
 					Expect(err).To(BeNil())
-					Expect(json).To(MatchJSON(`{"type":"MultiPolygon","coordinates":[[[[5.801096927991,45.12241193432],[5.771142340276,44.500735020838],[6.598660882864,44.47763583486],[6.637518180705,45.098809626962],[5.801096927991,45.12241193432]]]]}`))
+					Expect(json).To(MatchJSON(`{ "type": "MultiPolygon", "coordinates": [ [ [ [ 5.771142340276, 44.500735020838 ], [ 5.801096927991, 45.12241193432 ], [ 6.637518180705, 45.098809626962 ], [ 6.598660882864, 44.47763583486 ], [ 5.771142340276, 44.500735020838 ] ] ] ] }`))
 				})
 			}
 		)

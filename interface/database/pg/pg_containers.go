@@ -162,17 +162,17 @@ func (b Backend) DeleteDatasets(ctx context.Context, datasetsID []string) error 
 
 // FindDatasets implements GeocubeBackend
 func (b Backend) FindDatasets(ctx context.Context, status geocube.DatasetStatus, containerURI, lockedByJobID string, instancesID, recordsID []string,
-	recordTags geocube.Metadata, fromTime, toTime time.Time, geog *proj.GeographicShape, refinedShape *proj.Shape, page, limit int, order bool) (datasets []*geocube.Dataset, err error) {
+	recordTags geocube.Metadata, fromTime, toTime time.Time, geog *proj.GeographicRing, refined *proj.Ring, page, limit int, order bool) (datasets []*geocube.Dataset, err error) {
 	var containersURI []string
 	if containerURI != "" {
 		containersURI = []string{containerURI}
 	}
-	return b.findDatasets(ctx, []geocube.DatasetStatus{status}, containersURI, lockedByJobID, instancesID, recordsID, recordTags, fromTime, toTime, geog, refinedShape, page, limit, order)
+	return b.findDatasets(ctx, []geocube.DatasetStatus{status}, containersURI, lockedByJobID, instancesID, recordsID, recordTags, fromTime, toTime, geog, refined, page, limit, order)
 }
 
 // findDatasets is identical to FindDatasets but it can take a list of datasetStatus
 func (b Backend) findDatasets(ctx context.Context, status []geocube.DatasetStatus, containersURI []string, lockedByJobID string, instancesID, recordsID []string,
-	recordTags geocube.Metadata, fromTime, toTime time.Time, geog *proj.GeographicShape, refinedShape *proj.Shape, page, limit int, order bool) (datasets []*geocube.Dataset, err error) {
+	recordTags geocube.Metadata, fromTime, toTime time.Time, geog *proj.GeographicRing, refined *proj.Ring, page, limit int, order bool) (datasets []*geocube.Dataset, err error) {
 	// Create the selectClause
 	query := "SELECT d.id, d.record_id, d.instance_id, d.container_uri, d.geog, d.geom, d.shape, d.subdir, d.bands, d.status, " +
 		"d.dtype, d.no_data, d.min_value, d.max_value, d.real_min_value, d.real_max_value, d.exponent, d.overviews FROM geocube.datasets d"
@@ -217,8 +217,8 @@ func (b Backend) findDatasets(ctx context.Context, status []geocube.DatasetStatu
 
 	if geog != nil {
 		wc.append("ST_Intersects(d.geog,  $%d)", geog)
-		if refinedShape != nil {
-			wc.append("(CASE WHEN ST_SRID(d.shape) = $%d THEN ST_Relate(d.shape,  $%d, 'T********') ELSE true END)", refinedShape.SRID(), refinedShape)
+		if refined != nil {
+			wc.append("(CASE WHEN ST_SRID(d.shape) = $%d THEN ST_Relate(d.shape,  $%d, 'T********') ELSE true END)", refined.SRID(), refined)
 		}
 	}
 
@@ -297,7 +297,7 @@ func (b Backend) ListActiveDatasetsID(ctx context.Context, instanceID string, re
 func (b Backend) GetDatasetsGeometryUnion(ctx context.Context, lockedByJobID string) (*geom.MultiPolygon, error) {
 	var data []byte
 	err := b.pg.QueryRowContext(ctx,
-		"SELECT ST_AsBinary(ST_Union(d.geom)) FROM geocube.datasets d JOIN geocube.locked_datasets l ON l.dataset_id = d.id"+
+		"SELECT ST_AsBinary(ST_MULTI(ST_Union(d.geom))) FROM geocube.datasets d JOIN geocube.locked_datasets l ON l.dataset_id = d.id"+
 			" WHERE l.job_id=$1", lockedByJobID).Scan(&data)
 	if err != nil {
 		return nil, pqErrorFormat("GetDatasetsGeometryUnion.QueryRowContext: %w", err)
@@ -312,26 +312,18 @@ func (b Backend) GetDatasetsGeometryUnion(ctx context.Context, lockedByJobID str
 		return nil, pqErrorFormat("GetDatasetsGeometryUnion.Unmarshal: %w", err)
 	}
 
-	switch union := g.(type) {
-	case *geom.MultiPolygon:
-		return union, nil
-	case *geom.Polygon:
-		return geom.NewMultiPolygonFlat(union.Layout(), union.FlatCoords(), [][]int{union.Ends()}), nil
-	default:
+	geom, ok := g.(*geom.MultiPolygon)
+	if !ok {
 		return nil, geocube.NewShouldNeverHappen("Wrong type for union of polygon")
 	}
+	return geom, nil
 }
 
 func (b Backend) ComputeValidShapeFromCell(ctx context.Context, datasetIDS []string, cell *grid.Cell) (*proj.Shape, error) {
 	srid := proj.Srid(cell.CRS)
 
-	cellRingValue, err := cell.Ring.Value()
-	if err != nil {
-		return nil, err
-	}
-
 	rows, err := b.pg.QueryContext(ctx,
-		"SELECT ST_Intersection(ST_Union(ST_Transform(d.shape,$1::int)),$2) FROM geocube.datasets d  WHERE d.id = ANY($3)", srid, cellRingValue, pq.Array(datasetIDS))
+		"SELECT ST_Multi(ST_Intersection(ST_Union(ST_Transform(d.shape,$1::int)),$2)) FROM geocube.datasets d  WHERE d.id = ANY($3)", srid, &cell.Ring, pq.Array(datasetIDS))
 	if err != nil {
 		return nil, pqErrorFormat("ComputeValidShapeFromCell: %w", err)
 	}

@@ -19,8 +19,8 @@ type Cell struct {
 	CRS            *godal.SpatialRef
 	PixelToCRS     *affine.Affine // Transform from pixel to crs/geometric coordinates
 	SizeX, SizeY   int
-	GeographicRing proj.GeographicShape // lon/lat geodetic coordinates
-	Ring           proj.Shape           // coordinates in the CRS
+	GeographicRing proj.GeographicRing // lon/lat geodetic coordinates
+	Ring           proj.Ring           // coordinates in the CRS
 }
 
 type StreamedURI struct {
@@ -60,12 +60,8 @@ func newCell(uri string, crs *godal.SpatialRef, srid int, pixToCRS *affine.Affin
 		PixelToCRS: pixToCRS,
 		SizeX:      sizeX,
 		SizeY:      sizeY,
+		Ring:       proj.NewRingFromExtent(pixToCRS, sizeX, sizeY, srid),
 	}
-
-	x1, y1 := pixToCRS.Transform(0, 0)
-	x2, y2 := pixToCRS.Transform(float64(sizeX), float64(sizeY))
-
-	c.Ring = proj.NewShapeFlat(srid, []float64{x1, y1, x1, y2, x2, y2, x2, y1, x1, y1})
 
 	// Prepare geometric to geographic transform
 	x, y := proj.FlatCoordToXY(c.Ring.FlatCoords())
@@ -76,7 +72,7 @@ func newCell(uri string, crs *godal.SpatialRef, srid int, pixToCRS *affine.Affin
 	// TODO densify
 
 	// Convert to flat_coords
-	c.GeographicRing = proj.GeographicShape{Shape: proj.NewShapeFlat(4326, proj.XYToFlatCoord(x, y))}
+	c.GeographicRing = proj.GeographicRing{Ring: proj.NewRingFlat(4326, proj.XYToFlatCoord(x, y))}
 
 	return &c
 }
@@ -89,7 +85,12 @@ func CellsToJSON(gr Grid, cellsURI []string) (string, error) {
 		if err != nil {
 			return "", fmt.Errorf("unable to retrieve the cell '%s': %w", cellURI, err)
 		}
-		g.Push(&cell.GeographicRing.Polygon)
+		lr := cell.GeographicRing.LinearRing
+		polygon := geom.NewPolygonFlat(geom.XY, lr.FlatCoords(), []int{len(lr.FlatCoords())})
+		if err = g.Push(polygon); err != nil {
+			return "", fmt.Errorf("failed to push polygon: %w", err)
+		}
+
 	}
 	return geomToJSON(g)
 }

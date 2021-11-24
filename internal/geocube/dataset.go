@@ -13,6 +13,7 @@ import (
 	"github.com/airbusgeo/geocube/internal/utils"
 	"github.com/airbusgeo/geocube/internal/utils/affine"
 	"github.com/airbusgeo/geocube/internal/utils/proj"
+	"github.com/airbusgeo/godal"
 )
 
 type DatasetStatus int
@@ -78,11 +79,9 @@ func IncompleteDatasetFromConsolidation(c *ConsolidationContainer, instanceID st
 
 	// Init GeoBBox
 	transform := affine.Affine(c.Transform)
-	left, top := transform.Transform(0, 0)
-	right, bottom := transform.Transform(float64(c.Width), float64(c.Height))
-	bounds := geom.NewBounds(geom.XY)
-	bounds.SetCoords([]float64{left, bottom}, []float64{right, top})
-	if err := d.SetShape(bounds.Polygon(), c.CRS); err != nil {
+	p := proj.NewPolygonFromExtent(&transform, c.Width, c.Height)
+	mp := geom.NewMultiPolygonFlat(geom.XY, p.FlatCoords(), [][]int{{10}})
+	if err := d.SetShape(mp, c.CRS); err != nil {
 		return nil, err
 	}
 
@@ -106,6 +105,13 @@ func NewDatasetFromIncomplete(d Dataset, consolidationRecord ConsolidationRecord
 
 	if consolidationRecord.ValidShape != nil {
 		d.Shape = *consolidationRecord.ValidShape
+		crs, err := proj.CRSFromEPSG(d.Shape.SRID())
+		if err != nil {
+			return nil, fmt.Errorf("NewDatasetFromIncomplete.%w", err)
+		}
+		if err := d.setGeomGeogShape(crs); err != nil {
+			return nil, fmt.Errorf("NewDatasetFromIncomplete.%w", err)
+		}
 	}
 
 	if err := d.validate(); err != nil {
@@ -115,7 +121,7 @@ func NewDatasetFromIncomplete(d Dataset, consolidationRecord ConsolidationRecord
 }
 
 // SetShape sets the shape in a given CRS and bounding boxes of a new dataset
-func (d *Dataset) SetShape(shape *geom.Polygon, crsS string) error {
+func (d *Dataset) SetShape(shape *geom.MultiPolygon, crsS string) error {
 	if !d.IsNew() {
 		return NewValidationError("Set the shape of a dataset that is not new is forbidden")
 	}
@@ -128,11 +134,16 @@ func (d *Dataset) SetShape(shape *geom.Polygon, crsS string) error {
 	defer crs.Close()
 	d.Shape = proj.NewShape(srid, shape)
 
-	d.GeomShape, err = proj.NewGeometricShapeFromShape(crs, d.Shape)
+	return d.setGeomGeogShape(crs)
+}
+
+// SetShape sets the shape in a given CRS and bounding boxes of a new dataset
+func (d *Dataset) setGeomGeogShape(crs *godal.SpatialRef) (err error) {
+	d.GeomShape, err = proj.NewGeometricShapeFromShape(d.Shape, crs)
 	if err != nil {
 		return NewValidationError("Invalid crs or bbox: " + err.Error())
 	}
-	d.GeogShape, err = proj.NewGeographicShapeFromShape(crs, d.Shape)
+	d.GeogShape, err = proj.NewGeographicShapeFromShape(d.Shape, crs)
 	if err != nil {
 		return NewValidationError("Invalid crs or bbox: " + err.Error())
 	}

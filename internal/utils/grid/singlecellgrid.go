@@ -53,7 +53,7 @@ func (cg *SingleCellGrid) Covers(ctx context.Context, geomAOI *geom.MultiPolygon
 
 	lonLatToCRS, err := proj.CreateLonLatProj(cg.crs, false)
 	if err != nil {
-		return nil, fmt.Errorf("SingleCellGrid.Covers: failed to create lonlat projection: %w", err)
+		return nil, fmt.Errorf("SingleCellGrid.Covers.%w", err)
 	}
 
 	x, y := proj.FlatCoordToXY(geomAOI.FlatCoords())
@@ -94,7 +94,7 @@ func (cg *SingleCellGrid) Cell(uri string) (*Cell, error) {
 
 	crsToLonLat, err := proj.CreateLonLatProj(cg.crs, true)
 	if err != nil {
-		return nil, fmt.Errorf("SingleCellGrid.Covers: failed to create lonlat projection: %w", err)
+		return nil, fmt.Errorf("SingleCellGrid.Covers.%w", err)
 	}
 
 	return newCell(uri, cg.crs, cg.srid, pixToCRS, sizeX, sizeY, crsToLonLat), nil

@@ -267,7 +267,9 @@ func (svc *Service) validateAndSetRemoteDataset(ctx context.Context, dataset *ge
 	}
 	bounds := geom.NewBounds(geom.XY)
 	bounds.SetCoords([]float64{extent[0], extent[1]}, []float64{extent[2], extent[3]})
-	if err := dataset.SetShape(bounds.Polygon(), ds.Projection()); err != nil {
+	mp := geom.NewMultiPolygon(geom.XY)
+	mp.Push(bounds.Polygon())
+	if err := dataset.SetShape(mp, ds.Projection()); err != nil {
 		return err
 	}
 
