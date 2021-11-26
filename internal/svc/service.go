@@ -388,13 +388,14 @@ func (svc *Service) ConfigConsolidation(ctx context.Context, variableID string, 
 func (svc *Service) ConsolidateFromRecords(ctx context.Context, job *geocube.Job, recordsID []string) error {
 	// Get the list of datasets for the instanceID and the records provided
 	// TODO check that ListActiveDatasetsID does not take too long
+	job.LogMsg(geocube.DEBUG, "Listing active datasets...")
 	start := time.Now()
 	datasetsID, err := svc.db.ListActiveDatasetsID(ctx, job.Payload.InstanceID, recordsID, nil, time.Time{}, time.Time{})
 	if err != nil {
 		return fmt.Errorf("ConsolidateFromRecords.%w", err)
 	}
-	fmt.Printf("ListActiveDatasetsID: %v\n", time.Since(start))
-
+	job.LogMsgf(geocube.DEBUG, "...%d datasets found", len(datasetsID))
+	log.Logger(ctx).Sugar().Debugf("ListActiveDatasetsID: %v\n", time.Since(start))
 	return svc.consolidate(ctx, job, datasetsID)
 }
 
@@ -403,12 +404,13 @@ func (svc *Service) ConsolidateFromFilters(ctx context.Context, job *geocube.Job
 	// Get the list of datasets for the instanceID and the filters provided
 	// TODO check that ListActiveDatasetsID does not take too long
 	start := time.Now()
+	job.LogMsg(geocube.DEBUG, "Listing active datasets...")
 	datasetsID, err := svc.db.ListActiveDatasetsID(ctx, job.Payload.InstanceID, nil, tags, fromTime, toTime)
 	if err != nil {
 		return fmt.Errorf("ConsolidateFromFilters.%w", err)
 	}
-	fmt.Printf("ListActiveDatasetsID: %v\n", time.Since(start))
-
+	job.LogMsgf(geocube.DEBUG, "...%d datasets found", len(datasetsID))
+	log.Logger(ctx).Sugar().Debugf("ListActiveDatasetsID: %v\n", time.Since(start))
 	return svc.consolidate(ctx, job, datasetsID)
 }
 
@@ -437,16 +439,16 @@ func (svc Service) consolidate(ctx context.Context, job *geocube.Job, datasetsID
 
 		// Lock datasets
 		job.LockDatasets(datasetsID, geocube.LockFlagINIT)
-
 		// Persist the job
 		start := time.Now()
 		if err := svc.saveJob(ctx, txn, job); err != nil {
 			return fmt.Errorf("consolidate.%w", err)
 		}
-		fmt.Printf("SaveJob: %v\n", time.Since(start))
+		log.Logger(ctx).Sugar().Debugf("SaveJob: %v\n", time.Since(start))
 		start = time.Now()
 
 		// Start the job
+		log.Logger(ctx).Sugar().Debug("new consolidation job started")
 		if err := svc.csldOnEnterNewState(ctx, job); err != nil {
 			return fmt.Errorf("consolidate.%w", err)
 		}

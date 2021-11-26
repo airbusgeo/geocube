@@ -129,6 +129,7 @@ CREATE TABLE geocube.jobs (
 	type TEXT NOT NULL,
 	step_by_step INTEGER DEFAULT 0 NOT NULL,
 	waiting BOOLEAN DEFAULT FALSE NOT NULL,
+	logs JSONB default '[]'::JSONB,
 	PRIMARY KEY (id),
 	UNIQUE (name)
 );

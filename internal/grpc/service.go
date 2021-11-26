@@ -538,6 +538,7 @@ func (svc *Service) ConfigConsolidation(ctx context.Context, req *pb.ConfigConso
 
 // Consolidate starts a consolidation job
 func (svc *Service) Consolidate(ctx context.Context, req *pb.ConsolidateRequest) (*pb.ConsolidateResponse, error) {
+	log.Logger(ctx).Sugar().Debug("starting new consolidation job")
 	// Check that ids are uuid
 	for _, id := range req.GetRecords().GetIds() {
 		if _, err := uuid.Parse(id); err != nil {
@@ -558,11 +559,13 @@ func (svc *Service) Consolidate(ctx context.Context, req *pb.ConsolidateRequest)
 		// Convert times
 		fromTime := timeFromTimestamp(filters.GetFromTime())
 		toTime := timeFromTimestamp(filters.GetToTime())
+		job.LogMsg(geocube.INFO, "Consolidate from filters")
 		err = svc.gsvc.ConsolidateFromFilters(ctx, job, filters.GetTags(), fromTime, toTime)
 	} else {
 		if len(req.GetRecords().GetIds()) == 0 {
 			return &pb.ConsolidateResponse{}, newValidationError("At least one record must be provided")
 		}
+		job.LogMsg(geocube.INFO, "Consolidate from records")
 		err = svc.gsvc.ConsolidateFromRecords(ctx, job, req.GetRecords().GetIds())
 	}
 	if err != nil {

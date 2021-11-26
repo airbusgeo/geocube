@@ -45,7 +45,7 @@ message Job {
     string                    state            = 4;
     google.protobuf.Timestamp creation_time    = 5;
     google.protobuf.Timestamp last_update_time = 6;
-    repeated string           log              = 7;
+    repeated string           logs              = 7;
     int32                     active_tasks     = 8;
     int32                     failed_tasks     = 9;
     int32                     step_by_step     = 10;

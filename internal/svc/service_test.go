@@ -2,7 +2,6 @@ package svc_test
 
 import (
 	"context"
-	"log"
 	"os"
 	"path"
 
@@ -69,7 +68,6 @@ var _ = Describe("csldCancel", func() {
 					State: geocube.TaskStatePENDING,
 				},
 			},
-			Log: log.New(os.Stdout, "", log.Ldate|log.Ltime),
 		}
 		readJobErrorReturned = nil
 
@@ -94,7 +92,7 @@ var _ = Describe("csldCancel", func() {
 		mockDatabase.On("ReadTasks", ctx, readJobReturned.ID, mock.Anything).Return(readTasksReturned, readTasksErrorReturned)
 		geocubeTxBackendReturned.On("Rollback").Return(rollbackErrorReturned)
 		geocubeTxBackendReturned.On("Commit").Return(commitErrorReturned)
-		geocubeTxBackendReturned.GeocubeBackend.On("UpdateJob", ctx, readJobReturned).Return(updateJobErrorToReturned)
+		geocubeTxBackendReturned.On("UpdateJob", ctx, readJobReturned).Return(updateJobErrorToReturned)
 		geocubeTxBackendReturned.GeocubeBackend.On("UpdateTask", ctx, mock.Anything).Return(updateTaskErrorReturned)
 		mockEventPublisher.On("Publish", ctx, mock.Anything).Return(publishErrorReturned)
 		returnedError = service.CancelJob(ctx, jobIDToUse)

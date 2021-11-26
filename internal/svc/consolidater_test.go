@@ -275,7 +275,9 @@ var _ = Describe("Consolidater", func() {
 			itShouldNotReturnAnError = func() {
 				It("should not return an error", func() {
 					Expect(returnedError).To(BeNil())
-					Expect(jobToUse.Payload.Err).To(BeEmpty())
+					for _, log := range jobToUse.Logs {
+						Expect(log.Severity).NotTo(Equal("ERROR"))
+					}
 				})
 			}
 
@@ -331,6 +333,7 @@ var _ = Describe("Consolidater", func() {
 				}, nil)
 				geocubeTxBackendReturned.On("FindDatasets", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return([]*geocube.Dataset{}, nil)
 				geocubeTxBackendReturned.On("ReleaseDatasets", ctx, mock.Anything, mock.Anything).Return(nil)
+				geocubeTxBackendReturned.On("UpdateJob", ctx, mock.Anything).Return(nil)
 			})
 			itShouldNotReturnAnError()
 			itShouldCreateJobState("CREATED")

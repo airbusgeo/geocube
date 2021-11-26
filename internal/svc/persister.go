@@ -114,7 +114,7 @@ func (svc *Service) saveJob(ctx context.Context, txn database.GeocubeTxBackend, 
 			panic("Params cannot be dirty")
 		}
 
-		if job.IsDirty() {
+		if job.IsDirty() || job.IsClean() {
 			if err := txn.UpdateJob(ctx, job); err != nil {
 				if geocube.IsError(err, geocube.EntityNotFound) {
 					return utils.MakeTemporary(fmt.Errorf("savejob.%w (temporary)", err)) // OCC error

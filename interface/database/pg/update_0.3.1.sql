@@ -24,3 +24,6 @@ ALTER TABLE geocube.consolidation_params RENAME COLUMN downsampling_alg TO resam
 ALTER TABLE geocube.datasets ALTER COLUMN geog TYPE geography(MULTIPOLYGON,0) USING ST_Multi(geog::geometry)::geography;
 ALTER TABLE geocube.datasets ALTER COLUMN geom TYPE geometry(MULTIPOLYGON,4326) USING ST_MULTI(geom);
 ALTER TABLE geocube.datasets ALTER COLUMN shape TYPE geometry(MULTIPOLYGON,0) USING ST_MULTI(shape);
+
+-- add message column on job table
+ALTER TABLE geocube.jobs ADD COLUMN logs JSONB default '[]'::JSONB;

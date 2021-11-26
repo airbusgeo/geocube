@@ -5,9 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
-	"os"
-	"strings"
+	"sort"
 	"time"
 
 	pb "github.com/airbusgeo/geocube/internal/pb"
@@ -48,12 +46,29 @@ const (
 	JobStateDONEBUTUNTIDY
 )
 
+type LogSeverity string
+
+const (
+	DEBUG LogSeverity = "DEBUG"
+	INFO  LogSeverity = "INFO"
+	WARN  LogSeverity = "WARN"
+	ERROR LogSeverity = "ERROR"
+)
+
 // JobPayload contains all the information to process a job
 type JobPayload struct {
 	Layout     string `json:"layout,omitempty"`
 	InstanceID string `json:"instance_id,omitempty"`
 	ParamsID   string `json:"params_id,omitempty"`
-	Err        string `json:"error,omitempty"`
+}
+
+type JobLogs []JobLog
+
+type JobLog struct {
+	Severity LogSeverity `json:"severity,omitempty"`
+	Msg      string      `json:"message,omitempty"`
+	Status   string      `json:"status,omitempty"`
+	Date     time.Time   `json:"time,omitempty"`
 }
 
 type JobParams interface {
@@ -100,6 +115,7 @@ type Job struct {
 	occTime        time.Time // used for Optimistic Concurrency Control
 	LastUpdateTime time.Time
 	Payload        JobPayload
+	Logs           JobLogs
 	ActiveTasks    int
 	FailedTasks    int
 	StepByStep     int
@@ -110,13 +126,11 @@ type Job struct {
 	Params JobParams
 
 	LockedDatasets [int32(LockFlagNB)]LockedDatasets
-	Log            *log.Logger
 }
 
 // NewJob creates a new empty Job with a logger
 func NewJob(id string) *Job {
 	j := &Job{ID: id}
-	j.setLogger()
 	return j
 }
 
@@ -137,11 +151,16 @@ func NewConsolidationJob(jobName, layout, instanceID string, stepByStep int) *Jo
 			InstanceID: instanceID,
 			ParamsID:   id, // By default ParamsID is JobID
 		},
+		Logs: JobLogs{{
+			Severity: "INFO",
+			Msg:      "Create Job Consolidation",
+			Status:   JobStateNEW.String(),
+			Date:     time.Now(),
+		}},
 
 		StepByStep: stepByStep,
 		Waiting:    false,
 	}
-	j.setLogger()
 	return j
 }
 
@@ -152,10 +171,6 @@ func (j *Job) SetParams(params ConsolidationParams) error {
 	j.Params = &params
 	params.persistenceState = persistenceStateNEW // Job copies the params and takes ownership
 	return nil
-}
-
-func (j *Job) setLogger() {
-	j.Log = log.New(os.Stdout, "", log.Ldate|log.Ltime)
 }
 
 // ToProtobuf converts a job to protobuf
@@ -175,11 +190,11 @@ func (j *Job) ToProtobuf() (*pb.Job, error) {
 		CreationTime:   creationTime,
 		LastUpdateTime: lastUpdateTime,
 		State:          j.State.String(),
-		Log:            strings.Split(j.Payload.Err, "\n"),
 		ActiveTasks:    int32(j.ActiveTasks),
 		FailedTasks:    int32(j.FailedTasks),
 		StepByStep:     int32(j.StepByStep),
 		Waiting:        j.Waiting,
+		Logs:           j.Logs.toSliceString(),
 	}, nil
 }
 
@@ -226,12 +241,33 @@ func (j *Job) OCCTime() time.Time {
 	return j.occTime
 }
 
-// logErr updates and append the error status
-func (j *Job) logErr(err string) {
+// LogMsg updates and append the log status of Job
+func (j *Job) LogMsg(severity LogSeverity, msg string) {
+	j.Logs = append(j.Logs, JobLog{
+		Severity: severity,
+		Msg:      msg,
+		Status:   j.State.String(),
+		Date:     time.Now(),
+	})
+	j.dirty()
+}
+
+// LogMsgf updates and append the log status of Job
+func (j *Job) LogMsgf(severity LogSeverity, msg string, args ...interface{}) {
+	j.LogMsg(severity, fmt.Sprintf(msg, args...))
+}
+
+// LogErr updates and append the error status
+func (j *Job) LogErr(err string) {
 	if err != "" {
-		j.Payload.Err += fmt.Sprintf("%s State=%s: %s\n", time.Now().Format("2006-01-02 15:04:05 Z07:00"), j.State.String(), err)
-		j.dirty()
+		j.Logs = append(j.Logs, JobLog{
+			Severity: ERROR,
+			Msg:      err,
+			Status:   j.State.String(),
+			Date:     time.Now(),
+		})
 	}
+	j.dirty()
 }
 
 /***************************************************/
@@ -251,7 +287,12 @@ func (j *Job) Trigger(evt JobEvent) error {
 		handled = j.triggerIngestion(evt)
 	}
 	if handled {
-		j.Log.Printf("New state: " + j.State.String())
+		if j.Waiting {
+			j.LogMsg(INFO, "New state: "+j.State.String()+": waiting for user action")
+		} else {
+			j.LogMsg(INFO, "New state: "+j.State.String())
+
+		}
 		return nil
 	}
 	return NewUnhandledEvent("Job " + j.ID + ": Unable to trigger " + evt.Status.String() + " (current state=" + j.State.String() + ")")
@@ -283,7 +324,7 @@ func (j *Job) triggerConsolidation(evt JobEvent) bool {
 		case RetryForced:
 			return true
 		case PrepareConsolidationOrdersFailed:
-			j.logErr(evt.Error)
+			j.LogErr(evt.Error)
 			return j.changeState(JobStateINITIALISATIONFAILED)
 		case ConsolidationOrdersPrepared:
 			return j.changeState(JobStateCONSOLIDATIONINPROGRESS)
@@ -293,13 +334,13 @@ func (j *Job) triggerConsolidation(evt JobEvent) bool {
 		case RetryForced:
 			return j.changeState(JobStateCONSOLIDATIONRETRYING)
 		case CancelledByUser:
-			j.logErr("Cancelled by user")
+			j.LogErr("Cancelled by user")
 			return j.changeState(JobStateCONSOLIDATIONCANCELLING)
 		case ConsolidationFailed:
-			j.logErr(evt.Error)
+			j.LogErr(evt.Error)
 			return j.changeState(JobStateCONSOLIDATIONFAILED)
 		case SendConsolidationOrdersFailed:
-			j.logErr(evt.Error)
+			j.LogErr(evt.Error)
 			return j.changeState(JobStateCONSOLIDATIONFAILED)
 		case ConsolidationDone:
 			return j.changeState(JobStateCONSOLIDATIONDONE)
@@ -311,7 +352,7 @@ func (j *Job) triggerConsolidation(evt JobEvent) bool {
 		case CancelledByUser:
 			return j.changeState(JobStateABORTED)
 		case ConsolidationIndexingFailed:
-			j.logErr(evt.Error)
+			j.LogErr(evt.Error)
 			return j.changeState(JobStateCONSOLIDATIONFAILED)
 		case ConsolidationIndexed:
 			return j.changeState(JobStateCONSOLIDATIONINDEXED)
@@ -323,7 +364,7 @@ func (j *Job) triggerConsolidation(evt JobEvent) bool {
 		case CancelledByUser:
 			return j.changeState(JobStateABORTED)
 		case SwapDatasetsFailed:
-			j.logErr(evt.Error)
+			j.LogErr(evt.Error)
 			return j.changeState(JobStateCONSOLIDATIONFAILED)
 		case DatasetsSwapped:
 			return j.changeState(JobStateCONSOLIDATIONEFFECTIVE)
@@ -333,7 +374,7 @@ func (j *Job) triggerConsolidation(evt JobEvent) bool {
 		case RetryForced:
 			return true
 		case DeletionFailed:
-			j.logErr(evt.Error)
+			j.LogErr(evt.Error)
 			return j.changeState(JobStateDONEBUTUNTIDY)
 		case DeletionDone:
 			return j.changeState(JobStateDONE)
@@ -346,7 +387,7 @@ func (j *Job) triggerConsolidation(evt JobEvent) bool {
 		case RetryForced:
 			return j.changeState(JobStateCONSOLIDATIONEFFECTIVE)
 		case DeletionFailed:
-			j.logErr(evt.Error)
+			j.LogErr(evt.Error)
 			return j.changeState(JobStateDONEBUTUNTIDY)
 		case DeletionDone:
 			return j.changeState(JobStateDONE)
@@ -413,6 +454,7 @@ func (j *Job) triggerIngestion(evt JobEvent) bool {
 
 func (j *Job) changeState(newState JobState) bool {
 	j.State = newState
+	j.LogMsgf(DEBUG, "Update status to : %s", newState.String())
 	switch j.State {
 	case JobStateCONSOLIDATIONINPROGRESS, JobStateCONSOLIDATIONEFFECTIVE, JobStateABORTED:
 		// Before consolidation, before deletion, before rollback
@@ -491,7 +533,7 @@ func (j *Job) UpdateTask(evt TaskEvent) error {
 	j.setTaskState(task, newState)
 
 	if newState == TaskStateFAILED {
-		j.logErr("Task " + evt.TaskID + " failed: " + evt.Error)
+		j.LogErr("Task " + evt.TaskID + " failed: " + evt.Error)
 	}
 
 	return nil
@@ -584,6 +626,41 @@ func (jp *JobPayload) Scan(value interface{}) error {
 	}
 
 	return json.Unmarshal(b, &jp)
+}
+
+/***************************************************/
+/**                  JobLogs                      **/
+/***************************************************/
+
+func (jl JobLogs) Len() int           { return len(jl) }
+func (jl JobLogs) Less(i, j int) bool { return jl[i].Date.Before(jl[j].Date) }
+func (jl JobLogs) Swap(i, j int)      { jl[i], jl[j] = jl[j], jl[i] }
+
+func (jl JobLogs) toSliceString() []string {
+	sort.Sort(jl)
+	var result []string
+	for _, log := range jl {
+		result = append(result, fmt.Sprintf("%s - %s | Status: %s - Message: %s", log.Date.Format(time.RFC3339Nano), log.Severity, log.Status, log.Msg))
+	}
+	return result
+}
+
+// Value implements the driver.Valuer interface for a JobLogs. This method
+// simply returns the JSON-encoded representation of the struct.
+func (jl JobLogs) Value() (driver.Value, error) {
+	b, err := json.Marshal(jl)
+	return string(b), err
+}
+
+// Scan implements the sql.Scanner interface for a JobLogs. This method
+// simply decodes a JSON-encoded value into the struct fields.
+func (jl *JobLogs) Scan(value interface{}) error {
+	b, ok := value.([]byte)
+	if !ok {
+		return errors.New("type assertion to []byte failed")
+	}
+
+	return json.Unmarshal(b, &jl)
 }
 
 /***************************************************/
