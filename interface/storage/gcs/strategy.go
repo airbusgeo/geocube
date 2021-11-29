@@ -36,12 +36,23 @@ var retriableOAuth2Errors = []string{
 	"timeout",
 	"broken pipe",
 	"client connection force closed",
+	"502 Bad Gateway",
+}
+
+var retriableSuffixErrors = []string{
+	"http2: client connection lost",
+	"http2: client connection force closed via ClientConn.Close",
+	"EOF", // Unexpected EOF is a temporary error
 }
 
 func gsError(err error) error {
 	if err == nil {
 		return nil
 	}
+	if utils.Temporary(err) {
+		return err
+	}
+
 	// grpc & oauth2 does not transfer the temporary status of error
 	// see ./vendor/golang.org/x/oauth2/oauth2/jwt/jwt.go func (js jwtSource) Token()
 	// see ./vendor/google.golang.org/grpc/internal/transport/http2_client.go func (t *http2Client) getTrAuthData
@@ -53,9 +64,10 @@ func gsError(err error) error {
 		}
 	}
 
-	// Unexpected EOF is a temporary error
-	if strings.HasSuffix(err.Error(), "EOF") {
-		return utils.MakeTemporary(err)
+	for _, e := range retriableSuffixErrors {
+		if strings.HasSuffix(err.Error(), e) {
+			return utils.MakeTemporary(err)
+		}
 	}
 	return err
 }
