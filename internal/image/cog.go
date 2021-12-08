@@ -51,7 +51,7 @@ func (c *cogGenerator) Create(dataset *godal.Dataset, oContainer geocube.Consoli
 		options = append(options, "-co", "BIGTIFF=YES")
 	}
 
-	cogDatasetPath := filepath.Join(workDir, fmt.Sprintf("cog_without_overviews_%s.tif", recordId))
+	cogDatasetPath := filepath.Join("/vsimem", fmt.Sprintf("cog_without_overviews_%s.tif", recordId))
 	cogDataset, err := dataset.Translate(cogDatasetPath, options)
 	if err != nil {
 		return "", fmt.Errorf("failed to translate cog: %w", err)
@@ -252,7 +252,7 @@ func (c *cogGenerator) rewriteTiff(src, dest string) error {
 }
 
 func (c *cogGenerator) openDatasetTiffs(datasetFileName string) (tiff.ReadAtReadSeeker, io.Closer, error) {
-	fd, err := os.Open(datasetFileName)
+	fd, err := godal.VSIOpen(datasetFileName)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to open file: %w", err)
 	}
