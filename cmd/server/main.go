@@ -13,6 +13,10 @@ import (
 	"strings"
 	"time"
 
+	osioGcs "github.com/airbusgeo/osio/gcs"
+
+	"github.com/airbusgeo/geocube/interface/storage/gcs"
+
 	"github.com/airbusgeo/geocube/interface/database"
 	"github.com/airbusgeo/geocube/interface/database/pg"
 	"github.com/airbusgeo/geocube/interface/database/pg/secrets"
@@ -20,7 +24,6 @@ import (
 	"github.com/airbusgeo/geocube/interface/messaging/pubsub"
 	"github.com/airbusgeo/godal"
 	"github.com/airbusgeo/osio"
-	osioGcs "github.com/airbusgeo/osio/gcs"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"go.uber.org/zap"
 	"golang.org/x/net/http2"
@@ -235,11 +238,26 @@ func initGDAL(ctx context.Context, serverConfig *serverConfig) error {
 	if err := godal.RegisterRaster("PNG"); err != nil {
 		return err
 	}
-	osioGCSHandle, err := osioGcs.Handle(ctx)
-	if err != nil {
-		return err
+
+	var adapter interface {
+		StreamAt(key string, off int64, n int64) (io.ReadCloser, int64, error)
 	}
-	gcsa, err := osio.NewAdapter(osioGCSHandle,
+
+	var err error
+	if serverConfig.GdalStorageDebug {
+		adapter, err = gcs.NewGsStrategy(ctx)
+		if err != nil {
+			return err
+		}
+	} else {
+		adapter, err = osioGcs.Handle(ctx)
+		if err != nil {
+			return err
+		}
+
+	}
+
+	gcsa, err := osio.NewAdapter(adapter,
 		osio.BlockSize(serverConfig.GdalBlockSize),
 		osio.NumCachedBlocks(serverConfig.GdalNumCachedBlocks))
 	if err != nil {
@@ -321,6 +339,7 @@ func newServerAppConfig() (*serverConfig, error) {
 	gdalBlocksize := flag.String("gdalBlockSize", "1Mb", "gdal blocksize value (default 1Mb)")
 	gdalNumCachedBlocks := flag.Int("gdalNumCachedBlocks", 500, "gdal blockcache value (default 500)")
 	cancelledJobs := flag.String("cancelledJobs", "", "storage where cancelled jobs are referenced")
+	gdalStorageDebug := flag.Bool("gdalStorageDebug", false, "storage debug enable to use custom gdal storage strategy")
 
 	flag.Parse()
 
@@ -351,6 +370,7 @@ func newServerAppConfig() (*serverConfig, error) {
 		CatalogWorkers:                *workers,
 		GdalBlockSize:                 *gdalBlocksize,
 		GdalNumCachedBlocks:           *gdalNumCachedBlocks,
+		GdalStorageDebug:              *gdalStorageDebug,
 	}, nil
 }
 
@@ -373,6 +393,7 @@ type serverConfig struct {
 	CatalogWorkers                int
 	GdalBlockSize                 string
 	GdalNumCachedBlocks           int
+	GdalStorageDebug              bool
 }
 
 func PgConnString(ctx context.Context, serverConfig *serverConfig) (string, error) {

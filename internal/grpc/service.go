@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/airbusgeo/geocube/interface/storage/gcs"
+
 	"github.com/airbusgeo/godal"
 	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/golang/protobuf/ptypes/wrappers"
@@ -856,7 +858,7 @@ func (svc *Service) GetCube(req *pb.GetCubeRequest, stream pb.Geocube_GetCubeSer
 			}
 		}
 	}
-
+	defer gcs.GetMetrics(ctx)
 	return ctx.Err()
 }
 

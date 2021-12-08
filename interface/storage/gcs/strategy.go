@@ -3,12 +3,18 @@ package gcs
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"time"
+
+	"github.com/airbusgeo/geocube/internal/log"
+
+	"google.golang.org/api/googleapi"
 
 	"cloud.google.com/go/storage"
 	geocubeStorage "github.com/airbusgeo/geocube/interface/storage"
@@ -17,6 +23,7 @@ import (
 
 type gsStrategy struct {
 	gsClient *storage.Client
+	ctx      context.Context
 }
 
 type Writer interface {
@@ -76,6 +83,7 @@ func NewGsStrategy(ctx context.Context) (geocubeStorage.Strategy, error) {
 
 	return gsStrategy{
 		gsClient: gsClient,
+		ctx:      ctx,
 	}, nil
 }
 
@@ -200,7 +208,61 @@ func (s gsStrategy) GetAttrs(ctx context.Context, uri string) (geocubeStorage.At
 	}, nil
 }
 
-func (s *gsStrategy) decodeURI(ctx context.Context, uri string) (string, string, error) {
+var (
+	metrics = make(map[string][]streamAtMetrics)
+)
+
+type streamAtMetrics struct {
+	Calls  int
+	Volume int
+}
+
+func GetMetrics(ctx context.Context) {
+	for key, streamAtMetricsList := range metrics {
+		log.Logger(ctx).Sugar().Debugf("GCS Metrics: %s - %d calls", key, len(streamAtMetricsList))
+	}
+
+	defer func() {
+		metrics = nil
+	}()
+}
+
+func (s gsStrategy) StreamAt(key string, off int64, n int64) (io.ReadCloser, int64, error) {
+	bucket, object, err := bucketObject(key)
+	if err != nil {
+		return nil, 0, err
+	}
+	gbucket := s.gsClient.Bucket(bucket)
+
+	r, err := gbucket.Object(object).NewRangeReader(s.ctx, off, n)
+	if err != nil {
+		var gerr *googleapi.Error
+		if off > 0 && errors.As(err, &gerr) && gerr.Code == 416 {
+			return nil, 0, io.EOF
+		}
+		if errors.Is(err, storage.ErrObjectNotExist) || errors.Is(err, storage.ErrBucketNotExist) {
+			return nil, -1, syscall.ENOENT
+		}
+		err = addTemporaryCheck(err)
+		return nil, 0, fmt.Errorf("new reader for gs://%s/%s: %w", bucket, object, err)
+	}
+
+	if metrics[key] != nil {
+		metrics[key] = append(metrics[key], streamAtMetrics{
+			Calls:  len(metrics[key]) + 1,
+			Volume: metrics[key][len(metrics[key])-1].Volume + int(n),
+		})
+	} else {
+		metrics[key] = []streamAtMetrics{{
+			Calls:  1,
+			Volume: int(n),
+		}}
+	}
+
+	return readWrapper{r}, r.Attrs.Size, nil
+}
+
+func (s *gsStrategy) decodeURI(_ context.Context, uri string) (string, string, error) {
 	bucket, path, err := Parse(uri)
 	if err != nil {
 		return "", "", fmt.Errorf("failed to parse URI : %s : %w", uri, err)

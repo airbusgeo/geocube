@@ -478,6 +478,7 @@ func (svc *Service) mergeDatasetsWorker(ctx context.Context, jobs <-chan mergeDa
 			}
 			ds.Close()
 		}
+
 		metadata := map[string]string{fmt.Sprintf("Merge %d", len(job.Datasets)): fmt.Sprintf("%v", time.Since(start))}
 
 		// Send bitmap

@@ -147,3 +147,13 @@ func (s fileSystemStrategy) GetAttrs(ctx context.Context, uri string) (geocubeSt
 		StorageClass: "filesystem",
 	}, nil
 }
+
+func (s fileSystemStrategy) StreamAt(key string, off int64, n int64) (io.ReadCloser, int64, error) {
+	f, err := os.Open(key)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to open file: %w", err)
+	}
+	defer f.Close()
+
+	return ioutil.NopCloser(f), 0, nil
+}
