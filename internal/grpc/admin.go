@@ -12,7 +12,7 @@ type GeocubeServiceAdmin interface {
 	// TidyPending remove from the database the entities that are not linked to any dataset
 	TidyPending(ctx context.Context, aois, records, variables, instances, containers, params bool, simulate bool) ([]int64, error)
 	// UpdateDatasets given the instance id
-	UpdateDatasets(ctx context.Context, simulate bool, instanceID string, dmapping geocube.DataMapping) (map[string]int64, error)
+	UpdateDatasets(ctx context.Context, simulate bool, instanceID string, RecordIds []string, dmapping geocube.DataMapping) (map[string]int64, error)
 	// DeleteDatasets given the instance id
 	DeleteDatasets(ctx context.Context, simulate bool, instancesID, recordsID []string) ([]string, error)
 }
@@ -48,7 +48,7 @@ func (svc *ServiceAdmin) TidyDB(ctx context.Context, req *pb.TidyDBRequest) (*pb
 
 // UpdateDatasets implements AdminServer
 func (svc *ServiceAdmin) UpdateDatasets(ctx context.Context, req *pb.UpdateDatasetsRequest) (*pb.UpdateDatasetsResponse, error) {
-	results, err := svc.gsvca.UpdateDatasets(ctx, req.Simulate, req.InstanceId,
+	results, err := svc.gsvca.UpdateDatasets(ctx, req.Simulate, req.InstanceId, req.RecordIds,
 		geocube.DataMapping{
 			DataFormat: *geocube.NewDataFormatFromProtobuf(req.GetDformat()),
 			RangeExt:   geocube.Range{Min: req.RealMinValue, Max: req.RealMaxValue},
@@ -63,7 +63,7 @@ func (svc *ServiceAdmin) UpdateDatasets(ctx context.Context, req *pb.UpdateDatas
 
 // DeleteDatasets implements AdminServer
 func (svc *ServiceAdmin) DeleteDatasets(ctx context.Context, req *pb.DeleteDatasetsRequest) (*pb.DeleteDatasetsResponse, error) {
-	results, err := svc.gsvca.DeleteDatasets(ctx, req.Simulate, req.GetInstancesId(), req.GetRecordsId())
+	results, err := svc.gsvca.DeleteDatasets(ctx, req.Simulate, req.GetInstanceIds(), req.GetRecordIds())
 	if err != nil {
 		return nil, err
 	}

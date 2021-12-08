@@ -154,8 +154,8 @@ type GeocubeBackend interface {
 	// GetDatasetsGeometryUnion returns the union of AOI of all the locked datasets
 	GetDatasetsGeometryUnion(ctx context.Context, lockedByJobID string) (*geom.MultiPolygon, error)
 
-	// UpdateDatasets given an instance id
-	UpdateDatasets(ctx context.Context, instanceID string, dmapping geocube.DataMapping) (map[string]int64, error)
+	// UpdateDatasets given an instance id and records ids
+	UpdateDatasets(ctx context.Context, instanceID string, recordIds []string, dmapping geocube.DataMapping) (map[string]int64, error)
 
 	// ComputeValidShapeFromCell compute valid shape in right crs from cell ring
 	ComputeValidShapeFromCell(ctx context.Context, datasetIDS []string, cell *grid.Cell) (*proj.Shape, error)

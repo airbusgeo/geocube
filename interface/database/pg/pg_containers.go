@@ -351,13 +351,13 @@ func (b Backend) ComputeValidShapeFromCell(ctx context.Context, datasetIDS []str
 }
 
 // UpdateDatasets implements GeocubeBackend
-func (b Backend) UpdateDatasets(ctx context.Context, instanceID string, dmapping geocube.DataMapping) (map[string]int64, error) {
+func (b Backend) UpdateDatasets(ctx context.Context, instanceID string, recordIds []string, dmapping geocube.DataMapping) (map[string]int64, error) {
 
 	// Get impact of the update
 	rows, err := b.pg.QueryContext(ctx,
 		"SELECT COUNT(*), '(' || dtype || ', ' || no_data || ', ' || min_value || ', ' || max_value || ') -> (' || real_min_value || ', ' || real_max_value || ') e' || exponent"+
-			" FROM geocube.datasets WHERE instance_id = $1"+
-			" GROUP BY dtype, no_data, min_value, max_value, real_min_value, real_max_value, exponent", instanceID)
+			" FROM geocube.datasets WHERE instance_id = $1 and record_is = ANY($2)"+
+			" GROUP BY dtype, no_data, min_value, max_value, real_min_value, real_max_value, exponent", instanceID, pq.Array(recordIds))
 	if err != nil {
 		return nil, pqErrorFormat("UpdateDatasets: %w", err)
 	}

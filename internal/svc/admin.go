@@ -70,11 +70,11 @@ func (svc *Service) TidyPending(ctx context.Context, aois, records, variables, i
 }
 
 // UpdateDatasets implements ServiceAdmin
-func (svc *Service) UpdateDatasets(ctx context.Context, simulate bool, instanceID string, dmapping geocube.DataMapping) (map[string]int64, error) {
+func (svc *Service) UpdateDatasets(ctx context.Context, simulate bool, instanceID string, recordIds []string, dmapping geocube.DataMapping) (map[string]int64, error) {
 	var results map[string]int64
 
 	err := svc.unitOfWork(ctx, func(txn database.GeocubeTxBackend) (err error) {
-		if results, err = txn.UpdateDatasets(ctx, instanceID, dmapping); err != nil {
+		if results, err = txn.UpdateDatasets(ctx, instanceID, recordIds, dmapping); err != nil {
 			return fmt.Errorf("UpdateDatasets.%w", err)
 		}
 

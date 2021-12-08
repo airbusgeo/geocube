@@ -293,7 +293,7 @@ func (_m *GeocubeBackend) GetDatasetsGeometryUnion(ctx context.Context, lockedBy
 	return r0, r1
 }
 
-func (_m *GeocubeBackend) UpdateDatasets(ctx context.Context, instanceID string, dmapping geocube.DataMapping) (map[string]int64, error) {
+func (_m *GeocubeBackend) UpdateDatasets(ctx context.Context, instanceID string, recordIds []string, dmapping geocube.DataMapping) (map[string]int64, error) {
 	panic("implement me")
 }
 

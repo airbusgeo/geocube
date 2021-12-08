@@ -4,16 +4,22 @@ option go_package = "./pb;geocube";
 
 import "pb/dataformat.proto";
 
+/**
+  * Request to remove from the database all the pending entities (entities that are not linked to any dataset)
+  */
 message TidyDBRequest{
-    bool Simulate          = 1;
-    bool PendingAOIs       = 2;
-    bool PendingRecords    = 3;
-    bool PendingVariables  = 4;
-    bool PendingInstances  = 5;
-    bool PendingContainers = 6;
-    bool PendingParams     = 7;
+    bool Simulate          = 1; // If true, a simulation is done, nothing is actually deleted
+    bool PendingAOIs       = 2; // Remove AOIs that are not linked to any Records
+    bool PendingRecords    = 3; // Remove Records that do not reference any Datasets
+    bool PendingVariables  = 4; // Remove Variables that have not any instances
+    bool PendingInstances  = 5; // Remove Instances that do not reference any Datasets
+    bool PendingContainers = 6; // Remove Containers that do not contain any Datasets
+    bool PendingParams     = 7; // Remove ConsolidationParams that are not linked to any Variable or Job
 }
 
+/**
+  * Return the number of entities that were deleted (or should have been deleted if Simulate=True)
+  */
 message TidyDBResponse{
     int64 NbAOIs       = 1;
     int64 NbRecords    = 2;
@@ -23,9 +29,13 @@ message TidyDBResponse{
     int64 NbParams     = 6;
 }
 
+/**
+  * Update fields of datasets that can be tricky
+  */
 message UpdateDatasetsRequest{
-    bool       simulate         = 1;
-    string     instance_id      = 2;
+    bool            simulate     = 1; // If true, a simulation is done, nothing is actually updated
+    string          instance_id  = 2; // Instance id that references the datasets to be updated
+    repeated string record_ids   = 3; // Record ids that reference the datasets to be updated
 
     DataFormat dformat          = 8;  // Internal data format (DType can be Undefined)
     double     real_min_value   = 9;  // Real min value (dformat.min_value maps to real_min_value)
@@ -33,20 +43,34 @@ message UpdateDatasetsRequest{
     double     exponent         = 11; // 1: linear scaling (RealMax - RealMin) * pow( (Value - Min) / (Max - Min), Exponent) + RealMin
 }
 
+/**
+  * Return the number of modifications per kind of modification
+  */
 message UpdateDatasetsResponse{
     map<string, int64> results = 1;
 }
 
+/**
+  * Remove the datasets referenced by instances and records without any control
+  * The containers (if empty) are not deleted
+  */
 message DeleteDatasetsRequest{
-    bool            simulate     = 1;
-    repeated string records_id   = 2;
-    repeated string instances_id = 3;
+    bool            simulate     = 1; // If true, a simulation is done, nothing is actually deleted
+    repeated string record_ids   = 2; // Instance id that references the datasets to be deleted
+    repeated string instance_ids = 3; // Record ids that reference the datasets to be deleted
 }
 
+/**
+  * Return the number of deleted datasets
+  */
 message DeleteDatasetsResponse{
     repeated string results = 1;
 }
 
+/**
+  * Service providing some functions to update or clean the database
+  * Must be used cautiously because there is no control neither possible rollback
+  */
 service Admin {
     rpc TidyDB(TidyDBRequest) returns (TidyDBResponse){}
     rpc UpdateDatasets(UpdateDatasetsRequest) returns (UpdateDatasetsResponse){}
