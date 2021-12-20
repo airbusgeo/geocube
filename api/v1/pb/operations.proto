@@ -8,6 +8,9 @@ import "pb/dataformat.proto";
 import "pb/variables.proto";
 import "pb/records.proto";
 
+/**
+  * Storage class of a container. Depends on the storage
+  */
 enum StorageClass{
     STANDARD    = 0;
     INFREQUENT  = 1;
@@ -15,13 +18,17 @@ enum StorageClass{
     DEEPARCHIVE = 3;
 }
 
+/**
+  * Define a dataset. A dataset is the metadata to retrieve an image from a file.
+  * It is defined by a record and the instance of a variable.
+  * 
+  * A dataset defines:
+  * - Which band(s) are indexed (usually all the bands, but it can be a subset)
+  * - How to map the value of its pixels to the dataformat of the variable. In more details:
+  *    . the dataformat of the dataset (dformat.[no_data, min, max]) that describes the pixel of the image
+  *    . the mapping from each pixel to the data format of the variable (variable.dformat). This mapping is defined as [MinOut, MaxOut, Exponent]. 
+  */
 message Dataset {
-    message Bounds { // In geographic coordinates (crs)
-        double left   = 1;
-        double bottom = 2;
-        double right  = 3;
-        double top    = 4;
-    }
     string         record_id        = 2;
     string         instance_id      = 3;
     string         container_subdir = 6;
@@ -32,41 +39,55 @@ message Dataset {
     double         exponent         = 11; // 1: linear scaling (RealMax - RealMin) * pow( (Value - Min) / (Max - Min), Exponent) + RealMin
 }
 
+/**
+  * Define a container of datasets.
+  * Usually a container is a file containing one dataset.
+  * But after a consolidation or if the container has several bands, it can contains several datasets.
+  */
 message Container{
-    string           uri           = 1;
-    bool             managed       = 2;
-    repeated Dataset datasets      = 3;
+    string           uri           = 1; // URI of the file
+    bool             managed       = 2; // True if the Geocube is responsible of the lifecycle of this file
+    repeated Dataset datasets      = 3; // List of datasets of the container
 }
 
+/**
+  * Job to modify datasets (consolidation, deletion, ingestion...)
+  * Some lifecycle operations are required to be done cautiously, in order to garantee the integrity of the database.
+  * Such operations are defined by a job and are done asynchronously.
+  * A job is a state-machine that can be rollbacked anytime during the operation until it ends.
+  */
 message Job {
-    string                    id               = 1;
-    string                    name             = 2;
-    string                    type             = 3;
-    string                    state            = 4;
-    google.protobuf.Timestamp creation_time    = 5;
-    google.protobuf.Timestamp last_update_time = 6;
-    repeated string           logs              = 7;
-    int32                     active_tasks     = 8;
-    int32                     failed_tasks     = 9;
-    int32                     step_by_step     = 10;
-    bool                      waiting          = 11;
+    string                    id               = 1;  // Id of the job
+    string                    name             = 2;  // Name of the job (must be unique)
+    string                    type             = 3;  // Type of the job (consolidation, deletion...)
+    string                    state            = 4;  // Current state of the state machine
+    google.protobuf.Timestamp creation_time    = 5;  // Time of creation of the job
+    google.protobuf.Timestamp last_update_time = 6;  // Time of the last update
+    repeated string           logs             = 7;  // Job logs 
+    int32                     active_tasks     = 8;  // If the job is divided into sub tasks, number of pending tasks
+    int32                     failed_tasks     = 9;  // If the job is divided into sub tasks, number of failed tasks
+    int32                     step_by_step     = 10; // 0: disable 1: wait before each critical steps 2: before each major steps 3: before all steps
+    bool                      waiting          = 11; // If true, the job is waiting for user to continue
 }
 
+/**
+  * Request to index all the datasets of a container
+  */
 message IndexDatasetsRequest {
     // TODO Index several containers: repeated ?
     Container container = 1;
 }
 
+/**
+  * 
+  */
 message IndexDatasetsResponse {}
 
-message IngestDatasetsRequest {
-    repeated Container container = 1;
-}
-
-message IngestDatasetsResponse{
-    repeated string job_ids = 1;
-}
-
+/**
+  * Parameters of consolidation that are linked to a variable, to define:
+  * - how to store the data
+  * - how to resample the data during consolidation
+  */
 message ConsolidationParams{
     enum Compression{
         NO       = 0;
@@ -74,36 +95,55 @@ message ConsolidationParams{
         LOSSY    = 2;
     }
 
-    DataFormat   dformat          = 1;
+    DataFormat   dformat          = 1; // dataformat of the data. See exponent for the mapping formula.
     double       exponent         = 2; // 1: linear scaling (RealMax - RealMin) * pow( (Value - Min) / (Max - Min), Exponent) + RealMin
-    bool         create_overviews = 3;
-    Resampling   resampling_alg   = 4;
-    Compression  compression      = 5;
-    bool         bands_interleave = 6;
-    StorageClass storage_class    = 7;
+    bool         create_overviews = 3; // To create overviews (to speed up the production of data at lower scale)
+    Resampling   resampling_alg   = 4; // Define how to resample the data during the consolidation (if a reprojection is needed or if the overviews are created)
+    Compression  compression      = 5; // Define whether the date is compressed at block level
+    bool         bands_interleave = 6; // In case of multibands, define whether or not the bands are interleaved
+    StorageClass storage_class    = 7; // Define the storage class of the created file (support only GCS)
 }
 
+/**
+  * Configure the parameters of the consolidation attached to the variable
+  */
 message ConfigConsolidationRequest {
     string              variable_id          = 1;
     ConsolidationParams consolidation_params = 2;
 }
 
+/**
+  * 
+  */
 message ConfigConsolidationResponse {
 }
 
+/**
+  * Retrieve the consolidation parameters attached to the given variable
+  */
 message GetConsolidationParamsRequest {
     string              variable_id          = 1;
 }
 
+/**
+  * Return consolidation parameters
+  */
 message GetConsolidationParamsResponse {
     ConsolidationParams consolidation_params = 2;
 }
 
+/**
+  * Create and start a consolidation job given a list of records and an instance_id to be consolidated on a layout
+  * Optionnaly, the job can be done step by step, pausing and waiting for user action, with three levels:
+  * - 1: after each critical steps
+  * - 2: after each major steps
+  * - 3: after all steps
+  */
 message ConsolidateRequest {
     string job_name     = 1;
     string instance_id  = 2;
     string layout_name  = 7;
-    int32  step_by_step = 6;
+    int32  step_by_step = 6; // by default 0, 1: critical steps, 2: major steps, 3: all steps
 
     oneof records_lister{
         RecordList    records = 4; // At least one
@@ -111,21 +151,37 @@ message ConsolidateRequest {
     }
 }
 
+/**
+  * Return the id of the job created
+  */
 message ConsolidateResponse{
     string job_id = 1;
 }
 
+/**
+  * List jobs given a name pattern
+  */
 message ListJobsRequest{
     string name_like = 1;
 }
 
+/**
+  * Return a list of the job whose name matchs the pattern
+  */
 message ListJobsResponse {
     repeated Job jobs = 1;
 }
+
+/**
+  * Retrieve a job given its id
+  */
 message GetJobRequest{
     string id = 1;
 }
 
+/**
+  * Return a job with the requested id
+  */
 message GetJobResponse {
     Job job = 1;
 }
@@ -138,34 +194,50 @@ message CleanJobsRequest{
     string state     = 2; // Filter by terminated state (DONE, FAILED)
 }
 
+/**
+  * Return the number of jobs that have been deleted 
+  */
 message CleanJobsResponse{
     int32 count = 1;
 }
 
+/**
+  * Cancel a job (e.g. during consolidation)
+  */
 message CancelJobRequest {
     string id = 1;
+    bool   force_any_state = 2; // Force cancel even when the job is not in a failed state or consolidation step (could corrupt the data)
 }
 
+/**
+  * 
+  */
 message CancelJobResponse{
 }
 
+/**
+  * Retry a job that failed or is stuck (e.g. during consolidation)
+  */
 message RetryJobRequest {
     string id              = 1;
     bool   force_any_state = 2; // Force retry even when the job is not in a failed state (could corrupt the data)
 }
 
+/**
+  * 
+  */
 message RetryJobResponse{
 }
 
 /**
-  * Proceed the next step for a step-by-step job
+  * Proceed the next step of a step-by-step job
   */
 message ContinueJobRequest {
     string id = 1;
 }
 
 /**
-  * ContinueJobResponse
+  * 
   */
 message ContinueJobResponse{
 }

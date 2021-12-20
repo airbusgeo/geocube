@@ -52,7 +52,6 @@ service Geocube {
 
 // @exclude Operations
     rpc IndexDatasets(IndexDatasetsRequest)                   returns (IndexDatasetsResponse) {}
-    rpc IngestDatasets(IngestDatasetsRequest)                 returns (stream IngestDatasetsResponse){}
     rpc ConfigConsolidation(ConfigConsolidationRequest)       returns (ConfigConsolidationResponse){}
     rpc GetConsolidationParams(GetConsolidationParamsRequest) returns (GetConsolidationParamsResponse){}
     rpc Consolidate(ConsolidateRequest)                       returns (ConsolidateResponse){}

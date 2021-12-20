@@ -259,6 +259,7 @@ const (
 	DeletionDone
 	DeletionFailed
 	CancelledByUser
+	CancelledByUserForced
 	CancellationFailed
 	CancellationDone
 	RollbackFailed
@@ -338,6 +339,8 @@ func (s JobStatus) String() string {
 		return "SendDeletionOrdersFailed"
 	case CancelledByUser:
 		return "CancelledByUser"
+	case CancelledByUserForced:
+		return "CancelledByUserForced"
 	case CancellationFailed:
 		return "CancellationFailed"
 	case CancellationDone:

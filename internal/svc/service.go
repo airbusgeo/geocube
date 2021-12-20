@@ -559,16 +559,20 @@ func (svc *Service) RetryJob(ctx context.Context, jobID string, forceAnyState bo
 }
 
 // CancelJob implements GeocubeService
-func (svc *Service) CancelJob(ctx context.Context, jobID string) error {
+func (svc *Service) CancelJob(ctx context.Context, jobID string, forceAnyState bool) error {
 	job, err := svc.GetJob(ctx, jobID)
 	if err != nil {
 		return fmt.Errorf("CancelJob.%w", err)
 	}
+	event := geocube.CancelledByUser
+	if forceAnyState {
+		event = geocube.CancelledByUserForced
+	}
 	// Check that the event can be triggered (job is not persisted)
-	if err := job.Trigger(*geocube.NewJobEvent(jobID, geocube.CancelledByUser, "")); err != nil {
+	if err := job.Trigger(*geocube.NewJobEvent(jobID, event, "")); err != nil {
 		return fmt.Errorf("CancelJob.%w", err)
 	}
-	return svc.publishEvent(ctx, geocube.CancelledByUser, job, "")
+	return svc.publishEvent(ctx, event, job, "")
 }
 
 // ContinueJob implements GeocubeService

@@ -312,15 +312,23 @@ func (j *Job) triggerConsolidation(evt JobEvent) bool {
 		switch evt.Status {
 		case RetryForced:
 			return true
-		case CancelledByUser:
+		case CancelledByUserForced:
 			return j.changeState(JobStateABORTED)
+		case CancelledByUser:
+			if j.Waiting {
+				return j.changeState(JobStateABORTED)
+			}
 		case JobCreated:
 			return j.changeState(JobStateCREATED)
 		}
 	case JobStateCREATED:
 		switch evt.Status {
-		case CancelledByUser:
+		case CancelledByUserForced:
 			return j.changeState(JobStateABORTED)
+		case CancelledByUser:
+			if j.Waiting {
+				return j.changeState(JobStateABORTED)
+			}
 		case RetryForced:
 			return true
 		case PrepareConsolidationOrdersFailed:
@@ -333,7 +341,7 @@ func (j *Job) triggerConsolidation(evt JobEvent) bool {
 		switch evt.Status {
 		case RetryForced:
 			return j.changeState(JobStateCONSOLIDATIONRETRYING)
-		case CancelledByUser:
+		case CancelledByUser, CancelledByUserForced:
 			j.LogErr("Cancelled by user")
 			return j.changeState(JobStateCONSOLIDATIONCANCELLING)
 		case ConsolidationFailed:
@@ -349,8 +357,12 @@ func (j *Job) triggerConsolidation(evt JobEvent) bool {
 		switch evt.Status {
 		case RetryForced:
 			return true
-		case CancelledByUser:
+		case CancelledByUserForced:
 			return j.changeState(JobStateABORTED)
+		case CancelledByUser:
+			if j.Waiting {
+				return j.changeState(JobStateABORTED)
+			}
 		case ConsolidationIndexingFailed:
 			j.LogErr(evt.Error)
 			return j.changeState(JobStateCONSOLIDATIONFAILED)
@@ -361,8 +373,12 @@ func (j *Job) triggerConsolidation(evt JobEvent) bool {
 		switch evt.Status {
 		case RetryForced:
 			return true
-		case CancelledByUser:
+		case CancelledByUserForced:
 			return j.changeState(JobStateABORTED)
+		case CancelledByUser:
+			if j.Waiting {
+				return j.changeState(JobStateABORTED)
+			}
 		case SwapDatasetsFailed:
 			j.LogErr(evt.Error)
 			return j.changeState(JobStateCONSOLIDATIONFAILED)
@@ -410,14 +426,14 @@ func (j *Job) triggerConsolidation(evt JobEvent) bool {
 		switch evt.Status {
 		case ConsolidationRetried, RetryForced:
 			return j.changeState(JobStateCREATED)
-		case CancelledByUser:
+		case CancelledByUser, CancelledByUserForced:
 			return j.changeState(JobStateABORTED)
 		}
 	case JobStateCONSOLIDATIONFAILED:
 		switch evt.Status {
 		case ConsolidationRetried, RetryForced:
 			return j.changeState(JobStateCONSOLIDATIONRETRYING)
-		case CancelledByUser:
+		case CancelledByUser, CancelledByUserForced:
 			return j.changeState(JobStateABORTED)
 		}
 	case JobStateABORTED:

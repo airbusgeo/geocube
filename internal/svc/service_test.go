@@ -8,10 +8,11 @@ import (
 	mocksDB "github.com/airbusgeo/geocube/interface/database/mocks"
 	mocksMessaging "github.com/airbusgeo/geocube/interface/messaging/mocks"
 	"github.com/airbusgeo/geocube/internal/geocube"
+	"github.com/stretchr/testify/mock"
+
 	"github.com/airbusgeo/geocube/internal/svc"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/stretchr/testify/mock"
 )
 
 var _ = Describe("csldCancel", func() {
@@ -95,7 +96,7 @@ var _ = Describe("csldCancel", func() {
 		geocubeTxBackendReturned.On("UpdateJob", ctx, readJobReturned).Return(updateJobErrorToReturned)
 		geocubeTxBackendReturned.GeocubeBackend.On("UpdateTask", ctx, mock.Anything).Return(updateTaskErrorReturned)
 		mockEventPublisher.On("Publish", ctx, mock.Anything).Return(publishErrorReturned)
-		returnedError = service.CancelJob(ctx, jobIDToUse)
+		returnedError = service.CancelJob(ctx, jobIDToUse, false)
 	})
 
 	var (
@@ -105,8 +106,8 @@ var _ = Describe("csldCancel", func() {
 			})
 		}
 
-		itShouldRightCancelledFile = func() {
-			It("should right cancelled file", func() {
+		itShouldWriteCancelledFile = func() {
+			It("should write cancelled file", func() {
 				_, errFiTask1 := os.Stat(path.Join(os.TempDir(), "jobID_task1"))
 				_, errFiTask2 := os.Stat(path.Join(os.TempDir(), "jobID_task2"))
 
@@ -123,6 +124,6 @@ var _ = Describe("csldCancel", func() {
 
 	Context("default", func() {
 		itShouldNotReturnAnError()
-		itShouldRightCancelledFile()
+		itShouldWriteCancelledFile()
 	})
 })

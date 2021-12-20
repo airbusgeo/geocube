@@ -64,7 +64,7 @@ type GeocubeService interface {
 	ListJobs(ctx context.Context, nameLike string) ([]*geocube.Job, error)
 	GetJob(ctx context.Context, jobID string) (*geocube.Job, error)
 	RetryJob(ctx context.Context, jobID string, forceAnyState bool) error
-	CancelJob(ctx context.Context, jobID string) error
+	CancelJob(ctx context.Context, jobID string, forceAnyState bool) error
 	ContinueJob(ctx context.Context, jobID string) error
 	CleanJobs(ctx context.Context, nameLike string, state *geocube.JobState) (int, error)
 
@@ -501,11 +501,6 @@ func (svc *Service) IndexDatasets(ctx context.Context, req *pb.IndexDatasetsRequ
 	return &pb.IndexDatasetsResponse{}, nil
 }
 
-// IngestDatasets TODO
-func (svc *Service) IngestDatasets(req *pb.IngestDatasetsRequest, stream pb.Geocube_IngestDatasetsServer) error {
-	return fmt.Errorf("not implemented")
-}
-
 // GetConsolidationParams reads the configuration parameters associated to a variable
 func (svc *Service) GetConsolidationParams(ctx context.Context, req *pb.GetConsolidationParamsRequest) (*pb.GetConsolidationParamsResponse, error) {
 	// Check that pb.Id is uuid
@@ -667,7 +662,7 @@ func (svc *Service) CancelJob(ctx context.Context, req *pb.CancelJobRequest) (*p
 	}
 
 	// Cancel Job
-	if err := svc.gsvc.CancelJob(ctx, req.GetId()); err != nil {
+	if err := svc.gsvc.CancelJob(ctx, req.GetId(), req.GetForceAnyState()); err != nil {
 		return nil, formatError("backend.%w", err)
 	}
 
