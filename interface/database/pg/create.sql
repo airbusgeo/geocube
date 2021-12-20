@@ -169,14 +169,13 @@ CREATE TABLE geocube.tasks (
 );
 CREATE INDEX idx_tasks_job ON geocube.tasks (job_id);
 
--- CREATE TABLE geocube.dataset_layouts (
--- 	dataset_id UUID NOT NULL,
--- 	layout_name TEXT NOT NULL,
--- 	cell_id TEXT NOT NULL,
--- 	PRIMARY KEY (dataset_id),
--- 	FOREIGN KEY(dataset_id) REFERENCES geocube.datasets (id) MATCH FULL ON DELETE CASCADE ON UPDATE CASCADE,
--- 	FOREIGN KEY(layout_name) REFERENCES geocube.layouts (name) MATCH FULL ON DELETE NO ACTION ON UPDATE NO ACTION
--- );
+CREATE TABLE geocube.container_layouts (
+	container_uri TEXT NOT NULL,
+	layout_name TEXT NOT NULL,
+	PRIMARY KEY (container_uri),
+	FOREIGN KEY(container_uri) REFERENCES geocube.containers (uri) MATCH FULL ON DELETE CASCADE ON UPDATE CASCADE,
+ 	FOREIGN KEY(layout_name) REFERENCES geocube.layouts (name) MATCH FULL ON DELETE NO ACTION ON UPDATE NO ACTION
+);
 
 
 -- CREATE ROLE apiserver WITH LOGIN;

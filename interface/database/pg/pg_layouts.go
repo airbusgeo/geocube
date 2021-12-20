@@ -79,3 +79,18 @@ func (b Backend) FindLayouts(ctx context.Context, nameLike string) ([]*geocube.L
 	}
 	return layouts, nil
 }
+
+// SaveContainerLayout implements GeocubeBackend
+func (b Backend) SaveContainerLayout(ctx context.Context, containerURI string, layoutName string) error {
+	_, err := b.pg.ExecContext(ctx, "INSERT INTO geocube.container_layouts (container_uri, layout_name) VALUES ($1, $2)", containerURI, layoutName)
+
+	switch pqErrorCode(err) {
+	case noError:
+	case uniqueViolation:
+		return geocube.NewEntityAlreadyExists("ContainerURI", "container_uri", containerURI, "")
+	default:
+		return pqErrorFormat("saveContainerLayout.exec: %w", err)
+	}
+
+	return nil
+}

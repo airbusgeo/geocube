@@ -171,6 +171,9 @@ type GeocubeBackend interface {
 	// Raise geocube.EntityNotFound
 	FindLayouts(ctx context.Context, nameLike string) ([]*geocube.Layout, error)
 
+	// SaveContainerLayout saves the layout that defines the container
+	SaveContainerLayout(ctx context.Context, containerURI string, layoutName string) error
+
 	/******************** Jobs *************************/
 	// CreateJob creates the job in the database
 	CreateJob(ctx context.Context, job *geocube.Job) error

@@ -584,6 +584,12 @@ func (svc *Service) csldIndex(ctx context.Context, job *geocube.Job) (err error)
 				return fmt.Errorf("csldIndex.%w", err)
 			}
 
+			// Create containerLayout
+			layout := job.Payload.Layout
+			if err = txn.SaveContainerLayout(ctx, newContainer.URI, layout); err != nil {
+				return fmt.Errorf("csldIndex.%w", err)
+			}
+
 			// Delete task
 			// TODO Consolidation delete tasks one by one ? Or all in a row (in the last case, it's more difficult to handle a Retry)
 			job.DeleteTask(0)

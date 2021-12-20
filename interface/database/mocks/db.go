@@ -329,6 +329,19 @@ func (_m *GeocubeBackend) FindLayouts(ctx context.Context, nameLike string) ([]*
 	panic("implement me")
 }
 
+func (_m *GeocubeBackend) SaveContainerLayout(ctx context.Context, containerURI string, layoutName string) error {
+	ret := _m.Called(ctx, containerURI, layoutName)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
+		r0 = rf(ctx, containerURI, layoutName)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 func (_m *GeocubeBackend) CreateJob(ctx context.Context, job *geocube.Job) error {
 	ret := _m.Called(ctx, job)
 
