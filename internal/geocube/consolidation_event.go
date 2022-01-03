@@ -242,7 +242,9 @@ func (d *ConsolidationDataset) NeedsReconsolidation(c *ConsolidationContainer) b
 /**                         JOB EVENTS                              */
 /********************************************************************/
 
-// JobStatus is the status of a finished step of a job
+//go:generate enumer -json -sql -type JobStatus
+
+// JobStatus defines an event emitted when a step of a job is finished
 type JobStatus int32
 
 // Possible status of a finished step
@@ -253,7 +255,6 @@ const (
 	SendConsolidationOrdersFailed
 	ConsolidationDone
 	ConsolidationFailed
-	ConsolidationRetried
 	ConsolidationRetryFailed
 	ConsolidationIndexed
 	ConsolidationIndexingFailed
@@ -269,6 +270,7 @@ const (
 	CancellationDone
 	RollbackFailed
 	RollbackDone
+	Retried
 	RetryForced
 	Continue
 )
@@ -310,58 +312,4 @@ func NewJobEvent(jobID string, status JobStatus, err string) *JobEvent {
 		Status: status,
 		Error:  err,
 	}
-}
-
-func (s JobStatus) String() string {
-	switch s {
-	case JobCreated:
-		return "JobCreated"
-	case ConsolidationOrdersPrepared:
-		return "ConsolidationOrdersPrepared"
-	case PrepareConsolidationOrdersFailed:
-		return "PrepareConsolidationOrdersFailed"
-	case SendConsolidationOrdersFailed:
-		return "SendConsolidationOrdersFailed"
-	case ConsolidationDone:
-		return "ConsolidationDone"
-	case ConsolidationFailed:
-		return "ConsolidationFailed"
-	case ConsolidationRetried:
-		return "ConsolidationRetried"
-	case ConsolidationRetryFailed:
-		return "ConsolidationRetryFailed"
-	case ConsolidationIndexed:
-		return "ConsolidationIndexed"
-	case ConsolidationIndexingFailed:
-		return "ConsolidationIndexingFailed"
-	case DatasetsSwapped:
-		return "DatasetsSwapped"
-	case SwapDatasetsFailed:
-		return "SwapDatasetsFailed"
-	case DeletionOrdersSent:
-		return "DeletionOrdersSent"
-	case SendDeletionOrdersFailed:
-		return "SendDeletionOrdersFailed"
-	case CancelledByUser:
-		return "CancelledByUser"
-	case CancelledByUserForced:
-		return "CancelledByUserForced"
-	case CancellationFailed:
-		return "CancellationFailed"
-	case CancellationDone:
-		return "CancellationDone"
-	case DeletionDone:
-		return "DeletionDone"
-	case DeletionFailed:
-		return "DeletionFailed"
-	case RollbackFailed:
-		return "RollbackFailed"
-	case RollbackDone:
-		return "RollbackDone"
-	case RetryForced:
-		return "RetryForced"
-	case Continue:
-		return "Continue"
-	}
-	panic("undefined status")
 }

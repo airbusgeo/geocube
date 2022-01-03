@@ -547,7 +547,7 @@ func (svc *Service) RetryJob(ctx context.Context, jobID string, forceAnyState bo
 	if err != nil {
 		return fmt.Errorf("RetryJob.%w", err)
 	}
-	event := geocube.ConsolidationRetried
+	event := geocube.Retried
 	if forceAnyState {
 		event = geocube.RetryForced
 	}

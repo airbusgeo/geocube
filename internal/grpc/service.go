@@ -549,7 +549,7 @@ func (svc *Service) Consolidate(ctx context.Context, req *pb.ConsolidateRequest)
 	}
 
 	// Create the job
-	job := geocube.NewConsolidationJob(req.GetJobName(), req.GetLayoutName(), req.GetInstanceId(), int(req.GetStepByStep()))
+	job := geocube.NewConsolidationJob(req.GetJobName(), req.GetLayoutName(), req.GetInstanceId(), geocube.StepByStepLevel(req.GetStepByStep()))
 
 	// Consolidate
 	var err error

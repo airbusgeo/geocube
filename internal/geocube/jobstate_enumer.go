@@ -9,9 +9,9 @@ import (
 	"fmt"
 )
 
-const _JobStateName = "NEWCREATEDCONSOLIDATIONINPROGRESSCONSOLIDATIONDONECONSOLIDATIONINDEXEDCONSOLIDATIONEFFECTIVEDONEFAILEDINITIALISATIONFAILEDCONSOLIDATIONFAILEDCONSOLIDATIONRETRYINGCONSOLIDATIONCANCELLINGCANCELLATIONFAILEDABORTEDDONEBUTUNTIDY"
+const _JobStateName = "NEWCREATEDCONSOLIDATIONINPROGRESSCONSOLIDATIONDONECONSOLIDATIONINDEXEDCONSOLIDATIONEFFECTIVEDONEFAILEDINITIALISATIONFAILEDCONSOLIDATIONFAILEDCONSOLIDATIONRETRYINGCONSOLIDATIONCANCELLINGCANCELLATIONFAILEDABORTEDROLLBACKFAILEDDONEBUTUNTIDY"
 
-var _JobStateIndex = [...]uint8{0, 3, 10, 33, 50, 70, 92, 96, 102, 122, 141, 162, 185, 203, 210, 223}
+var _JobStateIndex = [...]uint8{0, 3, 10, 33, 50, 70, 92, 96, 102, 122, 141, 162, 185, 203, 210, 224, 237}
 
 func (i JobState) String() string {
 	if i < 0 || i >= JobState(len(_JobStateIndex)-1) {
@@ -20,7 +20,7 @@ func (i JobState) String() string {
 	return _JobStateName[_JobStateIndex[i]:_JobStateIndex[i+1]]
 }
 
-var _JobStateValues = []JobState{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14}
+var _JobStateValues = []JobState{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}
 
 var _JobStateNameToValueMap = map[string]JobState{
 	_JobStateName[0:3]:     0,
@@ -37,7 +37,8 @@ var _JobStateNameToValueMap = map[string]JobState{
 	_JobStateName[162:185]: 11,
 	_JobStateName[185:203]: 12,
 	_JobStateName[203:210]: 13,
-	_JobStateName[210:223]: 14,
+	_JobStateName[210:224]: 14,
+	_JobStateName[224:237]: 15,
 }
 
 // JobStateString retrieves an enum value from the enum constants string name.
