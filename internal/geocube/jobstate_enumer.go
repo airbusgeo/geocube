@@ -9,9 +9,9 @@ import (
 	"fmt"
 )
 
-const _JobStateName = "NEWCREATEDCONSOLIDATIONINPROGRESSCONSOLIDATIONDONECONSOLIDATIONINDEXEDCONSOLIDATIONEFFECTIVEDONEFAILEDINITIALISATIONFAILEDCONSOLIDATIONFAILEDCONSOLIDATIONRETRYINGCONSOLIDATIONCANCELLINGCANCELLATIONFAILEDABORTEDROLLBACKFAILEDDONEBUTUNTIDY"
+const _JobStateName = "NEWCREATEDCONSOLIDATIONINPROGRESSCONSOLIDATIONDONECONSOLIDATIONINDEXEDCONSOLIDATIONEFFECTIVECONSOLIDATIONFAILEDCONSOLIDATIONRETRYINGCONSOLIDATIONCANCELLINGDELETIONINPROGRESSDELETIONEFFECTIVEDELETIONFAILEDDONEFAILEDINITIALISATIONFAILEDCANCELLATIONFAILEDABORTEDROLLBACKFAILEDDONEBUTUNTIDY"
 
-var _JobStateIndex = [...]uint8{0, 3, 10, 33, 50, 70, 92, 96, 102, 122, 141, 162, 185, 203, 210, 224, 237}
+var _JobStateIndex = [...]uint16{0, 3, 10, 33, 50, 70, 92, 111, 132, 155, 173, 190, 204, 208, 214, 234, 252, 259, 273, 286}
 
 func (i JobState) String() string {
 	if i < 0 || i >= JobState(len(_JobStateIndex)-1) {
@@ -20,7 +20,7 @@ func (i JobState) String() string {
 	return _JobStateName[_JobStateIndex[i]:_JobStateIndex[i+1]]
 }
 
-var _JobStateValues = []JobState{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}
+var _JobStateValues = []JobState{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18}
 
 var _JobStateNameToValueMap = map[string]JobState{
 	_JobStateName[0:3]:     0,
@@ -29,16 +29,19 @@ var _JobStateNameToValueMap = map[string]JobState{
 	_JobStateName[33:50]:   3,
 	_JobStateName[50:70]:   4,
 	_JobStateName[70:92]:   5,
-	_JobStateName[92:96]:   6,
-	_JobStateName[96:102]:  7,
-	_JobStateName[102:122]: 8,
-	_JobStateName[122:141]: 9,
-	_JobStateName[141:162]: 10,
-	_JobStateName[162:185]: 11,
-	_JobStateName[185:203]: 12,
-	_JobStateName[203:210]: 13,
-	_JobStateName[210:224]: 14,
-	_JobStateName[224:237]: 15,
+	_JobStateName[92:111]:  6,
+	_JobStateName[111:132]: 7,
+	_JobStateName[132:155]: 8,
+	_JobStateName[155:173]: 9,
+	_JobStateName[173:190]: 10,
+	_JobStateName[190:204]: 11,
+	_JobStateName[204:208]: 12,
+	_JobStateName[208:214]: 13,
+	_JobStateName[214:234]: 14,
+	_JobStateName[234:252]: 15,
+	_JobStateName[252:259]: 16,
+	_JobStateName[259:273]: 17,
+	_JobStateName[273:286]: 18,
 }
 
 // JobStateString retrieves an enum value from the enum constants string name.

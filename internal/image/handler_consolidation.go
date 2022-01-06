@@ -75,6 +75,9 @@ func (h *handlerConsolidation) Consolidate(ctx context.Context, cEvent *geocube.
 
 	log.Logger(ctx).Sugar().Infof("starting to create COG files")
 	for index, record := range cEvent.Records {
+		if h.isCancelled(ctx, cEvent) {
+			return errors.New("consolidation event is cancelled")
+		}
 		recordID := record.ID
 		localDatasetsByRecords := datasetsByRecords[recordID]
 
@@ -122,9 +125,6 @@ func (h *handlerConsolidation) Consolidate(ctx context.Context, cEvent *geocube.
 
 	log.Logger(ctx).Sugar().Infof("%d COGs have been generated", len(cogListFile))
 
-	if h.isCancelled(ctx, cEvent) {
-		return errors.New("consolidation event is cancelled")
-	}
 	if len(cogListFile) == 1 {
 		if err := h.uploadFile(ctx, cogListFile[0], cEvent.Container.URI); err != nil {
 			return fmt.Errorf("failed to upload file on: %s : %w", cEvent.Container.URI, err)

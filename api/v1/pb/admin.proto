@@ -3,6 +3,7 @@ package geocube;
 option go_package = "./pb;geocube";
 
 import "pb/dataformat.proto";
+import "pb/operations.proto";
 
 /**
   * Request to remove from the database all the pending entities (entities that are not linked to any dataset)
@@ -55,16 +56,19 @@ message UpdateDatasetsResponse{
   * The containers (if empty) are not deleted
   */
 message DeleteDatasetsRequest{
-    bool            simulate     = 1; // If true, a simulation is done, nothing is actually deleted
+    //bool            simulate     = 1; // DEPRECATED If true, a simulation is done, nothing is actually deleted. Use StepByStep=2 instead
     repeated string record_ids   = 2; // Instance id that references the datasets to be deleted
     repeated string instance_ids = 3; // Record ids that reference the datasets to be deleted
+    int32           step_by_step = 4; // by default 0, 1: critical steps, 2: major steps, 3: all steps
+    string          job_name     = 5; // Name of the job (if empty, a name will be generated)
 }
 
 /**
   * Return the number of deleted datasets
   */
 message DeleteDatasetsResponse{
-    repeated string results = 1;
+    //repeated string results = 1; // DEPRECATED: use the log of the job
+    Job job = 2;
 }
 
 /**

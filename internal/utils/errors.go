@@ -77,11 +77,16 @@ func (g *ErrWaitGroup) Go(f func() error) {
 		defer g.wg.Done()
 
 		if err := f(); err != nil {
-			g.errMutex.Lock()
-			g.errs = append(g.errs, err)
-			g.errMutex.Unlock()
+			g.AppendError(err)
 		}
 	}()
+}
+
+// AppendError to the list of errors
+func (g *ErrWaitGroup) AppendError(err error) {
+	g.errMutex.Lock()
+	g.errs = append(g.errs, err)
+	g.errMutex.Unlock()
 }
 
 // MergeErrors, appending texts

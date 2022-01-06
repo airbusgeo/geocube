@@ -250,28 +250,38 @@ type JobStatus int32
 // Possible status of a finished step
 const (
 	JobCreated JobStatus = iota
-	ConsolidationOrdersPrepared
-	PrepareConsolidationOrdersFailed
-	SendConsolidationOrdersFailed
+	OrdersPrepared
+	PrepareOrdersFailed
+	SendOrdersFailed
 	ConsolidationDone
 	ConsolidationFailed
 	ConsolidationRetryFailed
 	ConsolidationIndexed
 	ConsolidationIndexingFailed
+
 	DatasetsSwapped
 	SwapDatasetsFailed
-	DeletionOrdersSent
-	SendDeletionOrdersFailed
+	DeletionStarted
+	StartDeletionFailed
+
+	DeletionReady
+	DeletionNotReady
+	RemovalDone
 	DeletionDone
+	RemovalFailed
 	DeletionFailed
+
 	CancelledByUser
 	CancelledByUserForced
 	CancellationFailed
 	CancellationDone
+
 	RollbackFailed
 	RollbackDone
+
 	Retried
 	RetryForced
+
 	Continue
 )
 
@@ -285,14 +295,15 @@ type JobEvent struct {
 
 func statusWithError(status JobStatus) bool {
 	switch status {
-	case PrepareConsolidationOrdersFailed,
-		SendConsolidationOrdersFailed,
+	case PrepareOrdersFailed,
+		SendOrdersFailed,
 		ConsolidationFailed,
 		ConsolidationRetryFailed,
 		ConsolidationIndexingFailed,
 		CancellationFailed,
 		SwapDatasetsFailed,
-		SendDeletionOrdersFailed,
+		StartDeletionFailed,
+		RemovalFailed,
 		DeletionFailed,
 		RollbackFailed:
 		return true

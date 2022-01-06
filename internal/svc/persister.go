@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/airbusgeo/geocube/interface/database"
-	"github.com/airbusgeo/geocube/interface/storage/uri"
 	"github.com/airbusgeo/geocube/internal/geocube"
 	"github.com/airbusgeo/geocube/internal/utils"
 )
@@ -330,60 +329,4 @@ func (svc *Service) prepareIndexation(ctx context.Context, db database.GeocubeBa
 	}
 
 	return nil
-}
-
-// deleteEmptyContainers deletes the remotes containers and the container in the database
-// emptyContainers MUST be empty (only little validation done)
-// Does not returns at the first error, but tries to delete all the container before returning all the errors
-func (svc *Service) deleteEmptyContainers(ctx context.Context, emptyContainers []*geocube.Container) ([]error, error) {
-	if emptyContainers == nil {
-		return nil, nil
-	}
-
-	// Delete containers
-	var errors []error
-	containersURI := []string{}
-	if err := svc.unitOfWork(ctx, func(txn database.GeocubeTxBackend) error {
-		for _, container := range emptyContainers {
-			managed := container.Managed
-
-			// Unmanaged the container to flag it "toDelete"
-			container.Managed = false
-			if err := container.Delete(); err != nil {
-				errors = append(errors, err)
-				continue
-			}
-
-			// Persist the container
-			if err := svc.saveContainer(ctx, txn, container); err != nil {
-				errors = append(errors, err)
-				continue
-			}
-
-			// Store the uri to delete it later
-			if managed {
-				containersURI = append(containersURI, container.URI)
-			}
-		}
-		return nil
-	}); err != nil {
-		errors = append(errors, err)
-	}
-
-	// Delete the remote containers
-	wg := utils.ErrWaitGroup{}
-	for _, containerURI := range containersURI {
-		containerURI := containerURI
-		wg.Go(func() error {
-			containerURI, err := uri.ParseUri(containerURI)
-			if err != nil {
-				return err
-			}
-			return containerURI.Delete(ctx)
-		})
-	}
-
-	errors = append(errors, wg.Wait()...)
-
-	return errors, nil
 }

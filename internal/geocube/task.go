@@ -48,6 +48,17 @@ func newConsolidationTask(evt ConsolidationEvent) (*Task, error) {
 	}, nil
 }
 
+// newDeletionTask creates a new task with the container URI to be deleted
+func newDeletionTask(containerURI string) (*Task, error) {
+	// Marshal the payload
+	return &Task{
+		persistenceState: persistenceStateNEW,
+		ID:               uuid.New().String(),
+		State:            TaskStatePENDING,
+		Payload:          []byte(containerURI),
+	}, nil
+}
+
 // ConsolidationOutput retrieves the output of the consolidation payload
 func (t *Task) ConsolidationOutput() (*ConsolidationContainer, []ConsolidationRecord, error) {
 	// Unmarshal the payload
@@ -56,6 +67,11 @@ func (t *Task) ConsolidationOutput() (*ConsolidationContainer, []ConsolidationRe
 		return nil, nil, fmt.Errorf("ConsolidationOutput.%w", err)
 	}
 	return &evt.Container, evt.Records, nil
+}
+
+// DeletionPayload retrieves the deletion payload
+func (t *Task) DeletionPayload() (string, error) {
+	return string(t.Payload), nil
 }
 
 // setState changes the state of the tasks

@@ -9,9 +9,9 @@ import (
 	"fmt"
 )
 
-const _JobStatusName = "JobCreatedConsolidationOrdersPreparedPrepareConsolidationOrdersFailedSendConsolidationOrdersFailedConsolidationDoneConsolidationFailedConsolidationRetryFailedConsolidationIndexedConsolidationIndexingFailedDatasetsSwappedSwapDatasetsFailedDeletionOrdersSentSendDeletionOrdersFailedDeletionDoneDeletionFailedCancelledByUserCancelledByUserForcedCancellationFailedCancellationDoneRollbackFailedRollbackDoneRetriedRetryForcedContinue"
+const _JobStatusName = "JobCreatedOrdersPreparedPrepareOrdersFailedSendOrdersFailedConsolidationDoneConsolidationFailedConsolidationRetryFailedConsolidationIndexedConsolidationIndexingFailedDatasetsSwappedSwapDatasetsFailedDeletionStartedStartDeletionFailedDeletionReadyDeletionNotReadyRemovalDoneDeletionDoneRemovalFailedDeletionFailedCancelledByUserCancelledByUserForcedCancellationFailedCancellationDoneRollbackFailedRollbackDoneRetriedRetryForcedContinue"
 
-var _JobStatusIndex = [...]uint16{0, 10, 37, 69, 98, 115, 134, 158, 178, 205, 220, 238, 256, 280, 292, 306, 321, 342, 360, 376, 390, 402, 409, 420, 428}
+var _JobStatusIndex = [...]uint16{0, 10, 24, 43, 59, 76, 95, 119, 139, 166, 181, 199, 214, 233, 246, 262, 273, 285, 298, 312, 327, 348, 366, 382, 396, 408, 415, 426, 434}
 
 func (i JobStatus) String() string {
 	if i < 0 || i >= JobStatus(len(_JobStatusIndex)-1) {
@@ -20,33 +20,37 @@ func (i JobStatus) String() string {
 	return _JobStatusName[_JobStatusIndex[i]:_JobStatusIndex[i+1]]
 }
 
-var _JobStatusValues = []JobStatus{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23}
+var _JobStatusValues = []JobStatus{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27}
 
 var _JobStatusNameToValueMap = map[string]JobStatus{
 	_JobStatusName[0:10]:    0,
-	_JobStatusName[10:37]:   1,
-	_JobStatusName[37:69]:   2,
-	_JobStatusName[69:98]:   3,
-	_JobStatusName[98:115]:  4,
-	_JobStatusName[115:134]: 5,
-	_JobStatusName[134:158]: 6,
-	_JobStatusName[158:178]: 7,
-	_JobStatusName[178:205]: 8,
-	_JobStatusName[205:220]: 9,
-	_JobStatusName[220:238]: 10,
-	_JobStatusName[238:256]: 11,
-	_JobStatusName[256:280]: 12,
-	_JobStatusName[280:292]: 13,
-	_JobStatusName[292:306]: 14,
-	_JobStatusName[306:321]: 15,
-	_JobStatusName[321:342]: 16,
-	_JobStatusName[342:360]: 17,
-	_JobStatusName[360:376]: 18,
-	_JobStatusName[376:390]: 19,
-	_JobStatusName[390:402]: 20,
-	_JobStatusName[402:409]: 21,
-	_JobStatusName[409:420]: 22,
-	_JobStatusName[420:428]: 23,
+	_JobStatusName[10:24]:   1,
+	_JobStatusName[24:43]:   2,
+	_JobStatusName[43:59]:   3,
+	_JobStatusName[59:76]:   4,
+	_JobStatusName[76:95]:   5,
+	_JobStatusName[95:119]:  6,
+	_JobStatusName[119:139]: 7,
+	_JobStatusName[139:166]: 8,
+	_JobStatusName[166:181]: 9,
+	_JobStatusName[181:199]: 10,
+	_JobStatusName[199:214]: 11,
+	_JobStatusName[214:233]: 12,
+	_JobStatusName[233:246]: 13,
+	_JobStatusName[246:262]: 14,
+	_JobStatusName[262:273]: 15,
+	_JobStatusName[273:285]: 16,
+	_JobStatusName[285:298]: 17,
+	_JobStatusName[298:312]: 18,
+	_JobStatusName[312:327]: 19,
+	_JobStatusName[327:348]: 20,
+	_JobStatusName[348:366]: 21,
+	_JobStatusName[366:382]: 22,
+	_JobStatusName[382:396]: 23,
+	_JobStatusName[396:408]: 24,
+	_JobStatusName[408:415]: 25,
+	_JobStatusName[415:426]: 26,
+	_JobStatusName[426:434]: 27,
 }
 
 // JobStatusString retrieves an enum value from the enum constants string name.

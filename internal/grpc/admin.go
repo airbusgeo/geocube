@@ -14,7 +14,7 @@ type GeocubeServiceAdmin interface {
 	// UpdateDatasets given the instance id
 	UpdateDatasets(ctx context.Context, simulate bool, instanceID string, RecordIds []string, dmapping geocube.DataMapping) (map[string]int64, error)
 	// DeleteDatasets given the instance id
-	DeleteDatasets(ctx context.Context, simulate bool, instancesID, recordsID []string) ([]string, error)
+	DeleteDatasets(ctx context.Context, jobName string, instancesID, recordsID []string, stepByStep geocube.StepByStepLevel) (*geocube.Job, error)
 }
 
 // ServiceAdmin is the GRPC service
@@ -34,7 +34,7 @@ func (svc *ServiceAdmin) TidyDB(ctx context.Context, req *pb.TidyDBRequest) (*pb
 	nbs, err := svc.gsvca.TidyPending(ctx, req.GetPendingAOIs(), req.GetPendingRecords(), req.GetPendingVariables(),
 		req.GetPendingInstances(), req.GetPendingContainers(), req.GetPendingParams(), req.GetSimulate())
 	if err != nil {
-		return nil, err
+		return nil, formatError("backend.%w", err)
 	}
 	return &pb.TidyDBResponse{
 		NbAOIs:       nbs[0],
@@ -54,7 +54,7 @@ func (svc *ServiceAdmin) UpdateDatasets(ctx context.Context, req *pb.UpdateDatas
 			RangeExt:   geocube.Range{Min: req.RealMinValue, Max: req.RealMaxValue},
 			Exponent:   req.Exponent})
 	if err != nil {
-		return nil, err
+		return nil, formatError("backend.%w", err)
 	}
 	return &pb.UpdateDatasetsResponse{
 		Results: results,
@@ -63,11 +63,15 @@ func (svc *ServiceAdmin) UpdateDatasets(ctx context.Context, req *pb.UpdateDatas
 
 // DeleteDatasets implements AdminServer
 func (svc *ServiceAdmin) DeleteDatasets(ctx context.Context, req *pb.DeleteDatasetsRequest) (*pb.DeleteDatasetsResponse, error) {
-	results, err := svc.gsvca.DeleteDatasets(ctx, req.Simulate, req.GetInstanceIds(), req.GetRecordIds())
+	job, err := svc.gsvca.DeleteDatasets(ctx, req.JobName, req.GetInstanceIds(), req.GetRecordIds(), geocube.StepByStepLevel(req.StepByStep))
 	if err != nil {
-		return nil, err
+		return nil, formatError("backend.%w", err)
+	}
+	jobpb, err := job.ToProtobuf()
+	if err != nil {
+		return nil, formatError("backend.%w", err)
 	}
 	return &pb.DeleteDatasetsResponse{
-		Results: results,
+		Job: jobpb,
 	}, nil
 }

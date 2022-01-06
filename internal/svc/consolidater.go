@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
-	"strings"
+	"sync"
 	"time"
 
 	"github.com/airbusgeo/geocube/interface/database"
@@ -13,120 +13,45 @@ import (
 	"github.com/airbusgeo/geocube/internal/geocube"
 	"github.com/airbusgeo/geocube/internal/log"
 	"github.com/airbusgeo/geocube/internal/utils"
+	"github.com/google/uuid"
 )
-
-// HandleEvent handles TaskEvent and JobEvent for a job
-func (svc *Service) HandleEvent(ctx context.Context, evt geocube.Event) error {
-	if taskevt, ok := evt.(geocube.TaskEvent); ok {
-		if err := svc.handleTaskEvt(ctx, taskevt); err != nil {
-			if !utils.Temporary(err) {
-				// TODO handle this case : it may result in a storage leak !!!
-				return geocube.NewUnhandledEvent("FATAL %v!!! Job %s Task %s Status %s", err, taskevt.JobID, taskevt.TaskID, taskevt.Status.String())
-			}
-			return err
-		}
-		return nil
-	}
-	return svc.handleJobEvt(ctx, evt.(geocube.JobEvent))
-}
-
-func (svc *Service) handleJobEvt(ctx context.Context, evt geocube.JobEvent) error {
-	// Get Job
-	job, err := svc.GetJob(ctx, evt.JobID)
-	if err != nil {
-		return fmt.Errorf("handleJobEvt.%w", err)
-	}
-
-	// Trigger the event
-	if err = job.Trigger(evt); err != nil {
-		return fmt.Errorf("handleJobEvt.%w", err)
-	}
-
-	// Save the Job
-	if err = svc.saveJob(ctx, nil, job); err != nil {
-		return fmt.Errorf("handleJobEvt.%w", err)
-	}
-
-	// Launch the commands associated to the state
-	if !job.Waiting {
-		start := time.Now()
-		err = svc.csldOnEnterNewState(ctx, job)
-		job.LogMsgf(geocube.DEBUG, "  ... in %v", time.Since(start))
-	}
-	return err
-}
-
-func (svc *Service) handleTaskEvt(ctx context.Context, evt geocube.TaskEvent) error {
-	switch evt.Status {
-	case geocube.TaskCancelled:
-		// manage task cancelled
-		return nil
-	case geocube.TaskSuccessful:
-		// manage tasks succeeded but job is cancelled (tasks are deleted)
-		job, err := svc.db.ReadJob(ctx, evt.JobID)
-		if err != nil {
-			return fmt.Errorf("handleTaskEvt(%s).%w", evt.TaskID, err)
-		}
-
-		if job.State == geocube.JobStateABORTED || job.State == geocube.JobStateFAILED {
-			return nil
-		}
-	default:
-	}
-
-	// Get Job with the task of the event
-	job, err := svc.db.ReadJobWithTask(ctx, evt.JobID, evt.TaskID)
-	if err != nil {
-		return fmt.Errorf("handleTaskEvt(%s).%w", evt.TaskID, err)
-	}
-	job.Clean(true)
-
-	if err = job.UpdateTask(evt); err != nil {
-		return fmt.Errorf("handleTaskEvt(%s).%w", evt.TaskID, err)
-	}
-
-	job.LogMsgf(geocube.DEBUG, "TaskEvt received with status %s (id:%s, err:%s)", evt.Status.String(), evt.TaskID, evt.Error)
-
-	if err = svc.saveJob(ctx, nil, job); err != nil {
-		return fmt.Errorf("handleTaskEvt(%s).%w", evt.TaskID, err)
-	}
-
-	if job.ActiveTasks == 0 {
-		if job.State == geocube.JobStateCONSOLIDATIONCANCELLING {
-			job.LogMsg(geocube.INFO, "Job has been canceled")
-			return svc.publishEvent(ctx, geocube.CancellationDone, job, "")
-		}
-		if job.FailedTasks > 0 {
-			return svc.publishEvent(ctx, geocube.ConsolidationFailed, job,
-				fmt.Sprintf("Job failed: %d tasks failed\n", job.FailedTasks))
-		}
-		return svc.publishEvent(ctx, geocube.ConsolidationDone, job, "")
-	}
-
-	return nil
-}
 
 // csldOnEnterNewState should only returns publishing error
 // All the other errors must be handle by the state machine
 func (svc *Service) csldOnEnterNewState(ctx context.Context, j *geocube.Job) error {
 	switch j.State {
 	case geocube.JobStateNEW:
-		return svc.csldSendJobCreated(ctx, j)
+		return svc.publishEvent(ctx, geocube.JobCreated, j, "")
 
 	case geocube.JobStateCREATED:
-		return svc.csldPrepareOrders(ctx, j)
+		if err := svc.csldPrepareOrders(ctx, j); err != nil {
+			return svc.publishEvent(ctx, geocube.PrepareOrdersFailed, j, err.Error())
+		}
+		return svc.publishEvent(ctx, geocube.OrdersPrepared, j, "")
 
 	case geocube.JobStateCONSOLIDATIONINPROGRESS:
-		return svc.csldSendOrders(ctx, j)
+		if err := svc.csldSendOrders(ctx, j); err != nil {
+			return svc.publishEvent(ctx, geocube.SendOrdersFailed, j, err.Error())
+		}
+		return nil
 
 	case geocube.JobStateCONSOLIDATIONDONE:
-		return svc.csldIndex(ctx, j)
+		if err := svc.csldIndex(ctx, j); err != nil {
+			return svc.publishEvent(ctx, geocube.ConsolidationIndexingFailed, j, err.Error())
+		}
+		return svc.publishEvent(ctx, geocube.ConsolidationIndexed, j, "")
 
 	case geocube.JobStateCONSOLIDATIONINDEXED:
-		return svc.csldSwapDatasets(ctx, j)
+		if err := svc.csldSwapDatasets(ctx, j); err != nil {
+			return svc.publishEvent(ctx, geocube.SwapDatasetsFailed, j, err.Error())
+		}
+		return svc.publishEvent(ctx, geocube.DatasetsSwapped, j, "")
 
 	case geocube.JobStateCONSOLIDATIONEFFECTIVE:
-		return svc.csldDeleteDatasets(ctx, j)
+		if err := svc.csldDeleteDatasets(ctx, j); err != nil {
+			return svc.publishEvent(ctx, geocube.StartDeletionFailed, j, err.Error())
+		}
+		return svc.publishEvent(ctx, geocube.DeletionStarted, j, "")
 
 	case geocube.JobStateDONE:
 		// Finished !
@@ -134,11 +59,13 @@ func (svc *Service) csldOnEnterNewState(ctx context.Context, j *geocube.Job) err
 		return nil
 
 	case geocube.JobStateDONEBUTUNTIDY:
-		j.LogErr("Job Done but untidy")
-		return svc.csldContactAdmin(ctx, j)
+		return svc.opContactAdmin(ctx, j)
 
 	case geocube.JobStateCONSOLIDATIONCANCELLING:
-		return svc.csldCancel(ctx, j)
+		if err := svc.csldCancel(ctx, j); err != nil {
+			return svc.publishEvent(ctx, geocube.CancellationFailed, j, err.Error())
+		}
+		return svc.publishEvent(ctx, geocube.CancellationDone, j, "")
 
 	case geocube.JobStateCONSOLIDATIONFAILED, geocube.JobStateINITIALISATIONFAILED, geocube.JobStateCANCELLATIONFAILED:
 		j.LogErr("Consolidation failed")
@@ -146,10 +73,22 @@ func (svc *Service) csldOnEnterNewState(ctx context.Context, j *geocube.Job) err
 		return nil
 
 	case geocube.JobStateCONSOLIDATIONRETRYING:
-		return svc.csldConsolidationRetry(ctx, j)
+		if err := svc.csldConsolidationRetry(ctx, j); err != nil {
+			return svc.publishEvent(ctx, geocube.ConsolidationRetryFailed, j, err.Error())
+		}
+		return svc.publishEvent(ctx, geocube.OrdersPrepared, j, "")
 
 	case geocube.JobStateABORTED:
-		return svc.csldRollback(ctx, j)
+		if err := svc.csldRollback(ctx, j); err != nil {
+			return svc.publishEvent(ctx, geocube.RollbackFailed, j, err.Error())
+		}
+		return svc.publishEvent(ctx, geocube.RollbackDone, j, "")
+
+	case geocube.JobStateROLLBACKFAILED:
+		j.LogErr("Rollback failed")
+		j.LogMsg(geocube.INFO, "Wait for user command...")
+		// Finished but...
+		return nil
 
 	case geocube.JobStateFAILED:
 		j.LogErr("Job failed")
@@ -158,10 +97,6 @@ func (svc *Service) csldOnEnterNewState(ctx context.Context, j *geocube.Job) err
 	}
 
 	return nil
-}
-
-func (svc *Service) csldSendJobCreated(ctx context.Context, job *geocube.Job) error {
-	return svc.publishEvent(ctx, geocube.JobCreated, job, "")
 }
 
 func fillRecordsTime(recordsTime map[string]string, records []*geocube.Record) {
@@ -181,7 +116,7 @@ func (svc *Service) csldPrepareOrders(ctx context.Context, job *geocube.Job) err
 	job.LogMsg(geocube.INFO, "Prepare consolidation orders...")
 	logger := log.Logger(ctx).Sugar()
 
-	err := svc.unitOfWork(ctx, func(txn database.GeocubeTxBackend) error {
+	return svc.unitOfWork(ctx, func(txn database.GeocubeTxBackend) error {
 		start := time.Now()
 		// Get all the records id and datetime of the job
 		recordsTime := make(map[string]string)
@@ -388,12 +323,6 @@ func (svc *Service) csldPrepareOrders(ctx context.Context, job *geocube.Job) err
 		// Save job
 		return svc.saveJob(ctx, txn, job)
 	})
-
-	if err != nil {
-		return svc.publishEvent(ctx, geocube.PrepareConsolidationOrdersFailed, job, err.Error())
-	}
-
-	return svc.publishEvent(ctx, geocube.ConsolidationOrdersPrepared, job, "")
 }
 
 // csldPrepareOrdersSortDatasets is a subtask of csldPrepareOrders
@@ -511,7 +440,7 @@ func (svc *Service) csldSendOrders(ctx context.Context, job *geocube.Job) error 
 	// Retrieves tasks
 	tasks, err := svc.db.ReadTasks(ctx, job.ID, []geocube.TaskState{geocube.TaskStatePENDING})
 	if err != nil {
-		return svc.publishEvent(ctx, geocube.SendConsolidationOrdersFailed, job, "Unable to retrieve tasks")
+		return err
 	}
 
 	var consolidationOrders [][]byte
@@ -526,10 +455,7 @@ func (svc *Service) csldSendOrders(ctx context.Context, job *geocube.Job) error 
 	}
 
 	// Publish
-	if err := svc.consolidationPublisher.Publish(ctx, consolidationOrders...); err != nil {
-		return svc.publishEvent(ctx, geocube.SendConsolidationOrdersFailed, job, err.Error())
-	}
-	return nil
+	return svc.consolidationPublisher.Publish(ctx, consolidationOrders...)
 }
 
 func (svc *Service) csldIndex(ctx context.Context, job *geocube.Job) (err error) {
@@ -537,7 +463,7 @@ func (svc *Service) csldIndex(ctx context.Context, job *geocube.Job) (err error)
 
 	// Retrieves tasks
 	if job.Tasks, err = svc.db.ReadTasks(ctx, job.ID, []geocube.TaskState{geocube.TaskStateDONE}); err != nil {
-		return svc.publishEvent(ctx, geocube.ConsolidationIndexingFailed, job, err.Error())
+		return err
 	}
 
 	// Create new datasets
@@ -605,17 +531,16 @@ func (svc *Service) csldIndex(ctx context.Context, job *geocube.Job) (err error)
 			return svc.saveJob(ctx, txn, job)
 		})
 		if err != nil {
-			return svc.publishEvent(ctx, geocube.ConsolidationIndexingFailed, job, err.Error())
+			return err
 		}
 	}
-
-	return svc.publishEvent(ctx, geocube.ConsolidationIndexed, job, "")
+	return nil
 }
 
 func (svc *Service) csldSwapDatasets(ctx context.Context, job *geocube.Job) error {
 	job.LogMsg(geocube.INFO, "Swap datasets...")
 
-	err := svc.unitOfWork(ctx, func(txn database.GeocubeTxBackend) error {
+	return svc.unitOfWork(ctx, func(txn database.GeocubeTxBackend) error {
 		// Active datasets are tagged to_delete
 		err := txn.ChangeDatasetsStatus(ctx, job.ID, geocube.DatasetStatusACTIVE, geocube.DatasetStatusTODELETE)
 		if err != nil {
@@ -633,102 +558,46 @@ func (svc *Service) csldSwapDatasets(ctx context.Context, job *geocube.Job) erro
 		// Persist changes in db
 		return svc.saveJob(ctx, txn, job)
 	})
-
-	if err != nil {
-		return svc.publishEvent(ctx, geocube.SwapDatasetsFailed, job, err.Error())
-	}
-	return svc.publishEvent(ctx, geocube.DatasetsSwapped, job, "")
 }
 
 func (svc *Service) csldDeleteDatasets(ctx context.Context, job *geocube.Job) error {
-	job.LogMsg(geocube.INFO, "Tidy job...")
-
-	errors, err := svc.csldSubFncDeleteJobDatasetsAndContainers(ctx, job, geocube.LockFlagTODELETE, geocube.DatasetStatusTODELETE)
-
-	if err = utils.MergeErrors(true, err, errors...); err != nil {
-		job.LogErr(err.Error())
-		return svc.publishEvent(ctx, geocube.DeletionFailed, job, err.Error())
-	}
-
-	return svc.publishEvent(ctx, geocube.DeletionDone, job, "")
-}
-
-// csldSubFncDeleteJobDatasetsAndContainers deletes all the datasets locked by the job with the given status and the containers (if empty)
-// Returns a list of errors for the deletion of remote containers
-func (svc *Service) csldSubFncDeleteJobDatasetsAndContainers(ctx context.Context, job *geocube.Job, lockFlag geocube.LockFlag, datasetStatus geocube.DatasetStatus) ([]error, error) {
-	var emptyContainers []*geocube.Container
-	if err := svc.unitOfWork(ctx, func(txn database.GeocubeTxBackend) error {
-		// Find the datasets of the job with the given status
-		datasets, err := txn.FindDatasets(ctx, datasetStatus, "", job.ID, nil, nil, geocube.Metadata{}, time.Time{}, time.Time{}, nil, nil, 0, 0, true)
+	// Persist the jobs
+	return svc.unitOfWork(ctx, func(txn database.GeocubeTxBackend) error {
+		// Get Dataset to delete
+		datasets, err := txn.FindDatasets(ctx, geocube.DatasetStatusTODELETE, "", job.ID, nil, nil, geocube.Metadata{}, time.Time{}, time.Time{}, nil, nil, 0, 0, true)
 		if err != nil {
-			return fmt.Errorf("csldSubFncDeleteJobDatasetsAndContainers.%w", err)
+			return fmt.Errorf("DeleteDatasets.%w", err)
 		}
-		// First, release the datasets (otherwise the database cannot delete them)
-		job.ReleaseDatasets(lockFlag)
-		if err = svc.saveJob(ctx, txn, job); err != nil {
-			return fmt.Errorf("csldSubFncDeleteJobDatasetsAndContainers.%w", err)
+		if len(datasets) == 0 {
+			return nil
+		}
+		ids := make([]string, len(datasets))
+		for i, dataset := range datasets {
+			ids[i] = dataset.ID
 		}
 
-		// Then, delete them
-		if emptyContainers, err = svc.csldSubFncDeleteDatasetsAndUnmanagedContainers(ctx, txn, datasets); err != nil {
-			return fmt.Errorf("csldSubFncDeleteJobDatasetsAndContainers.%w", err)
+		// Create a deletion job
+		deletionJob := geocube.NewDeletionJob(job.Name+"_deletion_"+uuid.New().String(), geocube.StepByStepNone)
+
+		// Lock datasets for deletion
+		deletionJob.LockDatasets(ids, geocube.LockFlagTODELETE)
+
+		// Release dataset
+		job.ReleaseDatasets(geocube.LockFlagTODELETE)
+
+		job.LogMsgf(geocube.INFO, "Create a deletion job to delete %d dataset(s): %s", len(ids), deletionJob.Name)
+
+		if err := svc.saveJob(ctx, txn, job); err != nil {
+			return fmt.Errorf("DeleteDatasets.%w", err)
+		}
+		if err := svc.saveJob(ctx, txn, deletionJob); err != nil {
+			return fmt.Errorf("DeleteDatasets.%w", err)
+		}
+		if err := svc.delOnEnterNewState(ctx, deletionJob); err != nil {
+			return fmt.Errorf("DeleteDatasets.%w", err)
 		}
 		return nil
-	}); err != nil {
-		return nil, err
-	}
-
-	// It's not mandatory to delete the empty containers (it can be done latter), but we will do what we can
-	// As there is a lot of chance of failure, we do it outside the previous unitofwork
-	return svc.deleteEmptyContainers(ctx, emptyContainers)
-}
-
-// csldSubFncDeleteDatasetsAndUnmanagedContainers deletes all the datasets and the containers (if empty and not managed)
-// Returns a list of empty and managed containers to be deleted
-func (svc *Service) csldSubFncDeleteDatasetsAndUnmanagedContainers(ctx context.Context, txn database.GeocubeTxBackend, datasets []*geocube.Dataset) (emptyManagedContainers []*geocube.Container, err error) {
-	containers := map[string]*geocube.Container{}
-	var containersURI []string
-
-	// Get all the containersURI
-	for _, dataset := range datasets {
-		if _, ok := containers[dataset.ContainerURI]; !ok {
-			containers[dataset.ContainerURI] = nil
-			containersURI = append(containersURI, dataset.ContainerURI)
-		}
-	}
-	// Fetch containers
-	cs, err := txn.ReadContainers(ctx, containersURI)
-	if err != nil {
-		return nil, fmt.Errorf("csldSubFncDeleteDatasetsAndUnmanagedContainers.%w", err)
-	}
-	for _, c := range cs {
-		c.Clean(true)
-		containers[c.URI] = c
-	}
-
-	// Delete datasets
-	for _, dataset := range datasets {
-		container := containers[dataset.ContainerURI]
-		if empty, err := container.RemoveDataset(dataset.ID); empty || err != nil {
-			if err != nil {
-				return nil, fmt.Errorf("csldSubFncDeleteDatasetsAndUnmanagedContainers.%w", err)
-			}
-			if container.Managed {
-				emptyManagedContainers = append(emptyManagedContainers, container)
-			} else {
-				container.Delete()
-			}
-		}
-	}
-
-	// Save containers
-	for _, container := range containers {
-		if err = svc.saveContainer(ctx, txn, container); err != nil {
-			return nil, fmt.Errorf("csldSubFncDeleteDatasetsAndUnmanagedContainers.%w", err)
-		}
-	}
-
-	return emptyManagedContainers, nil
+	})
 }
 
 // csldSubFncDeletePendingRemoteContainers physically delete remote containers that are not indexed
@@ -768,22 +637,16 @@ func (svc *Service) csldSubFncDeletePendingRemoteContainers(ctx context.Context,
 	return nil
 }
 
-func (svc *Service) csldContactAdmin(ctx context.Context, job *geocube.Job) error {
-	job.LogMsg(geocube.WARN, "Contact admin...")
-	//TODO Contact Admin
-	return nil
-}
-
 func (svc *Service) csldCancel(ctx context.Context, job *geocube.Job) error {
 	job.LogMsg(geocube.INFO, "Cancel all tasks...")
 
 	if job.ActiveTasks == 0 {
-		return svc.publishEvent(ctx, geocube.CancellationDone, job, "")
+		return nil
 	}
 
 	var err error
 	if job.Tasks, err = svc.db.ReadTasks(ctx, job.ID, []geocube.TaskState{geocube.TaskStatePENDING}); err != nil {
-		return svc.publishEvent(ctx, geocube.CancellationFailed, job, err.Error())
+		return err
 	}
 
 	for taskIndex, task := range job.Tasks {
@@ -793,19 +656,19 @@ func (svc *Service) csldCancel(ctx context.Context, job *geocube.Job) error {
 		path := svc.cancelledConsolidationPath + "/" + fmt.Sprintf("%s_%s", job.ID, task.ID)
 		cancelledJobsURI, err := uri.ParseUri(path)
 		if err != nil {
-			return svc.publishEvent(ctx, geocube.CancellationFailed, job, fmt.Sprintf("%s: %s", err.Error(), path))
+			return fmt.Errorf("%w: %s", err, path)
 		}
 
 		if err := cancelledJobsURI.Upload(ctx, nil); err != nil {
-			return svc.publishEvent(ctx, geocube.CancellationFailed, job, err.Error())
+			return err
 		}
 
 		job.LogMsg(geocube.INFO, "Job and associated tasks are cancelled")
 		if err = svc.saveJob(ctx, nil, job); err != nil {
-			return svc.publishEvent(ctx, geocube.CancellationFailed, job, err.Error())
+			return err
 		}
 	}
-	return svc.publishEvent(ctx, geocube.CancellationDone, job, "")
+	return nil
 }
 
 func (svc *Service) csldConsolidationRetry(ctx context.Context, job *geocube.Job) error {
@@ -814,27 +677,16 @@ func (svc *Service) csldConsolidationRetry(ctx context.Context, job *geocube.Job
 	var err error
 	// Load tasks
 	if job.Tasks, err = svc.db.ReadTasks(ctx, job.ID, []geocube.TaskState{geocube.TaskStateFAILED}); err != nil {
-		return svc.publishEvent(ctx, geocube.ConsolidationRetryFailed, job, err.Error())
+		return err
 	}
 	// Reset and save task status
 	job.ResetAllTasks()
-	if err = svc.saveJob(ctx, nil, job); err != nil {
-		return svc.publishEvent(ctx, geocube.ConsolidationRetryFailed, job, err.Error())
-	}
-	return svc.publishEvent(ctx, geocube.ConsolidationOrdersPrepared, job, "")
+	return svc.saveJob(ctx, nil, job)
 }
 
-// csldRollback encapsulates csldSubFncRollback
 func (svc *Service) csldRollback(ctx context.Context, job *geocube.Job) error {
-	job.LogMsg(geocube.INFO, "Rollback...")
-	if err := svc.csldSubFncRollback(ctx, job); err != nil {
-		return svc.publishEvent(ctx, geocube.RollbackFailed, job, err.Error())
-	}
-	return svc.publishEvent(ctx, geocube.RollbackDone, job, "")
-}
-
-func (svc *Service) csldSubFncRollback(ctx context.Context, job *geocube.Job) error {
 	var err error
+	job.LogMsg(geocube.INFO, "Rollback...")
 
 	// Load tasks
 	if job.Tasks, err = svc.db.ReadTasks(ctx, job.ID, nil); err != nil {
@@ -846,16 +698,13 @@ func (svc *Service) csldSubFncRollback(ctx context.Context, job *geocube.Job) er
 
 	// Rollback from JobStateCONSOLIDATIONDONE: delete the inactive datasets
 	{
-		errors, err := svc.csldSubFncDeleteJobDatasetsAndContainers(ctx, job, geocube.LockFlagNEW, geocube.DatasetStatusINACTIVE)
+		containersURI, err := svc.opSubFncRemoveDatasetsAndContainers(ctx, nil, job, geocube.LockFlagNEW, geocube.DatasetStatusINACTIVE)
 		if err != nil {
 			return fmt.Errorf("Rollback.%w", err)
 		}
-		if errors != nil {
-			errs := make([]string, len(errors))
-			for i, err := range errors {
-				errs[i] = err.Error()
-			}
-			return fmt.Errorf("Rollback:\n%s", strings.Join(errs, "\n"))
+
+		if err := svc.csldSubFncDeleteContainers(ctx, containersURI); err != nil {
+			return fmt.Errorf("Rollback.%w", err)
 		}
 	}
 
@@ -879,15 +728,26 @@ func (svc *Service) csldSubFncRollback(ctx context.Context, job *geocube.Job) er
 	return nil
 }
 
-func (svc *Service) publishEvent(ctx context.Context, status geocube.JobStatus, job *geocube.Job, serr string) error {
-	job.LogMsgf(geocube.DEBUG, "  Event %s %s...", status.String(), serr)
+func (svc *Service) csldSubFncDeleteContainers(ctx context.Context, containersURI []string) error {
+	// Delete containers
+	workers := 20
+	tasks := make(chan string)
+	wg := sync.WaitGroup{}
 
-	evt := geocube.NewJobEvent(job.ID, status, serr)
-
-	data, err := geocube.MarshalEvent(evt)
-	if err != nil {
-		panic("Unable to marshal event")
+	wg.Add(workers)
+	for w := 0; w < workers; w++ {
+		go func() error {
+			defer wg.Done()
+			for task := range tasks {
+				svc.opSubFncDeleteContainer(ctx, task)
+			}
+			return nil
+		}()
 	}
-
-	return svc.eventPublisher.Publish(ctx, data)
+	for _, task := range containersURI {
+		tasks <- task
+	}
+	close(tasks)
+	wg.Wait()
+	return nil
 }

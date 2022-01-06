@@ -30,22 +30,55 @@ type JobState int32
 const (
 	JobStateNEW JobState = iota
 	JobStateCREATED
+
 	JobStateCONSOLIDATIONINPROGRESS
 	JobStateCONSOLIDATIONDONE
 	JobStateCONSOLIDATIONINDEXED
 	JobStateCONSOLIDATIONEFFECTIVE
+	JobStateCONSOLIDATIONFAILED
+	JobStateCONSOLIDATIONRETRYING
+	JobStateCONSOLIDATIONCANCELLING
+
+	JobStateDELETIONINPROGRESS
+	JobStateDELETIONEFFECTIVE
+	JobStateDELETIONFAILED
+
 	JobStateDONE
 
 	JobStateFAILED
 	JobStateINITIALISATIONFAILED
-	JobStateCONSOLIDATIONFAILED
-	JobStateCONSOLIDATIONRETRYING
-	JobStateCONSOLIDATIONCANCELLING
 	JobStateCANCELLATIONFAILED
 	JobStateABORTED
 	JobStateROLLBACKFAILED
 	JobStateDONEBUTUNTIDY
 )
+
+type JobStateInfo struct {
+	Level       StepByStepLevel
+	RetryForced bool // if event = RetryForced, retry the current state (other behaviors can be defined in the trigger...() functions )
+}
+
+var jobStateInfo = map[JobState]JobStateInfo{
+	JobStateNEW:                     {StepByStepAll, true},
+	JobStateCREATED:                 {StepByStepMajor, true},
+	JobStateCONSOLIDATIONINPROGRESS: {StepByStepCritical, false},
+	JobStateCONSOLIDATIONDONE:       {StepByStepMajor, true},
+	JobStateCONSOLIDATIONINDEXED:    {StepByStepAll, true},
+	JobStateCONSOLIDATIONEFFECTIVE:  {StepByStepCritical, true},
+	JobStateCONSOLIDATIONFAILED:     {StepByStepAll, false},
+	JobStateCONSOLIDATIONRETRYING:   {StepByStepMajor, true},
+	JobStateCONSOLIDATIONCANCELLING: {StepByStepMajor, true},
+	JobStateDELETIONINPROGRESS:      {StepByStepCritical, true},
+	JobStateDELETIONEFFECTIVE:       {StepByStepMajor, true},
+	JobStateDELETIONFAILED:          {StepByStepAll, false},
+	JobStateDONE:                    {StepByStepNever, false},
+	JobStateFAILED:                  {StepByStepNever, false},
+	JobStateINITIALISATIONFAILED:    {StepByStepAll, false},
+	JobStateCANCELLATIONFAILED:      {StepByStepAll, false},
+	JobStateABORTED:                 {StepByStepCritical, true},
+	JobStateROLLBACKFAILED:          {StepByStepAll, false},
+	JobStateDONEBUTUNTIDY:           {StepByStepNever, false},
+}
 
 type LogSeverity string
 
@@ -88,6 +121,8 @@ const (
 	StepByStepCritical
 	StepByStepMajor
 	StepByStepAll
+
+	StepByStepNever // For a JobState to never be in a waiting mode
 )
 
 type LockFlag int32
@@ -155,6 +190,32 @@ func NewConsolidationJob(jobName, layout, instanceID string, stepByStep StepBySt
 		Logs: JobLogs{{
 			Severity: "INFO",
 			Msg:      "Create Job Consolidation",
+			Status:   JobStateNEW.String(),
+			Date:     time.Now(),
+		}},
+
+		StepByStep: stepByStep,
+		Waiting:    false,
+	}
+	return j
+}
+
+// NewDeletionJob creates a new Job to delete datasets and containers
+func NewDeletionJob(jobName string, stepByStep StepByStepLevel) *Job {
+	id := uuid.New().String()
+	j := &Job{
+		persistenceState: persistenceStateNEW,
+		ID:               id,
+		Name:             jobName,
+		Type:             JobTypeDELETION,
+		CreationTime:     time.Now(),
+		LastUpdateTime:   time.Now(),
+		ActiveTasks:      0,
+		FailedTasks:      0,
+		Payload:          JobPayload{},
+		Logs: JobLogs{{
+			Severity: "INFO",
+			Msg:      "Create Job Deletion",
 			Status:   JobStateNEW.String(),
 			Date:     time.Now(),
 		}},
@@ -260,14 +321,15 @@ func (j *Job) LogMsgf(severity LogSeverity, msg string, args ...interface{}) {
 
 // LogErr updates and append the error status
 func (j *Job) LogErr(err string) {
-	if err != "" {
-		j.Logs = append(j.Logs, JobLog{
-			Severity: ERROR,
-			Msg:      err,
-			Status:   j.State.String(),
-			Date:     time.Now(),
-		})
+	if err == "" {
+		return
 	}
+	j.Logs = append(j.Logs, JobLog{
+		Severity: ERROR,
+		Msg:      err,
+		Status:   j.State.String(),
+		Date:     time.Now(),
+	})
 	j.dirty()
 }
 
@@ -279,13 +341,29 @@ func (j *Job) LogErr(err string) {
 // Only returns UnhandledEvent
 func (j *Job) Trigger(evt JobEvent) error {
 	handled := false
-	switch j.Type {
-	case JobTypeCONSOLIDATION:
-		handled = j.triggerConsolidation(evt)
-	case JobTypeDELETION:
-		handled = j.triggerDeletion(evt)
-	case JobTypeINGESTION:
-		handled = j.triggerIngestion(evt)
+
+	if evt.Status == Continue {
+		if j.Waiting {
+			j.Waiting = false
+			j.dirty()
+			handled = true
+		}
+	} else if evt.Status == RetryForced && jobStateInfo[j.State].RetryForced {
+		j.LogMsg(INFO, "Retried by user")
+		handled = true
+	} else {
+		if evt.Error != "" {
+			j.LogErr(evt.Error)
+		}
+
+		switch j.Type {
+		case JobTypeCONSOLIDATION:
+			handled = j.triggerConsolidation(evt)
+		case JobTypeDELETION:
+			handled = j.triggerDeletion(evt)
+		case JobTypeINGESTION:
+			handled = j.triggerIngestion(evt)
+		}
 	}
 	if handled {
 		if j.Waiting {
@@ -300,19 +378,9 @@ func (j *Job) Trigger(evt JobEvent) error {
 }
 
 func (j *Job) triggerConsolidation(evt JobEvent) bool {
-	if evt.Status == Continue {
-		if j.Waiting {
-			j.Waiting = false
-			j.dirty()
-			return true
-		}
-	}
-
 	switch j.State {
 	case JobStateNEW:
 		switch evt.Status {
-		case RetryForced:
-			return true
 		case CancelledByUserForced:
 			return j.changeState(JobStateABORTED)
 		case CancelledByUser:
@@ -330,12 +398,9 @@ func (j *Job) triggerConsolidation(evt JobEvent) bool {
 			if j.Waiting {
 				return j.changeState(JobStateABORTED)
 			}
-		case RetryForced:
-			return true
-		case PrepareConsolidationOrdersFailed:
-			j.LogErr(evt.Error)
+		case PrepareOrdersFailed:
 			return j.changeState(JobStateINITIALISATIONFAILED)
-		case ConsolidationOrdersPrepared:
+		case OrdersPrepared:
 			return j.changeState(JobStateCONSOLIDATIONINPROGRESS)
 		}
 	case JobStateCONSOLIDATIONINPROGRESS:
@@ -343,21 +408,17 @@ func (j *Job) triggerConsolidation(evt JobEvent) bool {
 		case RetryForced:
 			return j.changeState(JobStateCONSOLIDATIONRETRYING)
 		case CancelledByUser, CancelledByUserForced:
-			j.LogErr("Cancelled by user")
+			j.LogMsg(INFO, "Cancelled by user")
 			return j.changeState(JobStateCONSOLIDATIONCANCELLING)
 		case ConsolidationFailed:
-			j.LogErr(evt.Error)
 			return j.changeState(JobStateCONSOLIDATIONFAILED)
-		case SendConsolidationOrdersFailed:
-			j.LogErr(evt.Error)
+		case SendOrdersFailed:
 			return j.changeState(JobStateCONSOLIDATIONFAILED)
 		case ConsolidationDone:
 			return j.changeState(JobStateCONSOLIDATIONDONE)
 		}
 	case JobStateCONSOLIDATIONDONE:
 		switch evt.Status {
-		case RetryForced:
-			return true
 		case CancelledByUserForced:
 			return j.changeState(JobStateABORTED)
 		case CancelledByUser:
@@ -365,15 +426,12 @@ func (j *Job) triggerConsolidation(evt JobEvent) bool {
 				return j.changeState(JobStateABORTED)
 			}
 		case ConsolidationIndexingFailed:
-			j.LogErr(evt.Error)
 			return j.changeState(JobStateCONSOLIDATIONFAILED)
 		case ConsolidationIndexed:
 			return j.changeState(JobStateCONSOLIDATIONINDEXED)
 		}
 	case JobStateCONSOLIDATIONINDEXED:
 		switch evt.Status {
-		case RetryForced:
-			return true
 		case CancelledByUserForced:
 			return j.changeState(JobStateABORTED)
 		case CancelledByUser:
@@ -381,19 +439,15 @@ func (j *Job) triggerConsolidation(evt JobEvent) bool {
 				return j.changeState(JobStateABORTED)
 			}
 		case SwapDatasetsFailed:
-			j.LogErr(evt.Error)
 			return j.changeState(JobStateCONSOLIDATIONFAILED)
 		case DatasetsSwapped:
 			return j.changeState(JobStateCONSOLIDATIONEFFECTIVE)
 		}
 	case JobStateCONSOLIDATIONEFFECTIVE:
 		switch evt.Status {
-		case RetryForced:
-			return true
-		case DeletionFailed:
-			j.LogErr(evt.Error)
+		case StartDeletionFailed:
 			return j.changeState(JobStateDONEBUTUNTIDY)
-		case DeletionDone:
+		case DeletionStarted:
 			return j.changeState(JobStateDONE)
 		}
 	case JobStateDONE:
@@ -402,12 +456,12 @@ func (j *Job) triggerConsolidation(evt JobEvent) bool {
 	case JobStateDONEBUTUNTIDY:
 		switch evt.Status {
 		case RetryForced:
+			j.LogMsg(INFO, "Retried by user")
 			return j.changeState(JobStateCONSOLIDATIONEFFECTIVE)
 		}
+
 	case JobStateCONSOLIDATIONCANCELLING:
 		switch evt.Status {
-		case RetryForced:
-			return true
 		case CancellationFailed:
 			return j.changeState(JobStateCANCELLATIONFAILED)
 		case CancellationDone:
@@ -416,11 +470,13 @@ func (j *Job) triggerConsolidation(evt JobEvent) bool {
 	case JobStateCANCELLATIONFAILED:
 		switch evt.Status {
 		case Retried, RetryForced:
+			j.LogMsg(INFO, "Retried by user")
 			return j.changeState(JobStateCONSOLIDATIONCANCELLING)
 		}
 	case JobStateINITIALISATIONFAILED:
 		switch evt.Status {
 		case Retried, RetryForced:
+			j.LogMsg(INFO, "Retried by user")
 			return j.changeState(JobStateCREATED)
 		case CancelledByUser, CancelledByUserForced:
 			return j.changeState(JobStateABORTED)
@@ -434,8 +490,6 @@ func (j *Job) triggerConsolidation(evt JobEvent) bool {
 		}
 	case JobStateABORTED:
 		switch evt.Status {
-		case RetryForced:
-			return true
 		case RollbackFailed:
 			return j.changeState(JobStateROLLBACKFAILED)
 		case RollbackDone:
@@ -454,7 +508,7 @@ func (j *Job) triggerConsolidation(evt JobEvent) bool {
 		switch evt.Status {
 		case ConsolidationRetryFailed:
 			return j.changeState(JobStateCONSOLIDATIONFAILED)
-		case ConsolidationOrdersPrepared:
+		case OrdersPrepared:
 			return j.changeState(JobStateCONSOLIDATIONINPROGRESS)
 		}
 	case JobStateFAILED:
@@ -467,7 +521,90 @@ func (j *Job) triggerConsolidation(evt JobEvent) bool {
 }
 
 func (j *Job) triggerDeletion(evt JobEvent) bool {
-	panic("TODO Deletion Not Implemented")
+	switch j.State {
+	case JobStateNEW:
+		switch evt.Status {
+		case CancelledByUserForced:
+			return j.changeState(JobStateABORTED)
+		case CancelledByUser:
+			if j.Waiting {
+				return j.changeState(JobStateABORTED)
+			}
+		case JobCreated:
+			return j.changeState(JobStateCREATED)
+		}
+	case JobStateCREATED:
+		switch evt.Status {
+		case CancelledByUserForced:
+			return j.changeState(JobStateABORTED)
+		case CancelledByUser:
+			if j.Waiting {
+				return j.changeState(JobStateABORTED)
+			}
+		case DeletionNotReady:
+			return j.changeState(JobStateINITIALISATIONFAILED)
+		case DeletionReady:
+			return j.changeState(JobStateDELETIONINPROGRESS)
+		}
+	case JobStateDELETIONINPROGRESS:
+		switch evt.Status {
+		case CancelledByUser:
+			if j.Waiting {
+				return j.changeState(JobStateABORTED)
+			}
+		case RemovalFailed:
+			return j.changeState(JobStateDELETIONFAILED)
+		case RemovalDone:
+			return j.changeState(JobStateDELETIONEFFECTIVE)
+		}
+	case JobStateDELETIONEFFECTIVE:
+		switch evt.Status {
+		case DeletionFailed:
+			return j.changeState(JobStateDONEBUTUNTIDY)
+		case DeletionDone:
+			return j.changeState(JobStateDONE)
+		}
+	case JobStateDONE:
+		return false
+
+	case JobStateDONEBUTUNTIDY:
+		switch evt.Status {
+		case RetryForced:
+			j.LogMsg(INFO, "Retried by user")
+			return j.changeState(JobStateDELETIONEFFECTIVE)
+		}
+	case JobStateDELETIONFAILED:
+		switch evt.Status {
+		case Retried, RetryForced:
+			j.LogMsg(INFO, "Retried by user")
+			return j.changeState(JobStateDELETIONINPROGRESS)
+		case CancelledByUser, CancelledByUserForced:
+			return j.changeState(JobStateABORTED)
+		}
+
+	case JobStateABORTED:
+		switch evt.Status {
+		case RollbackFailed:
+			return j.changeState(JobStateROLLBACKFAILED)
+		case RollbackDone:
+			return j.changeState(JobStateFAILED)
+		}
+	case JobStateROLLBACKFAILED:
+		switch evt.Status {
+		case RetryForced, Retried:
+			j.LogMsg(INFO, "Retried by user")
+			return j.changeState(JobStateABORTED)
+		case CancelledByUserForced:
+			return j.changeState(JobStateFAILED)
+		}
+
+	case JobStateFAILED:
+		return false
+	default:
+		panic("trigger: Unknown state")
+	}
+
+	return false
 }
 
 func (j *Job) triggerIngestion(evt JobEvent) bool {
@@ -476,19 +613,7 @@ func (j *Job) triggerIngestion(evt JobEvent) bool {
 
 func (j *Job) changeState(newState JobState) bool {
 	j.State = newState
-	j.LogMsgf(DEBUG, "Update status to : %s", newState.String())
-	switch j.State {
-	case JobStateCONSOLIDATIONINPROGRESS, JobStateCONSOLIDATIONEFFECTIVE, JobStateABORTED:
-		// Before consolidation, before deletion, before rollback
-		j.Waiting = j.StepByStep >= StepByStepCritical
-
-	case JobStateCREATED, JobStateCONSOLIDATIONDONE, JobStateCONSOLIDATIONCANCELLING, JobStateCONSOLIDATIONRETRYING:
-		j.Waiting = j.StepByStep >= StepByStepMajor
-
-	default:
-		// JobStateNEW, JobStateCONSOLIDATIONINDEXED, JobStateDONE, JobStateDONEBUTUNTIDY, JobStateCONSOLIDATIONFAILED, JobStateINITIALISATIONFAILED, JobStateCANCELLATIONFAILED, JobStateFAILED:
-		j.Waiting = j.StepByStep >= StepByStepAll
-	}
+	j.Waiting = j.StepByStep >= jobStateInfo[j.State].Level
 	j.dirty()
 	return true
 }
@@ -500,6 +625,17 @@ func (j *Job) changeState(newState JobState) bool {
 // CreateConsolidationTask adds a new consolidation task with the event provided
 func (j *Job) CreateConsolidationTask(evt ConsolidationEvent) error {
 	t, err := newConsolidationTask(evt)
+	if err == nil {
+		j.ActiveTasks++
+		j.Tasks = append(j.Tasks, t)
+		j.dirty()
+	}
+	return err
+}
+
+// CreateDeletionTask adds a new deletion task with the container uri provided
+func (j *Job) CreateDeletionTask(containerURI string) error {
+	t, err := newDeletionTask(containerURI)
 	if err == nil {
 		j.ActiveTasks++
 		j.Tasks = append(j.Tasks, t)
@@ -536,7 +672,7 @@ func (j *Job) UpdateTask(evt TaskEvent) error {
 	}
 
 	// If the state is different but the job cannot handle task events, returns !
-	if j.State != JobStateCONSOLIDATIONINPROGRESS && j.State != JobStateCONSOLIDATIONCANCELLING {
+	if j.State != JobStateCONSOLIDATIONINPROGRESS && j.State != JobStateDELETIONEFFECTIVE && j.State != JobStateCONSOLIDATIONCANCELLING {
 		return NewUnhandledEvent("Job %s Task %s Status %s", j.ID, evt.TaskID, evt.Status.String())
 	}
 
@@ -721,6 +857,7 @@ func (l *LockedDatasets) Clean() {
 }
 
 // NewIDs returns the ID of the datasets to be locked
+// Only the new ids are available (those who are already locked are not available)
 func (l LockedDatasets) NewIDs() []string {
 	return l.newDatasetsID.Slice()
 }
