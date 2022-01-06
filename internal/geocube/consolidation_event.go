@@ -123,6 +123,11 @@ type ConsolidationDataset struct {
 	DatasetFormat DataMapping
 }
 
+const (
+	NO_OVERVIEW                = 0
+	OVERVIEWS_DEFAULT_MIN_SIZE = -1
+)
+
 // ConsolidationContainer contains all the information to create the output of the consolidation
 type ConsolidationContainer struct {
 	URI               string // "gs://bucket/mucog/random_name.TIF"
@@ -136,7 +141,7 @@ type ConsolidationContainer struct {
 	BlockYSize        int          // 256
 	InterleaveBands   bool         // True
 	InterleaveRecords bool         // True
-	CreateOverviews   bool         // True
+	OverviewsMinSize  int          // Maximum width or height of the smallest overview level. 0=NO_OVERVIEW, -1=OVERVIEWS_DEFAULT_MIN_SIZE (=256)
 	ResamplingAlg     Resampling   // "bilinear"
 	Compression       Compression  // "NO", "LOSSLESS", "LOSSY"
 	StorageClass      StorageClass // "COLDLINE"
@@ -166,7 +171,7 @@ func NewConsolidationContainer(URI string, variable *Variable, params *Consolida
 		BlockYSize:        layout.BlockYSize,
 		InterleaveBands:   params.BandsInterleave,
 		InterleaveRecords: true,
-		CreateOverviews:   params.Overviews,
+		OverviewsMinSize:  params.OverviewsMinSize,
 		ResamplingAlg:     params.ResamplingAlg,
 		Compression:       params.Compression,
 		StorageClass:      params.StorageClass,
@@ -212,7 +217,7 @@ func (d *ConsolidationDataset) InGroupOfContainers(c *ConsolidationContainer) bo
 // NeedsReconsolidation returns true if the dataset must be reconsolidated
 // Cannot check whether the compression, resampling_alg or the band interleave changed
 func (d *ConsolidationDataset) NeedsReconsolidation(c *ConsolidationContainer) bool {
-	if !d.DatasetFormat.Equals(c.DatasetFormat) || d.Overviews != c.CreateOverviews {
+	if !d.DatasetFormat.Equals(c.DatasetFormat) || d.Overviews != (c.OverviewsMinSize != NO_OVERVIEW) {
 		return true
 	}
 

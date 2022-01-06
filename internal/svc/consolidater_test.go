@@ -223,11 +223,11 @@ var _ = Describe("Consolidater", func() {
 							Max: 255,
 						},
 					},
-					Exponent:        0,
-					Compression:     0,
-					Overviews:       false,
-					BandsInterleave: false,
-					StorageClass:    0,
+					Exponent:         0,
+					Compression:      0,
+					OverviewsMinSize: geocube.NO_OVERVIEW,
+					BandsInterleave:  false,
+					StorageClass:     0,
 				},
 			}
 			variableErrorToReturned = nil
@@ -241,11 +241,11 @@ var _ = Describe("Consolidater", func() {
 						Max: 255,
 					},
 				},
-				Exponent:        0,
-				Compression:     0,
-				Overviews:       false,
-				BandsInterleave: false,
-				StorageClass:    0,
+				Exponent:         0,
+				Compression:      0,
+				OverviewsMinSize: geocube.NO_OVERVIEW,
+				BandsInterleave:  false,
+				StorageClass:     0,
 			}
 			consolidationParamErrorReturned = nil
 

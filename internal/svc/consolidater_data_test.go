@@ -130,9 +130,9 @@ var (
 		datasetNotConsolidated[0],
 	}
 	containerF_3_O = geocube.ConsolidationContainer{
-		URI:             consolidatedBaseName,
-		DatasetFormat:   dataMappingF,
-		BandsCount:      3,
-		CreateOverviews: true,
+		URI:              consolidatedBaseName,
+		DatasetFormat:    dataMappingF,
+		BandsCount:       3,
+		OverviewsMinSize: geocube.OVERVIEWS_DEFAULT_MIN_SIZE,
 	}
 )

@@ -309,8 +309,8 @@ func (h *handlerConsolidation) isAlreadyUsableCOG(ctx context.Context, records [
 
 	band := ds.Bands()[0]
 	ovrCount := len(band.Overviews())
-	if ovrCount == 0 && container.CreateOverviews {
-		errors = append(errors, "cog has not overviews (required by container)")
+	if ovrCount != h.computeNbOverviews(container.Width, container.Height, container.OverviewsMinSize) {
+		errors = append(errors, "cog does not have the required number of overviews")
 	}
 
 	srWKT, err := ds.SpatialRef().WKT()
@@ -364,4 +364,23 @@ func (h *handlerConsolidation) isSameGeoTransForm(gt1 [6]float64, gt2 [6]float64
 		return false
 	}
 	return true
+}
+
+/**
+ *	computeNbOverviews returns the number of overviews requested
+ */
+func (h *handlerConsolidation) computeNbOverviews(width, height, minSize int) int {
+	if minSize == geocube.NO_OVERVIEW {
+		return 0
+	}
+	if minSize == geocube.OVERVIEWS_DEFAULT_MIN_SIZE {
+		minSize = 256
+	}
+	nb := 0
+	for width > minSize && height > minSize {
+		nb += 1
+		width /= 2
+		height /= 2
+	}
+	return nb
 }

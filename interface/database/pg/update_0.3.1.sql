@@ -55,3 +55,8 @@ CREATE TABLE geocube.cells (
 );
 CREATE INDEX idx_cells_coordinates ON geocube.cells USING GIST (coordinates);
 CREATE INDEX idx_cells_grid ON geocube.cells (grid);
+
+-- create_overviews => overviews_min_size
+ALTER TABLE geocube.consolidation_params ADD COLUMN overviews_min_size INTEGER default -1;
+UPDATE geocube.consolidation_params SET overviews_min_size=0 WHERE overviews=FALSE;
+ALTER TABLE geocube.consolidation_params DROP COLUMN overviews;

@@ -1033,7 +1033,7 @@ func (svc *Service) ListGrids(ctx context.Context, req *pb.ListGridsRequest) (*p
 // CreateLayout creates a layout
 func (svc *Service) CreateLayout(ctx context.Context, req *pb.CreateLayoutRequest) (*pb.CreateLayoutResponse, error) {
 	// Convert pb.Layout to geocube.Layout
-	layout, err := geocube.NewLayoutFromProtobuf(req.GetLayout())
+	layout, err := geocube.NewLayoutFromProtobuf(req.GetLayout(), false)
 	if err != nil {
 		return nil, formatError("", err) // ValidationError
 	}
@@ -1087,7 +1087,7 @@ func (svc *Service) TileAOI(req *pb.TileAOIRequest, stream pb.Geocube_TileAOISer
 	var layout *geocube.Layout
 	var layoutName string
 	if req.GetLayout() != nil {
-		if layout, err = geocube.NewLayoutFromProtobuf(req.GetLayout()); err != nil {
+		if layout, err = geocube.NewLayoutFromProtobuf(req.GetLayout(), true); err != nil {
 			return formatError("", err) // ValidationError
 		}
 	} else {

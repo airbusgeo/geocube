@@ -26,7 +26,8 @@ type Layout struct {
 
 // NewLayoutFromProtobuf creates a layout from protobuf and validates it
 // Only returns validationError
-func NewLayoutFromProtobuf(pbl *pb.Layout) (*Layout, error) {
+// if ignoreName=True, do not validate Name
+func NewLayoutFromProtobuf(pbl *pb.Layout, ignoreName bool) (*Layout, error) {
 	l := Layout{
 		Name:           pbl.GetName(),
 		GridFlags:      pbl.GetGridFlags(),
@@ -36,7 +37,7 @@ func NewLayoutFromProtobuf(pbl *pb.Layout) (*Layout, error) {
 		MaxRecords:     int(pbl.GetMaxRecords()),
 	}
 
-	if err := l.validate(); err != nil {
+	if err := l.validate(ignoreName); err != nil {
 		return nil, err
 	}
 
@@ -104,8 +105,9 @@ func (l *Layout) Covers(ctx context.Context, aoi *geom.MultiPolygon, removeDupli
 }
 
 // validate returns an error if layout has an invalid format
-func (l *Layout) validate() error {
-	if !isValidURN(l.Name) {
+// Do not validate name if ignoreName is true
+func (l *Layout) validate(ignoreName bool) error {
+	if !ignoreName && !isValidURN(l.Name) {
 		return NewValidationError("invalid name: " + l.Name)
 	}
 	if l.BlockXSize <= 0 || l.BlockYSize <= 0 {

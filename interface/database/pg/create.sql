@@ -142,7 +142,7 @@ CREATE TABLE geocube.consolidation_params (
 	max_value double precision NOT NULL,
 	exponent double precision NOT NULL,
 	compression geocube.compression NOT NULL,
-	overviews BOOLEAN NOT NULL,
+	overviews_min_size INTEGER NOT NULL,
 	resampling_alg geocube.resampling NOT NULL,
 	bands_interleave BOOLEAN NOT NULL,
 	storage_class geocube.storage_class NOT NULL,

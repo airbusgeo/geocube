@@ -74,7 +74,7 @@ func IncompleteDatasetFromConsolidation(c *ConsolidationContainer, instanceID st
 		Bands:            make([]int64, c.BandsCount),
 		DataMapping:      c.DatasetFormat,
 		Status:           DatasetStatusINACTIVE,
-		Overviews:        c.CreateOverviews,
+		Overviews:        c.OverviewsMinSize != NO_OVERVIEW,
 	}
 
 	// Init GeoBBox

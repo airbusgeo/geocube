@@ -61,8 +61,11 @@ func (c *cogGenerator) Create(dataset *godal.Dataset, oContainer geocube.Consoli
 		return "", fmt.Errorf("failed to close inputDataset: %w", err)
 	}
 
-	if oContainer.CreateOverviews {
-		if err := c.buildOverviews(cogDataset, oContainer.ResamplingAlg); err != nil {
+	if oContainer.OverviewsMinSize != geocube.NO_OVERVIEW {
+		if oContainer.OverviewsMinSize == geocube.OVERVIEWS_DEFAULT_MIN_SIZE {
+			oContainer.OverviewsMinSize = 256
+		}
+		if err := c.buildOverviews(cogDataset, oContainer.ResamplingAlg, oContainer.OverviewsMinSize); err != nil {
 			return "", fmt.Errorf("failed to build overviews: %w", err)
 		}
 	}
@@ -223,9 +226,8 @@ func (c *cogGenerator) addCompressionOption(container geocube.ConsolidationConta
 	return options
 }
 
-func (c *cogGenerator) buildOverviews(d *godal.Dataset, resampling geocube.Resampling) error {
-	overviews := c.computeOverviewLevels(d.Structure().SizeX, d.Structure().SizeY)
-	if err := d.BuildOverviews(godal.Resampling(resampling.ToGDAL()), godal.Levels(overviews...)); err != nil {
+func (c *cogGenerator) buildOverviews(d *godal.Dataset, resampling geocube.Resampling, overviewsMinSize int) error {
+	if err := d.BuildOverviews(godal.Resampling(resampling.ToGDAL()), godal.MinSize(overviewsMinSize)); err != nil {
 		return fmt.Errorf("failed to build overviews: %w", err)
 	}
 
@@ -256,16 +258,4 @@ func (c *cogGenerator) openDatasetTiffs(datasetFileName string) (tiff.ReadAtRead
 	}
 
 	return tiff.NewReadAtReadSeeker(fd), fd, nil
-}
-
-func (c *cogGenerator) computeOverviewLevels(width, height int) []int {
-	exp := 1
-	ret := make([]int, 0)
-	for width > 1024 && height > 1024 {
-		exp *= 2
-		width /= 2
-		height /= 2
-		ret = append(ret, exp)
-	}
-	return ret
 }
