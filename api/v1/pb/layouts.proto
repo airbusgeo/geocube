@@ -94,19 +94,77 @@ message ListLayoutsResponse{
 
 /**
   * Tile an AOI, covering it with cells defined by a grid.
-  * Currently, only support regular grid defined by squared cells (width=height=size_px) at a given resolution in a CRS.
-  * In the future, it will be able to cover an AOI given several kind of grids, or finding the best tiling given the internal layout of datasets.
+  * Currently, only support user-defined layout.
+  * In the future, it will be able to find the best tiling given the internal layout of datasets.
   */
 message TileAOIRequest{
     AOI    aoi        = 1;
-    string crs        = 2;
-    float  resolution = 3;
-    Size   size_px   = 4;
-}
+    oneof identifier{
+      string  layout_name = 5; // Name of an existing layout
+      Layout  layout      = 6; // User-defined layout
+    }}
 
 /**
   * Return tiles, thousand by thousand.
   */
 message TileAOIResponse{
     repeated Tile tiles = 1;
+}
+
+/**
+  * Define a grid
+  */
+message Grid{
+  string        name        = 1; // Unique name of the grid
+  string        description = 2; // Description of the grid
+  repeated Cell cells       = 3; // Cells of the grid
+}
+
+/**
+  * Define a cell of a grid
+  */
+message Cell{
+  string     id          = 1; // Cell identifier
+  string     crs         = 2; // Coordinate reference system used in the cell
+  LinearRing coordinates = 3; // Geographic coordinates
+}
+
+/**
+  * Create a new grid.
+  */
+message CreateGridRequest{
+  Grid grid = 1;
+}
+
+/**
+  *
+  */
+message CreateGridResponse{
+}
+
+/**
+  * Delete a grid
+  */
+  message DeleteGridRequest{
+    string name = 1;
+}
+
+/**
+  *
+  */
+message DeleteGridResponse{
+}
+
+/**
+  * List all the grids given a name pattern (does not retrieve the cells)
+  */
+  message ListGridsRequest{
+    string name_like = 1; // Name pattern (support * and ? for all or any characters and trailing (?i) for case-insensitiveness)
+}
+
+/**
+  * Return a list of grids
+  */
+message ListGridsResponse{
+  repeated Grid grids = 1;
 }

@@ -68,10 +68,14 @@ type GeocubeService interface {
 	ContinueJob(ctx context.Context, jobID string) error
 	CleanJobs(ctx context.Context, nameLike string, state *geocube.JobState) (int, error)
 
+	CreateGrid(ctx context.Context, grid *geocube.Grid) error
+	DeleteGrid(ctx context.Context, name string) error
+	ListGrids(ctx context.Context, nameLike string) ([]*geocube.Grid, error)
+
 	CreateLayout(ctx context.Context, layout *geocube.Layout) error
 	DeleteLayout(ctx context.Context, name string) error
 	ListLayouts(ctx context.Context, nameLike string) ([]*geocube.Layout, error)
-	TileAOI(ctx context.Context, aoi *geocube.AOI, crs string, resolution float32, width, height int32) (<-chan geocube.StreamedCell, error)
+	TileAOI(ctx context.Context, aoi *geocube.AOI, layoutName string, layout *geocube.Layout) (<-chan geocube.StreamedCell, error)
 
 	GetXYZTile(ctx context.Context, recordsID []string, instanceID string, a, b, z int) ([]byte, error)
 	GetCubeFromRecords(ctx context.Context, recordsID [][]string, instancesID []string, crs *godal.SpatialRef, pixToCRS *affine.Affine, width, height int, format string, headersOnly bool) (internal.CubeInfo, <-chan internal.CubeSlice, error)
@@ -989,6 +993,48 @@ func (svc *Service) GetXYZTile(ctx context.Context, req *pb.GetTileRequest) (*pb
 	return &pb.GetTileResponse{Image: &pb.ImageFile{Data: image}}, nil
 }
 
+// CreateGrid
+func (svc *Service) CreateGrid(ctx context.Context, req *pb.CreateGridRequest) (*pb.CreateGridResponse, error) {
+	grid, err := geocube.NewGridFromProtobuf(req.Grid)
+	if err != nil {
+		return nil, formatError("", err) // ValidationError
+	}
+
+	if err := svc.gsvc.CreateGrid(ctx, grid); err != nil {
+		return nil, formatError("backend.%w", err)
+	}
+
+	// Format response
+	return &pb.CreateGridResponse{}, nil
+}
+
+// DeleteGrid
+func (svc *Service) DeleteGrid(ctx context.Context, req *pb.DeleteGridRequest) (*pb.DeleteGridResponse, error) {
+	if err := svc.gsvc.DeleteGrid(ctx, req.Name); err != nil {
+		return nil, formatError("backend.%w", err)
+	}
+
+	// Format response
+	return &pb.DeleteGridResponse{}, nil
+}
+
+// ListGrids
+func (svc *Service) ListGrids(ctx context.Context, req *pb.ListGridsRequest) (*pb.ListGridsResponse, error) {
+	// List grids
+	grids, err := svc.gsvc.ListGrids(ctx, req.GetNameLike())
+	if err != nil {
+		return nil, formatError("backend.%w", err)
+	}
+
+	// Format response
+	resp := pb.ListGridsResponse{}
+	for _, grid := range grids {
+		resp.Grids = append(resp.Grids, grid.ToProtobuf())
+	}
+
+	return &resp, nil
+}
+
 // CreateLayout creates a layout
 func (svc *Service) CreateLayout(ctx context.Context, req *pb.CreateLayoutRequest) (*pb.CreateLayoutResponse, error) {
 	// Convert pb.Layout to geocube.Layout
@@ -1043,8 +1089,18 @@ func (svc *Service) TileAOI(req *pb.TileAOIRequest, stream pb.Geocube_TileAOISer
 		return formatError("", err) // ValidationError
 	}
 
+	var layout *geocube.Layout
+	var layoutName string
+	if req.GetLayout() != nil {
+		if layout, err = geocube.NewLayoutFromProtobuf(req.GetLayout()); err != nil {
+			return formatError("", err) // ValidationError
+		}
+	} else {
+		layoutName = req.GetLayoutName()
+	}
+
 	// Tile AOI
-	cells, err := svc.gsvc.TileAOI(ctx, aoi, req.Crs, req.Resolution, req.GetSizePx().GetWidth(), req.GetSizePx().GetHeight())
+	cells, err := svc.gsvc.TileAOI(ctx, aoi, layoutName, layout)
 	if err != nil {
 		return formatError("backend.%w", err)
 	}

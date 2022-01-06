@@ -342,6 +342,26 @@ func (_m *GeocubeBackend) SaveContainerLayout(ctx context.Context, containerURI 
 	return r0
 }
 
+func (_m *GeocubeBackend) CreateGrid(ctx context.Context, grid *geocube.Grid) error {
+	panic("implement me")
+}
+
+func (_m *GeocubeBackend) DeleteGrid(ctx context.Context, gridName string) error {
+	panic("implement me")
+}
+
+func (_m *GeocubeBackend) ReadGrid(ctx context.Context, name string) (*geocube.Grid, error) {
+	panic("implement me")
+}
+
+func (_m *GeocubeBackend) FindGrids(ctx context.Context, nameLike string) ([]*geocube.Grid, error) {
+	panic("implement me")
+}
+
+func (_m *GeocubeBackend) FindCells(ctx context.Context, gridName string, aoi *geocube.AOI) ([]geocube.Cell, []geom.MultiPolygon, error) {
+	panic("implement me")
+}
+
 func (_m *GeocubeBackend) CreateJob(ctx context.Context, job *geocube.Job) error {
 	ret := _m.Called(ctx, job)
 

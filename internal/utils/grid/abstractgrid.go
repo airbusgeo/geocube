@@ -12,7 +12,18 @@ import (
 	"github.com/twpayne/go-geom/encoding/wkb"
 )
 
-// Cell is a polygon on the surface of the Earth defined using either
+// UnsupportedGrid is raised when the GridName is not supported
+type UnsupportedGridErr struct {
+	GridName string
+}
+
+func (err UnsupportedGridErr) Error() string {
+	return fmt.Sprintf("unsupported grid type: " + err.GridName)
+}
+
+var ReservedNames = []string{"regular", "singlecell"}
+
+// Cell is a polygon with a resolution on the surface of the Earth defined using either
 // a WGS84 polygon or a projected polygon. Which of them is the reference
 type Cell struct {
 	URI            string
@@ -50,7 +61,7 @@ func NewGrid(flags []string, parameters map[string]string) (Grid, error) {
 		return newSingleCellGrid(flags, parameters)
 	}
 
-	return nil, fmt.Errorf("unsupported grid type: " + grid)
+	return nil, UnsupportedGridErr{grid}
 }
 
 func newCell(uri string, crs *godal.SpatialRef, srid int, pixToCRS *affine.Affine, sizeX, sizeY int, p *godal.Transform) *Cell {

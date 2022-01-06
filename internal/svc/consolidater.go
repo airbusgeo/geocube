@@ -228,8 +228,13 @@ func (svc *Service) csldPrepareOrders(ctx context.Context, job *geocube.Job) err
 				return fmt.Errorf("csldPrepareOrders.%w", err)
 			}
 
+			// Create grid
+			if err := layout.InitGrid(ctx, svc.db); err != nil {
+				return fmt.Errorf("csldPrepareOrders.%w", err)
+			}
+
 			// Get all the cells covering the AOI in the layout
-			cells, err = layout.Covers(ctx, aoi)
+			cells, err = layout.Covers(ctx, aoi, true)
 			if err != nil {
 				return fmt.Errorf("csldPrepareOrders.%w", err)
 			}

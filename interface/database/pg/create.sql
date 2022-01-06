@@ -169,6 +169,25 @@ CREATE TABLE geocube.tasks (
 );
 CREATE INDEX idx_tasks_job ON geocube.tasks (job_id);
 
+CREATE TABLE geocube.grids (
+	name TEXT NOT NULL,
+	description TEXT NOT NULL,
+	PRIMARY KEY (name)
+);
+
+CREATE TABLE geocube.cells (
+	id TEXT NOT NULL,
+	grid TEXT NOT NULL,
+	crs TEXT NOT NULL,
+	srid INTEGER NOT NULL,
+	coordinates geography(POLYGON,0),
+	PRIMARY KEY (id, grid),
+	FOREIGN KEY(grid) REFERENCES geocube.grids (name) MATCH FULL ON DELETE NO ACTION ON UPDATE NO ACTION,
+	CONSTRAINT geometry_valid_check CHECK (ST_IsValid(geometry(coordinates)))
+);
+CREATE INDEX idx_cells_coordinates ON geocube.cells USING GIST (coordinates);
+CREATE INDEX idx_cells_grid ON geocube.cells (grid);
+
 CREATE TABLE geocube.container_layouts (
 	container_uri TEXT NOT NULL,
 	layout_name TEXT NOT NULL,

@@ -260,6 +260,30 @@ func (ring *Ring) Value() (driver.Value, error) {
 	return ewkbhex.Encode(polygon, ewkbhex.NDR)
 }
 
+// Scan implements the sql.Scanner interface.
+func (ring *Ring) Scan(src interface{}) error {
+	if src == nil {
+		*ring = Ring{}
+		return nil
+	}
+
+	switch src := src.(type) {
+	case []uint8:
+		g, err := ewkbhex.Decode(string(src))
+		if err != nil {
+			return err
+		}
+		geom, ok := g.(*geom.Polygon)
+		if !ok {
+			return fmt.Errorf("ring.Scan: data is not a polygon")
+		}
+		ring.LinearRing = *geom.LinearRing(0)
+		return nil
+	}
+
+	return fmt.Errorf("cannot convert %T to Ring", src)
+}
+
 // NewGeographicRingFromExtent creates a ring in geographic coordinates that covers the geometric extent in planar crs
 func NewGeographicRingFromExtent(pixToCrs *affine.Affine, width, height int, crs *godal.SpatialRef) (GeographicRing, error) {
 	ring, err := NewRingFromExtent(pixToCrs, width, height, 0).cloneTo4326(crs, true)

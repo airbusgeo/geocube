@@ -37,3 +37,21 @@ CREATE TABLE geocube.container_layouts (
  	FOREIGN KEY(layout_name) REFERENCES geocube.layouts (name) MATCH FULL ON DELETE NO ACTION ON UPDATE NO ACTION
 );
 
+-- Commit: CustomGrid for layout
+CREATE TABLE geocube.grids (
+	name TEXT NOT NULL,
+	description TEXT NOT NULL,
+	PRIMARY KEY (name)
+);
+
+CREATE TABLE geocube.cells (
+	id TEXT NOT NULL,
+	grid TEXT NOT NULL,
+	crs TEXT NOT NULL,
+	srid INTEGER NOT NULL,
+	coordinates geography(POLYGON,0),
+	PRIMARY KEY (id, grid),
+	FOREIGN KEY(grid) REFERENCES geocube.grids (name) MATCH FULL ON DELETE NO ACTION ON UPDATE NO ACTION
+);
+CREATE INDEX idx_cells_coordinates ON geocube.cells USING GIST (coordinates);
+CREATE INDEX idx_cells_grid ON geocube.cells (grid);

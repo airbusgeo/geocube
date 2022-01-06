@@ -174,6 +174,19 @@ type GeocubeBackend interface {
 	// SaveContainerLayout saves the layout that defines the container
 	SaveContainerLayout(ctx context.Context, containerURI string, layoutName string) error
 
+	/******************** Grids *************************/
+	// CreateGrid creates a grid in the database
+	CreateGrid(ctx context.Context, grid *geocube.Grid) error
+	// DeleteGrid deletes a grid from the database
+	DeleteGrid(ctx context.Context, gridName string) error
+	// ReadGrid retrieve the grid (without the cells)
+	ReadGrid(ctx context.Context, name string) (*geocube.Grid, error)
+	// FindGrids retrieves the grid name & description (not the cells) (support "*?" and "(?i)" suffix for case insensitivity)
+	FindGrids(ctx context.Context, nameLike string) ([]*geocube.Grid, error)
+	// FindCells find the cells of the grid intersecting the AOI
+	// Returns the cells  and the intersection with the AOI
+	FindCells(ctx context.Context, gridName string, aoi *geocube.AOI) ([]geocube.Cell, []geom.MultiPolygon, error)
+
 	/******************** Jobs *************************/
 	// CreateJob creates the job in the database
 	CreateJob(ctx context.Context, job *geocube.Job) error

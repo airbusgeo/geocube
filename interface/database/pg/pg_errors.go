@@ -16,6 +16,8 @@ const (
 	connectionFailure   = "08006"
 	foreignKeyViolation = "23503"
 	uniqueViolation     = "23505"
+	checkViolation      = "23514"
+	noDataFound         = "P0002"
 
 	notPqError = "X"
 )

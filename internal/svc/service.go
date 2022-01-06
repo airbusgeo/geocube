@@ -470,29 +470,49 @@ func (svc *Service) DeleteLayout(ctx context.Context, name string) error {
 	})
 }
 
+// CreateGrid implements GeocubeService
+func (svc *Service) CreateGrid(ctx context.Context, grid *geocube.Grid) error {
+	return svc.unitOfWork(ctx, func(txn database.GeocubeTxBackend) error {
+		return txn.CreateGrid(ctx, grid)
+	})
+}
+
+// DeleteGrid implements GeocubeService
+func (svc *Service) DeleteGrid(ctx context.Context, name string) error {
+	return svc.unitOfWork(ctx, func(txn database.GeocubeTxBackend) error {
+		return txn.DeleteGrid(ctx, name)
+	})
+}
+
+// ListGrids implements GeocubeService
+func (svc *Service) ListGrids(ctx context.Context, nameLike string) ([]*geocube.Grid, error) {
+	return svc.db.FindGrids(ctx, nameLike)
+}
+
 // ListLayouts implements GeocubeService
 func (svc *Service) ListLayouts(ctx context.Context, nameLike string) ([]*geocube.Layout, error) {
 	return svc.db.FindLayouts(ctx, nameLike)
 }
 
 // TileAOI implements GeocubeService
-func (svc *Service) TileAOI(ctx context.Context, aoi *geocube.AOI, crsS string, resolution float32, width, height int32) (<-chan geocube.StreamedCell, error) {
-	// Create Layout with a regular grid
-	layout := geocube.Layout{
-		GridParameters: geocube.Metadata{
-			"grid":         "regular",
-			"crs":          crsS,
-			"cell_x_size":  fmt.Sprintf("%d", width),
-			"cell_y_size":  fmt.Sprintf("%d", height),
-			"resolution":   fmt.Sprintf("%f", resolution),
-			"ox":           "0",
-			"oy":           "0",
-			"memory_limit": fmt.Sprintf("%d", ramSize/10),
-		},
+func (svc *Service) TileAOI(ctx context.Context, aoi *geocube.AOI, layoutName string, layout *geocube.Layout) (<-chan geocube.StreamedCell, error) {
+	if layout == nil {
+		var err error
+		if layout, err = svc.db.ReadLayout(ctx, layoutName); err != nil {
+			return nil, fmt.Errorf("TileAOI.%w", err)
+		}
+	}
+
+	// Add a memory limit
+	layout.GridParameters["memory_limit"] = fmt.Sprintf("%d", ramSize/10)
+
+	// Create grid
+	if err := layout.InitGrid(ctx, svc.db); err != nil {
+		return nil, fmt.Errorf("TileAOI.%w", err)
 	}
 
 	// Tile AOI
-	return layout.Covers(ctx, (*geom.MultiPolygon)(aoi.Geometry.MultiPolygon))
+	return layout.Covers(ctx, (*geom.MultiPolygon)(aoi.Geometry.MultiPolygon), true)
 }
 
 // ListJobs implements GeocubeService

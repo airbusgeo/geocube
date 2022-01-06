@@ -4,6 +4,7 @@ import (
 	"crypto/sha1"
 	"encoding/hex"
 	"fmt"
+	"strings"
 	"time"
 
 	pb "github.com/airbusgeo/geocube/internal/pb"
@@ -29,20 +30,31 @@ type Record struct {
 	AOI  AOI
 }
 
+func hashGeometry(g geom.T) (string, error) {
+	switch gt := g.(type) {
+	case *geom.LinearRing:
+		g = geom.NewPolygonFlat(gt.Layout(), gt.FlatCoords(), []int{len(gt.FlatCoords())})
+	}
+
+	h := sha1.New()
+	sb := &strings.Builder{}
+	if err := wkb.Write(sb, wkb.NDR, g); err != nil {
+		return "", fmt.Errorf("hashGeometry: %w", err)
+	}
+	h.Write([]byte(sb.String()))
+	return hex.EncodeToString(h.Sum(nil)), nil
+}
+
 // HashGeometry computes and returns a hash version of the geometry
 // The hashing is computed only once, hence the geometry must not be changed.
 func (aoi *AOI) HashGeometry() (string, error) {
+	var err error
+
 	if aoi.hash == "" {
-		h := sha1.New()
-		value, err := aoi.Geometry.Value()
-		if err != nil {
-			return "", fmt.Errorf("HashGeometry: %w", err)
-		}
-		h.Write(value.([]byte))
-		aoi.hash = hex.EncodeToString(h.Sum(nil))
+		aoi.hash, err = hashGeometry(aoi.Geometry.MultiPolygon)
 	}
 
-	return aoi.hash, nil
+	return aoi.hash, err
 }
 
 // NewRecordFromProtobuf creates a new record from protobuf and validates it
@@ -91,6 +103,19 @@ func NewAOIFromProtobuf(polygons []*pb.Polygon, canBeEmpty bool) (*AOI, error) {
 	}
 
 	return &aoi, aoi.validate(canBeEmpty)
+}
+
+// NewAOIFromMultiPolygon creates an AOI from a multi polygon
+// Only returns ValidationError
+func NewAOIFromMultiPolygon(geomAOI geom.MultiPolygon) (*AOI, error) {
+	geomAOI.SetSRID(4326)
+
+	aoi := AOI{
+		ID:       uuid.New().String(),
+		Geometry: &wkb.MultiPolygon{MultiPolygon: &geomAOI},
+	}
+
+	return &aoi, aoi.validate(false)
 }
 
 // ToProtobuf convers a record to a protobuf

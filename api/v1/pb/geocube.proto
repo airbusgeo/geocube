@@ -12,13 +12,23 @@ import "pb/operations.proto";
 
 // ApiGW https://cloud.google.com/endpoints/docs/grpc-service-config/reference/rpc/google.api
 
+/**
+  * Request the version of the Geocube Server
+  */
 message GetVersionRequest{}
+
+/**
+  * Return the version of the Geocube Server
+  */
 message GetVersionResponse{
     string Version = 1;
 }
 
+/**
+  * API
+  */
 service Geocube {
-// Records
+// @exclude Records
     rpc ListRecords(ListRecordsRequest)     returns (stream ListRecordsResponseItem) {}
     rpc CreateRecords(CreateRecordsRequest) returns (CreateRecordsResponse) {}
     rpc DeleteRecords(DeleteRecordsRequest) returns (DeleteRecordsResponse) {} // Delete records iif no dataset has a reference on.
@@ -27,7 +37,7 @@ service Geocube {
     rpc CreateAOI(CreateAOIRequest) returns (CreateAOIResponse) {}
     rpc GetAOI(GetAOIRequest)       returns (GetAOIResponse)    {}
 
-// Variables
+// @exclude Variables
     rpc CreateVariable(CreateVariableRequest)           returns (CreateVariableResponse) {}
     rpc InstantiateVariable(InstantiateVariableRequest) returns (InstantiateVariableResponse) {}
     rpc GetVariable(GetVariableRequest)                 returns (GetVariableResponse) {}
@@ -40,7 +50,7 @@ service Geocube {
 
     rpc CreatePalette(CreatePaletteRequest)returns (CreatePaletteResponse){}
 
-// Operations
+// @exclude Operations
     rpc IndexDatasets(IndexDatasetsRequest)                   returns (IndexDatasetsResponse) {}
     rpc IngestDatasets(IngestDatasetsRequest)                 returns (stream IngestDatasetsResponse){}
     rpc ConfigConsolidation(ConfigConsolidationRequest)       returns (ConfigConsolidationResponse){}
@@ -53,7 +63,7 @@ service Geocube {
     rpc CancelJob(CancelJobRequest)                           returns (CancelJobResponse){}
     rpc ContinueJob(ContinueJobRequest)                       returns (ContinueJobResponse){}
 
-// Catalog
+// @exclude Catalog
     rpc GetCube(GetCubeRequest)               returns (stream GetCubeResponse){}
     rpc GetXYZTile(GetTileRequest)            returns (GetTileResponse){
         option (google.api.http) = {
@@ -62,12 +72,17 @@ service Geocube {
         };
     }
 
-// Layout
+// @exclude Layout
     rpc CreateLayout(CreateLayoutRequest)        returns (CreateLayoutResponse){}
     rpc DeleteLayout(DeleteLayoutRequest)        returns (DeleteLayoutResponse){}
     rpc ListLayouts(ListLayoutsRequest)          returns (ListLayoutsResponse){}
     rpc TileAOI(TileAOIRequest)                  returns (stream TileAOIResponse){}
 
-// Version
+// @exclude Grid
+    rpc CreateGrid(CreateGridRequest)            returns (CreateGridResponse){}
+    rpc DeleteGrid(DeleteGridRequest)            returns (DeleteGridResponse){}
+    rpc ListGrids(ListGridsRequest)              returns (ListGridsResponse){}
+
+// @exclude Version
     rpc Version(GetVersionRequest)               returns (GetVersionResponse){}
 }

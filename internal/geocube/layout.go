@@ -2,9 +2,11 @@ package geocube
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	pb "github.com/airbusgeo/geocube/internal/pb"
+	"github.com/airbusgeo/geocube/internal/utils"
 	gridlib "github.com/airbusgeo/geocube/internal/utils/grid"
 	"github.com/twpayne/go-geom"
 )
@@ -38,11 +40,6 @@ func NewLayoutFromProtobuf(pbl *pb.Layout) (*Layout, error) {
 		return nil, err
 	}
 
-	// At creation, we build the grid to check that all parameters and flags are corrects
-	if err := l.createGrid(); err != nil {
-		return nil, err
-	}
-
 	return &l, nil
 }
 
@@ -64,15 +61,16 @@ type StreamedCell struct {
 }
 
 // Covers returns all the cells of the layout covered by the AOI
-func (l *Layout) Covers(ctx context.Context, aoi *geom.MultiPolygon) (<-chan StreamedCell, error) {
-	err := l.createGrid()
-	if err != nil {
-		return nil, fmt.Errorf("Covers.%w", err)
+func (l *Layout) Covers(ctx context.Context, aoi *geom.MultiPolygon, removeDuplicate bool) (<-chan StreamedCell, error) {
+	if l.grid == nil {
+		return nil, NewValidationError("covers: grid is not initialized. Call CreateGrid()")
 	}
 	cellsuri, err := l.grid.Covers(ctx, aoi)
 	if err != nil {
 		return nil, err
 	}
+
+	hashCells := utils.StringSet{}
 	cells := make(chan StreamedCell)
 	go func() {
 		defer close(cells)
@@ -82,6 +80,18 @@ func (l *Layout) Covers(ctx context.Context, aoi *geom.MultiPolygon) (<-chan Str
 				cells <- StreamedCell{Error: fmt.Errorf("Covers.%w", err)}
 				continue
 			}
+			if removeDuplicate {
+				hash, err := hashGeometry(&cell.GeographicRing.LinearRing)
+				if err != nil {
+					cells <- StreamedCell{Error: fmt.Errorf("Covers.%w", err)}
+					continue
+				}
+				if hashCells.Exists(hash) {
+					continue
+				}
+				hashCells.Push(hash)
+			}
+
 			select {
 			case <-ctx.Done():
 				cells <- StreamedCell{Error: fmt.Errorf("Layout.Covers: %w", ctx.Err())}
@@ -107,13 +117,18 @@ func (l *Layout) validate() error {
 	return nil
 }
 
-// createGrid creates the grid if necessary
-func (l *Layout) createGrid() error {
+// InitGrid if necessary
+func (l *Layout) InitGrid(ctx context.Context, initializer CustomGridInitializer) error {
 	if l.grid == nil {
 		var err error
 		l.grid, err = gridlib.NewGrid(l.GridFlags, l.GridParameters)
+		verr := gridlib.UnsupportedGridErr{}
+		if errors.As(err, &verr) {
+			l.grid, err = newCustomGrid(ctx, initializer, l.GridFlags, l.GridParameters)
+		}
+
 		if err != nil {
-			return NewValidationError("invalid grid flags/parameters: " + err.Error())
+			return fmt.Errorf("InitGrid.%w", err)
 		}
 	}
 	return nil
