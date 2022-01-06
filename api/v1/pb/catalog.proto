@@ -26,38 +26,43 @@ enum ByteOrder{
 }
 
 /**
-  *
+  * Header of an image (slice of the cube)
+  * It describes the image, the underlying datasets and the way to recreate it from the array of byte :
+  * 1. Append ImageHeader.data and ImageChunk.data from part=0 to part=nb_parts-1
+  * 2. If compression=True, decompresss the array of bytes using deflate
+  * 3. Cast the result to the dtype using byteOrder
+  * 4. Reshape the result
   */
 message ImageHeader{
-    Shape                shape        = 1;
-    DataFormat.Dtype     dtype        = 2;
-    bytes                data         = 3;
-    int32                nb_parts     = 4;
-    int64                size         = 5;
-    ByteOrder            order        = 6;
-    bool                 compression  = 7; // Deflate compressed data format, described in RFC 1951
-    repeated Record      records      = 8;
-    DatasetMeta          dataset_meta = 10;
-    string               error        = 9;
+    Shape                shape           = 1;  // Shape of the image (widthxheight)
+    DataFormat.Dtype     dtype           = 2;  // Type of the data (to interprete "ImageHeader.data + ImageChunk.data")
+    int32                nb_parts        = 4;  // Number of parts the image is splitted into
+    bytes                data            = 3;  // First part of the image as an array of bytes
+    int64                size            = 5;  // Size of the full array of bytes
+    ByteOrder            order           = 6;  // ByteOrder of the datatype
+    bool                 compression     = 7;  // Deflate compressed data format, described in RFC 1951
+    GroupedRecords       grouped_records = 11; // Group of records used to generate this image
+    DatasetMeta          dataset_meta    = 10; // All information on the underlying datasets that composed the image
+    string               error           = 9;  // If not empty, an error occured and the image was not retrieved.
 }
 
 /**
-  *
+  * Chunk of the full image, to handle the GRPC limit of 4Mbytes/message
   */
 message ImageChunk{
-    int32 part = 1;
-    bytes data = 2;
+    int32 part = 1; // Index of the chunk (from 1 to ImageHeader.nb_parts-1). The first part (=0) is ImageHeader.data
+    bytes data = 2; // Chunk of the full array of bytes
 }
 
 /**
-  *
+  * ByteArray of a PNG image 256x256pixels
   */
 message ImageFile{
     bytes data = 1;
 }
 
 /**
-  *
+  * Available file formats
   */
 enum FileFormat{
     Raw   = 0; // raw bitmap
@@ -69,9 +74,9 @@ enum FileFormat{
   */
 message GetCubeRequest {
     oneof records_lister{
-        RecordList         records  = 1;   // List of records id requested. At least one. One image will be returned by record (if not empty)
-        RecordFilters      filters  = 2;   // Filters to list the records that will be used to create the cube
-        GroupedRecordsList grecords = 10;  // List of group of records id requested. At least one. One image will be returned by group of records (if not empty). All the datasets of a group of records will be merged together using the latest first.
+        RecordIdList         records         = 11; // List of record ids requested. At least one. One image will be returned by record (if not empty)
+        RecordFilters        filters         = 2;  // Filters to list the records that will be used to create the cube
+        GroupedRecordIdsList grouped_records = 12; // List of groups of record ids requested. At least one. One image will be returned by group of records (if not empty). All the datasets of a group of records will be merged together using the latest first.
     }
 
     repeated string instances_id      = 3; // Instances of a variable defining the kind of images requested. At least one, and all must be instance of the same variable. Only one is actually supported
@@ -104,6 +109,9 @@ message GetCubeResponse {
     }
 }
 
+/**
+  * Request a web-mercator tile, given a variable and a group of records
+  */
 message GetTileRequest {
     string instance_id = 1;
     int32  x           = 2;
@@ -111,13 +119,13 @@ message GetTileRequest {
     int32  z           = 4;
 
     oneof records_lister{
-        RecordList    records = 5; // At least one
-        //RecordFilters filters = 6; // Not supported right now
+        GroupedRecordIds records = 6; // Group of record ids. At least one. All the datasets of the group of records will be merged together using the latest first.
+        //RecordFilters filters = 7; // Not supported right now
     }
 }
 
 /**
-  *
+  * Return a 256x256 png image
   */
 message GetTileResponse {
     ImageFile image = 1;

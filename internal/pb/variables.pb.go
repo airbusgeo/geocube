@@ -21,6 +21,8 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+//*
+// Resampling algorithms (supported by GDAL)
 type Resampling int32
 
 const (
@@ -163,20 +165,22 @@ func (x *Instance) GetMetadata() map[string]string {
 	return nil
 }
 
+//*
+// Variable
 type Variable struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id            string      `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"` // Ignored at creation
-	Name          string      `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Unit          string      `protobuf:"bytes,3,opt,name=unit,proto3" json:"unit,omitempty"`
-	Description   string      `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
-	Dformat       *DataFormat `protobuf:"bytes,5,opt,name=dformat,proto3" json:"dformat,omitempty"`
-	Bands         []string    `protobuf:"bytes,6,rep,name=bands,proto3" json:"bands,omitempty"`
-	Palette       string      `protobuf:"bytes,7,opt,name=palette,proto3" json:"palette,omitempty"` // enums ?
-	ResamplingAlg Resampling  `protobuf:"varint,8,opt,name=resampling_alg,json=resamplingAlg,proto3,enum=geocube.Resampling" json:"resampling_alg,omitempty"`
-	Instances     []*Instance `protobuf:"bytes,9,rep,name=instances,proto3" json:"instances,omitempty"`
+	Id            string      `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`                                                                     // Internal UUID-4 of the variable (ignored at creation)
+	Name          string      `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`                                                                 // Name of the variable (Alpha-numerics characters, dashs, dots and underscores)
+	Unit          string      `protobuf:"bytes,3,opt,name=unit,proto3" json:"unit,omitempty"`                                                                 // Unit of the variable (for user information only)
+	Description   string      `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`                                                   // Description of the variable (for user information only)
+	Dformat       *DataFormat `protobuf:"bytes,5,opt,name=dformat,proto3" json:"dformat,omitempty"`                                                           // Format of the data. Range.Min and Range.Max are used for data mapping from internal data format of a dataset (See IndexDatasets for more details), DType and NoData are used for the outputs of GetCube.
+	Bands         []string    `protobuf:"bytes,6,rep,name=bands,proto3" json:"bands,omitempty"`                                                               // Name of each band. Can be empty when the variable refers to only one band, must be unique otherwise.
+	Palette       string      `protobuf:"bytes,7,opt,name=palette,proto3" json:"palette,omitempty"`                                                           // Name of the default palette for color rendering.
+	ResamplingAlg Resampling  `protobuf:"varint,8,opt,name=resampling_alg,json=resamplingAlg,proto3,enum=geocube.Resampling" json:"resampling_alg,omitempty"` // Default resampling algorithm in case of reprojection.
+	Instances     []*Instance `protobuf:"bytes,9,rep,name=instances,proto3" json:"instances,omitempty"`                                                       // List of instances of the variable (ignored at creation)
 }
 
 func (x *Variable) Reset() {
@@ -274,6 +278,9 @@ func (x *Variable) GetInstances() []*Instance {
 	return nil
 }
 
+//*
+// Define a new variable.
+// Return an error if the name already exists.
 type CreateVariableRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -321,6 +328,8 @@ func (x *CreateVariableRequest) GetVariable() *Variable {
 	return nil
 }
 
+//*
+// Return the id of the new variable.
 type CreateVariableResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -368,6 +377,9 @@ func (x *CreateVariableResponse) GetId() string {
 	return ""
 }
 
+//*
+// Instantiate a variable.
+// Return an error if the instance_name already exists for this variable.
 type InstantiateVariableRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -431,6 +443,8 @@ func (x *InstantiateVariableRequest) GetInstanceMetadata() map[string]string {
 	return nil
 }
 
+//*
+// Return the new instance (its id, name and metadata)
 type InstantiateVariableResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -478,6 +492,8 @@ func (x *InstantiateVariableResponse) GetInstance() *Instance {
 	return nil
 }
 
+//*
+// Read a variable given either its id, its name or the id of one of its instance
 type GetVariableRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -555,15 +571,15 @@ type isGetVariableRequest_Identifier interface {
 }
 
 type GetVariableRequest_Id struct {
-	Id string `protobuf:"bytes,1,opt,name=id,proto3,oneof"`
+	Id string `protobuf:"bytes,1,opt,name=id,proto3,oneof"` // UUID-4 of the variable
 }
 
 type GetVariableRequest_Name struct {
-	Name string `protobuf:"bytes,2,opt,name=name,proto3,oneof"`
+	Name string `protobuf:"bytes,2,opt,name=name,proto3,oneof"` // Name of the variable
 }
 
 type GetVariableRequest_InstanceId struct {
-	InstanceId string `protobuf:"bytes,3,opt,name=instance_id,json=instanceId,proto3,oneof"`
+	InstanceId string `protobuf:"bytes,3,opt,name=instance_id,json=instanceId,proto3,oneof"` // UUID-4 of an instance
 }
 
 func (*GetVariableRequest_Id) isGetVariableRequest_Identifier() {}
@@ -572,6 +588,8 @@ func (*GetVariableRequest_Name) isGetVariableRequest_Identifier() {}
 
 func (*GetVariableRequest_InstanceId) isGetVariableRequest_Identifier() {}
 
+//*
+// Return the variable and its instances
 type GetVariableResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -619,15 +637,16 @@ func (x *GetVariableResponse) GetVariable() *Variable {
 	return nil
 }
 
-// For the future...
+//*
+// List variables given a name pattern
 type ListVariablesRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Name  string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Limit int32  `protobuf:"varint,3,opt,name=limit,proto3" json:"limit,omitempty"`
-	Page  int32  `protobuf:"varint,4,opt,name=page,proto3" json:"page,omitempty"`
+	Name  string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`    // Pattern of the name of the variable (support * and ? for all or any characters, (?i) suffix for case-insensitiveness)
+	Limit int32  `protobuf:"varint,3,opt,name=limit,proto3" json:"limit,omitempty"` // Limit the number of variables returned
+	Page  int32  `protobuf:"varint,4,opt,name=page,proto3" json:"page,omitempty"`   // Navigate through results (start at 0)
 }
 
 func (x *ListVariablesRequest) Reset() {
@@ -683,6 +702,8 @@ func (x *ListVariablesRequest) GetPage() int32 {
 	return 0
 }
 
+//*
+// Return a stream of variables
 type ListVariablesResponseItem struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -730,17 +751,20 @@ func (x *ListVariablesResponseItem) GetVariable() *Variable {
 	return nil
 }
 
+//*
+// Update the non-critical fields of a variable
+// Return an error if the name is to be updated but the new name already exists.
 type UpdateVariableRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id            string                `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name          *wrappers.StringValue `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`                                                                 // Optional
-	Unit          *wrappers.StringValue `protobuf:"bytes,3,opt,name=unit,proto3" json:"unit,omitempty"`                                                                 // Optional
-	Description   *wrappers.StringValue `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`                                                   // Optional
-	Palette       *wrappers.StringValue `protobuf:"bytes,5,opt,name=palette,proto3" json:"palette,omitempty"`                                                           // Optional
-	ResamplingAlg Resampling            `protobuf:"varint,6,opt,name=resampling_alg,json=resamplingAlg,proto3,enum=geocube.Resampling" json:"resampling_alg,omitempty"` // Optional
+	Id            string                `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`                                                                     // UUID-4 of the variable to update
+	Name          *wrappers.StringValue `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`                                                                 // [Optional] New name of the variable. Empty to ignore
+	Unit          *wrappers.StringValue `protobuf:"bytes,3,opt,name=unit,proto3" json:"unit,omitempty"`                                                                 // [Optional] New unit of the variable. Empty to ignore
+	Description   *wrappers.StringValue `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`                                                   // [Optional] New description of the variable. Empty to ignore
+	Palette       *wrappers.StringValue `protobuf:"bytes,5,opt,name=palette,proto3" json:"palette,omitempty"`                                                           // [Optional] New default palette of the variable. Empty to ignore
+	ResamplingAlg Resampling            `protobuf:"varint,6,opt,name=resampling_alg,json=resamplingAlg,proto3,enum=geocube.Resampling" json:"resampling_alg,omitempty"` // [Optional] New default resampling algorithm of the variable. UNDEFINED to ignore
 }
 
 func (x *UpdateVariableRequest) Reset() {
@@ -817,6 +841,8 @@ func (x *UpdateVariableRequest) GetResamplingAlg() Resampling {
 	return Resampling_UNDEFINED
 }
 
+//*
+// Return nothing
 type UpdateVariableResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -855,15 +881,18 @@ func (*UpdateVariableResponse) Descriptor() ([]byte, []int) {
 	return file_pb_variables_proto_rawDescGZIP(), []int{11}
 }
 
+//*
+// Update an instance
+// Return an error if the name is to be updated but the new name already exists.
 type UpdateInstanceRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id              string                `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name            *wrappers.StringValue `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`                                                                                                                          // Optional
-	AddMetadata     map[string]string     `protobuf:"bytes,3,rep,name=add_metadata,json=addMetadata,proto3" json:"add_metadata,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"` // New keys to be inserted or updated
-	DelMetadataKeys []string              `protobuf:"bytes,4,rep,name=del_metadata_keys,json=delMetadataKeys,proto3" json:"del_metadata_keys,omitempty"`                                                                           // Keys to be deleted
+	Id              string                `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`                                                                                                                              // UUID-4 of the instance to update
+	Name            *wrappers.StringValue `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`                                                                                                                          // [Optional] New name of the variable. Empty to ignore
+	AddMetadata     map[string]string     `protobuf:"bytes,3,rep,name=add_metadata,json=addMetadata,proto3" json:"add_metadata,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"` // Pairs of metadata (key, values) to be inserted or updated
+	DelMetadataKeys []string              `protobuf:"bytes,4,rep,name=del_metadata_keys,json=delMetadataKeys,proto3" json:"del_metadata_keys,omitempty"`                                                                           // Metadata keys to be deleted
 }
 
 func (x *UpdateInstanceRequest) Reset() {
@@ -926,6 +955,8 @@ func (x *UpdateInstanceRequest) GetDelMetadataKeys() []string {
 	return nil
 }
 
+//*
+// Return nothing
 type UpdateInstanceResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -964,12 +995,15 @@ func (*UpdateInstanceResponse) Descriptor() ([]byte, []int) {
 	return file_pb_variables_proto_rawDescGZIP(), []int{13}
 }
 
+//*
+// Delete a variable
+// Return an error if the variable has still instances
 type DeleteVariableRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"` // UUID-4 of the variable to delete
 }
 
 func (x *DeleteVariableRequest) Reset() {
@@ -1011,6 +1045,8 @@ func (x *DeleteVariableRequest) GetId() string {
 	return ""
 }
 
+//*
+// Return nothing
 type DeleteVariableResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1049,12 +1085,15 @@ func (*DeleteVariableResponse) Descriptor() ([]byte, []int) {
 	return file_pb_variables_proto_rawDescGZIP(), []int{15}
 }
 
+//*
+// Delete an instance
+// Return an error if the instance is linked to datasets.
 type DeleteInstanceRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"` // UUID-4 of the instance to delete
 }
 
 func (x *DeleteInstanceRequest) Reset() {
@@ -1096,6 +1135,8 @@ func (x *DeleteInstanceRequest) GetId() string {
 	return ""
 }
 
+//*
+// Return nothing
 type DeleteInstanceResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1134,6 +1175,8 @@ func (*DeleteInstanceResponse) Descriptor() ([]byte, []int) {
 	return file_pb_variables_proto_rawDescGZIP(), []int{17}
 }
 
+//*
+// Define a color mapping from a value [0-1] to a RGBA value.
 type ColorPoint struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1213,13 +1256,17 @@ func (x *ColorPoint) GetA() uint32 {
 	return 0
 }
 
+//*
+// Define a palette with a name and a set of colorPoint.
+// Maps all values in [0,1] to an RGBA value, using piecewise curve defined by colorPoints.
+// All intermediate values are linearly interpolated.
 type Palette struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Name   string        `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Colors []*ColorPoint `protobuf:"bytes,2,rep,name=colors,proto3" json:"colors,omitempty"`
+	Name   string        `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`     // Name of the palette (Alpha-numerics characters, dots, dashes and underscores are supported)
+	Colors []*ColorPoint `protobuf:"bytes,2,rep,name=colors,proto3" json:"colors,omitempty"` // Set of colorPoints. At least two points must be defined, corresponding to value=0 and value=1.
 }
 
 func (x *Palette) Reset() {
@@ -1268,12 +1315,14 @@ func (x *Palette) GetColors() []*ColorPoint {
 	return nil
 }
 
+//*
+// Create a new palette or update it if already exists (provided replace=True)
 type CreatePaletteRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Palette *Palette `protobuf:"bytes,1,opt,name=palette,proto3" json:"palette,omitempty"`
+	Palette *Palette `protobuf:"bytes,1,opt,name=palette,proto3" json:"palette,omitempty"`  // Palette to be created
 	Replace bool     `protobuf:"varint,2,opt,name=replace,proto3" json:"replace,omitempty"` // Replace the current existing palette if exists
 }
 
@@ -1323,6 +1372,8 @@ func (x *CreatePaletteRequest) GetReplace() bool {
 	return false
 }
 
+//*
+// Return nothing.
 type CreatePaletteResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

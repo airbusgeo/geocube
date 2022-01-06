@@ -147,7 +147,7 @@ message ConsolidateRequest {
     int32  step_by_step = 6; // by default 0, 1: critical steps, 2: major steps, 3: all steps
 
     oneof records_lister{
-        RecordList    records = 4; // At least one
+        RecordIdList  records = 8; // At least one
         RecordFilters filters = 5;
     }
 }

@@ -5,23 +5,38 @@ option go_package = "./pb;geocube";
 import "google/protobuf/timestamp.proto";
 
 
+/**
+  * Geographic coordinates (4326)
+  */
 message Coord{
     float lon = 1;
     float lat = 2;
 }
 
+/**
+  * Geographic linear ring
+  */
 message LinearRing{
     repeated Coord points = 1;
 }
 
+/**
+  * Geographic polygon
+  */
 message Polygon{
     repeated LinearRing linearrings = 1;
 }
 
+/**
+  * Geographic AOI
+  */
 message AOI{
     repeated Polygon polygons = 1;
 }
 
+/**
+  * Record
+  */
 message Record {
     string                    id     = 1;
     string                    name   = 2;
@@ -31,6 +46,9 @@ message Record {
     AOI                       aoi    = 6; // optional
 }
 
+/**
+  * Structure to create a new record
+  */
 message NewRecord{
     string                    name   = 1;
     google.protobuf.Timestamp time   = 2;
@@ -38,56 +56,123 @@ message NewRecord{
     string                    aoi_id = 4;
 }
 
+/**
+  * List of record ids that are considered separately
+  */
+  message RecordIdList {
+    repeated string ids = 1;
+}
+
+/**
+  * Records that are considered as one
+  */
+message GroupedRecords {
+    repeated Record records = 1;
+}
+
+/**
+  * Record ids that are considered as one
+  */
+message GroupedRecordIds {
+    repeated string ids = 1;
+}
+
+/**
+  * List of groupedRecordIds
+  */
+message GroupedRecordIdsList {
+    repeated GroupedRecordIds records = 1;
+}
+
+/**
+  * 
+  */
 message CreateRecordsRequest {
     repeated NewRecord records = 1;
 }
 
+/**
+  * 
+  */
 message CreateRecordsResponse {
     repeated string ids = 1;
 }
 
+/**
+  * 
+  */
 message DeleteRecordsRequest {
     repeated string ids = 1;
 }
 
+/**
+  * 
+  */
 message DeleteRecordsResponse {
     int64 nb = 1;
 }
 
+/**
+  * 
+  */
 message AddRecordsTagsRequest {
-    repeated string ids = 1;
-    map<string, string>       tags       = 2;
+    repeated string     ids  = 1;
+    map<string, string> tags = 2;
 }
 
+/**
+  * 
+  */
 message AddRecordsTagsResponse {
     int64 nb = 1;
 }
 
+/**
+  * 
+  */
 message RemoveRecordsTagsRequest {
     repeated string ids = 1;
     repeated string tagsKey = 2;
 }
 
+/**
+  * 
+  */
 message RemoveRecordsTagsResponse {
     int64 nb = 1;
 }
 
+/**
+  * 
+  */
 message CreateAOIRequest {
     AOI aoi = 1;
 }
 
+/**
+  * 
+  */
 message CreateAOIResponse {
     string id = 1;
 }
 
+/**
+  * 
+  */
 message GetAOIRequest {
     string id = 1;
 }
 
+/**
+  * 
+  */
 message GetAOIResponse {
     AOI aoi = 1;
 }
 
+/**
+  * 
+  */
 message ListRecordsRequest {
     string                    name       = 1;
     map<string, string>       tags       = 3;
@@ -99,20 +184,18 @@ message ListRecordsRequest {
     bool                      with_aoi   = 9; // Also returns the AOI (may be big)
 }
 
+/**
+  * 
+  */
 message ListRecordsResponseItem {
     Record record = 1;
 }
 
+/**
+  * 
+  */
 message RecordFilters {
     map<string, string>       tags       = 1;
     google.protobuf.Timestamp from_time  = 2;
     google.protobuf.Timestamp to_time    = 3;
-}
-
-message RecordList {
-    repeated string ids = 1;
-}
-
-message GroupedRecordsList {
-    repeated RecordList records = 1;
 }

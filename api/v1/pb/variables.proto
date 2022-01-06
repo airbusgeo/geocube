@@ -11,6 +11,9 @@ message Instance{
     map<string, string> metadata = 3;
 }
 
+/**
+  * Resampling algorithms (supported by GDAL)
+  */
 enum Resampling{
     UNDEFINED   = 0;
     NEAR        = 1;
@@ -27,94 +30,153 @@ enum Resampling{
     Q3          = 12;
 }
 
+/**
+  * Variable
+  */
 message Variable {
-    string              id               = 1; // Ignored at creation
-    string              name             = 2;
-    string              unit             = 3;
-    string              description      = 4;
-    DataFormat          dformat          = 5;
-    repeated string     bands            = 6;
+    string              id               = 1; // Internal UUID-4 of the variable (ignored at creation)
+    string              name             = 2; // Name of the variable (Alpha-numerics characters, dashs, dots and underscores)
+    string              unit             = 3; // Unit of the variable (for user information only)
+    string              description      = 4; // Description of the variable (for user information only)
+    DataFormat          dformat          = 5; // Format of the data. Range.Min and Range.Max are used for data mapping from internal data format of a dataset (See IndexDatasets for more details), DType and NoData are used for the outputs of GetCube.
+    repeated string     bands            = 6; // Name of each band. Can be empty when the variable refers to only one band, must be unique otherwise.
     
-    string              palette          = 7; // enums ?
-    Resampling          resampling_alg   = 8;
-    repeated Instance   instances        = 9;
+    string              palette          = 7; // Name of the default palette for color rendering.
+    Resampling          resampling_alg   = 8; // Default resampling algorithm in case of reprojection.
+    repeated Instance   instances        = 9; // List of instances of the variable (ignored at creation)
 }
 
+/**
+  * Define a new variable.
+  * Return an error if the name already exists.
+  */
 message CreateVariableRequest {
     Variable variable = 1;
 }
 
+/**
+  * Return the id of the new variable.
+  */
 message CreateVariableResponse {
     string id = 1;
 }
 
+/**
+  * Instantiate a variable.
+  * Return an error if the instance_name already exists for this variable.
+  */
 message InstantiateVariableRequest {
     string              variable_id       = 1;
     string              instance_name     = 2;
     map<string, string> instance_metadata = 3;
 }
 
+/**
+  * Return the new instance (its id, name and metadata)
+  */
 message InstantiateVariableResponse {
     Instance            instance = 1;
 }
 
+/**
+  * Read a variable given either its id, its name or the id of one of its instance
+  */
 message GetVariableRequest {
     oneof identifier{
-        string  id          = 1;
-        string  name        = 2;
-        string  instance_id = 3;
+        string  id          = 1; // UUID-4 of the variable
+        string  name        = 2; // Name of the variable
+        string  instance_id = 3; // UUID-4 of an instance
     }
 }
 
+/**
+  * Return the variable and its instances
+  */
 message GetVariableResponse {
     Variable variable = 1;
 }
 
-// For the future...
+/**
+  * List variables given a name pattern
+  */
 message ListVariablesRequest {
-    string  name  = 1;
-    int32   limit = 3;
-    int32   page  = 4;
+    string  name  = 1; // Pattern of the name of the variable (support * and ? for all or any characters, (?i) suffix for case-insensitiveness)
+    int32   limit = 3; // Limit the number of variables returned
+    int32   page  = 4; // Navigate through results (start at 0)
 }
 
+/**
+  * Return a stream of variables
+  */
 message ListVariablesResponseItem {
     Variable variable = 1;
 }
 
+/**
+  * Update the non-critical fields of a variable
+  * Return an error if the name is to be updated but the new name already exists.
+  */
 message UpdateVariableRequest{
-    string                      id             = 1;
+    string                      id             = 1; // UUID-4 of the variable to update
 
-    google.protobuf.StringValue name           = 2; // Optional
-    google.protobuf.StringValue unit           = 3; // Optional
-    google.protobuf.StringValue description    = 4; // Optional
-    google.protobuf.StringValue palette        = 5; // Optional
-    Resampling                  resampling_alg = 6; // Optional
+    google.protobuf.StringValue name           = 2; // [Optional] New name of the variable. Empty to ignore
+    google.protobuf.StringValue unit           = 3; // [Optional] New unit of the variable. Empty to ignore
+    google.protobuf.StringValue description    = 4; // [Optional] New description of the variable. Empty to ignore
+    google.protobuf.StringValue palette        = 5; // [Optional] New default palette of the variable. Empty to ignore
+    Resampling                  resampling_alg = 6; // [Optional] New default resampling algorithm of the variable. UNDEFINED to ignore
 }
 
+/**
+  * Return nothing
+  */
 message UpdateVariableResponse {}
 
+/**
+  * Update an instance
+  * Return an error if the name is to be updated but the new name already exists.
+  */
 message UpdateInstanceRequest{
-    string                      id                = 1;
+    string                      id                = 1; // UUID-4 of the instance to update
 
-    google.protobuf.StringValue name              = 2; // Optional
-    map<string, string>         add_metadata      = 3; // New keys to be inserted or updated
-    repeated string             del_metadata_keys = 4; // Keys to be deleted
+    google.protobuf.StringValue name              = 2; // [Optional] New name of the variable. Empty to ignore
+    map<string, string>         add_metadata      = 3; // Pairs of metadata (key, values) to be inserted or updated
+    repeated string             del_metadata_keys = 4; // Metadata keys to be deleted
 }
 
+/**
+  * Return nothing
+  */
 message UpdateInstanceResponse {}
 
+/**
+  * Delete a variable
+  * Return an error if the variable has still instances
+  */
 message DeleteVariableRequest {
-    string  id = 1;
+    string  id = 1; // UUID-4 of the variable to delete
 }
 
+/**
+  * Return nothing
+  */
 message DeleteVariableResponse{}
 
+/**
+  * Delete an instance
+  * Return an error if the instance is linked to datasets.
+  */
 message DeleteInstanceRequest {
-    string  id = 1;
+    string  id = 1; // UUID-4 of the instance to delete
 }
 
+/**
+  * Return nothing
+  */
 message DeleteInstanceResponse {}
 
+/**
+  * Define a color mapping from a value [0-1] to a RGBA value.
+  */
 message colorPoint{
     float  value = 1;
     uint32 r     = 2;
@@ -123,14 +185,25 @@ message colorPoint{
     uint32 a     = 5;
 }
 
+/**
+  * Define a palette with a name and a set of colorPoint.
+  * Maps all values in [0,1] to an RGBA value, using piecewise curve defined by colorPoints.
+  * All intermediate values are linearly interpolated.
+  */
 message Palette{
-    string              name   = 1;
-    repeated colorPoint colors = 2;
+    string              name   = 1; // Name of the palette (Alpha-numerics characters, dots, dashes and underscores are supported)
+    repeated colorPoint colors = 2; // Set of colorPoints. At least two points must be defined, corresponding to value=0 and value=1.
 }
 
+/**
+  * Create a new palette or update it if already exists (provided replace=True)
+  */
 message CreatePaletteRequest{
-    Palette palette = 1;
+    Palette palette = 1; // Palette to be created
     bool    replace = 2; // Replace the current existing palette if exists
 }
 
+/**
+  * Return nothing.
+  */
 message CreatePaletteResponse{}

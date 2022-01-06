@@ -2,22 +2,29 @@ syntax = "proto3";
 package geocube;
 option go_package = "./pb;geocube";
 
+/**
+  * Format of the data of a dataset.
+  * Format is defined by the type of the data, its no-data value and the range of values (its interpretation depends on the use)
+  */
 message DataFormat{
+	/**
+	  * Type of data supported by the Geocube & GDAL
+	  */
     enum Dtype{
-        UNDEFINED = 0; // Bool
+        UNDEFINED = 0;
         UInt8     = 1;
         UInt16    = 2;
         UInt32    = 3;
-        //Int8      = 4;
+        //Int8      = 4; Not supported by GDAL
         Int16     = 5;
         Int32     = 6;
         Float32   = 7;
         Float64   = 8;
-        Complex64 = 9;
+        Complex64 = 9; // Pair of float32
     }
 
-    Dtype  dtype     = 1;
-    double no_data   = 2;
-    double min_value = 3;
-    double max_value = 4;
+    Dtype  dtype     = 1; // Type of the data
+    double no_data   = 2; // No-data value (supports any float values, including NaN)
+    double min_value = 3; // Min value (usually used to map from one min value to another)
+    double max_value = 4; // Max value (usually used to map from one min value to another)
 }

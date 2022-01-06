@@ -20,19 +20,21 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+//*
+// Type of data supported by the Geocube & GDAL
 type DataFormat_Dtype int32
 
 const (
-	DataFormat_UNDEFINED DataFormat_Dtype = 0 // Bool
+	DataFormat_UNDEFINED DataFormat_Dtype = 0
 	DataFormat_UInt8     DataFormat_Dtype = 1
 	DataFormat_UInt16    DataFormat_Dtype = 2
 	DataFormat_UInt32    DataFormat_Dtype = 3
-	//Int8      = 4;
+	//Int8      = 4; Not supported by GDAL
 	DataFormat_Int16     DataFormat_Dtype = 5
 	DataFormat_Int32     DataFormat_Dtype = 6
 	DataFormat_Float32   DataFormat_Dtype = 7
 	DataFormat_Float64   DataFormat_Dtype = 8
-	DataFormat_Complex64 DataFormat_Dtype = 9
+	DataFormat_Complex64 DataFormat_Dtype = 9 // Pair of float32
 )
 
 // Enum value maps for DataFormat_Dtype.
@@ -88,15 +90,18 @@ func (DataFormat_Dtype) EnumDescriptor() ([]byte, []int) {
 	return file_pb_dataformat_proto_rawDescGZIP(), []int{0, 0}
 }
 
+//*
+// Format of the data of a dataset.
+// Format is defined by the type of the data, its no-data value and the range of values (its interpretation depends on the use)
 type DataFormat struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Dtype    DataFormat_Dtype `protobuf:"varint,1,opt,name=dtype,proto3,enum=geocube.DataFormat_Dtype" json:"dtype,omitempty"`
-	NoData   float64          `protobuf:"fixed64,2,opt,name=no_data,json=noData,proto3" json:"no_data,omitempty"`
-	MinValue float64          `protobuf:"fixed64,3,opt,name=min_value,json=minValue,proto3" json:"min_value,omitempty"`
-	MaxValue float64          `protobuf:"fixed64,4,opt,name=max_value,json=maxValue,proto3" json:"max_value,omitempty"`
+	Dtype    DataFormat_Dtype `protobuf:"varint,1,opt,name=dtype,proto3,enum=geocube.DataFormat_Dtype" json:"dtype,omitempty"` // Type of the data
+	NoData   float64          `protobuf:"fixed64,2,opt,name=no_data,json=noData,proto3" json:"no_data,omitempty"`              // No-data value (supports any float values, including NaN)
+	MinValue float64          `protobuf:"fixed64,3,opt,name=min_value,json=minValue,proto3" json:"min_value,omitempty"`        // Min value (usually used to map from one min value to another)
+	MaxValue float64          `protobuf:"fixed64,4,opt,name=max_value,json=maxValue,proto3" json:"max_value,omitempty"`        // Max value (usually used to map from one min value to another)
 }
 
 func (x *DataFormat) Reset() {

@@ -707,7 +707,7 @@ func (svc *Service) prepareGetCube(req *pb.GetCubeRequest) (*cubeInfo, error) {
 			return nil, newValidationError("Invalid Record.uuid " + id + ": " + err.Error())
 		}
 	}
-	for _, records := range req.GetGrecords().GetRecords() {
+	for _, records := range req.GetGroupedRecords().GetRecords() {
 		ids := make([]string, len(records.GetIds()))
 		for i, id := range records.GetIds() {
 			ids[i] = id
@@ -777,7 +777,7 @@ func (svc *Service) GetCube(req *pb.GetCubeRequest, stream pb.Geocube_GetCubeSer
 	// Get the cube
 	var slicesQueue <-chan internal.CubeSlice
 	var info internal.CubeInfo
-	if req.GetRecords() == nil && req.GetGrecords() == nil {
+	if req.GetRecords() == nil && req.GetGroupedRecords() == nil {
 		filters := req.GetFilters()
 		// Convert times
 		fromTime := timeFromTimestamp(filters.GetFromTime())
@@ -902,7 +902,7 @@ func getCubeCreateResponses(slice *internal.CubeSlice) (*pb.ImageHeader, []*pb.I
 
 	// Create the header
 	header := &pb.ImageHeader{
-		Records: make([]*pb.Record, len(slice.Records)),
+		GroupedRecords: &pb.GroupedRecords{Records: make([]*pb.Record, len(slice.Records))},
 		DatasetMeta: &pb.DatasetMeta{
 			InternalsMeta: make([]*pb.InternalMeta, len(slice.DatasetsMeta.Datasets)),
 		},
@@ -910,7 +910,7 @@ func getCubeCreateResponses(slice *internal.CubeSlice) (*pb.ImageHeader, []*pb.I
 
 	// Append records
 	for i, r := range slice.Records {
-		header.Records[i] = r.ToProtobuf(false)
+		header.GroupedRecords.Records[i] = r.ToProtobuf(false)
 	}
 
 	// Populate the datasetMeta part of the header
