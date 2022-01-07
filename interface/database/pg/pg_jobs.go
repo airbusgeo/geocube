@@ -17,7 +17,7 @@ func (b Backend) FindJobs(ctx context.Context, nameLike string) ([]*geocube.Job,
 		wc.append(" name "+operator+" $%d", nameLike)
 	}
 	rows, err := b.pg.QueryContext(ctx,
-		"SELECT id, name, type, creation_ts, last_update_ts, state, active_tasks, failed_tasks, payload, step_by_step, waiting, logs FROM geocube.jobs"+wc.WhereClause(), wc.Parameters...)
+		"SELECT id, name, type, creation_ts, last_update_ts, state, active_tasks, failed_tasks, payload, execution_level, waiting, logs FROM geocube.jobs"+wc.WhereClause(), wc.Parameters...)
 
 	if err != nil {
 		return nil, pqErrorFormat("FindJobs: %w", err)
@@ -27,7 +27,7 @@ func (b Backend) FindJobs(ctx context.Context, nameLike string) ([]*geocube.Job,
 	jobs := []*geocube.Job{}
 	for rows.Next() {
 		var j geocube.Job
-		if err := rows.Scan(&j.ID, &j.Name, &j.Type, &j.CreationTime, &j.LastUpdateTime, &j.State, &j.ActiveTasks, &j.FailedTasks, &j.Payload, &j.StepByStep, &j.Waiting, &j.Logs); err != nil {
+		if err := rows.Scan(&j.ID, &j.Name, &j.Type, &j.CreationTime, &j.LastUpdateTime, &j.State, &j.ActiveTasks, &j.FailedTasks, &j.Payload, &j.ExecutionLevel, &j.Waiting, &j.Logs); err != nil {
 			return nil, fmt.Errorf("FindJobs: %w", err)
 		}
 		jobs = append(jobs, &j)
@@ -39,8 +39,8 @@ func (b Backend) FindJobs(ctx context.Context, nameLike string) ([]*geocube.Job,
 func (b Backend) ReadJob(ctx context.Context, jobID string) (*geocube.Job, error) {
 	j := geocube.NewJob(jobID)
 	err := b.pg.QueryRowContext(ctx,
-		"SELECT name, type, creation_ts, last_update_ts, state, active_tasks, failed_tasks, payload, step_by_step, waiting, logs FROM geocube.jobs WHERE id = $1", jobID).
-		Scan(&j.Name, &j.Type, &j.CreationTime, &j.LastUpdateTime, &j.State, &j.ActiveTasks, &j.FailedTasks, &j.Payload, &j.StepByStep, &j.Waiting, &j.Logs)
+		"SELECT name, type, creation_ts, last_update_ts, state, active_tasks, failed_tasks, payload, execution_level, waiting, logs FROM geocube.jobs WHERE id = $1", jobID).
+		Scan(&j.Name, &j.Type, &j.CreationTime, &j.LastUpdateTime, &j.State, &j.ActiveTasks, &j.FailedTasks, &j.Payload, &j.ExecutionLevel, &j.Waiting, &j.Logs)
 
 	switch {
 	case err == sql.ErrNoRows:
@@ -60,9 +60,9 @@ func (b Backend) ReadJobWithTask(ctx context.Context, jobID string, taskID strin
 
 	var t geocube.Task
 	err := b.pg.QueryRowContext(ctx,
-		"SELECT j.name, j.type, j.creation_ts, j.last_update_ts, j.state, j.active_tasks, j.failed_tasks, j.payload, j.step_by_step, j.waiting, t.id, t.state, j.logs "+
+		"SELECT j.name, j.type, j.creation_ts, j.last_update_ts, j.state, j.active_tasks, j.failed_tasks, j.payload, j.execution_level, j.waiting, t.id, t.state, j.logs "+
 			"FROM geocube.jobs j JOIN geocube.tasks t ON j.id = t.job_id WHERE j.id = $1 AND t.id = $2", jobID, taskID).
-		Scan(&j.Name, &j.Type, &j.CreationTime, &j.LastUpdateTime, &j.State, &j.ActiveTasks, &j.FailedTasks, &j.Payload, &j.StepByStep, &j.Waiting, &t.ID, &t.State, &j.Logs)
+		Scan(&j.Name, &j.Type, &j.CreationTime, &j.LastUpdateTime, &j.State, &j.ActiveTasks, &j.FailedTasks, &j.Payload, &j.ExecutionLevel, &j.Waiting, &t.ID, &t.State, &j.Logs)
 
 	switch {
 	case err == sql.ErrNoRows:
@@ -80,9 +80,9 @@ func (b Backend) ReadJobWithTask(ctx context.Context, jobID string, taskID strin
 // CreateJob implements GeocubeBackend
 func (b Backend) CreateJob(ctx context.Context, job *geocube.Job) error {
 	_, err := b.pg.ExecContext(ctx,
-		"INSERT INTO geocube.jobs (id, name, type, creation_ts, last_update_ts, state, active_tasks, failed_tasks, payload, step_by_step, logs)"+
+		"INSERT INTO geocube.jobs (id, name, type, creation_ts, last_update_ts, state, active_tasks, failed_tasks, payload, execution_level, logs)"+
 			" VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)",
-		job.ID, job.Name, job.Type, job.CreationTime, job.LastUpdateTime, job.State, job.ActiveTasks, job.FailedTasks, job.Payload, job.StepByStep, job.Logs)
+		job.ID, job.Name, job.Type, job.CreationTime, job.LastUpdateTime, job.State, job.ActiveTasks, job.FailedTasks, job.Payload, job.ExecutionLevel, job.Logs)
 
 	switch pqErrorCode(err) {
 	case noError:

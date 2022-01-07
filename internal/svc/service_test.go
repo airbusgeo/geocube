@@ -69,6 +69,7 @@ var _ = Describe("csldCancel", func() {
 					State: geocube.TaskStatePENDING,
 				},
 			},
+			ExecutionLevel: geocube.ExecutionAsynchronous,
 		}
 		readJobErrorReturned = nil
 

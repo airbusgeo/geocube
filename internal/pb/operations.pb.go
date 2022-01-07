@@ -75,6 +75,63 @@ func (StorageClass) EnumDescriptor() ([]byte, []int) {
 	return file_pb_operations_proto_rawDescGZIP(), []int{0}
 }
 
+//*
+// Execution level of a job
+type ExecutionLevel int32
+
+const (
+	ExecutionLevel_ExecutionSynchronous  ExecutionLevel = 0 // Job is done synchronously
+	ExecutionLevel_ExecutionAsynchronous ExecutionLevel = 1 // Job is done asynchronously, but without any pause
+	ExecutionLevel_StepByStepCritical    ExecutionLevel = 2 // Job is done asynchronously, step-by-step, pausing at every critical steps
+	ExecutionLevel_StepByStepMajor       ExecutionLevel = 3 // Job is done asynchronously, step-by-step, pausing at every major steps
+	ExecutionLevel_StepByStepAll         ExecutionLevel = 4 // Job is done asynchronously, step-by-step, pausing at every steps
+)
+
+// Enum value maps for ExecutionLevel.
+var (
+	ExecutionLevel_name = map[int32]string{
+		0: "ExecutionSynchronous",
+		1: "ExecutionAsynchronous",
+		2: "StepByStepCritical",
+		3: "StepByStepMajor",
+		4: "StepByStepAll",
+	}
+	ExecutionLevel_value = map[string]int32{
+		"ExecutionSynchronous":  0,
+		"ExecutionAsynchronous": 1,
+		"StepByStepCritical":    2,
+		"StepByStepMajor":       3,
+		"StepByStepAll":         4,
+	}
+)
+
+func (x ExecutionLevel) Enum() *ExecutionLevel {
+	p := new(ExecutionLevel)
+	*p = x
+	return p
+}
+
+func (x ExecutionLevel) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ExecutionLevel) Descriptor() protoreflect.EnumDescriptor {
+	return file_pb_operations_proto_enumTypes[1].Descriptor()
+}
+
+func (ExecutionLevel) Type() protoreflect.EnumType {
+	return &file_pb_operations_proto_enumTypes[1]
+}
+
+func (x ExecutionLevel) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use ExecutionLevel.Descriptor instead.
+func (ExecutionLevel) EnumDescriptor() ([]byte, []int) {
+	return file_pb_operations_proto_rawDescGZIP(), []int{1}
+}
+
 type ConsolidationParams_Compression int32
 
 const (
@@ -108,11 +165,11 @@ func (x ConsolidationParams_Compression) String() string {
 }
 
 func (ConsolidationParams_Compression) Descriptor() protoreflect.EnumDescriptor {
-	return file_pb_operations_proto_enumTypes[1].Descriptor()
+	return file_pb_operations_proto_enumTypes[2].Descriptor()
 }
 
 func (ConsolidationParams_Compression) Type() protoreflect.EnumType {
-	return &file_pb_operations_proto_enumTypes[1]
+	return &file_pb_operations_proto_enumTypes[2]
 }
 
 func (x ConsolidationParams_Compression) Number() protoreflect.EnumNumber {
@@ -313,17 +370,17 @@ type Job struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id             string               `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`                                                 // Id of the job
-	Name           string               `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`                                             // Name of the job (must be unique)
-	Type           string               `protobuf:"bytes,3,opt,name=type,proto3" json:"type,omitempty"`                                             // Type of the job (consolidation, deletion...)
-	State          string               `protobuf:"bytes,4,opt,name=state,proto3" json:"state,omitempty"`                                           // Current state of the state machine
-	CreationTime   *timestamp.Timestamp `protobuf:"bytes,5,opt,name=creation_time,json=creationTime,proto3" json:"creation_time,omitempty"`         // Time of creation of the job
-	LastUpdateTime *timestamp.Timestamp `protobuf:"bytes,6,opt,name=last_update_time,json=lastUpdateTime,proto3" json:"last_update_time,omitempty"` // Time of the last update
-	Logs           []string             `protobuf:"bytes,7,rep,name=logs,proto3" json:"logs,omitempty"`                                             // Job logs
-	ActiveTasks    int32                `protobuf:"varint,8,opt,name=active_tasks,json=activeTasks,proto3" json:"active_tasks,omitempty"`           // If the job is divided into sub tasks, number of pending tasks
-	FailedTasks    int32                `protobuf:"varint,9,opt,name=failed_tasks,json=failedTasks,proto3" json:"failed_tasks,omitempty"`           // If the job is divided into sub tasks, number of failed tasks
-	StepByStep     int32                `protobuf:"varint,10,opt,name=step_by_step,json=stepByStep,proto3" json:"step_by_step,omitempty"`           // 0: disable 1: wait before each critical steps 2: before each major steps 3: before all steps
-	Waiting        bool                 `protobuf:"varint,11,opt,name=waiting,proto3" json:"waiting,omitempty"`                                     // If true, the job is waiting for user to continue
+	Id             string               `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`                                                                             // Id of the job
+	Name           string               `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`                                                                         // Name of the job (must be unique)
+	Type           string               `protobuf:"bytes,3,opt,name=type,proto3" json:"type,omitempty"`                                                                         // Type of the job (consolidation, deletion...)
+	State          string               `protobuf:"bytes,4,opt,name=state,proto3" json:"state,omitempty"`                                                                       // Current state of the state machine
+	CreationTime   *timestamp.Timestamp `protobuf:"bytes,5,opt,name=creation_time,json=creationTime,proto3" json:"creation_time,omitempty"`                                     // Time of creation of the job
+	LastUpdateTime *timestamp.Timestamp `protobuf:"bytes,6,opt,name=last_update_time,json=lastUpdateTime,proto3" json:"last_update_time,omitempty"`                             // Time of the last update
+	Logs           []string             `protobuf:"bytes,7,rep,name=logs,proto3" json:"logs,omitempty"`                                                                         // Job logs
+	ActiveTasks    int32                `protobuf:"varint,8,opt,name=active_tasks,json=activeTasks,proto3" json:"active_tasks,omitempty"`                                       // If the job is divided into sub tasks, number of pending tasks
+	FailedTasks    int32                `protobuf:"varint,9,opt,name=failed_tasks,json=failedTasks,proto3" json:"failed_tasks,omitempty"`                                       // If the job is divided into sub tasks, number of failed tasks
+	ExecutionLevel ExecutionLevel       `protobuf:"varint,10,opt,name=execution_level,json=executionLevel,proto3,enum=geocube.ExecutionLevel" json:"execution_level,omitempty"` // Execution level of a job (see ExecutionLevel)
+	Waiting        bool                 `protobuf:"varint,11,opt,name=waiting,proto3" json:"waiting,omitempty"`                                                                 // If true, the job is waiting for user to continue
 }
 
 func (x *Job) Reset() {
@@ -421,11 +478,11 @@ func (x *Job) GetFailedTasks() int32 {
 	return 0
 }
 
-func (x *Job) GetStepByStep() int32 {
+func (x *Job) GetExecutionLevel() ExecutionLevel {
 	if x != nil {
-		return x.StepByStep
+		return x.ExecutionLevel
 	}
-	return 0
+	return ExecutionLevel_ExecutionSynchronous
 }
 
 func (x *Job) GetWaiting() bool {
@@ -831,10 +888,10 @@ type ConsolidateRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	JobName    string `protobuf:"bytes,1,opt,name=job_name,json=jobName,proto3" json:"job_name,omitempty"`
-	InstanceId string `protobuf:"bytes,2,opt,name=instance_id,json=instanceId,proto3" json:"instance_id,omitempty"`
-	LayoutName string `protobuf:"bytes,7,opt,name=layout_name,json=layoutName,proto3" json:"layout_name,omitempty"`
-	StepByStep int32  `protobuf:"varint,6,opt,name=step_by_step,json=stepByStep,proto3" json:"step_by_step,omitempty"` // by default 0, 1: critical steps, 2: major steps, 3: all steps
+	JobName        string         `protobuf:"bytes,1,opt,name=job_name,json=jobName,proto3" json:"job_name,omitempty"`
+	InstanceId     string         `protobuf:"bytes,2,opt,name=instance_id,json=instanceId,proto3" json:"instance_id,omitempty"`
+	LayoutName     string         `protobuf:"bytes,7,opt,name=layout_name,json=layoutName,proto3" json:"layout_name,omitempty"`
+	ExecutionLevel ExecutionLevel `protobuf:"varint,6,opt,name=execution_level,json=executionLevel,proto3,enum=geocube.ExecutionLevel" json:"execution_level,omitempty"` // Execution level of a job. A consolidation job cannot be executed synchronously
 	// Types that are assignable to RecordsLister:
 	//	*ConsolidateRequest_Records
 	//	*ConsolidateRequest_Filters
@@ -894,11 +951,11 @@ func (x *ConsolidateRequest) GetLayoutName() string {
 	return ""
 }
 
-func (x *ConsolidateRequest) GetStepByStep() int32 {
+func (x *ConsolidateRequest) GetExecutionLevel() ExecutionLevel {
 	if x != nil {
-		return x.StepByStep
+		return x.ExecutionLevel
 	}
-	return 0
+	return ExecutionLevel_ExecutionSynchronous
 }
 
 func (m *ConsolidateRequest) GetRecordsLister() isConsolidateRequest_RecordsLister {
@@ -1607,7 +1664,7 @@ var file_pb_operations_proto_rawDesc = []byte{
 	0x6e, 0x61, 0x67, 0x65, 0x64, 0x12, 0x2c, 0x0a, 0x08, 0x64, 0x61, 0x74, 0x61, 0x73, 0x65, 0x74,
 	0x73, 0x18, 0x03, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x10, 0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75, 0x62,
 	0x65, 0x2e, 0x44, 0x61, 0x74, 0x61, 0x73, 0x65, 0x74, 0x52, 0x08, 0x64, 0x61, 0x74, 0x61, 0x73,
-	0x65, 0x74, 0x73, 0x22, 0xf0, 0x02, 0x0a, 0x03, 0x4a, 0x6f, 0x62, 0x12, 0x0e, 0x0a, 0x02, 0x69,
+	0x65, 0x74, 0x73, 0x22, 0x90, 0x03, 0x0a, 0x03, 0x4a, 0x6f, 0x62, 0x12, 0x0e, 0x0a, 0x02, 0x69,
 	0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x02, 0x69, 0x64, 0x12, 0x12, 0x0a, 0x04, 0x6e,
 	0x61, 0x6d, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12,
 	0x12, 0x0a, 0x04, 0x74, 0x79, 0x70, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x74,
@@ -1626,9 +1683,11 @@ var file_pb_operations_proto_rawDesc = []byte{
 	0x61, 0x73, 0x6b, 0x73, 0x18, 0x08, 0x20, 0x01, 0x28, 0x05, 0x52, 0x0b, 0x61, 0x63, 0x74, 0x69,
 	0x76, 0x65, 0x54, 0x61, 0x73, 0x6b, 0x73, 0x12, 0x21, 0x0a, 0x0c, 0x66, 0x61, 0x69, 0x6c, 0x65,
 	0x64, 0x5f, 0x74, 0x61, 0x73, 0x6b, 0x73, 0x18, 0x09, 0x20, 0x01, 0x28, 0x05, 0x52, 0x0b, 0x66,
-	0x61, 0x69, 0x6c, 0x65, 0x64, 0x54, 0x61, 0x73, 0x6b, 0x73, 0x12, 0x20, 0x0a, 0x0c, 0x73, 0x74,
-	0x65, 0x70, 0x5f, 0x62, 0x79, 0x5f, 0x73, 0x74, 0x65, 0x70, 0x18, 0x0a, 0x20, 0x01, 0x28, 0x05,
-	0x52, 0x0a, 0x73, 0x74, 0x65, 0x70, 0x42, 0x79, 0x53, 0x74, 0x65, 0x70, 0x12, 0x18, 0x0a, 0x07,
+	0x61, 0x69, 0x6c, 0x65, 0x64, 0x54, 0x61, 0x73, 0x6b, 0x73, 0x12, 0x40, 0x0a, 0x0f, 0x65, 0x78,
+	0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x6c, 0x65, 0x76, 0x65, 0x6c, 0x18, 0x0a, 0x20,
+	0x01, 0x28, 0x0e, 0x32, 0x17, 0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75, 0x62, 0x65, 0x2e, 0x45, 0x78,
+	0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x4c, 0x65, 0x76, 0x65, 0x6c, 0x52, 0x0e, 0x65, 0x78,
+	0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x4c, 0x65, 0x76, 0x65, 0x6c, 0x12, 0x18, 0x0a, 0x07,
 	0x77, 0x61, 0x69, 0x74, 0x69, 0x6e, 0x67, 0x18, 0x0b, 0x20, 0x01, 0x28, 0x08, 0x52, 0x07, 0x77,
 	0x61, 0x69, 0x74, 0x69, 0x6e, 0x67, 0x22, 0x48, 0x0a, 0x14, 0x49, 0x6e, 0x64, 0x65, 0x78, 0x44,
 	0x61, 0x74, 0x61, 0x73, 0x65, 0x74, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x30,
@@ -1685,7 +1744,7 @@ var file_pb_operations_proto_rawDesc = []byte{
 	0x61, 0x72, 0x61, 0x6d, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x67, 0x65,
 	0x6f, 0x63, 0x75, 0x62, 0x65, 0x2e, 0x43, 0x6f, 0x6e, 0x73, 0x6f, 0x6c, 0x69, 0x64, 0x61, 0x74,
 	0x69, 0x6f, 0x6e, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x52, 0x13, 0x63, 0x6f, 0x6e, 0x73, 0x6f,
-	0x6c, 0x69, 0x64, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x22, 0x8c,
+	0x6c, 0x69, 0x64, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x22, 0xac,
 	0x02, 0x0a, 0x12, 0x43, 0x6f, 0x6e, 0x73, 0x6f, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x65, 0x52, 0x65,
 	0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x19, 0x0a, 0x08, 0x6a, 0x6f, 0x62, 0x5f, 0x6e, 0x61, 0x6d,
 	0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x6a, 0x6f, 0x62, 0x4e, 0x61, 0x6d, 0x65,
@@ -1693,9 +1752,11 @@ var file_pb_operations_proto_rawDesc = []byte{
 	0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0a, 0x69, 0x6e, 0x73, 0x74, 0x61, 0x6e, 0x63, 0x65, 0x49,
 	0x64, 0x12, 0x1f, 0x0a, 0x0b, 0x6c, 0x61, 0x79, 0x6f, 0x75, 0x74, 0x5f, 0x6e, 0x61, 0x6d, 0x65,
 	0x18, 0x07, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0a, 0x6c, 0x61, 0x79, 0x6f, 0x75, 0x74, 0x4e, 0x61,
-	0x6d, 0x65, 0x12, 0x20, 0x0a, 0x0c, 0x73, 0x74, 0x65, 0x70, 0x5f, 0x62, 0x79, 0x5f, 0x73, 0x74,
-	0x65, 0x70, 0x18, 0x06, 0x20, 0x01, 0x28, 0x05, 0x52, 0x0a, 0x73, 0x74, 0x65, 0x70, 0x42, 0x79,
-	0x53, 0x74, 0x65, 0x70, 0x12, 0x31, 0x0a, 0x07, 0x72, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x73, 0x18,
+	0x6d, 0x65, 0x12, 0x40, 0x0a, 0x0f, 0x65, 0x78, 0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x5f,
+	0x6c, 0x65, 0x76, 0x65, 0x6c, 0x18, 0x06, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x17, 0x2e, 0x67, 0x65,
+	0x6f, 0x63, 0x75, 0x62, 0x65, 0x2e, 0x45, 0x78, 0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x4c,
+	0x65, 0x76, 0x65, 0x6c, 0x52, 0x0e, 0x65, 0x78, 0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x4c,
+	0x65, 0x76, 0x65, 0x6c, 0x12, 0x31, 0x0a, 0x07, 0x72, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x73, 0x18,
 	0x08, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x15, 0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75, 0x62, 0x65, 0x2e,
 	0x52, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x49, 0x64, 0x4c, 0x69, 0x73, 0x74, 0x48, 0x00, 0x52, 0x07,
 	0x72, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x73, 0x12, 0x32, 0x0a, 0x07, 0x66, 0x69, 0x6c, 0x74, 0x65,
@@ -1744,9 +1805,17 @@ var file_pb_operations_proto_rawDesc = []byte{
 	0x61, 0x73, 0x73, 0x12, 0x0c, 0x0a, 0x08, 0x53, 0x54, 0x41, 0x4e, 0x44, 0x41, 0x52, 0x44, 0x10,
 	0x00, 0x12, 0x0e, 0x0a, 0x0a, 0x49, 0x4e, 0x46, 0x52, 0x45, 0x51, 0x55, 0x45, 0x4e, 0x54, 0x10,
 	0x01, 0x12, 0x0b, 0x0a, 0x07, 0x41, 0x52, 0x43, 0x48, 0x49, 0x56, 0x45, 0x10, 0x02, 0x12, 0x0f,
-	0x0a, 0x0b, 0x44, 0x45, 0x45, 0x50, 0x41, 0x52, 0x43, 0x48, 0x49, 0x56, 0x45, 0x10, 0x03, 0x42,
-	0x0e, 0x5a, 0x0c, 0x2e, 0x2f, 0x70, 0x62, 0x3b, 0x67, 0x65, 0x6f, 0x63, 0x75, 0x62, 0x65, 0x62,
-	0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x0a, 0x0b, 0x44, 0x45, 0x45, 0x50, 0x41, 0x52, 0x43, 0x48, 0x49, 0x56, 0x45, 0x10, 0x03, 0x2a,
+	0x85, 0x01, 0x0a, 0x0e, 0x45, 0x78, 0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x4c, 0x65, 0x76,
+	0x65, 0x6c, 0x12, 0x18, 0x0a, 0x14, 0x45, 0x78, 0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x53,
+	0x79, 0x6e, 0x63, 0x68, 0x72, 0x6f, 0x6e, 0x6f, 0x75, 0x73, 0x10, 0x00, 0x12, 0x19, 0x0a, 0x15,
+	0x45, 0x78, 0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x41, 0x73, 0x79, 0x6e, 0x63, 0x68, 0x72,
+	0x6f, 0x6e, 0x6f, 0x75, 0x73, 0x10, 0x01, 0x12, 0x16, 0x0a, 0x12, 0x53, 0x74, 0x65, 0x70, 0x42,
+	0x79, 0x53, 0x74, 0x65, 0x70, 0x43, 0x72, 0x69, 0x74, 0x69, 0x63, 0x61, 0x6c, 0x10, 0x02, 0x12,
+	0x13, 0x0a, 0x0f, 0x53, 0x74, 0x65, 0x70, 0x42, 0x79, 0x53, 0x74, 0x65, 0x70, 0x4d, 0x61, 0x6a,
+	0x6f, 0x72, 0x10, 0x03, 0x12, 0x11, 0x0a, 0x0d, 0x53, 0x74, 0x65, 0x70, 0x42, 0x79, 0x53, 0x74,
+	0x65, 0x70, 0x41, 0x6c, 0x6c, 0x10, 0x04, 0x42, 0x0e, 0x5a, 0x0c, 0x2e, 0x2f, 0x70, 0x62, 0x3b,
+	0x67, 0x65, 0x6f, 0x63, 0x75, 0x62, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -1761,62 +1830,65 @@ func file_pb_operations_proto_rawDescGZIP() []byte {
 	return file_pb_operations_proto_rawDescData
 }
 
-var file_pb_operations_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_pb_operations_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
 var file_pb_operations_proto_msgTypes = make([]protoimpl.MessageInfo, 24)
 var file_pb_operations_proto_goTypes = []interface{}{
 	(StorageClass)(0),                      // 0: geocube.StorageClass
-	(ConsolidationParams_Compression)(0),   // 1: geocube.ConsolidationParams.Compression
-	(*Dataset)(nil),                        // 2: geocube.Dataset
-	(*Container)(nil),                      // 3: geocube.Container
-	(*Job)(nil),                            // 4: geocube.Job
-	(*IndexDatasetsRequest)(nil),           // 5: geocube.IndexDatasetsRequest
-	(*IndexDatasetsResponse)(nil),          // 6: geocube.IndexDatasetsResponse
-	(*ConsolidationParams)(nil),            // 7: geocube.ConsolidationParams
-	(*ConfigConsolidationRequest)(nil),     // 8: geocube.ConfigConsolidationRequest
-	(*ConfigConsolidationResponse)(nil),    // 9: geocube.ConfigConsolidationResponse
-	(*GetConsolidationParamsRequest)(nil),  // 10: geocube.GetConsolidationParamsRequest
-	(*GetConsolidationParamsResponse)(nil), // 11: geocube.GetConsolidationParamsResponse
-	(*ConsolidateRequest)(nil),             // 12: geocube.ConsolidateRequest
-	(*ConsolidateResponse)(nil),            // 13: geocube.ConsolidateResponse
-	(*ListJobsRequest)(nil),                // 14: geocube.ListJobsRequest
-	(*ListJobsResponse)(nil),               // 15: geocube.ListJobsResponse
-	(*GetJobRequest)(nil),                  // 16: geocube.GetJobRequest
-	(*GetJobResponse)(nil),                 // 17: geocube.GetJobResponse
-	(*CleanJobsRequest)(nil),               // 18: geocube.CleanJobsRequest
-	(*CleanJobsResponse)(nil),              // 19: geocube.CleanJobsResponse
-	(*CancelJobRequest)(nil),               // 20: geocube.CancelJobRequest
-	(*CancelJobResponse)(nil),              // 21: geocube.CancelJobResponse
-	(*RetryJobRequest)(nil),                // 22: geocube.RetryJobRequest
-	(*RetryJobResponse)(nil),               // 23: geocube.RetryJobResponse
-	(*ContinueJobRequest)(nil),             // 24: geocube.ContinueJobRequest
-	(*ContinueJobResponse)(nil),            // 25: geocube.ContinueJobResponse
-	(*DataFormat)(nil),                     // 26: geocube.DataFormat
-	(*timestamp.Timestamp)(nil),            // 27: google.protobuf.Timestamp
-	(Resampling)(0),                        // 28: geocube.Resampling
-	(*RecordIdList)(nil),                   // 29: geocube.RecordIdList
-	(*RecordFilters)(nil),                  // 30: geocube.RecordFilters
+	(ExecutionLevel)(0),                    // 1: geocube.ExecutionLevel
+	(ConsolidationParams_Compression)(0),   // 2: geocube.ConsolidationParams.Compression
+	(*Dataset)(nil),                        // 3: geocube.Dataset
+	(*Container)(nil),                      // 4: geocube.Container
+	(*Job)(nil),                            // 5: geocube.Job
+	(*IndexDatasetsRequest)(nil),           // 6: geocube.IndexDatasetsRequest
+	(*IndexDatasetsResponse)(nil),          // 7: geocube.IndexDatasetsResponse
+	(*ConsolidationParams)(nil),            // 8: geocube.ConsolidationParams
+	(*ConfigConsolidationRequest)(nil),     // 9: geocube.ConfigConsolidationRequest
+	(*ConfigConsolidationResponse)(nil),    // 10: geocube.ConfigConsolidationResponse
+	(*GetConsolidationParamsRequest)(nil),  // 11: geocube.GetConsolidationParamsRequest
+	(*GetConsolidationParamsResponse)(nil), // 12: geocube.GetConsolidationParamsResponse
+	(*ConsolidateRequest)(nil),             // 13: geocube.ConsolidateRequest
+	(*ConsolidateResponse)(nil),            // 14: geocube.ConsolidateResponse
+	(*ListJobsRequest)(nil),                // 15: geocube.ListJobsRequest
+	(*ListJobsResponse)(nil),               // 16: geocube.ListJobsResponse
+	(*GetJobRequest)(nil),                  // 17: geocube.GetJobRequest
+	(*GetJobResponse)(nil),                 // 18: geocube.GetJobResponse
+	(*CleanJobsRequest)(nil),               // 19: geocube.CleanJobsRequest
+	(*CleanJobsResponse)(nil),              // 20: geocube.CleanJobsResponse
+	(*CancelJobRequest)(nil),               // 21: geocube.CancelJobRequest
+	(*CancelJobResponse)(nil),              // 22: geocube.CancelJobResponse
+	(*RetryJobRequest)(nil),                // 23: geocube.RetryJobRequest
+	(*RetryJobResponse)(nil),               // 24: geocube.RetryJobResponse
+	(*ContinueJobRequest)(nil),             // 25: geocube.ContinueJobRequest
+	(*ContinueJobResponse)(nil),            // 26: geocube.ContinueJobResponse
+	(*DataFormat)(nil),                     // 27: geocube.DataFormat
+	(*timestamp.Timestamp)(nil),            // 28: google.protobuf.Timestamp
+	(Resampling)(0),                        // 29: geocube.Resampling
+	(*RecordIdList)(nil),                   // 30: geocube.RecordIdList
+	(*RecordFilters)(nil),                  // 31: geocube.RecordFilters
 }
 var file_pb_operations_proto_depIdxs = []int32{
-	26, // 0: geocube.Dataset.dformat:type_name -> geocube.DataFormat
-	2,  // 1: geocube.Container.datasets:type_name -> geocube.Dataset
-	27, // 2: geocube.Job.creation_time:type_name -> google.protobuf.Timestamp
-	27, // 3: geocube.Job.last_update_time:type_name -> google.protobuf.Timestamp
-	3,  // 4: geocube.IndexDatasetsRequest.container:type_name -> geocube.Container
-	26, // 5: geocube.ConsolidationParams.dformat:type_name -> geocube.DataFormat
-	28, // 6: geocube.ConsolidationParams.resampling_alg:type_name -> geocube.Resampling
-	1,  // 7: geocube.ConsolidationParams.compression:type_name -> geocube.ConsolidationParams.Compression
-	0,  // 8: geocube.ConsolidationParams.storage_class:type_name -> geocube.StorageClass
-	7,  // 9: geocube.ConfigConsolidationRequest.consolidation_params:type_name -> geocube.ConsolidationParams
-	7,  // 10: geocube.GetConsolidationParamsResponse.consolidation_params:type_name -> geocube.ConsolidationParams
-	29, // 11: geocube.ConsolidateRequest.records:type_name -> geocube.RecordIdList
-	30, // 12: geocube.ConsolidateRequest.filters:type_name -> geocube.RecordFilters
-	4,  // 13: geocube.ListJobsResponse.jobs:type_name -> geocube.Job
-	4,  // 14: geocube.GetJobResponse.job:type_name -> geocube.Job
-	15, // [15:15] is the sub-list for method output_type
-	15, // [15:15] is the sub-list for method input_type
-	15, // [15:15] is the sub-list for extension type_name
-	15, // [15:15] is the sub-list for extension extendee
-	0,  // [0:15] is the sub-list for field type_name
+	27, // 0: geocube.Dataset.dformat:type_name -> geocube.DataFormat
+	3,  // 1: geocube.Container.datasets:type_name -> geocube.Dataset
+	28, // 2: geocube.Job.creation_time:type_name -> google.protobuf.Timestamp
+	28, // 3: geocube.Job.last_update_time:type_name -> google.protobuf.Timestamp
+	1,  // 4: geocube.Job.execution_level:type_name -> geocube.ExecutionLevel
+	4,  // 5: geocube.IndexDatasetsRequest.container:type_name -> geocube.Container
+	27, // 6: geocube.ConsolidationParams.dformat:type_name -> geocube.DataFormat
+	29, // 7: geocube.ConsolidationParams.resampling_alg:type_name -> geocube.Resampling
+	2,  // 8: geocube.ConsolidationParams.compression:type_name -> geocube.ConsolidationParams.Compression
+	0,  // 9: geocube.ConsolidationParams.storage_class:type_name -> geocube.StorageClass
+	8,  // 10: geocube.ConfigConsolidationRequest.consolidation_params:type_name -> geocube.ConsolidationParams
+	8,  // 11: geocube.GetConsolidationParamsResponse.consolidation_params:type_name -> geocube.ConsolidationParams
+	1,  // 12: geocube.ConsolidateRequest.execution_level:type_name -> geocube.ExecutionLevel
+	30, // 13: geocube.ConsolidateRequest.records:type_name -> geocube.RecordIdList
+	31, // 14: geocube.ConsolidateRequest.filters:type_name -> geocube.RecordFilters
+	5,  // 15: geocube.ListJobsResponse.jobs:type_name -> geocube.Job
+	5,  // 16: geocube.GetJobResponse.job:type_name -> geocube.Job
+	17, // [17:17] is the sub-list for method output_type
+	17, // [17:17] is the sub-list for method input_type
+	17, // [17:17] is the sub-list for extension type_name
+	17, // [17:17] is the sub-list for extension extendee
+	0,  // [0:17] is the sub-list for field type_name
 }
 
 func init() { file_pb_operations_proto_init() }
@@ -2126,7 +2198,7 @@ func file_pb_operations_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_pb_operations_proto_rawDesc,
-			NumEnums:      2,
+			NumEnums:      3,
 			NumMessages:   24,
 			NumExtensions: 0,
 			NumServices:   0,

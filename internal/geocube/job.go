@@ -54,7 +54,7 @@ const (
 )
 
 type JobStateInfo struct {
-	Level       StepByStepLevel
+	Level       ExecutionLevel
 	RetryForced bool // if event = RetryForced, retry the current state (other behaviors can be defined in the trigger...() functions )
 }
 
@@ -113,16 +113,17 @@ type JobParams interface {
 	Clean()
 }
 
-type StepByStepLevel int32
+type ExecutionLevel int32
 
-// StepByStepLevel
+// ExecutionLevel
 const (
-	StepByStepNone StepByStepLevel = iota
-	StepByStepCritical
-	StepByStepMajor
-	StepByStepAll
+	ExecutionSynchronous  ExecutionLevel = iota // Job is done synchronously
+	ExecutionAsynchronous                       // Job is done asynchronously, but without any pause
+	StepByStepCritical                          // Job is done asynchronously, step-by-step, pausing at every critical steps
+	StepByStepMajor                             // Job is done asynchronously, step-by-step, pausing at every major steps
+	StepByStepAll                               // Job is done asynchronously, step-by-step, pausing at every steps
 
-	StepByStepNever // For a JobState to never be in a waiting mode
+	StepByStepNever // For a JobState to never be paused
 )
 
 type LockFlag int32
@@ -154,7 +155,7 @@ type Job struct {
 	Logs           JobLogs
 	ActiveTasks    int
 	FailedTasks    int
-	StepByStep     StepByStepLevel
+	ExecutionLevel ExecutionLevel
 	Waiting        bool
 
 	// These following fields may not be loaded
@@ -171,8 +172,11 @@ func NewJob(id string) *Job {
 }
 
 // NewConsolidationJob creates a new consolidation Job
-func NewConsolidationJob(jobName, layout, instanceID string, stepByStep StepByStepLevel) *Job {
+func NewConsolidationJob(jobName, layout, instanceID string, executionLevel ExecutionLevel) (*Job, error) {
 	id := uuid.New().String()
+	if executionLevel == ExecutionSynchronous {
+		return nil, NewValidationError("a consolidation job cannot be executed synchronously")
+	}
 	j := &Job{
 		persistenceState: persistenceStateNEW,
 		ID:               id,
@@ -194,14 +198,14 @@ func NewConsolidationJob(jobName, layout, instanceID string, stepByStep StepBySt
 			Date:     time.Now(),
 		}},
 
-		StepByStep: stepByStep,
-		Waiting:    false,
+		ExecutionLevel: executionLevel,
+		Waiting:        false,
 	}
-	return j
+	return j, nil
 }
 
 // NewDeletionJob creates a new Job to delete datasets and containers
-func NewDeletionJob(jobName string, stepByStep StepByStepLevel) *Job {
+func NewDeletionJob(jobName string, executionLevel ExecutionLevel) *Job {
 	id := uuid.New().String()
 	j := &Job{
 		persistenceState: persistenceStateNEW,
@@ -220,8 +224,8 @@ func NewDeletionJob(jobName string, stepByStep StepByStepLevel) *Job {
 			Date:     time.Now(),
 		}},
 
-		StepByStep: stepByStep,
-		Waiting:    false,
+		ExecutionLevel: executionLevel,
+		Waiting:        false,
 	}
 	return j
 }
@@ -254,7 +258,7 @@ func (j *Job) ToProtobuf() (*pb.Job, error) {
 		State:          j.State.String(),
 		ActiveTasks:    int32(j.ActiveTasks),
 		FailedTasks:    int32(j.FailedTasks),
-		StepByStep:     int32(j.StepByStep),
+		ExecutionLevel: pb.ExecutionLevel(j.ExecutionLevel),
 		Waiting:        j.Waiting,
 		Logs:           j.Logs.toSliceString(),
 	}, nil
@@ -613,7 +617,7 @@ func (j *Job) triggerIngestion(evt JobEvent) bool {
 
 func (j *Job) changeState(newState JobState) bool {
 	j.State = newState
-	j.Waiting = j.StepByStep >= jobStateInfo[j.State].Level
+	j.Waiting = j.ExecutionLevel >= jobStateInfo[j.State].Level
 	j.dirty()
 	return true
 }

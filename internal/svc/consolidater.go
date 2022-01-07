@@ -577,7 +577,7 @@ func (svc *Service) csldDeleteDatasets(ctx context.Context, job *geocube.Job) er
 		}
 
 		// Create a deletion job
-		deletionJob := geocube.NewDeletionJob(job.Name+"_deletion_"+uuid.New().String(), geocube.StepByStepNone)
+		deletionJob := geocube.NewDeletionJob(job.Name+"_deletion_"+uuid.New().String(), geocube.ExecutionAsynchronous)
 
 		// Lock datasets for deletion
 		deletionJob.LockDatasets(ids, geocube.LockFlagTODELETE)

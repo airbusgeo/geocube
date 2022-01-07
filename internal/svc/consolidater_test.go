@@ -187,7 +187,7 @@ var _ = Describe("Consolidater", func() {
 				panic(err)
 			}
 
-			jobToUse = geocube.NewConsolidationJob("test_consolidation", "layoutID", "instanceID", 0)
+			jobToUse, _ = geocube.NewConsolidationJob("test_consolidation", "layoutID", "instanceID", geocube.ExecutionAsynchronous)
 			jobToUse.Tasks = append(jobToUse.Tasks, &geocube.Task{
 				ID:      "task1",
 				State:   geocube.TaskStateDONE,

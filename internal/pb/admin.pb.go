@@ -365,10 +365,10 @@ type DeleteDatasetsRequest struct {
 	unknownFields protoimpl.UnknownFields
 
 	//bool            simulate     = 1; // DEPRECATED If true, a simulation is done, nothing is actually deleted. Use StepByStep=2 instead
-	RecordIds   []string `protobuf:"bytes,2,rep,name=record_ids,json=recordIds,proto3" json:"record_ids,omitempty"`       // Instance id that references the datasets to be deleted
-	InstanceIds []string `protobuf:"bytes,3,rep,name=instance_ids,json=instanceIds,proto3" json:"instance_ids,omitempty"` // Record ids that reference the datasets to be deleted
-	StepByStep  int32    `protobuf:"varint,4,opt,name=step_by_step,json=stepByStep,proto3" json:"step_by_step,omitempty"` // by default 0, 1: critical steps, 2: major steps, 3: all steps
-	JobName     string   `protobuf:"bytes,5,opt,name=job_name,json=jobName,proto3" json:"job_name,omitempty"`             // Name of the job (if empty, a name will be generated)
+	RecordIds      []string       `protobuf:"bytes,2,rep,name=record_ids,json=recordIds,proto3" json:"record_ids,omitempty"`                                             // Instance id that references the datasets to be deleted
+	InstanceIds    []string       `protobuf:"bytes,3,rep,name=instance_ids,json=instanceIds,proto3" json:"instance_ids,omitempty"`                                       // Record ids that reference the datasets to be deleted
+	ExecutionLevel ExecutionLevel `protobuf:"varint,4,opt,name=execution_level,json=executionLevel,proto3,enum=geocube.ExecutionLevel" json:"execution_level,omitempty"` // Execution level (see enum)
+	JobName        string         `protobuf:"bytes,5,opt,name=job_name,json=jobName,proto3" json:"job_name,omitempty"`                                                   // Name of the job (if empty, a name will be generated)
 }
 
 func (x *DeleteDatasetsRequest) Reset() {
@@ -417,11 +417,11 @@ func (x *DeleteDatasetsRequest) GetInstanceIds() []string {
 	return nil
 }
 
-func (x *DeleteDatasetsRequest) GetStepByStep() int32 {
+func (x *DeleteDatasetsRequest) GetExecutionLevel() ExecutionLevel {
 	if x != nil {
-		return x.StepByStep
+		return x.ExecutionLevel
 	}
-	return 0
+	return ExecutionLevel_ExecutionSynchronous
 }
 
 func (x *DeleteDatasetsRequest) GetJobName() string {
@@ -546,14 +546,16 @@ var file_pb_admin_proto_rawDesc = []byte{
 	0x6e, 0x74, 0x72, 0x79, 0x12, 0x10, 0x0a, 0x03, 0x6b, 0x65, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28,
 	0x09, 0x52, 0x03, 0x6b, 0x65, 0x79, 0x12, 0x14, 0x0a, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x18,
 	0x02, 0x20, 0x01, 0x28, 0x03, 0x52, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x3a, 0x02, 0x38, 0x01,
-	0x22, 0x96, 0x01, 0x0a, 0x15, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x44, 0x61, 0x74, 0x61, 0x73,
+	0x22, 0xb6, 0x01, 0x0a, 0x15, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x44, 0x61, 0x74, 0x61, 0x73,
 	0x65, 0x74, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x1d, 0x0a, 0x0a, 0x72, 0x65,
 	0x63, 0x6f, 0x72, 0x64, 0x5f, 0x69, 0x64, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x09, 0x52, 0x09,
 	0x72, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x49, 0x64, 0x73, 0x12, 0x21, 0x0a, 0x0c, 0x69, 0x6e, 0x73,
 	0x74, 0x61, 0x6e, 0x63, 0x65, 0x5f, 0x69, 0x64, 0x73, 0x18, 0x03, 0x20, 0x03, 0x28, 0x09, 0x52,
-	0x0b, 0x69, 0x6e, 0x73, 0x74, 0x61, 0x6e, 0x63, 0x65, 0x49, 0x64, 0x73, 0x12, 0x20, 0x0a, 0x0c,
-	0x73, 0x74, 0x65, 0x70, 0x5f, 0x62, 0x79, 0x5f, 0x73, 0x74, 0x65, 0x70, 0x18, 0x04, 0x20, 0x01,
-	0x28, 0x05, 0x52, 0x0a, 0x73, 0x74, 0x65, 0x70, 0x42, 0x79, 0x53, 0x74, 0x65, 0x70, 0x12, 0x19,
+	0x0b, 0x69, 0x6e, 0x73, 0x74, 0x61, 0x6e, 0x63, 0x65, 0x49, 0x64, 0x73, 0x12, 0x40, 0x0a, 0x0f,
+	0x65, 0x78, 0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x6c, 0x65, 0x76, 0x65, 0x6c, 0x18,
+	0x04, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x17, 0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75, 0x62, 0x65, 0x2e,
+	0x45, 0x78, 0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x4c, 0x65, 0x76, 0x65, 0x6c, 0x52, 0x0e,
+	0x65, 0x78, 0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x4c, 0x65, 0x76, 0x65, 0x6c, 0x12, 0x19,
 	0x0a, 0x08, 0x6a, 0x6f, 0x62, 0x5f, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x05, 0x20, 0x01, 0x28, 0x09,
 	0x52, 0x07, 0x6a, 0x6f, 0x62, 0x4e, 0x61, 0x6d, 0x65, 0x22, 0x38, 0x0a, 0x16, 0x44, 0x65, 0x6c,
 	0x65, 0x74, 0x65, 0x44, 0x61, 0x74, 0x61, 0x73, 0x65, 0x74, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f,
@@ -600,23 +602,25 @@ var file_pb_admin_proto_goTypes = []interface{}{
 	(*DeleteDatasetsResponse)(nil), // 5: geocube.DeleteDatasetsResponse
 	nil,                            // 6: geocube.UpdateDatasetsResponse.ResultsEntry
 	(*DataFormat)(nil),             // 7: geocube.DataFormat
-	(*Job)(nil),                    // 8: geocube.Job
+	(ExecutionLevel)(0),            // 8: geocube.ExecutionLevel
+	(*Job)(nil),                    // 9: geocube.Job
 }
 var file_pb_admin_proto_depIdxs = []int32{
 	7, // 0: geocube.UpdateDatasetsRequest.dformat:type_name -> geocube.DataFormat
 	6, // 1: geocube.UpdateDatasetsResponse.results:type_name -> geocube.UpdateDatasetsResponse.ResultsEntry
-	8, // 2: geocube.DeleteDatasetsResponse.job:type_name -> geocube.Job
-	0, // 3: geocube.Admin.TidyDB:input_type -> geocube.TidyDBRequest
-	2, // 4: geocube.Admin.UpdateDatasets:input_type -> geocube.UpdateDatasetsRequest
-	4, // 5: geocube.Admin.DeleteDatasets:input_type -> geocube.DeleteDatasetsRequest
-	1, // 6: geocube.Admin.TidyDB:output_type -> geocube.TidyDBResponse
-	3, // 7: geocube.Admin.UpdateDatasets:output_type -> geocube.UpdateDatasetsResponse
-	5, // 8: geocube.Admin.DeleteDatasets:output_type -> geocube.DeleteDatasetsResponse
-	6, // [6:9] is the sub-list for method output_type
-	3, // [3:6] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	8, // 2: geocube.DeleteDatasetsRequest.execution_level:type_name -> geocube.ExecutionLevel
+	9, // 3: geocube.DeleteDatasetsResponse.job:type_name -> geocube.Job
+	0, // 4: geocube.Admin.TidyDB:input_type -> geocube.TidyDBRequest
+	2, // 5: geocube.Admin.UpdateDatasets:input_type -> geocube.UpdateDatasetsRequest
+	4, // 6: geocube.Admin.DeleteDatasets:input_type -> geocube.DeleteDatasetsRequest
+	1, // 7: geocube.Admin.TidyDB:output_type -> geocube.TidyDBResponse
+	3, // 8: geocube.Admin.UpdateDatasets:output_type -> geocube.UpdateDatasetsResponse
+	5, // 9: geocube.Admin.DeleteDatasets:output_type -> geocube.DeleteDatasetsResponse
+	7, // [7:10] is the sub-list for method output_type
+	4, // [4:7] is the sub-list for method input_type
+	4, // [4:4] is the sub-list for extension type_name
+	4, // [4:4] is the sub-list for extension extendee
+	0, // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_pb_admin_proto_init() }

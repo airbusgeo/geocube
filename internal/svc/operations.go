@@ -381,6 +381,10 @@ func (svc *Service) publishEvent(ctx context.Context, status geocube.JobStatus, 
 
 	evt := geocube.NewJobEvent(job.ID, status, serr)
 
+	if job.ExecutionLevel == geocube.ExecutionSynchronous {
+		return svc.handleJobEvt(ctx, *evt)
+	}
+
 	data, err := geocube.MarshalEvent(evt)
 	if err != nil {
 		panic("Unable to marshal event")

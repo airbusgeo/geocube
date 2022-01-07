@@ -14,7 +14,7 @@ type GeocubeServiceAdmin interface {
 	// UpdateDatasets given the instance id
 	UpdateDatasets(ctx context.Context, simulate bool, instanceID string, RecordIds []string, dmapping geocube.DataMapping) (map[string]int64, error)
 	// DeleteDatasets given the instance id
-	DeleteDatasets(ctx context.Context, jobName string, instancesID, recordsID []string, stepByStep geocube.StepByStepLevel) (*geocube.Job, error)
+	DeleteDatasets(ctx context.Context, jobName string, instancesID, recordsID []string, executionLevel geocube.ExecutionLevel) (*geocube.Job, error)
 }
 
 // ServiceAdmin is the GRPC service
@@ -63,7 +63,7 @@ func (svc *ServiceAdmin) UpdateDatasets(ctx context.Context, req *pb.UpdateDatas
 
 // DeleteDatasets implements AdminServer
 func (svc *ServiceAdmin) DeleteDatasets(ctx context.Context, req *pb.DeleteDatasetsRequest) (*pb.DeleteDatasetsResponse, error) {
-	job, err := svc.gsvca.DeleteDatasets(ctx, req.JobName, req.GetInstanceIds(), req.GetRecordIds(), geocube.StepByStepLevel(req.StepByStep))
+	job, err := svc.gsvca.DeleteDatasets(ctx, req.JobName, req.GetInstanceIds(), req.GetRecordIds(), geocube.ExecutionLevel(req.ExecutionLevel))
 	if err != nil {
 		return nil, formatError("backend.%w", err)
 	}

@@ -57,10 +57,10 @@ message UpdateDatasetsResponse{
   */
 message DeleteDatasetsRequest{
     //bool            simulate     = 1; // DEPRECATED If true, a simulation is done, nothing is actually deleted. Use StepByStep=2 instead
-    repeated string record_ids   = 2; // Instance id that references the datasets to be deleted
-    repeated string instance_ids = 3; // Record ids that reference the datasets to be deleted
-    int32           step_by_step = 4; // by default 0, 1: critical steps, 2: major steps, 3: all steps
-    string          job_name     = 5; // Name of the job (if empty, a name will be generated)
+    repeated string record_ids      = 2; // Instance id that references the datasets to be deleted
+    repeated string instance_ids    = 3; // Record ids that reference the datasets to be deleted
+    ExecutionLevel  execution_level = 4; // Execution level (see enum)
+    string          job_name        = 5; // Name of the job (if empty, a name will be generated)
 }
 
 /**

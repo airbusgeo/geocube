@@ -549,10 +549,12 @@ func (svc *Service) Consolidate(ctx context.Context, req *pb.ConsolidateRequest)
 	}
 
 	// Create the job
-	job := geocube.NewConsolidationJob(req.GetJobName(), req.GetLayoutName(), req.GetInstanceId(), geocube.StepByStepLevel(req.GetStepByStep()))
+	job, err := geocube.NewConsolidationJob(req.GetJobName(), req.GetLayoutName(), req.GetInstanceId(), geocube.ExecutionLevel(req.ExecutionLevel))
+	if err != nil {
+		return nil, formatError("backend.%w", err)
+	}
 
 	// Consolidate
-	var err error
 	if req.GetRecords() == nil {
 		filters := req.GetFilters()
 		// Convert times

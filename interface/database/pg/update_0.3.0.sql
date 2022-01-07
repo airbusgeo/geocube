@@ -11,7 +11,7 @@ CREATE INDEX idx_locked_datasets_job_id ON geocube.locked_datasets (job_id);
 CREATE INDEX idx_tasks_job ON geocube.tasks (job_id);
 
 -- Commit: step-by-step jobs
-ALTER TABLE geocube.jobs ADD COLUMN step_by_step INTEGER DEFAULT 0 NOT NULL;
+ALTER TABLE geocube.jobs ADD COLUMN execution_level INTEGER DEFAULT 0 NOT NULL;
 ALTER TABLE geocube.jobs ADD COLUMN waiting BOOLEAN DEFAULT FALSE NOT NULL;
 
 -- Commit: Add DeleteLayout, remove layout.id

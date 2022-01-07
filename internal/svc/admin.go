@@ -97,14 +97,14 @@ func (svc *Service) UpdateDatasets(ctx context.Context, simulate bool, instanceI
 }
 
 // DeleteDatasets implements ServiceAdmin
-func (svc *Service) DeleteDatasets(ctx context.Context, jobName string, instancesID, recordsID []string, stepByStep geocube.StepByStepLevel) (*geocube.Job, error) {
+func (svc *Service) DeleteDatasets(ctx context.Context, jobName string, instancesID, recordsID []string, executionLevel geocube.ExecutionLevel) (*geocube.Job, error) {
 	// Create the job
 	if jobName == "" {
 		jobName = uuid.New().String()
 	}
-	job := geocube.NewDeletionJob(jobName, stepByStep)
+	job := geocube.NewDeletionJob(jobName, executionLevel)
 
-	err := svc.unitOfWork(ctx, func(txn database.GeocubeTxBackend) (err error) {
+	if err := svc.unitOfWork(ctx, func(txn database.GeocubeTxBackend) (err error) {
 		datasets, err := txn.FindDatasets(ctx, geocube.DatasetStatusACTIVE, "", "", instancesID, recordsID, geocube.Metadata{}, time.Time{}, time.Time{}, nil, nil, 0, 0, false)
 		if err != nil {
 			return fmt.Errorf("DeleteDatasets.%w", err)
@@ -127,19 +127,16 @@ func (svc *Service) DeleteDatasets(ctx context.Context, jobName string, instance
 			return fmt.Errorf("DeleteDatasets.%w", err)
 		}
 		log.Logger(ctx).Sugar().Debugf("SaveJob: %v\n", time.Since(start))
-		start = time.Now()
 
-		// Start the job
-		log.Logger(ctx).Sugar().Debug("new deletion job started")
-		if err := svc.delOnEnterNewState(ctx, job); err != nil {
-			return fmt.Errorf("DeleteDatasets.%w", err)
-		}
 		return nil
-	})
-
-	if err != nil {
+	}); err != nil {
 		return nil, fmt.Errorf("DeleteDatasets.%w", err)
 	}
 
+	// Start the job
+	log.Logger(ctx).Sugar().Debug("new deletion job started")
+	if err := svc.delOnEnterNewState(ctx, job); err != nil {
+		return nil, fmt.Errorf("DeleteDatasets.%w", err)
+	}
 	return job, nil
 }

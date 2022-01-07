@@ -19,6 +19,17 @@ enum StorageClass{
 }
 
 /**
+  * Execution level of a job
+  */
+enum ExecutionLevel{
+    ExecutionSynchronous  = 0; // Job is done synchronously
+    ExecutionAsynchronous = 1; // Job is done asynchronously, but without any pause
+    StepByStepCritical    = 2; // Job is done asynchronously, step-by-step, pausing at every critical steps
+    StepByStepMajor       = 3; // Job is done asynchronously, step-by-step, pausing at every major steps
+    StepByStepAll         = 4; // Job is done asynchronously, step-by-step, pausing at every steps
+}
+
+/**
   * Define a dataset. A dataset is the metadata to retrieve an image from a file.
   * It is defined by a record and the instance of a variable.
   * 
@@ -66,7 +77,7 @@ message Job {
     repeated string           logs             = 7;  // Job logs 
     int32                     active_tasks     = 8;  // If the job is divided into sub tasks, number of pending tasks
     int32                     failed_tasks     = 9;  // If the job is divided into sub tasks, number of failed tasks
-    int32                     step_by_step     = 10; // 0: disable 1: wait before each critical steps 2: before each major steps 3: before all steps
+    ExecutionLevel            execution_level  = 10; // Execution level of a job (see ExecutionLevel)
     bool                      waiting          = 11; // If true, the job is waiting for user to continue
 }
 
@@ -141,10 +152,10 @@ message GetConsolidationParamsResponse {
   * - 3: after all steps
   */
 message ConsolidateRequest {
-    string job_name     = 1;
-    string instance_id  = 2;
-    string layout_name  = 7;
-    int32  step_by_step = 6; // by default 0, 1: critical steps, 2: major steps, 3: all steps
+    string         job_name        = 1;
+    string         instance_id     = 2;
+    string         layout_name     = 7;
+    ExecutionLevel execution_level = 6; // Execution level of a job. A consolidation job cannot be executed synchronously
 
     oneof records_lister{
         RecordIdList  records = 8; // At least one
