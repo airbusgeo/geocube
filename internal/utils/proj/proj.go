@@ -344,7 +344,7 @@ func relativeAccuracy(project *godal.Transform, x, y, lon, lat []float64) []floa
 	}
 	// Transform them to lon/lat
 	project.TransformEx(lonm, latm, make([]float64, len(lon)), nil)
-	// Estimate accuarcy as a percentage of the length of each edge
+	// Estimate accuracy as a percentage of the length of each edge
 	// MidPoint are used to be sure that the geodetic line is the right one (eg when points do not belong to the same hemisphere)
 	for i := 0; i < n; i++ {
 		acc[i] = (lonLatDistance(lon[i], lat[i], lonm[i], latm[i]) + lonLatDistance(lon[i+1], lat[i+1], lonm[i], latm[i])) * accuracyPc
@@ -443,7 +443,7 @@ func densifyEdge(projToLonLat *projection, geodetic bool, x1, y1, x2, y2, lon1, 
 
 	// Check whether the difference is lower than accuracy
 	distance := lonLatDistance(lonm, latm, lonm2, latm2)
-	if distance < accuracy {
+	if distance <= accuracy {
 		return []float64{}
 	}
 
