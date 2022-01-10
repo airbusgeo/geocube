@@ -99,6 +99,51 @@ func (svc *Service) csldOnEnterNewState(ctx context.Context, j *geocube.Job) err
 	return nil
 }
 
+func (svc Service) csldInit(ctx context.Context, job *geocube.Job, datasetsID []string) error {
+	job.LogMsgf(geocube.DEBUG, "Init with %d datasets", len(datasetsID))
+	if len(datasetsID) == 0 {
+		return geocube.NewEntityNotFound("", "", "", "No dataset found for theses records and instances")
+	}
+
+	if err := svc.unitOfWork(ctx, func(txn database.GeocubeTxBackend) error {
+		// Check and get consolidation parameters
+		var params *geocube.ConsolidationParams
+		{
+			variable, err := txn.ReadVariableFromInstanceID(ctx, job.Payload.InstanceID)
+			if err != nil {
+				return err
+			}
+			if params, err = txn.ReadConsolidationParams(ctx, variable.ID); err != nil {
+				return err
+			}
+			params.Clean()
+			if err := job.SetParams(*params); err != nil {
+				return err
+			}
+		}
+
+		// Lock datasets
+		job.LockDatasets(datasetsID, geocube.LockFlagINIT)
+		// Persist the job
+		start := time.Now()
+		if err := svc.saveJob(ctx, txn, job); err != nil {
+			return err
+		}
+		log.Logger(ctx).Sugar().Debugf("SaveJob: %v\n", time.Since(start))
+
+		return nil
+	}); err != nil {
+		return fmt.Errorf("csldInit.%w", err)
+	}
+
+	// Start the job
+	log.Logger(ctx).Sugar().Debug("new consolidation job started")
+	if err := svc.csldOnEnterNewState(ctx, job); err != nil {
+		return fmt.Errorf("csldInit.%w", err)
+	}
+	return nil
+}
+
 func fillRecordsTime(recordsTime map[string]string, records []*geocube.Record) {
 	for _, record := range records {
 		recordsTime[record.ID] = record.Time.Format("2006-01-02 15:04:05")

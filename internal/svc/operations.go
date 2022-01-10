@@ -168,6 +168,44 @@ func (svc *Service) delOnEnterNewState(ctx context.Context, job *geocube.Job) er
 	return nil
 }
 
+func (svc *Service) delInit(ctx context.Context, job *geocube.Job, instancesID, recordsID []string) error {
+	if err := svc.unitOfWork(ctx, func(txn database.GeocubeTxBackend) (err error) {
+		datasets, err := txn.FindDatasets(ctx, geocube.DatasetStatusACTIVE, "", "", instancesID, recordsID, geocube.Metadata{}, time.Time{}, time.Time{}, nil, nil, 0, 0, false)
+		if err != nil {
+			return err
+		}
+		if len(datasets) == 0 {
+			return geocube.NewEntityNotFound("", "", "", "No dataset found for theses records and instances")
+		}
+		datasetsID := make([]string, len(datasets))
+		for i, dataset := range datasets {
+			job.LogMsgf(geocube.DEBUG, "Lock %s%v %s (record:%s, instance:%s)", dataset.GDALOpenName(), dataset.Bands, dataset.ID, dataset.RecordID, dataset.InstanceID)
+			datasetsID[i] = dataset.ID
+		}
+
+		// Lock datasets
+		job.LockDatasets(datasetsID, geocube.LockFlagTODELETE)
+
+		// Persist the job
+		start := time.Now()
+		if err := svc.saveJob(ctx, txn, job); err != nil {
+			return err
+		}
+		log.Logger(ctx).Sugar().Debugf("SaveJob: %v\n", time.Since(start))
+
+		return nil
+	}); err != nil {
+		return fmt.Errorf("delInit.%w", err)
+	}
+
+	// Start the job
+	log.Logger(ctx).Sugar().Debug("new deletion job started")
+	if err := svc.delOnEnterNewState(ctx, job); err != nil {
+		return fmt.Errorf("delInit.%w", err)
+	}
+	return nil
+}
+
 func (svc *Service) delSetToDelete(ctx context.Context, job *geocube.Job) error {
 	job.LogMsg(geocube.INFO, "Set datasets to delete...")
 

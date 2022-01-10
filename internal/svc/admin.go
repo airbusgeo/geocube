@@ -4,13 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/airbusgeo/geocube/interface/database"
 	"github.com/google/uuid"
 
 	"github.com/airbusgeo/geocube/internal/geocube"
-	"github.com/airbusgeo/geocube/internal/log"
 )
 
 var errSimulationEnded = errors.New("simulation ended")
@@ -104,38 +102,7 @@ func (svc *Service) DeleteDatasets(ctx context.Context, jobName string, instance
 	}
 	job := geocube.NewDeletionJob(jobName, executionLevel)
 
-	if err := svc.unitOfWork(ctx, func(txn database.GeocubeTxBackend) (err error) {
-		datasets, err := txn.FindDatasets(ctx, geocube.DatasetStatusACTIVE, "", "", instancesID, recordsID, geocube.Metadata{}, time.Time{}, time.Time{}, nil, nil, 0, 0, false)
-		if err != nil {
-			return fmt.Errorf("DeleteDatasets.%w", err)
-		}
-		if len(datasets) == 0 {
-			return geocube.NewEntityNotFound("", "", "", "No dataset found for theses records and instances")
-		}
-		datasetsID := make([]string, len(datasets))
-		for i, dataset := range datasets {
-			job.LogMsgf(geocube.DEBUG, "Lock %s%v %s (record:%s, instance:%s)", dataset.GDALOpenName(), dataset.Bands, dataset.ID, dataset.RecordID, dataset.InstanceID)
-			datasetsID[i] = dataset.ID
-		}
-
-		// Lock datasets
-		job.LockDatasets(datasetsID, geocube.LockFlagTODELETE)
-
-		// Persist the job
-		start := time.Now()
-		if err := svc.saveJob(ctx, txn, job); err != nil {
-			return fmt.Errorf("DeleteDatasets.%w", err)
-		}
-		log.Logger(ctx).Sugar().Debugf("SaveJob: %v\n", time.Since(start))
-
-		return nil
-	}); err != nil {
-		return nil, fmt.Errorf("DeleteDatasets.%w", err)
-	}
-
-	// Start the job
-	log.Logger(ctx).Sugar().Debug("new deletion job started")
-	if err := svc.delOnEnterNewState(ctx, job); err != nil {
+	if err := svc.delInit(ctx, job, instancesID, recordsID); err != nil {
 		return nil, fmt.Errorf("DeleteDatasets.%w", err)
 	}
 	return job, nil

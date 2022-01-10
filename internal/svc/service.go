@@ -394,9 +394,11 @@ func (svc *Service) ConsolidateFromRecords(ctx context.Context, job *geocube.Job
 	if err != nil {
 		return fmt.Errorf("ConsolidateFromRecords.%w", err)
 	}
-	job.LogMsgf(geocube.DEBUG, "...%d datasets found", len(datasetsID))
 	log.Logger(ctx).Sugar().Debugf("ListActiveDatasetsID: %v\n", time.Since(start))
-	return svc.consolidate(ctx, job, datasetsID)
+	if err := svc.csldInit(ctx, job, datasetsID); err != nil {
+		return fmt.Errorf("ConsolidateFromRecords.%w", err)
+	}
+	return nil
 }
 
 // ConsolidateFromFilters implements GeocubeService
@@ -409,51 +411,11 @@ func (svc *Service) ConsolidateFromFilters(ctx context.Context, job *geocube.Job
 	if err != nil {
 		return fmt.Errorf("ConsolidateFromFilters.%w", err)
 	}
-	job.LogMsgf(geocube.DEBUG, "...%d datasets found", len(datasetsID))
 	log.Logger(ctx).Sugar().Debugf("ListActiveDatasetsID: %v\n", time.Since(start))
-	return svc.consolidate(ctx, job, datasetsID)
-}
-
-func (svc Service) consolidate(ctx context.Context, job *geocube.Job, datasetsID []string) error {
-	if len(datasetsID) == 0 {
-		return geocube.NewEntityNotFound("", "", "", "No dataset found for theses records and instances")
+	if err := svc.csldInit(ctx, job, datasetsID); err != nil {
+		return fmt.Errorf("ConsolidateFromFilters.%w", err)
 	}
-
-	return svc.unitOfWork(ctx, func(txn database.GeocubeTxBackend) error {
-		// Check and get consolidation parameters
-		var params *geocube.ConsolidationParams
-		{
-			variable, err := txn.ReadVariableFromInstanceID(ctx, job.Payload.InstanceID)
-			if err != nil {
-				return fmt.Errorf("consolidate.%w", err)
-			}
-			params, err = txn.ReadConsolidationParams(ctx, variable.ID)
-			if err != nil {
-				return fmt.Errorf("consolidate.%w", err)
-			}
-			params.Clean()
-			if err := job.SetParams(*params); err != nil {
-				return fmt.Errorf("consolidate.%w", err)
-			}
-		}
-
-		// Lock datasets
-		job.LockDatasets(datasetsID, geocube.LockFlagINIT)
-		// Persist the job
-		start := time.Now()
-		if err := svc.saveJob(ctx, txn, job); err != nil {
-			return fmt.Errorf("consolidate.%w", err)
-		}
-		log.Logger(ctx).Sugar().Debugf("SaveJob: %v\n", time.Since(start))
-		start = time.Now()
-
-		// Start the job
-		log.Logger(ctx).Sugar().Debug("new consolidation job started")
-		if err := svc.csldOnEnterNewState(ctx, job); err != nil {
-			return fmt.Errorf("consolidate.%w", err)
-		}
-		return nil
-	})
+	return nil
 }
 
 // CreateLayout implements GeocubeService
