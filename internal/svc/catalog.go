@@ -81,6 +81,42 @@ func NewSlideMetaFromProtobuf(pbmeta *pb.DatasetMeta) *SliceMeta {
 	return s
 }
 
+// GetCubeFromDatasets implements GeocubeDownloaderService
+// panics if instancesID is empty
+func (svc *Service) GetCubeFromMetadatas(ctx context.Context, metadatas []SliceMeta, grecords [][]*geocube.Record,
+	respl geocube.Resampling, refDf geocube.DataFormat, crs *godal.SpatialRef, pixToCRS *affine.Affine, width, height int, format string) (CubeInfo, <-chan CubeSlice, error) {
+	var err error
+	var nbDs int
+	dsByRecord := make([][]*internalImage.Dataset, len(metadatas))
+	for i, element := range metadatas {
+		dsByRecord[i] = element.Datasets
+		nbDs += len(element.Datasets)
+	}
+	outDesc := internalImage.GdalDatasetDescriptor{
+		PixToCRS:   pixToCRS,
+		Width:      width,
+		Height:     height,
+		Bands:      len(metadatas[0].Datasets[0].Bands),
+		Resampling: respl,
+		DataMapping: geocube.DataMapping{
+			DataFormat: refDf,
+			RangeExt:   refDf.Range,
+			Exponent:   1,
+		},
+		ValidPixPc: 0, // Only exclude empty image
+		Format:     format,
+	}
+	outDesc.WktCRS, err = crs.WKT()
+	if err != nil {
+		return CubeInfo{}, nil, fmt.Errorf("getCubeFromMetadatas.ToWKT: %w", err)
+	}
+	stream, err := svc.getCubeStream(ctx, dsByRecord, grecords, outDesc, false)
+	if err != nil {
+		return CubeInfo{}, nil, err
+	}
+	return CubeInfo{NbImages: len(dsByRecord), NbDatasets: nbDs}, stream, nil
+}
+
 // GetCubeFromRecords implements GeocubeService
 // panics if instancesID is empty
 func (svc *Service) GetCubeFromRecords(ctx context.Context, grecordsID [][]string, instancesID []string, crs *godal.SpatialRef, pixToCRS *affine.Affine,

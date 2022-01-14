@@ -4,6 +4,7 @@ option go_package = "./pb;geocube";
 
 import "google/api/annotations.proto";
 
+import "pb/version.proto";
 import "pb/catalog.proto";
 import "pb/records.proto";
 import "pb/variables.proto";
@@ -11,18 +12,6 @@ import "pb/layouts.proto";
 import "pb/operations.proto";
 
 // ApiGW https://cloud.google.com/endpoints/docs/grpc-service-config/reference/rpc/google.api
-
-/**
-  * Request the version of the Geocube Server
-  */
-message GetVersionRequest{}
-
-/**
-  * Return the version of the Geocube Server
-  */
-message GetVersionResponse{
-    string Version = 1;
-}
 
 /**
   * API
@@ -82,6 +71,6 @@ service Geocube {
     rpc DeleteGrid(DeleteGridRequest)            returns (DeleteGridResponse){}
     rpc ListGrids(ListGridsRequest)              returns (ListGridsResponse){}
 
-// @exclude Version
+    // Version of the GeocubeServer
     rpc Version(GetVersionRequest)               returns (GetVersionResponse){}
 }

@@ -96,12 +96,39 @@ message GetCubeResponseHeader{
     int64 nb_datasets = 2;
     DataFormat ref_dformat    = 3; // Output dataformat
     Resampling resampling_alg = 4; // Resampling algorithm to use for reprojection
+    GeoTransform geotransform = 5; // Geotransform used for mapping
+    string       crs          = 6;
 }
 
 /**
   * Return either information on the cube, information on an image or a chunk of an image
   */
 message GetCubeResponse {
+    oneof response{
+        GetCubeResponseHeader global_header = 3;
+        ImageHeader           header        = 1;
+        ImageChunk            chunk         = 2;
+    }
+}
+
+/**
+  * Request a cube from metadatas (provided by Geocube.GetCube())
+  */
+message GetCubeMetadataRequest{
+  repeated DatasetMeta     datasets_meta   = 1; // List of Metadatas needed to download and generate the slices of the cube
+  repeated GroupedRecords  grouped_records = 2; // List of GroupedRecords describing the slices of the cube
+  DataFormat               ref_dformat     = 3; // Output dataformat
+  Resampling               resampling_alg  = 4; // Resampling algorithm to use for reprojection
+  GeoTransform             pix_to_crs      = 5;
+  string                   crs             = 6;
+  Size                     size            = 7;
+  FileFormat               format          = 8; // Format of the output data
+}
+
+/**
+  * Return either information on the cube, information on an image or a chunk of an image
+  */
+message GetCubeMetadataResponse{
     oneof response{
         GetCubeResponseHeader global_header = 3;
         ImageHeader           header        = 1;

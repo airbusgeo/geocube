@@ -77,6 +77,26 @@ func NewRecordFromProtobuf(record *pb.NewRecord) (*Record, error) {
 	return &r, nil
 }
 
+// RecordFromProtobuf creates a new record from protobuf and validates it
+// Only returns ValidationError
+func RecordFromProtobuf(record *pb.Record) (*Record, error) {
+	if err := record.GetTime().CheckValid(); err != nil {
+		return nil, NewValidationError("Invalid time: " + err.Error())
+	}
+	r := Record{
+		persistenceState: persistenceStateCLEAN,
+		ID:               record.Id,
+		Name:             URN(record.GetName()),
+		Time:             record.GetTime().AsTime(),
+		Tags:             record.GetTags(),
+		AOI:              AOI{ID: record.GetAoiId()},
+	}
+	if err := r.validate(); err != nil {
+		return nil, err
+	}
+	return &r, nil
+}
+
 // NewAOIFromProtobuf creates an AOI from protobuf
 // Only returns ValidationError
 func NewAOIFromProtobuf(polygons []*pb.Polygon, canBeEmpty bool) (*AOI, error) {

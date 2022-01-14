@@ -1,0 +1,17 @@
+syntax = "proto3";
+package geocube;
+option go_package = "./pb;geocube";
+
+
+/**
+  * Request the version of the Geocube
+  */
+  message GetVersionRequest{}
+
+  /**
+    * Return the version of the Geocube
+    */
+  message GetVersionResponse{
+      string Version = 1;
+  }
+  

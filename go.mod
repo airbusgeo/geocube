@@ -3,12 +3,11 @@ module github.com/airbusgeo/geocube
 go 1.16
 
 require (
-	cloud.google.com/go v0.95.0 // indirect
 	cloud.google.com/go/kms v1.0.0 // indirect
 	cloud.google.com/go/monitoring v1.0.0
 	cloud.google.com/go/pubsub v1.6.1
 	cloud.google.com/go/secretmanager v1.0.0
-	cloud.google.com/go/storage v1.17.0
+	cloud.google.com/go/storage v1.18.2
 	github.com/airbusgeo/cogger v0.0.5
 	github.com/airbusgeo/godal v0.0.6-0.20211104110613-d49205b11c58
 	github.com/airbusgeo/mucog v0.0.0-20210928135728-43d5e17d5a2a
@@ -36,7 +35,7 @@ require (
 	golang.org/x/sys v0.0.0-20210927094055-39ccf1dd6fa6 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	google.golang.org/api v0.58.0
-	google.golang.org/genproto v0.0.0-20210927142257-433400c27d05
+	google.golang.org/genproto v0.0.0-20211117155847-120650a500bb
 	google.golang.org/grpc v1.41.0
 	google.golang.org/protobuf v1.27.1
 	gopkg.in/inf.v0 v0.9.1 // indirect

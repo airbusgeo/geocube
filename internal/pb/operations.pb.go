@@ -595,8 +595,8 @@ type ConsolidationParams struct {
 	Exponent float64     `protobuf:"fixed64,2,opt,name=exponent,proto3" json:"exponent,omitempty"` // 1: linear scaling (RealMax - RealMin) * pow( (Value - Min) / (Max - Min), Exponent) + RealMin
 	//    bool         create_overviews   = 3; // DEPRECATED
 	ResamplingAlg    Resampling                      `protobuf:"varint,4,opt,name=resampling_alg,json=resamplingAlg,proto3,enum=geocube.Resampling" json:"resampling_alg,omitempty"` // Define how to resample the data during the consolidation (if a reprojection is needed or if the overviews are created)
-	Compression      ConsolidationParams_Compression `protobuf:"varint,5,opt,name=compression,proto3,enum=geocube.ConsolidationParams_Compression" json:"compression,omitempty"`     // Define whether the date is compressed at block level
-	BandsInterleave  bool                            `protobuf:"varint,6,opt,name=bands_interleave,json=bandsInterleave,proto3" json:"bands_interleave,omitempty"`                   // In case of multibands, define whether or not the bands are interleaved
+	Compression      ConsolidationParams_Compression `protobuf:"varint,5,opt,name=compression,proto3,enum=geocube.ConsolidationParams_Compression" json:"compression,omitempty"`     // Define how the data is compressed at block level
+	BandsInterleave  bool                            `protobuf:"varint,6,opt,name=bands_interleave,json=bandsInterleave,proto3" json:"bands_interleave,omitempty"`                   // If the variable is multibands, define whether the bands are interleaved
 	StorageClass     StorageClass                    `protobuf:"varint,7,opt,name=storage_class,json=storageClass,proto3,enum=geocube.StorageClass" json:"storage_class,omitempty"`  // Define the storage class of the created file (support only GCS)
 	OverviewsMinSize int32                           `protobuf:"varint,8,opt,name=overviews_min_size,json=overviewsMinSize,proto3" json:"overviews_min_size,omitempty"`              // Maximum width or height of the smallest overview level. 0: No overview, -1: default=256.
 }

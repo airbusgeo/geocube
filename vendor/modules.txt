@@ -1,5 +1,4 @@
-# cloud.google.com/go v0.95.0
-## explicit
+# cloud.google.com/go v0.97.0
 cloud.google.com/go
 cloud.google.com/go/compute/metadata
 cloud.google.com/go/iam
@@ -21,7 +20,7 @@ cloud.google.com/go/pubsub/internal/scheduler
 # cloud.google.com/go/secretmanager v1.0.0
 ## explicit
 cloud.google.com/go/secretmanager/apiv1beta1
-# cloud.google.com/go/storage v1.17.0
+# cloud.google.com/go/storage v1.18.2
 ## explicit
 cloud.google.com/go/storage
 cloud.google.com/go/storage/internal/apiv2
@@ -289,7 +288,7 @@ golang.org/x/net/http2/hpack
 golang.org/x/net/idna
 golang.org/x/net/internal/timeseries
 golang.org/x/net/trace
-# golang.org/x/oauth2 v0.0.0-20210819190943-2bc19b11175f
+# golang.org/x/oauth2 v0.0.0-20211005180243-6b3c2da341f1
 golang.org/x/oauth2
 golang.org/x/oauth2/authhandler
 golang.org/x/oauth2/google
@@ -337,6 +336,7 @@ golang.org/x/xerrors/internal
 ## explicit
 google.golang.org/api/googleapi
 google.golang.org/api/googleapi/transport
+google.golang.org/api/iamcredentials/v1
 google.golang.org/api/internal
 google.golang.org/api/internal/gensupport
 google.golang.org/api/internal/impersonate
@@ -346,6 +346,7 @@ google.golang.org/api/option
 google.golang.org/api/option/internaloption
 google.golang.org/api/storage/v1
 google.golang.org/api/support/bundler
+google.golang.org/api/transport
 google.golang.org/api/transport/cert
 google.golang.org/api/transport/grpc
 google.golang.org/api/transport/http
@@ -364,7 +365,7 @@ google.golang.org/appengine/internal/socket
 google.golang.org/appengine/internal/urlfetch
 google.golang.org/appengine/socket
 google.golang.org/appengine/urlfetch
-# google.golang.org/genproto v0.0.0-20210927142257-433400c27d05
+# google.golang.org/genproto v0.0.0-20211117155847-120650a500bb
 ## explicit
 google.golang.org/genproto/googleapis/api
 google.golang.org/genproto/googleapis/api/annotations

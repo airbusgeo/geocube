@@ -824,6 +824,8 @@ func (svc *Service) GetCube(req *pb.GetCubeRequest, stream pb.Geocube_GetCubeSer
 		NbDatasets:    int64(info.NbDatasets),
 		ResamplingAlg: pb.Resampling(info.Resampling),
 		RefDformat:    info.RefDataFormat.ToProtobuf(),
+		Geotransform:  req.PixToCrs,
+		Crs:           req.Crs,
 	}}}); err != nil {
 		return formatError("backend.GetCube.%w", err)
 	}
@@ -842,7 +844,7 @@ func (svc *Service) GetCube(req *pb.GetCubeRequest, stream pb.Geocube_GetCubeSer
 	// If context close, compressedSlicesQueue is automatically closed
 	n := 1
 	for slice := range compressedSlicesQueue {
-		header, chunks := getCubeCreateResponses(&slice)
+		header, chunks := getCubeCreateResponses(&slice, true)
 
 		getCubeLog(ctx, slice, header, req.GetHeadersOnly(), n)
 		n++
@@ -902,7 +904,7 @@ func compressSlicesQueue(sliceQueue <-chan internal.CubeSlice, compressedSliceQu
 	}
 }
 
-func getCubeCreateResponses(slice *internal.CubeSlice) (*pb.ImageHeader, []*pb.ImageChunk) {
+func getCubeCreateResponses(slice *internal.CubeSlice, compression bool) (*pb.ImageHeader, []*pb.ImageChunk) {
 	chunkSize := 64 * 1024 // 1Mo/4Mo maximum
 
 	// Create the header
@@ -911,6 +913,7 @@ func getCubeCreateResponses(slice *internal.CubeSlice) (*pb.ImageHeader, []*pb.I
 		DatasetMeta: &pb.DatasetMeta{
 			InternalsMeta: make([]*pb.InternalMeta, len(slice.DatasetsMeta.Datasets)),
 		},
+		Compression: compression,
 	}
 
 	// Append records

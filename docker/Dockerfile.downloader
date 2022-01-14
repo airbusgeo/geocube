@@ -1,0 +1,35 @@
+ARG BASE_IMAGE=eu.gcr.io/d-gcb-geocuberd/geocube-base:v1-downloader
+FROM $BASE_IMAGE AS builder
+
+RUN apk update
+
+WORKDIR /build
+COPY go.* /build/
+COPY vendor vendor
+COPY internal internal
+COPY interface interface
+COPY cmd cmd
+COPY *.go /build/
+COPY cmd/downloader downloader
+
+RUN cd downloader && go build -ldflags="-s -w" .
+
+#---------------------------------------------------------------------------------------------------------------
+
+FROM alpine:3
+ENTRYPOINT ["/downloader"]
+COPY --from=builder /usr/local/lib /usr/local/lib
+COPY --from=builder /usr/local/share /usr/local/share
+
+RUN apk add \
+        ca-certificates \
+        libcurl \
+        libgcc \
+        libjpeg-turbo \
+        libstdc++ \
+        libwebp \
+        sqlite-libs \
+	    tiff \
+        zstd-libs &&\
+        ldconfig /usr/local/lib
+COPY --from=builder /build/downloader/downloader /
