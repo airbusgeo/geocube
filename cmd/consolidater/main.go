@@ -9,15 +9,13 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/airbusgeo/geocube/cmd"
 	"github.com/airbusgeo/geocube/interface/messaging"
 	"github.com/airbusgeo/geocube/interface/messaging/pubsub"
 	"github.com/airbusgeo/geocube/internal/geocube"
 	"github.com/airbusgeo/geocube/internal/image"
 	"github.com/airbusgeo/geocube/internal/log"
 	"github.com/airbusgeo/geocube/internal/utils"
-	"github.com/airbusgeo/godal"
-	"github.com/airbusgeo/osio"
-	osioGcs "github.com/airbusgeo/osio/gcs"
 	"go.uber.org/zap"
 )
 
@@ -55,20 +53,8 @@ func run(ctx context.Context) error {
 		http.ListenAndServe(":9000", nil)
 	}()
 
-	godal.RegisterAll()
-
-	osioGCSHandle, err := osioGcs.Handle(ctx)
-	if err != nil {
-		return fmt.Errorf("gcshandler: %w", err)
-	}
-	gcsa, err := osio.NewAdapter(osioGCSHandle,
-		osio.BlockSize("1Mb"),
-		osio.NumCachedBlocks(500))
-	if err != nil {
-		return fmt.Errorf("adapter: %w", err)
-	}
-	if err := godal.RegisterVSIAdapter("gs://", gcsa); err != nil {
-		return fmt.Errorf("register: %w", err)
+	if err := cmd.InitGDAL(ctx, consolidaterConfig.GDALConfig); err != nil {
+		return fmt.Errorf("init gdal: %w", err)
 	}
 
 	// Create Messaging Service
@@ -166,6 +152,7 @@ func newConsolidationAppConfig() (*consolidaterConfig, error) {
 	workdir := flag.String("workdir", "", "scratch work directory")
 	cancelledJobs := flag.String("cancelledJobs", "", "storage where cancelled jobs are referenced")
 	retryCount := flag.Int("retryCount", 1, "number of retries when consolidation job failed with a temporary error")
+	gdalFlags := cmd.GDALConfigGetFlags()
 
 	flag.Parse()
 
@@ -176,6 +163,11 @@ func newConsolidationAppConfig() (*consolidaterConfig, error) {
 		return nil, fmt.Errorf("missing --cancelledJobs storage flag")
 	}
 
+	gdalConfig, err := cmd.NewGDALConfig(gdalFlags)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize GDALConfig: %w", err)
+	}
+
 	return &consolidaterConfig{
 		PsConsolidationsSubscription: *psConsolidationsSubscription,
 		WorkDir:                      *workdir,
@@ -183,6 +175,7 @@ func newConsolidationAppConfig() (*consolidaterConfig, error) {
 		PsEventsTopic:                *psEventsTopic,
 		CancelledJobsStorage:         *cancelledJobs,
 		RetryCount:                   *retryCount,
+		GDALConfig:                   gdalConfig,
 	}, nil
 }
 
@@ -193,6 +186,7 @@ type consolidaterConfig struct {
 	PsConsolidationsSubscription string
 	CancelledJobsStorage         string
 	RetryCount                   int
+	GDALConfig                   *cmd.GDALConfig
 }
 
 func notify(ctx context.Context, evt *geocube.ConsolidationEvent, taskStatus geocube.TaskStatus, taskError error) error {

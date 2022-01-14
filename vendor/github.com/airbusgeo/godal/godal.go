@@ -31,10 +31,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"unsafe"
-
-	"github.com/airbusgeo/osio"
 )
 
 // DataType is a pixel data types
@@ -67,14 +64,20 @@ const (
 	CFloat64 = DataType(C.GDT_CFloat64)
 )
 
+// ErrorCategory wraps GDAL's error types
 type ErrorCategory int
 
 const (
-	CE_None    = ErrorCategory(C.CE_None)
-	CE_Debug   = ErrorCategory(C.CE_Debug)
+	// CE_None is not an error
+	CE_None = ErrorCategory(C.CE_None)
+	// CE_Debug is a debug level
+	CE_Debug = ErrorCategory(C.CE_Debug)
+	// CE_Warning is a warning levele
 	CE_Warning = ErrorCategory(C.CE_Warning)
+	// CE_Failure is an error
 	CE_Failure = ErrorCategory(C.CE_Failure)
-	CE_Fatal   = ErrorCategory(C.CE_Fatal)
+	// CE_Fatal is an unrecoverable error
+	CE_Fatal = ErrorCategory(C.CE_Fatal)
 )
 
 // String implements Stringer
@@ -222,6 +225,7 @@ func (band Band) SetColorInterp(colorInterp ColorInterp, opts ...SetColorInterpO
 }
 
 //MaskFlags returns the mask flags associated with this band.
+//
 //See https://gdal.org/development/rfc/rfc15_nodatabitmask.html for how this flag
 //should be interpreted
 func (band Band) MaskFlags() int {
@@ -235,6 +239,7 @@ func (band Band) MaskBand() Band {
 }
 
 //CreateMask creates a mask (nodata) band for this band.
+//
 //Any handle returned by a previous call to MaskBand() should not be used after a call to CreateMask
 //See https://gdal.org/development/rfc/rfc15_nodatabitmask.html for how flag should be used
 func (band Band) CreateMask(flags int, opts ...BandCreateMaskOption) (Band, error) {
@@ -283,15 +288,26 @@ func (band Band) IO(rw IOOperation, srcX, srcY int, buffer interface{}, bufWidth
 	if ro.dsWidth == 0 {
 		ro.dsWidth = bufWidth
 	}
-	dsize, dtype, cBuf := cBuffer(buffer)
-	pixelSpacing := C.int(dsize)
+	dtype := bufferType(buffer)
+	dsize := dtype.Size()
+
+	pixelSpacing := dsize
 	if ro.pixelSpacing > 0 {
-		pixelSpacing = C.int(ro.pixelSpacing)
+		pixelSpacing = ro.pixelSpacing
 	}
-	lineSpacing := C.int(bufWidth) * pixelSpacing
+	if ro.pixelStride > 0 {
+		pixelSpacing = ro.pixelStride * dsize
+	}
+	lineSpacing := bufWidth * pixelSpacing
 	if ro.lineSpacing > 0 {
-		lineSpacing = C.int(ro.lineSpacing)
+		lineSpacing = ro.lineSpacing
 	}
+	if ro.lineStride > 0 {
+		lineSpacing = ro.lineStride * dsize
+	}
+
+	minsize := (lineSpacing*(bufHeight-1) + (bufWidth-1)*pixelSpacing + dsize) / dsize
+	cBuf := cBuffer(buffer, minsize)
 	//fmt.Fprintf(os.Stderr, "%v %d %d %d\n", ro.bands, pixelSpacing, lineSpacing, bandSpacing)
 	ralg, err := ro.resampling.rioAlg()
 	if err != nil {
@@ -302,7 +318,7 @@ func (band Band) IO(rw IOOperation, srcX, srcY int, buffer interface{}, bufWidth
 		C.int(srcX), C.int(srcY), C.int(ro.dsWidth), C.int(ro.dsHeight),
 		cBuf,
 		C.int(bufWidth), C.int(bufHeight), C.GDALDataType(dtype),
-		pixelSpacing, lineSpacing, ralg)
+		C.int(pixelSpacing), C.int(lineSpacing), ralg)
 	return cgc.close()
 }
 
@@ -618,6 +634,7 @@ func (ds *Dataset) Bounds(opts ...BoundsOption) ([4]float64, error) {
 }
 
 //CreateMaskBand creates a mask (nodata) band shared for all bands of this dataset.
+//
 //Any handle returned by a previous call to Band.MaskBand() should not be used after a call to CreateMaskBand
 //See https://gdal.org/development/rfc/rfc15_nodatabitmask.html for how flag should be used
 func (ds *Dataset) CreateMaskBand(flags int, opts ...DatasetCreateMaskOption) (Band, error) {
@@ -662,6 +679,7 @@ func (ds *Dataset) SpatialRef() *SpatialRef {
 }
 
 // SetSpatialRef sets dataset's projection.
+//
 // sr can be set to nil to clear an existing projection
 func (ds *Dataset) SetSpatialRef(sr *SpatialRef, opts ...SetSpatialRefOption) error {
 	sro := &setSpatialRefOpts{}
@@ -982,24 +1000,41 @@ func (ds *Dataset) IO(rw IOOperation, srcX, srcY int, buffer interface{}, bufWid
 			ro.bands = append(ro.bands, i+1)
 		}
 	}
-	dsize, dtype, cBuf := cBuffer(buffer)
-	pixelSpacing := C.int(dsize * len(ro.bands))
-	lineSpacing := C.int(bufWidth * dsize * len(ro.bands))
-	bandSpacing := C.int(dsize)
-	if ro.bandInterleave {
-		pixelSpacing = C.int(dsize)
-		lineSpacing = C.int(bufWidth * dsize)
-		bandSpacing = C.int(bufHeight * bufWidth * dsize)
-	}
+	dtype := bufferType(buffer)
+	dsize := dtype.Size()
+
+	pixelSpacing := dsize * len(ro.bands)
 	if ro.pixelSpacing > 0 {
-		pixelSpacing = C.int(ro.pixelSpacing)
+		pixelSpacing = ro.pixelSpacing
 	}
-	if ro.bandSpacing > 0 {
-		bandSpacing = C.int(ro.bandSpacing)
+	if ro.pixelStride > 0 {
+		pixelSpacing = ro.pixelStride * dsize
 	}
+
+	lineSpacing := bufWidth * pixelSpacing
 	if ro.lineSpacing > 0 {
-		lineSpacing = C.int(ro.lineSpacing)
+		lineSpacing = ro.lineSpacing
 	}
+	if ro.lineStride > 0 {
+		lineSpacing = ro.lineStride * dsize
+	}
+
+	bandSpacing := dsize
+	if ro.bandSpacing > 0 {
+		bandSpacing = ro.bandSpacing
+	}
+	if ro.bandStride > 0 {
+		bandSpacing = ro.bandStride * dsize
+	}
+
+	if ro.bandInterleave {
+		pixelSpacing = dsize
+		lineSpacing = bufWidth * dsize
+		bandSpacing = bufHeight * bufWidth * dsize
+	}
+
+	minsize := ((len(ro.bands)-1)*bandSpacing + (bufHeight-1)*lineSpacing + (bufWidth-1)*pixelSpacing + dsize) / dsize
+	cBuf := cBuffer(buffer, minsize)
 
 	ralg, err := ro.resampling.rioAlg()
 	if err != nil {
@@ -1011,7 +1046,7 @@ func (ds *Dataset) IO(rw IOOperation, srcX, srcY int, buffer interface{}, bufWid
 		cBuf,
 		C.int(bufWidth), C.int(bufHeight), C.GDALDataType(dtype),
 		C.int(len(ro.bands)), cIntArray(ro.bands),
-		pixelSpacing, lineSpacing, bandSpacing, ralg)
+		C.int(pixelSpacing), C.int(lineSpacing), C.int(bandSpacing), ralg)
 	return cgc.close()
 }
 
@@ -1019,9 +1054,9 @@ func (ds *Dataset) IO(rw IOOperation, srcX, srcY int, buffer interface{}, bufWid
 // drivers.
 //
 // Alternatively, you may also register a select number of drivers by calling one or more of
-//  godal.RegisterInternal() // MEM, VRT, GTiff and GeoJSON
-//  godal.RegisterRaster(godal.GTiff,godal.VRT)
-//  godal.RegisterVector(godal.Shapefile)
+//  - godal.RegisterInternal() // MEM, VRT, GTiff and GeoJSON
+//  - godal.RegisterRaster(godal.GTiff,godal.VRT)
+//  - godal.RegisterVector(godal.Shapefile)
 func RegisterAll() {
 	C.GDALAllRegister()
 }
@@ -1251,6 +1286,7 @@ func (ds *Dataset) handle() C.GDALDatasetH {
 
 //Open calls GDALOpenEx() with the provided options. It returns nil and an error
 //in case there was an error opening the provided dataset name.
+//
 //name may be a filename or any supported string supported by gdal (e.g. a /vsixxx path,
 //the xml string representing a vrt dataset, etc...)
 func Open(name string, options ...OpenOption) (*Dataset, error) {
@@ -1472,44 +1508,70 @@ func (ra ResamplingAlg) rioAlg() (C.GDALRIOResampleAlg, error) {
 	}
 }
 
-//cBuffer returns the byte size of an individual element, and a pointer to the
-//underlying memory array
-func cBuffer(buffer interface{}) (int, DataType, unsafe.Pointer) {
-	var dtype DataType
-	var cBuf unsafe.Pointer
-	switch buf := buffer.(type) {
+func bufferType(buffer interface{}) DataType {
+	switch buffer.(type) {
 	case []byte:
-		dtype = Byte
-		cBuf = unsafe.Pointer(&buf[0])
+		return Byte
 	case []int16:
-		dtype = Int16
-		cBuf = unsafe.Pointer(&buf[0])
+		return Int16
 	case []uint16:
-		dtype = UInt16
-		cBuf = unsafe.Pointer(&buf[0])
+		return UInt16
 	case []int32:
-		dtype = Int32
-		cBuf = unsafe.Pointer(&buf[0])
+		return Int32
 	case []uint32:
-		dtype = UInt32
-		cBuf = unsafe.Pointer(&buf[0])
+		return UInt32
 	case []float32:
-		dtype = Float32
-		cBuf = unsafe.Pointer(&buf[0])
+		return Float32
 	case []float64:
-		dtype = Float64
-		cBuf = unsafe.Pointer(&buf[0])
+		return Float64
 	case []complex64:
-		dtype = CFloat32
-		cBuf = unsafe.Pointer(&buf[0])
+		return CFloat32
 	case []complex128:
-		dtype = CFloat64
-		cBuf = unsafe.Pointer(&buf[0])
+		return CFloat64
 	default:
 		panic("unsupported type")
 	}
-	dsize := dtype.Size()
-	return dsize, dtype, cBuf
+}
+
+//cBuffer returns the type of an individual element, and a pointer to the
+//underlying memory array
+func cBuffer(buffer interface{}, minsize int) unsafe.Pointer {
+	sizecheck := func(size int) {
+		if size < minsize {
+			panic(fmt.Sprintf("buffer len=%d less than min=%d", size, minsize))
+		}
+	}
+	switch buf := buffer.(type) {
+	case []byte:
+		sizecheck(len(buf))
+		return unsafe.Pointer(&buf[0])
+	case []int16:
+		sizecheck(len(buf))
+		return unsafe.Pointer(&buf[0])
+	case []uint16:
+		sizecheck(len(buf))
+		return unsafe.Pointer(&buf[0])
+	case []int32:
+		sizecheck(len(buf))
+		return unsafe.Pointer(&buf[0])
+	case []uint32:
+		sizecheck(len(buf))
+		return unsafe.Pointer(&buf[0])
+	case []float32:
+		sizecheck(len(buf))
+		return unsafe.Pointer(&buf[0])
+	case []float64:
+		sizecheck(len(buf))
+		return unsafe.Pointer(&buf[0])
+	case []complex64:
+		sizecheck(len(buf))
+		return unsafe.Pointer(&buf[0])
+	case []complex128:
+		sizecheck(len(buf))
+		return unsafe.Pointer(&buf[0])
+	default:
+		panic("unsupported type")
+	}
 }
 
 func (mo majorObject) Metadata(key string, opts ...MetadataOption) string {
@@ -1897,13 +1959,10 @@ func (ds *Dataset) Rasterize(dstDS string, switches []string, opts ...RasterizeO
 // RasterizeGeometry "burns" the provided geometry onto ds.
 // By default, the "0" value is burned into all of ds's bands. This behavior can be modified
 // with the following options:
-//
-// • Bands(bnd ...int) the list of bands to affect
-//
-// • Values(val ...float64) the pixel value to burn. There must be either 1 or len(bands) values
+//  - Bands(bnd ...int) the list of bands to affect
+//  - Values(val ...float64) the pixel value to burn. There must be either 1 or len(bands) values
 // provided
-//
-// • AllTouched() pixels touched by lines or polygons will be updated, not just those on the line
+//  - AllTouched() pixels touched by lines or polygons will be updated, not just those on the line
 // render path, or whose center point is within the polygon.
 //
 func (ds *Dataset) RasterizeGeometry(g *Geometry, opts ...RasterizeGeometryOption) error {
@@ -2399,8 +2458,7 @@ func (layer Layer) DeleteFeature(feat *Feature, opts ...DeleteFeatureOption) err
 // CreateLayer creates a new vector layer
 //
 // Available CreateLayerOptions are
-//
-// • FieldDefinition (may be used multiple times) to add attribute fields to the layer
+//  - FieldDefinition (may be used multiple times) to add attribute fields to the layer
 func (ds *Dataset) CreateLayer(name string, sr *SpatialRef, gtype GeometryType, opts ...CreateLayerOption) (Layer, error) {
 	co := createLayerOpts{}
 	for _, opt := range opts {
@@ -2542,8 +2600,7 @@ func (g *Geometry) Transform(trn *Transform, opts ...GeometryTransformOption) er
 // projection per RFCxxx
 //
 // Available GeoJSONOptions are
-//
-// • SignificantDigits(n int) to keep n significant digits after the decimal separator (default: 8)
+//  - SignificantDigits(n int) to keep n significant digits after the decimal separator (default: 8)
 func (g *Geometry) GeoJSON(opts ...GeoJSONOption) (string, error) {
 	gjo := geojsonOpts{
 		precision: 7,
@@ -2629,53 +2686,51 @@ func (vf *VSIFile) Read(buf []byte) (int, error) {
 	return int(n), nil
 }
 
-// VSIReader is the interface that should be returned by VSIKeyReader for a given
-// key (i.e. filename)
+// KeySizerReaderAt is the interface expected when calling RegisterVSIHandler
+//
+// ReadAt() is a standard io.ReaderAt that takes a key (i.e. filename) as argument.
 //
 // Size() is used as a probe to determine wether the given key exists, and should return
 // an error if no such key exists. The actual file size may or may not be effectively used
 // depending on the underlying GDAL driver opening the file
 //
-// VSIReader may also optionally implement VSIMultiReader which will be used (only?) by
+// It may also optionally implement KeyMultiReader which will be used (only?) by
 // the GTiff driver when reading pixels. If not provided, this
 // VSI implementation will concurrently call ReadAt([]byte,int64)
-type VSIReader interface {
-	io.ReaderAt
-	Size() int64
+type KeySizerReaderAt interface {
+	ReadAt(key string, buf []byte, off int64) (int, error)
+	Size(key string) (int64, error)
 }
 
-// VSIMultiReader is an optional interface that can be implemented by VSIReader that
+// KeyMultiReader is an optional interface that can be implemented by KeyReaderAtSizer that
 // will be used (only?) by the GTiff driver when reading pixels. If not provided, this
-// VSI implementation will concurrently call ReadAt([]byte,int64)
-type VSIMultiReader interface {
-	ReadAtMulti(bufs [][]byte, offs []int64) ([]int, error)
-}
-
-// VSIKeyReader is the interface that must be provided to RegisterVSIHandler. It
-// should return a VSIReader for the given key.
-//
-// When registering a reader with
-//  RegisterVSIHandler("scheme://",handler)
-// calling Open("scheme://myfile.txt") will result in godal making calls to
-//  VSIReader("myfile.txt")
-type VSIKeyReader interface {
-	VSIReader(key string) (VSIReader, error)
+// VSI implementation will concurrently call ReadAt(key,[]byte,int64)
+type KeyMultiReader interface {
+	ReadAtMulti(key string, bufs [][]byte, offs []int64) ([]int, error)
 }
 
 //export _gogdalSizeCallback
-func _gogdalSizeCallback(key *C.char, errorString **C.char) C.longlong {
-	//log.Printf("GetSize called")
-	cbd := getGoGDALReader(key, errorString)
-	if cbd == nil {
-		return -1
+func _gogdalSizeCallback(ckey *C.char, errorString **C.char) C.longlong {
+	key := C.GoString(ckey)
+	cbd := getGoGDALReader(key)
+	if cbd.prefix > 0 {
+		key = key[cbd.prefix:]
 	}
-	return C.longlong(cbd.Size())
+	l, err := cbd.Size(key)
+	if err != nil {
+		*errorString = C.CString(err.Error())
+	}
+	return C.longlong(l)
 }
 
 //export _gogdalMultiReadCallback
-func _gogdalMultiReadCallback(key *C.char, nRanges C.int, pocbuffers unsafe.Pointer, coffsets unsafe.Pointer, clengths unsafe.Pointer, errorString **C.char) C.int {
-	cbd := getGoGDALReader(key, errorString)
+func _gogdalMultiReadCallback(ckey *C.char, nRanges C.int, pocbuffers unsafe.Pointer, coffsets unsafe.Pointer, clengths unsafe.Pointer, errorString **C.char) C.int {
+	key := C.GoString(ckey)
+	cbd := getGoGDALReader(key)
 	/* cbd == nil would be a bug elsewhere */
+	if cbd.prefix > 0 {
+		key = key[cbd.prefix:]
+	}
 	n := int(nRanges)
 	cbuffers := (*[1 << 28]unsafe.Pointer)(unsafe.Pointer(pocbuffers))[:n:n]
 	lengths := (*[1 << 28]C.size_t)(unsafe.Pointer(clengths))[:n:n]
@@ -2690,100 +2745,90 @@ func _gogdalMultiReadCallback(key *C.char, nRanges C.int, pocbuffers unsafe.Poin
 		goffsets[b] = int64(offsets[b])
 	}
 	var err error
-	if mcbd, ok := cbd.(VSIMultiReader); ok {
-		_, err = mcbd.ReadAtMulti(buffers, goffsets)
-		if err != nil && err != io.EOF {
-			*errorString = C.CString(err.Error())
-			ret = -1
-		}
-		return C.int(ret)
+	_, err = cbd.ReadAtMulti(key, buffers, goffsets)
+	if err != nil && err != io.EOF {
+		*errorString = C.CString(err.Error())
+		ret = -1
 	}
-	var wg sync.WaitGroup
-	wg.Add(n)
-	for b := range buffers {
-		go func(bidx int) {
-			defer wg.Done()
-			rlen, err := cbd.ReadAt(buffers[bidx], goffsets[bidx])
-			if err != nil && err != io.EOF {
-				if *errorString == nil {
-					*errorString = C.CString(err.Error())
-				}
-				atomic.StoreInt64(&ret, -1)
-			}
-			if rlen != int(lengths[bidx]) {
-				if *errorString == nil {
-					if err != nil {
-						*errorString = C.CString(err.Error())
-					} else {
-						*errorString = C.CString("short read")
-					}
-				}
-				atomic.StoreInt64(&ret, -1)
-			}
-		}(b)
-	}
-	wg.Wait()
 	return C.int(ret)
 }
 
 //export _gogdalReadCallback
-func _gogdalReadCallback(key *C.char, buffer unsafe.Pointer, off C.size_t, clen C.size_t, errorString **C.char) C.size_t {
+func _gogdalReadCallback(ckey *C.char, buffer unsafe.Pointer, off C.size_t, clen C.size_t, errorString **C.char) C.size_t {
 	l := int(clen)
-	cbd := getGoGDALReader(key, errorString)
-	/* cbd == nil would be a bug elsewhere */
+	key := C.GoString(ckey)
+	cbd := getGoGDALReader(key)
+	if cbd.prefix > 0 {
+		key = key[cbd.prefix:]
+	}
 	slice := (*[1 << 28]byte)(buffer)[:l:l]
-	rlen, err := cbd.ReadAt(slice, int64(off))
+	rlen, err := cbd.ReadAt(key, slice, int64(off))
 	if err != nil && err != io.EOF {
 		*errorString = C.CString(err.Error())
 	}
 	return C.size_t(rlen)
 }
 
-var handlers map[string]VSIKeyReader
+var handlers map[string]vsiHandler
 
-func getGoGDALReader(ckey *C.char, errorString **C.char) VSIReader {
-	key := C.GoString(ckey)
+func getGoGDALReader(key string) vsiHandler {
 	for prefix, handler := range handlers {
 		if strings.HasPrefix(key, prefix) {
-			hndl, err := handler.VSIReader(key)
-			if err != nil {
-				*errorString = C.CString(err.Error())
-				return nil
-			}
-			return hndl
+			return handler
 		}
 	}
-	*errorString = C.CString("handler not registered for prefix")
-	return nil
+	return vsiHandler{}
 }
 
-type osioAdapterWrapper struct {
-	*osio.Adapter
+type vsiHandler struct {
+	KeySizerReaderAt
+	prefix int
 }
 
-func (ga osioAdapterWrapper) VSIReader(key string) (VSIReader, error) {
-	return ga.Reader(key)
+func (sp vsiHandler) ReadAtMulti(key string, bufs [][]byte, offs []int64) ([]int, error) {
+	if mcbd, ok := sp.KeySizerReaderAt.(KeyMultiReader); ok {
+		return mcbd.ReadAtMulti(key, bufs, offs)
+	}
+	var wg sync.WaitGroup
+	wg.Add(len(bufs))
+	lens := make([]int, len(bufs))
+	var err error
+	var errmu sync.Mutex
+	for b := range bufs {
+		go func(bidx int) {
+			var berr error
+			defer wg.Done()
+			lens[bidx], berr = sp.ReadAt(key, bufs[bidx], offs[bidx])
+			if berr != nil && berr != io.EOF {
+				errmu.Lock()
+				if err == nil {
+					err = berr
+				}
+				errmu.Unlock()
+			}
+			if lens[bidx] != int(len(bufs[bidx])) {
+				errmu.Lock()
+				if err == nil {
+					if berr != nil {
+						err = berr
+					} else {
+						err = fmt.Errorf("short read")
+					}
+				}
+				errmu.Unlock()
+			}
+		}(b)
+	}
+	wg.Wait()
+	return lens, err
 }
 
-type stripPrefixWrapper struct {
-	VSIKeyReader
-	prefix string
-}
-
-func (sp stripPrefixWrapper) VSIReader(key string) (VSIReader, error) {
-	return sp.VSIKeyReader.VSIReader(key[len(sp.prefix):])
-}
-
-func RegisterVSIAdapter(prefix string, keyReader *osio.Adapter, opts ...VSIHandlerOption) error {
-	return RegisterVSIHandler(prefix, osioAdapterWrapper{keyReader}, opts...)
-}
-
-// RegisterVSIHandler registers keyReader on the given prefix.
-// When registering a reader with
+// RegisterVSIHandler registers an osio.Adapter on the given prefix.
+// When registering an adapter with
 //  RegisterVSIHandler("scheme://",handler)
 // calling Open("scheme://myfile.txt") will result in godal making calls to
-//  VSIKeyReader("myfile.txt").ReadAt(buf,offset)
-func RegisterVSIHandler(prefix string, keyReader VSIKeyReader, opts ...VSIHandlerOption) error {
+//  adapter.Reader("myfile.txt").ReadAt(buf,offset)
+func RegisterVSIHandler(prefix string, handler KeySizerReaderAt, opts ...VSIHandlerOption) error {
 	opt := vsiHandlerOpts{
 		bufferSize:  64 * 1024,
 		cacheSize:   2 * 64 * 1024,
@@ -2793,9 +2838,9 @@ func RegisterVSIHandler(prefix string, keyReader VSIKeyReader, opts ...VSIHandle
 		o.setVSIHandlerOpt(&opt)
 	}
 	if handlers == nil {
-		handlers = make(map[string]VSIKeyReader)
+		handlers = make(map[string]vsiHandler)
 	}
-	if handlers[prefix] != nil {
+	if _, ok := handlers[prefix]; ok {
 		return fmt.Errorf("handler already registered on prefix")
 	}
 	cgc := createCGOContext(nil, opt.errorHandler)
@@ -2804,9 +2849,9 @@ func RegisterVSIHandler(prefix string, keyReader VSIKeyReader, opts ...VSIHandle
 		return err
 	}
 	if opt.stripPrefix {
-		handlers[prefix] = stripPrefixWrapper{keyReader, prefix}
+		handlers[prefix] = vsiHandler{handler, len(prefix)}
 	} else {
-		handlers[prefix] = keyReader
+		handlers[prefix] = vsiHandler{handler, 0}
 	}
 	return nil
 }

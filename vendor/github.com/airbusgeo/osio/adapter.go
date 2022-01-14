@@ -18,6 +18,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"sort"
 	"strconv"
@@ -83,6 +84,11 @@ type NamedOnceMutex interface {
 	Unlock(key interface{})
 }
 
+//Logger is used to optionally log requests to the underlying KetStreamerAt
+type Logger interface {
+	Log(key string, offset, length int64)
+}
+
 // Adapter caches fixed-sized chunks of a KeyStreamerAt, and exposes
 // ReadAt(key string, buf []byte, offset int64) (int, error)
 // that feeds from its internal cache, only falling back to the provided KeyStreamerAt whenever
@@ -97,6 +103,7 @@ type Adapter struct {
 	splitRanges     bool
 	sizeCache       *lru.Cache
 	retries         int
+	logger          Logger
 }
 
 func temporary(err error) bool {
@@ -110,6 +117,9 @@ func temporary(err error) bool {
 }
 
 func (a *Adapter) srcStreamAt(key string, off int64, n int64) (io.ReadCloser, error) {
+	if a.logger != nil {
+		a.logger.Log(key, off, n)
+	}
 	try := 1
 	delay := 100 * time.Millisecond
 	var r io.ReadCloser
@@ -332,6 +342,32 @@ func SizeCache(numEntries int) interface {
 } {
 	return scao{numEntries}
 }
+
+type logao struct {
+	logger Logger
+}
+
+func (l logao) adapterOpt(a *Adapter) error {
+	a.logger = l.logger
+	return nil
+}
+
+// WithLogger is an option to make the adapter log requests that were not served from the
+// lru cache, i.e. that logs each request to the underlying KeyStreamerAt
+func WithLogger(logger Logger) interface {
+	AdapterOption
+} {
+	return logao{logger}
+}
+
+type stdLogger struct{}
+
+func (stdl stdLogger) Log(key string, offset, length int64) {
+	log.Printf("GET %s off=%d len=%d", key, offset, length)
+}
+
+//StdLogger is a Logger using golang's standard library logger
+var StdLogger stdLogger
 
 const (
 	DefaultBlockSize       = 128 * 1024

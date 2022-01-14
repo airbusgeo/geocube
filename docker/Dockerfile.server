@@ -6,6 +6,7 @@ COPY go.* /build/
 COPY vendor vendor
 COPY internal internal
 COPY interface interface
+COPY cmd cmd
 COPY *.go /build/
 COPY cmd/server server
 

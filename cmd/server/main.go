@@ -13,17 +13,12 @@ import (
 	"strings"
 	"time"
 
-	osioGcs "github.com/airbusgeo/osio/gcs"
-
-	"github.com/airbusgeo/geocube/interface/storage/gcs"
-
+	"github.com/airbusgeo/geocube/cmd"
 	"github.com/airbusgeo/geocube/interface/database"
 	"github.com/airbusgeo/geocube/interface/database/pg"
 	"github.com/airbusgeo/geocube/interface/database/pg/secrets"
 	"github.com/airbusgeo/geocube/interface/messaging"
 	"github.com/airbusgeo/geocube/interface/messaging/pubsub"
-	"github.com/airbusgeo/godal"
-	"github.com/airbusgeo/osio"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"go.uber.org/zap"
 	"golang.org/x/net/http2"
@@ -98,7 +93,7 @@ func run(ctx context.Context) error {
 		return err
 	}
 
-	if err := initGDAL(ctx, serverConfig); err != nil {
+	if err := cmd.InitGDAL(ctx, serverConfig.GDALConfig); err != nil {
 		return fmt.Errorf("init gdal: %w", err)
 	}
 
@@ -231,41 +226,6 @@ func run(ctx context.Context) error {
 	return srv.Shutdown(sctx)
 }
 
-func initGDAL(ctx context.Context, serverConfig *serverConfig) error {
-	os.Setenv("GDAL_DISABLE_READDIR_ON_OPEN", "EMPTY_DIR")
-
-	godal.RegisterAll()
-	if err := godal.RegisterRaster("PNG"); err != nil {
-		return err
-	}
-
-	var adapter interface {
-		StreamAt(key string, off int64, n int64) (io.ReadCloser, int64, error)
-	}
-
-	var err error
-	if serverConfig.GdalStorageDebug {
-		adapter, err = gcs.NewGsStrategy(ctx)
-		if err != nil {
-			return err
-		}
-	} else {
-		adapter, err = osioGcs.Handle(ctx)
-		if err != nil {
-			return err
-		}
-
-	}
-
-	gcsa, err := osio.NewAdapter(adapter,
-		osio.BlockSize(serverConfig.GdalBlockSize),
-		osio.NumCachedBlocks(serverConfig.GdalNumCachedBlocks))
-	if err != nil {
-		return err
-	}
-	return godal.RegisterVSIAdapter("gs://", gcsa)
-}
-
 func getMaxConnectionAge(maxConnectionAge int) int {
 	if maxConnectionAge < 60 {
 		maxConnectionAge = 15 * 60
@@ -336,12 +296,16 @@ func newServerAppConfig() (*serverConfig, error) {
 	maxConnectionAge := flag.Int("maxConnectionAge", 0, "grpc max age connection")
 	ingestionStorage := flag.String("ingestionStorage", "", "path to the storage where ingested and consolidated datasets will be stored (local/gs)")
 	workers := flag.Int("workers", 1, "number of parallel workers per catalog request")
-	gdalBlocksize := flag.String("gdalBlockSize", "1Mb", "gdal blocksize value (default 1Mb)")
-	gdalNumCachedBlocks := flag.Int("gdalNumCachedBlocks", 500, "gdal blockcache value (default 500)")
 	cancelledJobs := flag.String("cancelledJobs", "", "storage where cancelled jobs are referenced")
-	gdalStorageDebug := flag.Bool("gdalStorageDebug", false, "storage debug enable to use custom gdal storage strategy")
+	gdalFlags := cmd.GDALConfigGetFlags()
 
 	flag.Parse()
+
+	gdalConfig, err := cmd.NewGDALConfig(gdalFlags)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize GDALConfig: %w", err)
+	}
+	gdalConfig.RegisterPNG = true
 
 	if *listenPort == "" {
 		return nil, fmt.Errorf("failed to initialize --port application flag")
@@ -368,9 +332,7 @@ func newServerAppConfig() (*serverConfig, error) {
 		PsEventsTopic:                 *psEventsTopic,
 		PsConsolidationsTopic:         *psConsolidationsTopic,
 		CatalogWorkers:                *workers,
-		GdalBlockSize:                 *gdalBlocksize,
-		GdalNumCachedBlocks:           *gdalNumCachedBlocks,
-		GdalStorageDebug:              *gdalStorageDebug,
+		GDALConfig:                    gdalConfig,
 	}, nil
 }
 
@@ -391,9 +353,7 @@ type serverConfig struct {
 	IngestionStorage              string
 	CancelledConsolidationStorage string
 	CatalogWorkers                int
-	GdalBlockSize                 string
-	GdalNumCachedBlocks           int
-	GdalStorageDebug              bool
+	GDALConfig                    *cmd.GDALConfig
 }
 
 func PgConnString(ctx context.Context, serverConfig *serverConfig) (string, error) {

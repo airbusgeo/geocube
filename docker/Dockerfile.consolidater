@@ -17,6 +17,7 @@ COPY vendor vendor
 RUN cd vendor && go install -ldflags="-s -w" ./...
 COPY internal internal
 COPY interface interface
+COPY cmd cmd
 COPY *.go /consolidater/
 COPY cmd/consolidater consolidater
 
