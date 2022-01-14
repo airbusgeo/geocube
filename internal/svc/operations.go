@@ -179,7 +179,7 @@ func (svc *Service) delInit(ctx context.Context, job *geocube.Job, instancesID, 
 		}
 		datasetsID := make([]string, len(datasets))
 		for i, dataset := range datasets {
-			job.LogMsgf(geocube.DEBUG, "Lock %s%v %s (record:%s, instance:%s)", dataset.GDALOpenName(), dataset.Bands, dataset.ID, dataset.RecordID, dataset.InstanceID)
+			job.LogMsgf(geocube.DEBUG, "Lock %s%v %s (record:%s, instance:%s)", dataset.GDALURI(), dataset.Bands, dataset.ID, dataset.RecordID, dataset.InstanceID)
 			datasetsID[i] = dataset.ID
 		}
 

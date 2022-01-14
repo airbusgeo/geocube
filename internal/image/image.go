@@ -26,10 +26,7 @@ type Dataset struct {
 }
 
 func (d Dataset) GDALURI() string {
-	if d.SubDir != "" {
-		return fmt.Sprintf("%s:%s", d.SubDir, d.URI)
-	}
-	return d.URI
+	return geocube.GDALURI(d.URI, d.SubDir)
 }
 
 var ErrLoger = godal.ErrLogger(func(ec godal.ErrorCategory, code int, msg string) error {
@@ -239,10 +236,11 @@ func warpDatasets(datasets []*Dataset, wktCRS string, transform *affine.Affine, 
 	gdatasets := make([]*godal.Dataset, len(datasets))
 	for i, dataset := range datasets {
 		var err error
-		listFile[i] = dataset.GDALURI()
-		gdatasets[i], err = godal.Open(dataset.GDALURI(), ErrLoger)
+		uri := dataset.GDALURI()
+		listFile[i] = uri
+		gdatasets[i], err = godal.Open(uri, ErrLoger)
 		if err != nil {
-			return nil, fmt.Errorf("while opening %s: %w", dataset.GDALURI(), err)
+			return nil, fmt.Errorf("while opening %s: %w", uri, err)
 		}
 		defer gdatasets[i].Close()
 	}

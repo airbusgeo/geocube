@@ -251,9 +251,10 @@ func (svc *Service) validateRemoteContainer(ctx context.Context, container *geoc
 
 // validateAndSetRemoteDataset validates and completes Dataset
 func (svc *Service) validateAndSetRemoteDataset(ctx context.Context, dataset *geocube.Dataset) error {
-	ds, err := godal.Open(dataset.GDALOpenName(), image.ErrLoger)
+	datasetURI := dataset.GDALURI()
+	ds, err := godal.Open(datasetURI, image.ErrLoger)
 	if err != nil {
-		return geocube.NewValidationError("%s is not reachable", dataset.GDALOpenName())
+		return geocube.NewValidationError("%s is not reachable", datasetURI)
 	}
 	defer ds.Close()
 
@@ -261,7 +262,7 @@ func (svc *Service) validateAndSetRemoteDataset(ctx context.Context, dataset *ge
 	nbbands := int64(ds.Structure().NBands)
 	for _, b := range dataset.Bands {
 		if b <= 0 || b > nbbands {
-			return geocube.NewValidationError("%s has no band: %d", dataset.ContainerURI, b)
+			return geocube.NewValidationError("%s has no band: %d", datasetURI, b)
 		}
 	}
 
@@ -286,15 +287,15 @@ func (svc *Service) validateAndSetRemoteDataset(ctx context.Context, dataset *ge
 		if gdaldtype == godal.Unknown {
 			gdaldtype = bstruct.DataType
 		} else if gdaldtype != bstruct.DataType {
-			return geocube.NewValidationError("%s : all bands must have the same data type (found %s and %s)", dataset.ContainerURI, gdaldtype.String(), bstruct.DataType.String())
+			return geocube.NewValidationError("%s : all bands must have the same data type (found %s and %s)", datasetURI, gdaldtype.String(), bstruct.DataType.String())
 		}
 	}
 	dtype := geocube.DTypeFromGDal(gdaldtype)
 	if dtype == geocube.DTypeUNDEFINED {
-		return geocube.NewValidationError("%s : datatype not found or not supported: %s", dataset.ContainerURI, gdaldtype.String())
+		return geocube.NewValidationError("%s : datatype not found or not supported: %s", datasetURI, gdaldtype.String())
 	}
 	if dataset.DataMapping.DType != geocube.DTypeUNDEFINED && dtype != dataset.DataMapping.DType {
-		fmt.Printf("Warning: overwrite dtype (%s->%s) of %s\n", dataset.DataMapping.DType, dtype, dataset.ContainerURI)
+		fmt.Printf("Warning: overwrite dtype (%s->%s) of %s\n", dataset.DataMapping.DType, dtype, datasetURI)
 	}
 	if err := dataset.SetDataType(dtype); err != nil {
 		return err

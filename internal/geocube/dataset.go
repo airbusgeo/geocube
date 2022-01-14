@@ -235,9 +235,13 @@ func (d *Dataset) identicalTo(d2 *Dataset) bool {
 		utils.SliceInt64Equal(d.Bands, d2.Bands)
 }
 
-func (d *Dataset) GDALOpenName() string {
-	if d.ContainerSubDir != "" {
-		return fmt.Sprintf("%s:%s", d.ContainerSubDir, d.ContainerURI)
+func (d *Dataset) GDALURI() string {
+	return GDALURI(d.ContainerURI, d.ContainerSubDir)
+}
+
+func GDALURI(uri, subdir string) string {
+	if subdir != "" {
+		return fmt.Sprintf("%s:%s", subdir, uri)
 	}
-	return d.ContainerURI
+	return uri
 }
