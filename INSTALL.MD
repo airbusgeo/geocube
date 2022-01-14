@@ -3,9 +3,8 @@
 ## Table of Contents
 
 
-  - [Reference](#reference)
-    - [Kubernetes](#kubernetes)
-  - [Development Environment](#development-environment)
+- [Geocube Installation Guide](#geocube-installation-guide)
+  - [Table of Contents](#table-of-contents)
   - [Prerequisites](#prerequisites)
 - [Architecture](#architecture)
 - [Interfaces](#interfaces)
@@ -20,13 +19,15 @@
     - [PostgreSQL Implementation](#postgresql-implementation)
   - [Autoscaler](#autoscaler)
 - [Installation - Local environment](#installation---local-environment)
-  - [Run With Docker](#run-with-docker)
-  - [Build and run (GoLang)](#build-and-run-golang)
+  - [Environment of development](#environment-of-development)
+  - [Build and run](#build-and-run)
     - [Apiserver](#apiserver)
     - [Consolidater](#consolidater)
   - [Messaging Broker](#messaging-broker)
     - [RabbitMq](#rabbitmq)
     - [Pub/Sub (Emulator)](#pubsub-emulator)
+- [Installation - Docker](#installation---docker)
+  - [Messaging Broker](#messaging-broker-1)
 - [Installation - Kubernetes Cluster](#installation---kubernetes-cluster)
   - [IAM & Security](#iam--security)
   - [Container Registry](#container-registry)
@@ -38,29 +39,8 @@
   - [Consolidater](#consolidater-1)
   - [Geocube Upgrade](#geocube-upgrade)
     - [PostgreSQL database](#postgresql-database)
-
-## Reference
-
-### Kubernetes
-
-- **Deployment** describes a desired state of pod: https://kubernetes.io/docs/concepts/workloads/controllers/deployment
-- **Pods** is a group of one or more containers: https://kubernetes.io/docs/concepts/workloads/pods
-- **Secrets** lets you store and manage sensitive information, such as passwords, OAuth tokens, and ssh keys: https://kubernetes.io/docs/concepts/configuration/secret
-- **Service** is an abstract way to expose an application running on a set of Pods as a network service: https://kubernetes.io/fr/docs/concepts/services-networking/service
-- **Replication controller** ensures that a specified number of pod replicas are running at any one time: https://kubernetes.io/docs/concepts/workloads/controllers/replicationcontroller
-- **RoleBinding** and **Role**: https://kubernetes.io/docs/reference/access-authn-authz/rbac/
-
-## Development Environment
-
-
-|   Name    	| Version 	|     link                               	|
-|:----------:	|:-------:	|:---------------------------------------:	|
-|   Golang   	| >= 1.13 	|      https://golang.org/doc/install     	|
-|    GDAL    	|  >= 3.2 	|             https://gdal.org            	|
-|   Python   	|  >= 3.7 	|    https://www.python.org/downloads/    	|
-| PostgreSQL 	|  >= 11  	|   https://www.postgresql.org/download/  	|
-|   PostGIS  	|  >= 2.5 	|       https://postgis.net/install/      	|
-|   Docker   	|    NC   	| https://docs.docker.com/engine/install/ 	|
+  - [Reference](#reference)
+    - [Kubernetes](#kubernetes)
 
 
 ## Prerequisites
@@ -71,7 +51,7 @@ The Geocube needs:
 - an Object Storage, writable and readable by range-request (currently supported: local storage or GCS)
 - (Optional) a Scaling Platform to automatically scale the ressources (currently supported: K8S)
 
-The Geocube can be run locally or deployed in a cluster (currently supported Kubernetes)
+The Geocube can be run [locally](#installation---local-environment), as [dockers](#installation---docker) or deployed in a [cluster](#installation---kubernetes-cluster) (currently supported Kubernetes)
 
 # Architecture
 
@@ -183,33 +163,18 @@ It’s an external service and does not have an interface. The current implement
 
 # Installation - Local environment
 
-## Run With Docker
+## Environment of development
 
-All dockerfile are available in the `docker` folder.
+|   Name    	| Version 	|     link                               	  |
+|:----------:	|:-------:	|:-----------------------------------------:|
+|   Golang   	| >= 1.13 	|      https://golang.org/doc/install     	|
+|    GDAL    	|  >= 3.2 	|             https://gdal.org            	|
+|   Python   	|  >= 3.7 	|    https://www.python.org/downloads/    	|
+| PostgreSQL 	|  >= 11  	|   https://www.postgresql.org/download/  	|
+|   PostGIS  	|  >= 2.5 	|       https://postgis.net/install/      	|
+|   Docker   	|    NC   	| https://docs.docker.com/engine/install/ 	|
 
-The Dockerfiles of the two services depend on a `base-image`:
-
-```bash
-$ docker build -f docker/Dockerfile.base-image -t geocube-base-image .
-[...]
-Successfully built 62eb9e6d2c0e
-```
-
-Then, the `BASE_IMAGE` must be passed as a parameter in order to build consolidater and server dockerfile:
-
-```bash
-$ docker build -f docker/Dockerfile.server . --build-arg BASE_IMAGE=geocube-base-image
-```
-
-```bash
-$ docker build -f docker/Dockerfile.consolidater . --build-arg BASE_IMAGE=geocube-base-image
-```
-
-You can run “docker run” command in order to start the application.
-
-For more information concerning running option, see: https://docs.docker.com/engine/reference/commandline/run/
-
-## Build and run (GoLang)
+## Build and run
 
 ### Apiserver
 
@@ -231,45 +196,61 @@ Some arguments are required in order to run this file.
 ```bash
 $ ./server --help
 Usage of ./server:
+  -aws-endpoint string
+        define aws_endpoint for GDAL to use s3 storage (--with-s3)
+  -aws-region string
+        define aws_region for GDAL to use s3 storage (--with-s3)
+  -aws-shared-credentials-file string
+        define aws_shared_credentials_file for GDAL to use s3 storage (--with-s3)
   -baSecretName string
-        bearer authentication secret name
-  -psConsolidationsTopic string
-        pubsub consolidations topic name
+        name of the secret that stores the bearer authentication (admin & user) (gcp only)
+  -cancelledJobs string
+        storage where cancelled jobs are referenced
   -dbConnection string
-        database connection (ex: postgresql://user:password@localhost:5432/geocube)
+        database connection (ex: postgresql://postgres:1234@localhost:5432/geocube)
   -dbHost string
-        database host
+        database host (see dbName)
   -dbName string
-        database name
+        database name (to connect with User, Host & Password)
   -dbPassword string
-        database password
+        database password (see dbName)
   -dbSecretName string
-        database secret name
+        name of the secret that stores credentials to connect to the database (gcp only)
   -dbUser string
-        database user
-  -psEventsTopic string
-        pubsub events topic name
+        database user (see dbName)
+  -gdalBlockSize string
+        gdal blocksize value (default 1Mb) (default "1Mb")
+  -gdalNumCachedBlocks int
+        gdal blockcache value (default 500) (default 500)
+  -gdalStorageDebug
+        enable storage debug to use custom gdal storage strategy
   -ingestionStorage string
-        ingestion storage strategy (local/gs://)
-  -local bool
+        path to the storage where ingested and consolidated datasets will be stored (local/gs)
+  -local
         execute geocube in local environment
   -maxConnectionAge int
         grpc max age connection
   -port string
         geocube port to use (default "8080")
   -project string
-        project name (gcp only)
+        project name (gcp only/not required in local usage)
+  -psConsolidationsTopic string
+        name of the topic to send the consolidation orders (pubsub only)
+  -psEventsTopic string
+        name of the topic to send the consolidation events (pubsub only)
+  -with-gcs
+        configure GDAL to use gcs storage (may need authentication)
+  -with-s3
+        configure GDAL to use s3 storage (may need authentication)
   -workers int
         number of parallel workers per catalog request (default 1)
-  -cancelledJobs string
-        storage where cancelled jobs are referenced
 ```
 
 Example (run):
 
 ```bash
-$  ./server -ingestionStorage=/tmp -dbConnection=postgresql://user:password@localhost:5432/geocube -psEventsTopic events -psConsolidationsTopic consolidations -local -cancelledJobs /tmp
-{"severity":"info","timestamp":"2021-05-24T15:10:57.621+0200","message":"Geocube v0.2.0"}
+$  ./server -ingestionStorage=/geocube-datasets -dbConnection=postgresql://user:password@localhost:5432/geocube -psEventsTopic events -psConsolidationsTopic consolidations -local -cancelledJobs /tmp
+{"severity":"info","timestamp":"2021-05-24T15:10:57.621+0200","message":"Geocube v0.3.0"}
 
 ```
 
@@ -289,22 +270,40 @@ Some arguments are required in order to run this file.
 ```bash
 $ ./consolidater --help
 Usage of ./consolidater:
-  -psEventsTopic string
-        pubsub events topic name
+  -aws-endpoint string
+        define aws_endpoint for GDAL to use s3 storage (--with-s3)
+  -aws-region string
+        define aws_region for GDAL to use s3 storage (--with-s3)
+  -aws-shared-credentials-file string
+        define aws_shared_credentials_file for GDAL to use s3 storage (--with-s3)
+  -cancelledJobs string
+        storage where cancelled jobs are referenced
+  -gdalBlockSize string
+        gdal blocksize value (default 1Mb) (default "1Mb")
+  -gdalNumCachedBlocks int
+        gdal blockcache value (default 500) (default 500)
+  -gdalStorageDebug
+        enable storage debug to use custom gdal storage strategy
   -project string
         subscription project (gcp pubSub only)
   -psConsolidationsSubscription string
         pubsub consolidation subscription name
+  -psEventsTopic string
+        pubsub events topic name
+  -retryCount int
+        number of retries when consolidation job failed with a temporary error (default 1)
+  -with-gcs
+        configure GDAL to use gcs storage (may need authentication)
+  -with-s3
+        configure GDAL to use s3 storage (may need authentication)
   -workdir string
         scratch work directory
-  -cancelledJobs string
-        storage where cancelled jobs are referenced
 ```
 
 Example (run):
 
 ```bash
-$  ./consolidater -workdir=/tmp -project geocube-emulator -psEventsTopic events -psConsolidationsTopic consolidations -cancelledJobs /tmp
+$  ./consolidater -workdir=/tmp -project geocube-emulator -psEventsTopic events -psConsolidationsSubscription consolidations -cancelledJobs /tmp
 ```
 
 ## Messaging Broker
@@ -356,6 +355,52 @@ $ go run tools/pubsub_emulator/main.go --project-id geocube-emulator --geocube-s
 ```
 
 In order to run geocube with the PubSub emulator, you must define the `PUBSUB_EMULATOR_HOST` environment variable (by default `localhost:8085`) **before** starting services.
+
+# Installation - Docker
+
+All dockerfile are available in the `docker` folder.
+
+The Dockerfiles of the two services depend on a `base-image`:
+
+```bash
+$ docker build -f docker/Dockerfile.base-image -t geocube-base-image .
+[...]
+Successfully built 62eb9e6d2c0e
+```
+
+Then, the `BASE_IMAGE` must be passed as a parameter in order to build consolidater and server dockerfile:
+
+```bash
+$ docker build -f docker/Dockerfile.server -t geocube . --build-arg BASE_IMAGE=geocube-base-image
+```
+
+```bash
+$ docker build -f docker/Dockerfile.consolidater -t geocube-consolidater . --build-arg BASE_IMAGE=geocube-base-image
+```
+
+You can run “docker run” command in order to start the application.
+
+Examples :
+```bash
+export STORAGE=/geocube-datasets
+docker run --rm --network=host -e PUBSUB_EMULATOR_HOST=localhost:8085 -v /tmp:/tmp -v $STORAGE:$STORAGE geocube -project geocube-emulator -ingestionStorage=$STORAGE -dbConnection=postgresql://user:password@localhost:5432/geocube -psEventsTopic events -psConsolidationsTopic consolidations -local -cancelledJobs /tmp
+```
+```bash
+export STORAGE=/geocube-datasets
+docker run --rm --network=host -e PUBSUB_EMULATOR_HOST=localhost:8085 -v /tmp:/tmp -v $STORAGE:$STORAGE geocube-consolidater /consolidater -workdir=/tmp -project geocube-emulator -psEventsTopic events -psConsolidationsSubscription consolidations -cancelledJobs /tmp
+```
+
+With GCS support (authentication with application_default_credentials.json):
+```bash
+export STORAGE=/geocube-datasets
+docker run --rm -v ~/.config/gcloud:/root/.config/gcloud geocube -with-gcs [...]
+```
+
+For more information concerning running option, see: https://docs.docker.com/engine/reference/commandline/run/
+
+## Messaging Broker
+
+cf [Local environment - Messaging Broker](#messaging-broker)
 
 # Installation - Kubernetes Cluster
 
@@ -567,3 +612,15 @@ After upgrading the Geocube server, the database schema might need an update. Ap
 ``bash
 $ psql -h <database_host> -d <database_name> -f interface/database/pg/update_X.X.X.sql
 ```
+
+## Reference
+
+### Kubernetes
+
+- **Deployment** describes a desired state of pod: https://kubernetes.io/docs/concepts/workloads/controllers/deployment
+- **Pods** is a group of one or more containers: https://kubernetes.io/docs/concepts/workloads/pods
+- **Secrets** lets you store and manage sensitive information, such as passwords, OAuth tokens, and ssh keys: https://kubernetes.io/docs/concepts/configuration/secret
+- **Service** is an abstract way to expose an application running on a set of Pods as a network service: https://kubernetes.io/fr/docs/concepts/services-networking/service
+- **Replication controller** ensures that a specified number of pod replicas are running at any one time: https://kubernetes.io/docs/concepts/workloads/controllers/replicationcontroller
+- **RoleBinding** and **Role**: https://kubernetes.io/docs/reference/access-authn-authz/rbac/
+

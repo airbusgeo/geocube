@@ -9,10 +9,11 @@ Please read the [Installation guide](https://github.com/airbusgeo/geocube/blob/m
 
 ## Quickstart
 
-After starting the server, two tutorials explain the basics of Geocube using the [Geocube Python Client Library](https://github.com/airbusgeo/geocube-client-python):
+After starting the server, three tutorials explain the basics of Geocube using the [Geocube Python Client Library](https://github.com/airbusgeo/geocube-client-python):
 
 - [Data Indexation Jupyter notebook](https://github.com/airbusgeo/geocube-client-python/blob/main/Jupyter/Geocube-Client-DataIndexation.ipynb)
 - [Data Access Jupyter notebook](https://github.com/airbusgeo/geocube-client-python/blob/main/Jupyter/Geocube-Client-DataAccess.ipynb)
+- [Data Consolidation Jupyter notebook](https://github.com/airbusgeo/geocube-client-python/blob/main/Jupyter/Geocube-Client-DataConsolidation.ipynb)
 
 ## Documentation
 
