@@ -41,32 +41,17 @@ const (
 	StorageDebug    = "gdalStorageDebug"
 )
 
-type GDALConfigFlags map[string]interface{}
-
-func GDALConfigGetFlags() GDALConfigFlags {
-	return map[string]interface{}{
-		BlockSize:       flag.String(BlockSize, "1Mb", "gdal blocksize value (default 1Mb)"),
-		NumCachedBlocks: flag.Int(NumCachedBlocks, 500, "gdal blockcache value (default 500)"),
-		WithGCS:         flag.Bool(WithGCS, false, "configure GDAL to use gcs storage (may need authentication)"),
-		WithS3:          flag.Bool(WithS3, false, "configure GDAL to use s3 storage (may need authentication)"),
-		AWSRegion:       flag.String(AWSRegion, "", "define aws_region for GDAL to use s3 storage (--with-s3)"),
-		AWSEndPoint:     flag.String(AWSEndPoint, "", "define aws_endpoint for GDAL to use s3 storage (--with-s3)"),
-		AwsCredentials:  flag.String(AwsCredentials, "", "define aws_shared_credentials_file for GDAL to use s3 storage (--with-s3)"),
-		StorageDebug:    flag.Bool(StorageDebug, false, "enable storage debug to use custom gdal storage strategy"),
-	}
-}
-
-func NewGDALConfig(flags GDALConfigFlags) (*GDALConfig, error) {
-	return &GDALConfig{
-		BlockSize:       *flags[BlockSize].(*string),
-		NumCachedBlocks: *flags[NumCachedBlocks].(*int),
-		WithGCS:         *flags[WithGCS].(*bool),
-		WithS3:          *flags[WithS3].(*bool),
-		AwsRegion:       *flags[AWSRegion].(*string),
-		AwsEndpoint:     *flags[AWSEndPoint].(*string),
-		AwsCredentials:  *flags[AwsCredentials].(*string),
-		StorageDebug:    *flags[StorageDebug].(*bool),
-	}, nil
+func GDALConfigFlags() *GDALConfig {
+	gdalConfig := GDALConfig{}
+	flag.StringVar(&gdalConfig.BlockSize, "gdalBlockSize", "1Mb", "gdal blocksize value (default 1Mb)")
+	flag.IntVar(&gdalConfig.NumCachedBlocks, "gdalNumCachedBlocks", 500, "gdal blockcache value (default 500)")
+	flag.BoolVar(&gdalConfig.WithGCS, "with-gcs", false, "configure GDAL to use gcs storage (may need authentication)")
+	flag.BoolVar(&gdalConfig.WithS3, "with-s3", false, "configure GDAL to use s3 storage (may need authentication)")
+	flag.StringVar(&gdalConfig.AwsRegion, "aws-region", "", "define aws_region for GDAL to use s3 storage (--with-s3)")
+	flag.StringVar(&gdalConfig.AwsEndpoint, "aws-endpoint", "", "define aws_endpoint for GDAL to use s3 storage (--with-s3)")
+	flag.StringVar(&gdalConfig.AwsCredentials, "aws-shared-credentials-file", "", "define aws_shared_credentials_file for GDAL to use s3 storage (--with-s3)")
+	flag.BoolVar(&gdalConfig.StorageDebug, "gdalStorageDebug", false, "enable storage debug to use custom gdal storage strategy")
+	return &gdalConfig
 }
 
 func InitGDAL(ctx context.Context, gdalConfig *GDALConfig) error {

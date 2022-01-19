@@ -281,59 +281,38 @@ func (pm pngMarshaler) NewEncoder(w io.Writer) runtime.Encoder {
 }
 
 func newServerAppConfig() (*serverConfig, error) {
-	local := flag.Bool("local", false, "execute geocube in local environment")
-	listenPort := flag.String("port", "8080", "geocube port to use")
-	dbConnection := flag.String("dbConnection", "", "database connection (ex: postgresql://postgres:1234@localhost:5432/geocube)")
-	dbName := flag.String("dbName", "", "database name (to connect with User, Host & Password)")
-	dbUser := flag.String("dbUser", "", "database user (see dbName)")
-	dbHost := flag.String("dbHost", "", "database host (see dbName)")
-	dbPassword := flag.String("dbPassword", "", "database password (see dbName)")
-	project := flag.String("project", "", "project name (gcp only/not required in local usage)")
-	dbSecretName := flag.String("dbSecretName", "", "name of the secret that stores credentials to connect to the database (gcp only)")
-	baSecretName := flag.String("baSecretName", "", "name of the secret that stores the bearer authentication (admin & user) (gcp only)")
-	psEventsTopic := flag.String("psEventsTopic", "", "name of the topic to send the consolidation events (pubsub only)")
-	psConsolidationsTopic := flag.String("psConsolidationsTopic", "", "name of the topic to send the consolidation orders (pubsub only)")
-	maxConnectionAge := flag.Int("maxConnectionAge", 0, "grpc max age connection")
-	ingestionStorage := flag.String("ingestionStorage", "", "path to the storage where ingested and consolidated datasets will be stored (local/gs)")
-	workers := flag.Int("workers", 1, "number of parallel workers per catalog request")
-	cancelledJobs := flag.String("cancelledJobs", "", "storage where cancelled jobs are referenced")
-	gdalFlags := cmd.GDALConfigGetFlags()
+	serverConfig := serverConfig{}
+	flag.BoolVar(&serverConfig.Local, "local", false, "execute geocube in local environment")
+	flag.StringVar(&serverConfig.AppPort, "port", "8080", "geocube port to use")
+	flag.StringVar(&serverConfig.DbConnection, "dbConnection", "", "database connection (ex: postgresql://user:password@localhost:5432/geocube)")
+	flag.StringVar(&serverConfig.DbName, "dbName", "", "database name (to connect with User, Host & Password)")
+	flag.StringVar(&serverConfig.DbUser, "dbUser", "", "database user (see dbName)")
+	flag.StringVar(&serverConfig.DbHost, "dbHost", "", "database host (see dbName)")
+	flag.StringVar(&serverConfig.DbPassword, "dbPassword", "", "database password (see dbName)")
+	flag.StringVar(&serverConfig.Project, "project", "", "project name (gcp only/not required in local usage)")
+	flag.StringVar(&serverConfig.DbSecretName, "dbSecretName", "", "name of the secret that stores credentials to connect to the database (gcp only)")
+	flag.StringVar(&serverConfig.BearerAuthSecretName, "baSecretName", "", "name of the secret that stores the bearer authentication (admin & user) (gcp only)")
+	flag.StringVar(&serverConfig.PsEventsTopic, "psEventsTopic", "", "name of the topic to send the consolidation events (pubsub only)")
+	flag.StringVar(&serverConfig.PsConsolidationsTopic, "psConsolidationsTopic", "", "name of the topic to send the consolidation orders (pubsub only)")
+	flag.IntVar(&serverConfig.MaxConnectionAge, "maxConnectionAge", 0, "grpc max age connection")
+	flag.StringVar(&serverConfig.IngestionStorage, "ingestionStorage", "", "path to the storage where ingested and consolidated datasets will be stored (local/gs)")
+	flag.IntVar(&serverConfig.CatalogWorkers, "workers", 1, "number of parallel workers per catalog request")
+	flag.StringVar(&serverConfig.CancelledConsolidationStorage, "cancelledJobs", "", "storage where cancelled jobs are referenced")
+	serverConfig.GDALConfig = cmd.GDALConfigFlags()
 
 	flag.Parse()
 
-	gdalConfig, err := cmd.NewGDALConfig(gdalFlags)
-	if err != nil {
-		return nil, fmt.Errorf("failed to initialize GDALConfig: %w", err)
-	}
-	gdalConfig.RegisterPNG = true
+	serverConfig.GDALConfig.RegisterPNG = true
 
-	if *listenPort == "" {
+	if serverConfig.AppPort == "" {
 		return nil, fmt.Errorf("failed to initialize --port application flag")
 	}
 
-	if *cancelledJobs == "" {
+	if serverConfig.CancelledConsolidationStorage == "" && serverConfig.IngestionStorage != "" {
 		return nil, fmt.Errorf("missing --cancelledJobs storage flag")
 	}
 
-	return &serverConfig{
-		Local:                         *local,
-		AppPort:                       *listenPort,
-		DbConnection:                  *dbConnection,
-		DbName:                        *dbName,
-		DbUser:                        *dbUser,
-		DbHost:                        *dbHost,
-		DbPassword:                    *dbPassword,
-		DbSecretName:                  *dbSecretName,
-		BearerAuthSecretName:          *baSecretName,
-		MaxConnectionAge:              *maxConnectionAge,
-		IngestionStorage:              *ingestionStorage,
-		CancelledConsolidationStorage: *cancelledJobs,
-		Project:                       *project,
-		PsEventsTopic:                 *psEventsTopic,
-		PsConsolidationsTopic:         *psConsolidationsTopic,
-		CatalogWorkers:                *workers,
-		GDALConfig:                    gdalConfig,
-	}, nil
+	return &serverConfig, nil
 }
 
 type serverConfig struct {
