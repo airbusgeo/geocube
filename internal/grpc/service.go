@@ -611,7 +611,7 @@ func (svc *Service) ListJobs(ctx context.Context, req *pb.ListJobsRequest) (*pb.
 	// Format response
 	resp := pb.ListJobsResponse{}
 	for _, job := range jobs {
-		pbjob, err := job.ToProtobuf()
+		pbjob, err := job.ToProtobuf(0, 10)
 		if err != nil {
 			return nil, formatError("toprotobuf: %w", err)
 		}
@@ -635,7 +635,7 @@ func (svc *Service) GetJob(ctx context.Context, req *pb.GetJobRequest) (*pb.GetJ
 	}
 
 	// Format response
-	pbjob, err := job.ToProtobuf()
+	pbjob, err := job.ToProtobuf(int(req.LogPage), int(req.LogLimit))
 	if err != nil {
 		return nil, formatError("toprotobuf: %w", err)
 	}

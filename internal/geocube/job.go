@@ -240,7 +240,7 @@ func (j *Job) SetParams(params ConsolidationParams) error {
 }
 
 // ToProtobuf converts a job to protobuf
-func (j *Job) ToProtobuf() (*pb.Job, error) {
+func (j *Job) ToProtobuf(logPage, logLimit int) (*pb.Job, error) {
 	creationTime := timestamppb.New(j.CreationTime)
 	if err := creationTime.CheckValid(); err != nil {
 		return nil, err
@@ -260,7 +260,7 @@ func (j *Job) ToProtobuf() (*pb.Job, error) {
 		FailedTasks:    int32(j.FailedTasks),
 		ExecutionLevel: pb.ExecutionLevel(j.ExecutionLevel),
 		Waiting:        j.Waiting,
-		Logs:           j.Logs.toSliceString(),
+		Logs:           j.Logs.toSliceString(logPage, logLimit),
 	}, nil
 }
 
@@ -798,11 +798,19 @@ func (jl JobLogs) Len() int           { return len(jl) }
 func (jl JobLogs) Less(i, j int) bool { return jl[i].Date.Before(jl[j].Date) }
 func (jl JobLogs) Swap(i, j int)      { jl[i], jl[j] = jl[j], jl[i] }
 
-func (jl JobLogs) toSliceString() []string {
+func (jl JobLogs) toSliceString(page, limit int) []string {
 	sort.Sort(jl)
 	var result []string
-	for _, log := range jl {
-		result = append(result, fmt.Sprintf("%s - %s | Status: %s - Message: %s", log.Date.Format(time.RFC3339Nano), log.Severity, log.Status, log.Msg))
+	last := utils.MaxI(0, len(jl)-page*limit)
+	first := utils.MaxI(0, len(jl)-(page+1)*limit)
+	if first != 0 {
+		result = append(result, fmt.Sprintf("[... %d more]", first))
+	}
+	for i := first; i < last; i++ {
+		result = append(result, fmt.Sprintf("%s - %s | Status: %s - Message: %s", jl[i].Date.Format(time.RFC3339Nano), jl[i].Severity, jl[i].Status, jl[i].Msg))
+	}
+	if last != len(jl) {
+		result = append(result, fmt.Sprintf("[... %d more]", len(jl)-last))
 	}
 	return result
 }

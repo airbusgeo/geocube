@@ -67,7 +67,7 @@ func (svc *ServiceAdmin) DeleteDatasets(ctx context.Context, req *pb.DeleteDatas
 	if err != nil {
 		return nil, formatError("backend.%w", err)
 	}
-	jobpb, err := job.ToProtobuf()
+	jobpb, err := job.ToProtobuf(0, 100)
 	if err != nil {
 		return nil, formatError("backend.%w", err)
 	}

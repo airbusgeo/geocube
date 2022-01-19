@@ -74,7 +74,7 @@ message Job {
     string                    state            = 4;  // Current state of the state machine
     google.protobuf.Timestamp creation_time    = 5;  // Time of creation of the job
     google.protobuf.Timestamp last_update_time = 6;  // Time of the last update
-    repeated string           logs             = 7;  // Job logs 
+    repeated string           logs             = 7;  // Job logs: if logs are too big to fit in a grpc response, logs will only be a subset (by default, the latest)
     int32                     active_tasks     = 8;  // If the job is divided into sub tasks, number of pending tasks
     int32                     failed_tasks     = 9;  // If the job is divided into sub tasks, number of failed tasks
     ExecutionLevel            execution_level  = 10; // Execution level of a job (see ExecutionLevel)
@@ -188,7 +188,9 @@ message ListJobsResponse {
   * Retrieve a job given its id
   */
 message GetJobRequest{
-    string id = 1;
+    string id        = 1;
+    int32  log_page  = 2;
+    int32  log_limit = 3;
 }
 
 /**
