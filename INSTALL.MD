@@ -3,9 +3,6 @@
 ## Table of Contents
 
 
-- [Geocube Installation Guide](#geocube-installation-guide)
-  - [Table of Contents](#table-of-contents)
-  - [Prerequisites](#prerequisites)
 - [Architecture](#architecture)
 - [Interfaces](#interfaces)
   - [Storage](#storage)
@@ -383,11 +380,11 @@ You can run “docker run” command in order to start the application.
 Examples :
 ```bash
 export STORAGE=/geocube-datasets
-docker run --rm --network=host -e PUBSUB_EMULATOR_HOST=localhost:8085 -v /tmp:/tmp -v $STORAGE:$STORAGE geocube -project geocube-emulator -ingestionStorage=$STORAGE -dbConnection=postgresql://user:password@localhost:5432/geocube -psEventsTopic events -psConsolidationsTopic consolidations -local -cancelledJobs /tmp
+docker run --rm --network=host -e PUBSUB_EMULATOR_HOST=localhost:8085 -v $STORAGE:$STORAGE geocube -project geocube-emulator -ingestionStorage=$STORAGE -dbConnection=postgresql://user:password@localhost:5432/geocube -psEventsTopic events -psConsolidationsTopic consolidations -local -cancelledJobs $STORAGE/cancelled-jobs
 ```
 ```bash
 export STORAGE=/geocube-datasets
-docker run --rm --network=host -e PUBSUB_EMULATOR_HOST=localhost:8085 -v /tmp:/tmp -v $STORAGE:$STORAGE geocube-consolidater /consolidater -workdir=/tmp -project geocube-emulator -psEventsTopic events -psConsolidationsSubscription consolidations -cancelledJobs /tmp
+docker run --rm --network=host -e PUBSUB_EMULATOR_HOST=localhost:8085 -v $STORAGE:$STORAGE geocube-consolidater /consolidater -project geocube-emulator -workdir=/tmp -psEventsTopic events -psConsolidationsSubscription consolidations -cancelledJobs $STORAGE/cancelled-jobs
 ```
 
 With GCS support (authentication with application_default_credentials.json):
@@ -609,7 +606,7 @@ $ kubectl apply -f deploy/k8s/consolidater/autoscaler-deployment.yaml
 ### PostgreSQL database
 After upgrading the Geocube server, the database schema might need an update. Apply incrementally each `interface/database/pg/update_X.X.X.sql` with X.X.X corresponding to a Geocube Server version from your previous version to the current version.
 
-``bash
+```bash
 $ psql -h <database_host> -d <database_name> -f interface/database/pg/update_X.X.X.sql
 ```
 

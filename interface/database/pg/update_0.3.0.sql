@@ -28,7 +28,7 @@ ALTER TABLE geocube.datasets ALTER COLUMN shape TYPE geometry(MULTIPOLYGON,0) US
 -- add message column on job table
 ALTER TABLE geocube.jobs ADD COLUMN logs JSONB default '[]'::JSONB;
 
--- add dataset_layouts
+-- add container_layouts
 CREATE TABLE geocube.container_layouts (
 	container_uri TEXT NOT NULL,
 	layout_name TEXT NOT NULL,

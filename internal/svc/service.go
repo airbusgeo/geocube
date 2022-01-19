@@ -318,6 +318,7 @@ func (svc *Service) validateAndSetRemoteDataset(ctx context.Context, dataset *ge
 // Index datasets that are not fully known. Checks that the container is reachable and get some missing informations.
 func (svc *Service) IndexExternalDatasets(ctx context.Context, newcontainer *geocube.Container, datasets []*geocube.Dataset) error {
 	var err error
+	log.Logger(ctx).Sugar().Debugf("Index external container %s containing %d datasets", newcontainer.URI, len(datasets))
 
 	// Validate container
 	if err = svc.validateRemoteContainer(ctx, newcontainer); err != nil {

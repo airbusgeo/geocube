@@ -538,6 +538,7 @@ func (svc *Service) csldIndex(ctx context.Context, job *geocube.Job) (err error)
 				newDatasets = append(newDatasets, newDataset)
 			}
 
+			log.Logger(ctx).Sugar().Debugf("Index consolidated container %s containing %d datasets", newContainer.URI, len(newDatasets))
 			job.LogMsgf(geocube.DEBUG, "Preparing indexation of %d new datasets", len(newDatasets))
 			// Prepare the container for indexation
 			if err = svc.prepareIndexation(ctx, txn, newContainer, newDatasets); err != nil {
@@ -567,7 +568,6 @@ func (svc *Service) csldIndex(ctx context.Context, job *geocube.Job) (err error)
 			}
 
 			// Delete task
-			// TODO Consolidation delete tasks one by one ? Or all in a row (in the last case, it's more difficult to handle a Retry)
 			job.DeleteTask(0)
 
 			job.LogMsg(geocube.DEBUG, "Datasets indexed")

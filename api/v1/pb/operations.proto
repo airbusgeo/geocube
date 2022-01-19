@@ -110,8 +110,8 @@ message ConsolidationParams{
     double       exponent           = 2; // 1: linear scaling (RealMax - RealMin) * pow( (Value - Min) / (Max - Min), Exponent) + RealMin
 //    bool         create_overviews   = 3; // DEPRECATED
     Resampling   resampling_alg     = 4; // Define how to resample the data during the consolidation (if a reprojection is needed or if the overviews are created)
-    Compression  compression        = 5; // Define whether the date is compressed at block level
-    bool         bands_interleave   = 6; // In case of multibands, define whether or not the bands are interleaved
+    Compression  compression        = 5; // Define how the data is compressed at block level
+    bool         bands_interleave   = 6; // If the variable is multibands, define whether the bands are interleaved
     StorageClass storage_class      = 7; // Define the storage class of the created file (support only GCS)
     int32        overviews_min_size = 8; // Maximum width or height of the smallest overview level. 0: No overview, -1: default=256.
 }
