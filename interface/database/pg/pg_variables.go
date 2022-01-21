@@ -48,22 +48,22 @@ func (s pqPalette) Value() (driver.Value, error) {
 
 // ReadVariable implements GeocubeBackend
 func (b Backend) ReadVariable(ctx context.Context, variableID string) (*geocube.Variable, error) {
-	return b.readVariable(ctx, " WHERE id = $1", variableID)
+	return b.readVariable(ctx, "id", variableID)
 }
 
 // ReadVariableFromName implements GeocubeBackend
 func (b Backend) ReadVariableFromName(ctx context.Context, variableName string) (*geocube.Variable, error) {
-	return b.readVariable(ctx, " WHERE name = $1", variableName)
+	return b.readVariable(ctx, "name", variableName)
 }
 
-func (b Backend) readVariable(ctx context.Context, whereClause, id string) (*geocube.Variable, error) {
+func (b Backend) readVariable(ctx context.Context, field, id string) (*geocube.Variable, error) {
 	var v geocube.Variable
 
-	err := b.pg.QueryRowContext(ctx, sqlSelectVariable+" FROM geocube.variable_definitions v "+whereClause, id).Scan(scanSelect(&v, nil)...)
+	err := b.pg.QueryRowContext(ctx, sqlSelectVariable+" FROM geocube.variable_definitions v WHERE "+field+" = $1", id).Scan(scanSelect(&v, nil)...)
 
 	switch {
 	case err == sql.ErrNoRows:
-		return nil, geocube.NewEntityNotFound("Variable", "id", id, "")
+		return nil, geocube.NewEntityNotFound("Variable", field, id, "")
 	case err != nil:
 		return nil, pqErrorFormat("readvariable: %w", err)
 	}

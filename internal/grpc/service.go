@@ -830,7 +830,7 @@ func (svc *Service) GetCube(req *pb.GetCubeRequest, stream pb.Geocube_GetCubeSer
 	if req.GetHeadersOnly() {
 		log.Logger(ctx).Sugar().Infof("GetCubeHeader : %d images from %d datasets (%v)\n", info.NbImages, info.NbDatasets, time.Since(start))
 	} else {
-		log.Logger(ctx).Sugar().Infof("GetCube : %d images from %d datasets (%v)\n", info.NbImages, info.NbDatasets, time.Since(start))
+		log.Logger(ctx).Sugar().Infof("GetCube (%d, %d): %d images from %d datasets (%v)\n", cubeInfo.width, cubeInfo.height, info.NbImages, info.NbDatasets, time.Since(start))
 	}
 
 	// Start the compression routine
