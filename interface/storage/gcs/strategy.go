@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -210,6 +211,7 @@ func (s gsStrategy) GetAttrs(ctx context.Context, uri string) (geocubeStorage.At
 
 var (
 	metrics = make(map[string][]streamAtMetrics)
+	lock    = sync.Mutex{}
 )
 
 type streamAtMetrics struct {
@@ -218,13 +220,12 @@ type streamAtMetrics struct {
 }
 
 func GetMetrics(ctx context.Context) {
+	lock.Lock()
+	defer lock.Unlock()
 	for key, streamAtMetricsList := range metrics {
-		log.Logger(ctx).Sugar().Debugf("GCS Metrics: %s - %d calls", key, len(streamAtMetricsList))
+		log.Logger(ctx).Sugar().Debugf("GCS Metrics: %s - %d calls - %d octets", key, len(streamAtMetricsList), streamAtMetricsList[len(streamAtMetricsList)-1].Volume)
 	}
-
-	defer func() {
-		metrics = nil
-	}()
+	metrics = map[string][]streamAtMetrics{}
 }
 
 func (s gsStrategy) StreamAt(key string, off int64, n int64) (io.ReadCloser, int64, error) {
@@ -247,6 +248,8 @@ func (s gsStrategy) StreamAt(key string, off int64, n int64) (io.ReadCloser, int
 		return nil, 0, fmt.Errorf("new reader for gs://%s/%s: %w", bucket, object, err)
 	}
 
+	lock.Lock()
+	defer lock.Unlock()
 	if metrics[key] != nil {
 		metrics[key] = append(metrics[key], streamAtMetrics{
 			Calls:  len(metrics[key]) + 1,
