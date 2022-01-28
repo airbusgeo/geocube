@@ -226,7 +226,7 @@ func (d *Dataset) identicalTo(d2 *Dataset) bool {
 		d.InstanceID == d2.InstanceID &&
 		d.ContainerURI == d2.ContainerURI &&
 		d.ContainerSubDir == d2.ContainerSubDir &&
-		d.DataMapping == d2.DataMapping &&
+		d.DataMapping.Equals(d2.DataMapping) &&
 		d.Status == d2.Status &&
 		d.Overviews == d2.Overviews &&
 		d.Shape.Equal(&d2.Shape) &&
