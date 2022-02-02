@@ -78,7 +78,7 @@ service Geocube {
     rpc TileAOI(TileAOIRequest)                  returns (stream TileAOIResponse){}
 
 // @exclude Grid
-    rpc CreateGrid(CreateGridRequest)            returns (CreateGridResponse){}
+    rpc CreateGrid(stream CreateGridRequest)     returns (CreateGridResponse){}
     rpc DeleteGrid(DeleteGridRequest)            returns (DeleteGridResponse){}
     rpc ListGrids(ListGridsRequest)              returns (ListGridsResponse){}
 

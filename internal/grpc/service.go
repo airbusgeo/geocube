@@ -7,6 +7,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"io"
 	"strings"
 	"time"
 
@@ -993,18 +994,35 @@ func (svc *Service) GetXYZTile(ctx context.Context, req *pb.GetTileRequest) (*pb
 }
 
 // CreateGrid
-func (svc *Service) CreateGrid(ctx context.Context, req *pb.CreateGridRequest) (*pb.CreateGridResponse, error) {
-	grid, err := geocube.NewGridFromProtobuf(req.Grid)
-	if err != nil {
-		return nil, formatError("", err) // ValidationError
+func (svc *Service) CreateGrid(stream pb.Geocube_CreateGridServer) error {
+	// Receiving grid
+	var grid *geocube.Grid
+	for {
+		resp, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return formatError("backend.CreateGrid", err)
+		}
+		g, err := geocube.NewGridFromProtobuf(resp.Grid)
+		if err != nil {
+			return formatError("", err) // ValidationError
+		}
+		if grid == nil {
+			grid = g
+		} else {
+			grid.Cells = append(grid.Cells, g.Cells...)
+		}
 	}
 
-	if err := svc.gsvc.CreateGrid(ctx, grid); err != nil {
-		return nil, formatError("backend.%w", err)
+	if err := svc.gsvc.CreateGrid(stream.Context(), grid); err != nil {
+		return formatError("backend.%w", err)
 	}
 
 	// Format response
-	return &pb.CreateGridResponse{}, nil
+	stream.SendAndClose(&pb.CreateGridResponse{})
+	return nil
 }
 
 // DeleteGrid
