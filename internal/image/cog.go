@@ -7,9 +7,8 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
-	"strings"
 
-	"github.com/airbusgeo/geocube/internal/log"
+	"github.com/airbusgeo/geocube/internal/utils"
 
 	"github.com/airbusgeo/cogger"
 	"github.com/airbusgeo/geocube/internal/geocube"
@@ -20,7 +19,7 @@ import (
 
 type CogGenerator interface {
 	Create(dataset *godal.Dataset, oContainer geocube.ConsolidationContainer, recordId, workDir string) (string, error)
-	IsCog(ctx context.Context, filePath string) (bool, *godal.Dataset)
+	Open(ctx context.Context, filePath string) (*godal.Dataset, error)
 }
 
 func NewCogGenerator() CogGenerator {
@@ -56,10 +55,10 @@ func (c *cogGenerator) Create(dataset *godal.Dataset, oContainer geocube.Consoli
 	if err != nil {
 		return "", fmt.Errorf("failed to translate cog: %w", err)
 	}
-
-	if err = dataset.Close(); err != nil {
-		return "", fmt.Errorf("failed to close inputDataset: %w", err)
-	}
+	defer func() {
+		cogDataset.Close()
+		godal.VSIUnlink(cogDatasetPath)
+	}()
 
 	if oContainer.OverviewsMinSize != geocube.NO_OVERVIEW {
 		if oContainer.OverviewsMinSize == geocube.OVERVIEWS_DEFAULT_MIN_SIZE {
@@ -91,13 +90,13 @@ func (c *cogGenerator) Create(dataset *godal.Dataset, oContainer geocube.Consoli
 }
 
 /*
-	IsCog check if file is a valid COG (see: https://github.com/rouault/cog_validator/blob/master/validate_cloud_optimized_geotiff.py)
+	Open a cog or return an error if file is not a valid COG (see: https://github.com/rouault/cog_validator/blob/master/validate_cloud_optimized_geotiff.py)
+	The caller is responible for closing the dataset
 */
-func (c *cogGenerator) IsCog(ctx context.Context, filepath string) (bool, *godal.Dataset) {
+func (c *cogGenerator) Open(ctx context.Context, filepath string) (*godal.Dataset, error) {
 	ds, err := godal.Open(filepath, godal.Drivers("GTiff"))
 	if err != nil {
-		log.Logger(ctx).Error(err.Error())
-		return false, nil
+		return nil, err
 	}
 
 	band := ds.Bands()[0]
@@ -107,17 +106,16 @@ func (c *cogGenerator) IsCog(ctx context.Context, filepath string) (bool, *godal
 	blockSizeX := band.Structure().BlockSizeX
 	blockSizeY := band.Structure().BlockSizeY
 
-	var errors []string
 	if sizeX > 512 || sizeY > 512 {
 		if (blockSizeX == sizeX && blockSizeX > 1024) || (blockSizeY == sizeY && blockSizeY > 1024) {
-			errors = append(errors, "file is greater than 1024xHeight or Widthx1024, but is not tiled")
+			err = utils.MergeErrors(true, err, fmt.Errorf("file is greater than 1024xHeight or Widthx1024, but is not tiled"))
 		}
 	}
 
 	var ifdOffsets []int
-	ifdOffset, err := strconv.Atoi(band.Metadata("IFD_OFFSET", godal.Domain("TIFF")))
-	if err != nil {
-		errors = append(errors, err.Error())
+	ifdOffset, e := strconv.Atoi(band.Metadata("IFD_OFFSET", godal.Domain("TIFF")))
+	if e != nil {
+		err = utils.MergeErrors(true, err, e)
 	}
 	ifdOffsets = append(ifdOffsets, ifdOffset)
 
@@ -125,38 +123,36 @@ func (c *cogGenerator) IsCog(ctx context.Context, filepath string) (bool, *godal
 		ovrBand := band.Overviews()[i]
 		if i == 0 {
 			if ovrBand.Structure().SizeX > sizeX || ovrBand.Structure().SizeY > sizeY {
-				errors = append(errors, "first overview has larger dimension than main band")
+				err = utils.MergeErrors(true, err, fmt.Errorf("first overview has larger dimension than main band"))
 			}
 		} else {
 			previousOvrBand := band.Overviews()[i-1]
 			if ovrBand.Structure().SizeX > previousOvrBand.Structure().SizeX || ovrBand.Structure().SizeY > previousOvrBand.Structure().SizeY {
-				errors = append(errors, fmt.Sprintf("overview of index %d has larger dimension than overview of index %d", i, i-1))
+				err = utils.MergeErrors(true, err, fmt.Errorf("overview of index %d has larger dimension than overview of index %d", i, i-1))
 			}
 		}
 
 		blockSizeXBandOvr := ovrBand.Structure().BlockSizeX
 		blockSizeYBandOvr := ovrBand.Structure().BlockSizeY
 		if (blockSizeXBandOvr == sizeX && blockSizeXBandOvr > 1024) || (blockSizeYBandOvr == sizeY && blockSizeYBandOvr > 1024) {
-			errors = append(errors, fmt.Sprintf("overview of index %d is not tiled", i))
+			err = utils.MergeErrors(true, err, fmt.Errorf("overview of index %d is not tiled", i))
 		}
 
-		ifdOffset, err = strconv.Atoi(ovrBand.Metadata("IFD_OFFSET", godal.Domain("TIFF")))
-		if err != nil {
-			errors = append(errors, err.Error())
+		if ifdOffset, e = strconv.Atoi(ovrBand.Metadata("IFD_OFFSET", godal.Domain("TIFF"))); e != nil {
+			err = utils.MergeErrors(true, err, e)
 		}
 		ifdOffsets = append(ifdOffsets, ifdOffset)
 		if ifdOffsets[len(ifdOffsets)-1] < ifdOffsets[len(ifdOffsets)-2] {
 			if i == 0 {
-				errors = append(errors, fmt.Sprintf("the offset of the IFD for overview of index %d is %d, whereas it should be greater than the one of the main image, which is at byte %d", i, ifdOffsets[len(ifdOffsets)-1], ifdOffsets[len(ifdOffsets)-2]))
+				err = utils.MergeErrors(true, err, fmt.Errorf("the offset of the IFD for overview of index %d is %d, whereas it should be greater than the one of the main image, which is at byte %d", i, ifdOffsets[len(ifdOffsets)-1], ifdOffsets[len(ifdOffsets)-2]))
 			} else {
-				errors = append(errors, fmt.Sprintf("the offset of the IFD for overview of index %d is %d, whereas it should be greater than the one of index %d, which is at byte %d", i, ifdOffsets[len(ifdOffsets)-1], i-1, ifdOffsets[len(ifdOffsets)-2]))
+				err = utils.MergeErrors(true, err, fmt.Errorf("the offset of the IFD for overview of index %d is %d, whereas it should be greater than the one of index %d, which is at byte %d", i, ifdOffsets[len(ifdOffsets)-1], i-1, ifdOffsets[len(ifdOffsets)-2]))
 			}
 		}
 	}
 
 	blockOffset := c.getBlockOffset(band)
-	var dataOffsets []int
-	dataOffsets = append(dataOffsets, blockOffset)
+	dataOffsets := []int{blockOffset}
 	for i := 0; i < ovrCount; i++ {
 		ovrBand := band.Overviews()[i]
 		blockOffset = c.getBlockOffset(ovrBand)
@@ -165,23 +161,21 @@ func (c *cogGenerator) IsCog(ctx context.Context, filepath string) (bool, *godal
 
 	if dataOffsets[len(dataOffsets)-1] != 0 && dataOffsets[len(dataOffsets)-1] < ifdOffsets[len(ifdOffsets)-1] {
 		if ovrCount > 0 {
-			errors = append(errors, "the offset of the first block of the smallest overview should be after its IFD")
+			err = utils.MergeErrors(true, err, fmt.Errorf("the offset of the first block of the smallest overview should be after its IFD"))
 		} else {
-			errors = append(errors, "the offset of the first block of the image should be after its IFD")
+			err = utils.MergeErrors(true, err, fmt.Errorf("the offset of the first block of the image should be after its IFD"))
 		}
 	}
 
 	if len(dataOffsets) >= 2 && dataOffsets[0] != 0 && dataOffsets[0] < dataOffsets[1] {
-		errors = append(errors, fmt.Sprintf("the offset of the first block of the main resolution image should be after the one of the overview of index %d", ovrCount-1))
+		err = utils.MergeErrors(true, err, fmt.Errorf("the offset of the first block of the main resolution image should be after the one of the overview of index %d", ovrCount-1))
 	}
 
-	if len(errors) > 0 {
-		log.Logger(ctx).Sugar().Debugf(strings.Join(errors, ", "))
+	if err != nil {
 		ds.Close()
-		return false, nil
+		return nil, err
 	}
-
-	return true, ds
+	return ds, nil
 }
 
 func (c *cogGenerator) getBlockOffset(band godal.Band) int {

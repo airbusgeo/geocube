@@ -33,7 +33,7 @@ var _ = Describe("HandleConsolidation", func() {
 	BeforeEach(func() {
 		godal.RegisterAll()
 		workspace = os.TempDir()
-		handleConsolidation = image.NewHandleConsolidation(cogGenerator, mucogGenerator, os.TempDir())
+		handleConsolidation = image.NewHandleConsolidation(cogGenerator, mucogGenerator, os.TempDir(), 2)
 	})
 
 	var (

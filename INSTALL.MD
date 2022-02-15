@@ -295,6 +295,8 @@ Usage of ./consolidater:
         pubsub events topic name
   -retryCount int
         number of retries when consolidation job failed with a temporary error (default 1)
+  -workers int
+        number of workers for parallel tasks        
   -with-gcs
         configure GDAL to use gcs storage (may need authentication)
   -with-s3

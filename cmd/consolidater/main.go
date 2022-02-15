@@ -88,8 +88,8 @@ func run(ctx context.Context) error {
 		return fmt.Errorf("missing configuration for eventPublisher")
 	}
 
-	handlerConsolidation := image.NewHandleConsolidation(image.NewCogGenerator(), image.NewMucogGenerator(), consolidaterConfig.CancelledJobsStorage)
-	log.Logger(ctx).Debug("consolidater starts " + logMessaging)
+	handlerConsolidation := image.NewHandleConsolidation(image.NewCogGenerator(), image.NewMucogGenerator(), consolidaterConfig.CancelledJobsStorage, consolidaterConfig.Workers)
+	log.Logger(ctx).Sugar().Debugf("consolidater starts "+logMessaging+" with %d worker(s)", consolidaterConfig.Workers)
 	for {
 		err := taskConsumer.Pull(ctx, func(ctx context.Context, msg *messaging.Message) error {
 			jobStarted = time.Now()
@@ -154,6 +154,7 @@ func newConsolidationAppConfig() (*consolidaterConfig, error) {
 	flag.StringVar(&consolidaterConfig.WorkDir, "workdir", "", "scratch work directory")
 	flag.StringVar(&consolidaterConfig.CancelledJobsStorage, "cancelledJobs", "", "storage where cancelled jobs are referenced")
 	flag.IntVar(&consolidaterConfig.RetryCount, "retryCount", 1, "number of retries when consolidation job failed with a temporary error")
+	flag.IntVar(&consolidaterConfig.Workers, "workers", 1, "number of workers for parallel tasks")
 	consolidaterConfig.GDALConfig = cmd.GDALConfigFlags()
 
 	flag.Parse()
@@ -175,6 +176,7 @@ type consolidaterConfig struct {
 	PsConsolidationsSubscription string
 	CancelledJobsStorage         string
 	RetryCount                   int
+	Workers                      int
 	GDALConfig                   *cmd.GDALConfig
 }
 

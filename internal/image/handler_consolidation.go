@@ -39,13 +39,15 @@ type handlerConsolidation struct {
 	cog                  CogGenerator
 	mucog                MucogGenerator
 	cancelledJobsStorage string
+	workers              int
 }
 
-func NewHandleConsolidation(c CogGenerator, m MucogGenerator, cancelledJobsStorage string) Handler {
+func NewHandleConsolidation(c CogGenerator, m MucogGenerator, cancelledJobsStorage string, workers int) Handler {
 	return &handlerConsolidation{
 		cog:                  c,
 		mucog:                m,
 		cancelledJobsStorage: cancelledJobsStorage,
+		workers:              workers,
 	}
 }
 
@@ -71,56 +73,76 @@ func (h *handlerConsolidation) Consolidate(ctx context.Context, cEvent *geocube.
 		return fmt.Errorf("failed to get local records datasets: %w", err)
 	}
 
-	var cogListFile []string
-
 	log.Logger(ctx).Sugar().Infof("starting to create COG files")
-	for index, record := range cEvent.Records {
-		if h.isCancelled(ctx, cEvent) {
-			return errors.New("consolidation event is cancelled")
-		}
-		recordID := record.ID
-		localDatasetsByRecords := datasetsByRecords[recordID]
+	cogListFile := make([]string, len(cEvent.Records))
 
-		cogFile, ok := h.isAlreadyUsableCOG(ctx, localDatasetsByRecords, cEvent.Container, recordID, workDir)
-		if ok {
-			cogListFile = append(cogListFile, cogFile)
-			continue
-		}
+	records := make(chan struct {
+		string
+		int
+	})
+	// Start download workers
+	g, gCtx := errgroup.WithContext(ctx)
+	for w := 0; w < h.workers; w++ {
+		g.Go(func() error {
+			for record := range records {
+				if h.isCancelled(gCtx, cEvent) {
+					return errors.New("consolidation event is cancelled")
+				}
+				recordID, recordIdx := record.string, record.int
+				localDatasetsByRecords := datasetsByRecords[recordID]
 
-		pixToCRS := affine.NewAffine(
-			cEvent.Container.Transform[0],
-			cEvent.Container.Transform[1],
-			cEvent.Container.Transform[2],
-			cEvent.Container.Transform[3],
-			cEvent.Container.Transform[4],
-			cEvent.Container.Transform[5],
-		)
+				if cogFile, ok := h.isAlreadyUsableCOG(gCtx, localDatasetsByRecords, cEvent.Container, recordID, workDir); ok {
+					cogListFile[recordIdx] = cogFile
+					continue
+				}
 
-		mergeDataset, err := MergeDatasets(ctx, localDatasetsByRecords, &GdalDatasetDescriptor{
-			Height:      cEvent.Container.Height,
-			Width:       cEvent.Container.Width,
-			Bands:       cEvent.Container.BandsCount,
-			DataMapping: cEvent.Container.DatasetFormat,
-			WktCRS:      cEvent.Container.CRS,
-			ValidPixPc:  -1,
-			Resampling:  cEvent.Container.ResamplingAlg,
-			PixToCRS:    pixToCRS,
+				pixToCRS := affine.NewAffine(
+					cEvent.Container.Transform[0],
+					cEvent.Container.Transform[1],
+					cEvent.Container.Transform[2],
+					cEvent.Container.Transform[3],
+					cEvent.Container.Transform[4],
+					cEvent.Container.Transform[5],
+				)
+
+				mergeDataset, err := MergeDatasets(gCtx, localDatasetsByRecords, &GdalDatasetDescriptor{
+					Height:      cEvent.Container.Height,
+					Width:       cEvent.Container.Width,
+					Bands:       cEvent.Container.BandsCount,
+					DataMapping: cEvent.Container.DatasetFormat,
+					WktCRS:      cEvent.Container.CRS,
+					ValidPixPc:  -1,
+					Resampling:  cEvent.Container.ResamplingAlg,
+					PixToCRS:    pixToCRS,
+				})
+				if err != nil {
+					return fmt.Errorf("failed to merge dataset: %w", err)
+				}
+
+				cogDatasetPath, err := h.cog.Create(mergeDataset, cEvent.Container, recordID, workDir)
+				mergeDataset.Close()
+				if err != nil {
+					return fmt.Errorf("failed to merge source images: %w", err)
+				}
+
+				log.Logger(gCtx).Sugar().Debugf("add cog %s for record: %s (%d/%d)", cogDatasetPath, recordID, recordIdx+1, len(cEvent.Records))
+				cogListFile[recordIdx] = cogDatasetPath
+			}
+			return nil
 		})
-		if err != nil {
-			return fmt.Errorf("failed to merge dataset: %w", err)
-		}
-
-		cogDatasetPath, err := h.cog.Create(mergeDataset, cEvent.Container, recordID, workDir)
-		if err != nil {
-			return fmt.Errorf("failed to merge source images: %w", err)
-		}
-
-		log.Logger(ctx).Sugar().Debugf("add cog %s for record: %s (%d/%d)", cogDatasetPath, recordID, index+1, len(cEvent.Records))
-		cogListFile = append(cogListFile, cogDatasetPath)
 	}
 
-	if len(cogListFile) != len(cEvent.Records) {
-		log.Logger(ctx).Sugar().Errorf("some cogs have not been generated (%d/%d)", len(cogListFile), len(cEvent.Records))
+	// Push record tasks
+	for i, record := range cEvent.Records {
+		records <- struct {
+			string
+			int
+		}{record.ID, i}
+	}
+	close(records)
+
+	if err := g.Wait(); err != nil {
+		return err
 	}
 
 	log.Logger(ctx).Sugar().Infof("%d COGs have been generated", len(cogListFile))
@@ -270,8 +292,7 @@ func (h *handlerConsolidation) isCancelled(ctx context.Context, event *geocube.C
 }
 
 /*
-	isAlreadyUsableCOG return boolean
-	true is returned if file is already a Cloud Optimized Geotiff and internal structure is similar that container, otherwise false.
+	isAlreadyUsableCOG return if file is already a Cloud Optimized Geotiff and internal structure is similar that container, otherwise false, and the path of the file.
 */
 func (h *handlerConsolidation) isAlreadyUsableCOG(ctx context.Context, records []*Dataset, container geocube.ConsolidationContainer, recordID, workDir string) (string, bool) {
 	if len(records) > 1 {
@@ -286,12 +307,11 @@ func (h *handlerConsolidation) isAlreadyUsableCOG(ctx context.Context, records [
 		localFilePath = records[0].URI
 	}
 
-	isCog, ds := h.cog.IsCog(ctx, localFilePath)
-	if !isCog {
-		log.Logger(ctx).Sugar().Debugf("file is not a cog")
+	ds, err := h.cog.Open(ctx, localFilePath)
+	if err != nil {
+		log.Logger(ctx).Sugar().Debugf("file is not a cog : %v", err)
 		return "", false
 	}
-
 	defer ds.Close()
 
 	var errors []string
@@ -345,7 +365,6 @@ func (h *handlerConsolidation) isAlreadyUsableCOG(ctx context.Context, records [
 	}
 
 	return localFilePath, true
-
 }
 
 /*
