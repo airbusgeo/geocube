@@ -3,6 +3,9 @@
 ## Table of Contents
 
 
+- [Geocube Installation Guide](#geocube-installation-guide)
+  - [Table of Contents](#table-of-contents)
+  - [Prerequisites](#prerequisites)
 - [Architecture](#architecture)
 - [Interfaces](#interfaces)
   - [Storage](#storage)
@@ -34,13 +37,13 @@
   - [Pubsub Emulator](#pubsub-emulator-1)
   - [Apiserver](#apiserver-1)
   - [Consolidater](#consolidater-1)
-  - [Geocube Upgrade](#geocube-upgrade)
-    - [PostgreSQL database](#postgresql-database)
   - [Reference](#reference)
     - [Kubernetes](#kubernetes)
 - [Downloader](#downloader)
   - [Docker build](#docker-build)
   - [Docker run](#docker-run)
+- [Geocube Upgrade](#geocube-upgrade)
+  - [PostgreSQL database](#postgresql-database)
 
 
 ## Prerequisites
@@ -605,14 +608,6 @@ $ kubectl apply -f deploy/k8s/consolidater/autoscaler-deployment.yaml
 ```
 
 
-## Geocube Upgrade
-### PostgreSQL database
-After upgrading the Geocube server, the database schema might need an update. Apply incrementally each `interface/database/pg/update_X.X.X.sql` with X.X.X corresponding to a Geocube Server version from your previous version to the current version.
-
-```bash
-$ psql -h <database_host> -d <database_name> -f interface/database/pg/update_X.X.X.sql
-```
-
 ## Reference
 
 ### Kubernetes
@@ -708,3 +703,12 @@ You will retrieve storage metrics into logs as:
 ```
 
 Logs: `https://docs.docker.com/engine/reference/commandline/logs/#examples`
+
+
+# Geocube Upgrade
+## PostgreSQL database
+After upgrading the Geocube server, the database schema might need an update. Apply incrementally each `interface/database/pg/update_X.X.X.sql` with X.X.X corresponding to a Geocube Server version from your previous version to the current version.
+
+```bash
+$ psql -h <database_host> -d <database_name> -f interface/database/pg/update_X.X.X.sql
+```

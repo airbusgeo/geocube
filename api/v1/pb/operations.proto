@@ -53,11 +53,11 @@ message Dataset {
 /**
   * Define a container of datasets.
   * Usually a container is a file containing one dataset.
-  * But after a consolidation or if the container has several bands, it can contains several datasets.
+  * But after a consolidation or if the container has several bands, it can contain several datasets.
   */
 message Container{
     string           uri           = 1; // URI of the file
-    bool             managed       = 2; // True if the Geocube is responsible of the lifecycle of this file
+    bool             managed       = 2; // True if the Geocube is responsible for the lifecycle of this file
     repeated Dataset datasets      = 3; // List of datasets of the container
 }
 

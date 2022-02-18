@@ -296,14 +296,14 @@ func (x *Dataset) GetExponent() float64 {
 //*
 // Define a container of datasets.
 // Usually a container is a file containing one dataset.
-// But after a consolidation or if the container has several bands, it can contains several datasets.
+// But after a consolidation or if the container has several bands, it can contain several datasets.
 type Container struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
 	Uri      string     `protobuf:"bytes,1,opt,name=uri,proto3" json:"uri,omitempty"`           // URI of the file
-	Managed  bool       `protobuf:"varint,2,opt,name=managed,proto3" json:"managed,omitempty"`  // True if the Geocube is responsible of the lifecycle of this file
+	Managed  bool       `protobuf:"varint,2,opt,name=managed,proto3" json:"managed,omitempty"`  // True if the Geocube is responsible for the lifecycle of this file
 	Datasets []*Dataset `protobuf:"bytes,3,rep,name=datasets,proto3" json:"datasets,omitempty"` // List of datasets of the container
 }
 
