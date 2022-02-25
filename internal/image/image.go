@@ -352,7 +352,10 @@ func DatasetToPngAsBytes(ctx context.Context, ds *godal.Dataset, fromDFormat geo
 	if err != nil {
 		return nil, fmt.Errorf("DatasetToPngAsBytes.%w", err)
 	}
-	defer pngDs.Close()
+	defer func() {
+		pngDs.Close()
+		godal.VSIUnlink(virtualname)
+	}()
 
 	// Apply palette
 	if palette256 != nil {
@@ -395,7 +398,10 @@ func DatasetToTiffAsBytes(ds *godal.Dataset, fromDFormat geocube.DataMapping, ta
 	if err != nil {
 		return nil, fmt.Errorf("datasetToTiff.Translate: %w", err)
 	}
-	defer tifDs.Close()
+	defer func() {
+		tifDs.Close()
+		godal.VSIUnlink(virtualname)
+	}()
 
 	// Apply palette
 	if palette != nil {
