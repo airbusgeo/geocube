@@ -18,6 +18,7 @@ const (
 	uniqueViolation     = "23505"
 	checkViolation      = "23514"
 	noDataFound         = "P0002"
+	noData              = "02000"
 
 	notPqError = "X"
 )
@@ -40,14 +41,21 @@ func pqErrorCode(err error) pq.ErrorCode {
 	if errors.As(err, &pqerr) {
 		return pqerr.Code
 	}
+	if err.Error() == "sql: no rows in result set" {
+		return noData
+	}
 	return notPqError
 }
 
 func pqErrorFormat(format string, err error) error {
 	ferr := fmt.Errorf(format, err)
-	switch pqErrorCode(err) {
+	code := pqErrorCode(err)
+	switch code {
 	case connectionFailure:
 		return utils.MakeTemporary(ferr)
+	case notPqError:
+	default:
+		ferr = fmt.Errorf("%w [%s]", ferr, code)
 	}
 	retriable := []string{"connection refused", "connection reset"}
 	for _, s := range retriable {

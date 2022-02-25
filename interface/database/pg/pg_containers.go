@@ -2,7 +2,6 @@ package pg
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	"github.com/airbusgeo/geocube/internal/utils/grid"
@@ -322,32 +321,20 @@ func (b Backend) GetDatasetsGeometryUnion(ctx context.Context, lockedByJobID str
 func (b Backend) ComputeValidShapeFromCell(ctx context.Context, datasetIDS []string, cell *grid.Cell) (*proj.Shape, error) {
 	srid := proj.Srid(cell.CRS)
 
-	rows, err := b.pg.QueryContext(ctx,
-		"SELECT ST_Multi(ST_Intersection(ST_Union(ST_Transform(d.shape,$1::int)),$2)) FROM geocube.datasets d  WHERE d.id = ANY($3)", srid, &cell.Ring, pq.Array(datasetIDS))
-	if err != nil {
+	computeShape := proj.Shape{}
+	err := b.pg.QueryRowContext(ctx,
+		`WITH intersection(shape) AS (
+			SELECT ST_Multi(ST_Intersection(ST_Union(ST_Transform(d.shape,$1::int)),$2)) FROM geocube.datasets d  WHERE d.id = ANY($3)
+		)
+		SELECT shape from intersection where NOT St_IsEmpty(shape) and st_dimension(shape) > 1`, srid, &cell.Ring, pq.Array(datasetIDS)).Scan(&computeShape)
+	switch pqErrorCode(err) {
+	case noError:
+		return &computeShape, nil
+	case noDataFound, noData:
+		return nil, geocube.NewEntityNotFound("", "", "", "empty intersection with %v", cell.Ring.Coords())
+	default:
 		return nil, pqErrorFormat("ComputeValidShapeFromCell: %w", err)
 	}
-	defer func() {
-		if e := rows.Close(); e != nil && err == nil {
-			err = e
-		}
-	}()
-
-	// Parse rows
-	computeShape := proj.Shape{}
-	nbShapeReturned := 0
-	for rows.Next() {
-		if nbShapeReturned > 1 {
-			return nil, errors.New("more than one geometry was returned")
-		}
-		nbShapeReturned++
-		err := rows.Scan(&computeShape)
-		if err != nil {
-			return nil, pqErrorFormat("ComputeValidShapeFromCell.scan: %w", err)
-		}
-	}
-
-	return &computeShape, nil
 }
 
 // UpdateDatasets implements GeocubeBackend

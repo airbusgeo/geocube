@@ -314,12 +314,17 @@ func (svc *Service) csldPrepareOrders(ctx context.Context, job *geocube.Job) err
 					datasetsToBeConsolidated.Push(datasets[i].ID)
 				}
 
-				recordValidShape, err := svc.db.ComputeValidShapeFromCell(ctx, datasetIDS, cell.Cell)
-				if err != nil {
-					return fmt.Errorf("failed to compute valid shape from cell: %w", err)
+				if record.ValidShape, err = svc.db.ComputeValidShapeFromCell(ctx, datasetIDS, cell.Cell); err != nil {
+					if geocube.IsError(err, geocube.EntityNotFound) {
+						log.Logger(ctx).Sugar().Debugf("csldPrepareOrders: skip record %v: %v", record.DateTime, err)
+						continue
+					}
+					return fmt.Errorf("csldPrepareOrders: failed to compute valid shape from cell (%v): %w", cell.Ring.Coords(), err)
 				}
-				record.ValidShape = recordValidShape
 				records = append(records, record)
+			}
+			if len(records) == 0 {
+				continue
 			}
 
 			// Create all the consolidationContainer
