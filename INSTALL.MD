@@ -287,7 +287,7 @@ Usage of ./consolidater:
         gdal blockcache value (default 500) (default 500)
   -gdalStorageDebug
         enable storage debug to use custom gdal storage strategy
-  -project string
+  -psProject string
         subscription project (gcp pubSub only)
   -psConsolidationsSubscription string
         pubsub consolidation subscription name
@@ -308,7 +308,7 @@ Usage of ./consolidater:
 Example (run):
 
 ```bash
-$  ./consolidater -workdir=/tmp -project geocube-emulator -psEventsTopic events -psConsolidationsSubscription consolidations -cancelledJobs /tmp
+$  ./consolidater -workdir=/tmp -psProject geocube-emulator -psEventsTopic events -psConsolidationsSubscription consolidations -cancelledJobs /tmp
 ```
 
 ## Messaging Broker
@@ -392,7 +392,7 @@ docker run --rm --network=host -e PUBSUB_EMULATOR_HOST=localhost:8085 -v $STORAG
 ```
 ```bash
 export STORAGE=/geocube-datasets
-docker run --rm --network=host -e PUBSUB_EMULATOR_HOST=localhost:8085 -v $STORAGE:$STORAGE geocube-consolidater /consolidater -project geocube-emulator -workdir=/tmp -psEventsTopic events -psConsolidationsSubscription consolidations -cancelledJobs $STORAGE/cancelled-jobs
+docker run --rm --network=host -e PUBSUB_EMULATOR_HOST=localhost:8085 -v $STORAGE:$STORAGE geocube-consolidater /consolidater -psProject geocube-emulator -workdir=/tmp -psEventsTopic events -psConsolidationsSubscription consolidations -cancelledJobs $STORAGE/cancelled-jobs
 ```
 
 With GCS support (authentication with application_default_credentials.json):

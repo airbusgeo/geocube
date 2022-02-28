@@ -18,9 +18,9 @@ func main() {
 
 	var (
 		argupd      = flag.Duration("update", 30*time.Second, "time between updates")
-		argproject  = flag.String("project", "", "input job subscription project")
-		argsub      = flag.String("psSubscription", "", "input pubsub job subscription")
-		argrc       = flag.String("rc", "", "replication controller")
+		argproject  = flag.String("psProject", "", "pubsub subscription project")
+		argsub      = flag.String("psSubscription", "", "pubsub subscription to configure the backlog for autoscaling (needs --psProject)")
+		argrc       = flag.String("rc", "", "K8S replication controller")
 		argns       = flag.String("ns", "default", "replication controller namespace")
 		argratio    = flag.Float64("ratio", 10.0, "job/worker ratio over which instances will be added")
 		argminratio = flag.Float64("minratio", 0.0, "job/worker under which instances will be deleted")
@@ -32,9 +32,6 @@ func main() {
 	)
 
 	flag.Parse()
-	if *argsub == "" {
-		panic("missing pubsub subscription")
-	}
 	if *argrc == "" {
 		panic("missing replication controller")
 	}
@@ -51,9 +48,15 @@ func main() {
 	controller.CostPath = *podCostPath
 	controller.CostPort = int(*podCostPort)
 
-	consumer, err := pubsub.NewConsumer(*argproject, *argsub)
-	if err != nil {
-		panic(err)
+	var queue qbas.Queue
+
+	if *argsub != "" {
+		if queue, err = pubsub.NewConsumer(*argproject, *argsub); err != nil {
+			panic(err)
+		}
+	}
+	if queue == nil {
+		panic("missing backlog configuration (e.g. psSubscription)")
 	}
 	cfg := qbas.Config{
 		Ratio:        *argratio,
@@ -62,7 +65,7 @@ func main() {
 		MinInstances: int64(*argmin),
 		MaxStep:      int64(*argstep),
 	}
-	as := autoscaler.New(consumer, controller, cfg, log.Logger(ctx))
+	as := autoscaler.New(queue, controller, cfg, log.Logger(ctx))
 	log.Logger(ctx).Sugar().Infof("starting autoscaler with refresh %s", argupd.String())
 	as.Run(ctx, *argupd)
 }

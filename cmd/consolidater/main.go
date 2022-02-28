@@ -148,7 +148,7 @@ func run(ctx context.Context) error {
 func newConsolidationAppConfig() (*consolidaterConfig, error) {
 	consolidaterConfig := consolidaterConfig{}
 
-	flag.StringVar(&consolidaterConfig.Project, "project", "", "subscription project (gcp pubSub only)")
+	flag.StringVar(&consolidaterConfig.Project, "psProject", "", "subscription project (gcp pubSub only)")
 	flag.StringVar(&consolidaterConfig.PsConsolidationsSubscription, "psConsolidationsSubscription", "", "pubsub consolidation subscription name")
 	flag.StringVar(&consolidaterConfig.PsEventsTopic, "psEventsTopic", "", "pubsub events topic name")
 	flag.StringVar(&consolidaterConfig.WorkDir, "workdir", "", "scratch work directory")

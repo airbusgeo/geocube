@@ -120,7 +120,7 @@ func (d *ReplicationController) createPod(ctx context.Context, namespace, name s
 					TopologyKey: "kubernetes.io/hostname",
 					LabelSelector: &metav1.LabelSelector{
 						MatchExpressions: []metav1.LabelSelectorRequirement{
-							metav1.LabelSelectorRequirement{
+							{
 								Key:      PMLABEL,
 								Operator: metav1.LabelSelectorOpIn,
 								Values:   []string{name},

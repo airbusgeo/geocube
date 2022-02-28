@@ -6,14 +6,12 @@ import (
 
 	rc "github.com/airbusgeo/geocube/interface/autoscaler/k8s"
 	"github.com/airbusgeo/geocube/interface/autoscaler/qbas"
-	"github.com/airbusgeo/geocube/interface/messaging/pubsub"
 
 	"go.uber.org/zap"
 )
 
 func (as Autoscaler) Backlog(ctx context.Context) (int64, error) {
-	cnt, err := as.queue.Count(ctx)
-	return int64(cnt), err
+	return as.queue.Backlog(ctx)
 }
 func (as Autoscaler) Size(ctx context.Context) (int64, error) {
 	s, err := as.rc.Size(ctx)
@@ -29,7 +27,7 @@ func (as Autoscaler) ScaleDown(ctx context.Context, newSize int64) error {
 type Autoscaler struct {
 	logger *zap.Logger
 	rc     *rc.ReplicationController
-	queue  *pubsub.Client
+	queue  qbas.Queue
 	cfg    qbas.Config
 }
 
@@ -57,7 +55,7 @@ func (as Autoscaler) autoscale(ctx context.Context) {
 	}
 }
 
-func New(queue *pubsub.Client, rc *rc.ReplicationController, cfg qbas.Config, logger *zap.Logger) Autoscaler {
+func New(queue qbas.Queue, rc *rc.ReplicationController, cfg qbas.Config, logger *zap.Logger) Autoscaler {
 	return Autoscaler{
 		logger: logger,
 		rc:     rc,

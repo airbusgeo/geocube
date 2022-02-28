@@ -320,7 +320,8 @@ func (c *Client) Process(ctx context.Context, cb messaging.Callback) error {
 	return <-keepAliveError
 }
 
-func (c *Client) Count(ctx context.Context) (uint, error) {
+// Backlog implements interface.autoscaler.qbas.Queue
+func (c *Client) Backlog(ctx context.Context) (int64, error) {
 	var initerr error
 	c.mOnce.Do(func() {
 		if c.m == nil {
@@ -353,11 +354,10 @@ func (c *Client) Count(ctx context.Context) (uint, error) {
 			return 0, fmt.Errorf("it.next: %w", err)
 		}
 		pnts := resp.GetPoints()
-		//log.Logger(ctx).Info("pnts", zap.Any("pnts", pnts))
 		if len(pnts) == 0 {
 			continue
 		}
-		return uint(pnts[len(pnts)-1].Value.GetInt64Value()), nil
+		return pnts[len(pnts)-1].Value.GetInt64Value(), nil
 	}
 	log.Logger(ctx).Warn("no monitoring metrics found. Does the subscription exist?")
 	return 0, nil
