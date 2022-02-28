@@ -127,14 +127,10 @@ func (svc *Service) GetCubeFromRecords(ctx context.Context, grecordsID [][]strin
 		return CubeInfo{}, nil, err
 	}
 
-	// Flaten and invert grecords
+	// Flatten grecords
 	var recordsID []string
-	recordsGrp := map[string]int{}
-	for i, rs := range grecordsID {
+	for _, rs := range grecordsID {
 		recordsID = append(recordsID, rs...)
-		for _, r := range rs {
-			recordsGrp[r] = i
-		}
 	}
 
 	// Find the datasets that fit
@@ -143,19 +139,23 @@ func (svc *Service) GetCubeFromRecords(ctx context.Context, grecordsID [][]strin
 		return CubeInfo{}, nil, fmt.Errorf("GetCubeFromRecords.%w", err)
 	}
 
-	// Group datasets by records
-	datasetsByRecords, records, err := svc.getCubeGroupByRecords(ctx, datasets)
+	// Group datasets by record
+	datasetsByRecord, records, err := svc.getCubeGroupByRecord(ctx, datasets)
 	if err != nil {
 		return CubeInfo{}, nil, fmt.Errorf("GetCubeFromRecords.%w", err)
 	}
 
-	// Group datasets by group of records
+	// Group datasets by group of records and set the original order
+	recordIdx := map[string]int{}
+	for i, record := range records {
+		recordIdx[record.ID] = i
+	}
 	var grecords [][]*geocube.Record
-	datasetsByRecords, grecords = getCubeGroupByRecordsGroup(datasetsByRecords, records, recordsGrp)
+	datasetsByRecord, grecords = getCubeGroupByRecordsGroup(datasetsByRecord, records, recordIdx, grecordsID)
 
 	// GetCube
-	stream, err := svc.getCubeStream(ctx, datasetsByRecords, grecords, outDesc, headersOnly)
-	return CubeInfo{NbImages: len(datasetsByRecords),
+	stream, err := svc.getCubeStream(ctx, datasetsByRecord, grecords, outDesc, headersOnly)
+	return CubeInfo{NbImages: len(datasetsByRecord),
 		NbDatasets:    len(datasets),
 		Resampling:    outDesc.Resampling,
 		RefDataFormat: outDesc.DataMapping.DataFormat,
@@ -178,8 +178,8 @@ func (svc *Service) GetCubeFromFilters(ctx context.Context, recordTags geocube.M
 		return CubeInfo{}, nil, fmt.Errorf("GetCubeFromFilters.%w", err)
 	}
 
-	// Group datasets by records
-	datasetsByRecord, records, err := svc.getCubeGroupByRecords(ctx, datasets)
+	// Group datasets by record
+	datasetsByRecord, records, err := svc.getCubeGroupByRecord(ctx, datasets)
 	if err != nil {
 		return CubeInfo{}, nil, fmt.Errorf("GetCubeFromFilters.%w", err)
 	}
@@ -246,27 +246,27 @@ func (svc *Service) getCubePrepare(ctx context.Context, instancesID []string, cr
 	return outDesc, &geogExtent, nil
 }
 
-// getCubeGroupByRecordsGroup groups datasets and records by the number given by recordsGrp[record.ID]
-func getCubeGroupByRecordsGroup(datasetsByRecord [][]*internalImage.Dataset, records []*geocube.Record, recordsGrp map[string]int) ([][]*internalImage.Dataset, [][]*geocube.Record) {
-	var grecords [][]*geocube.Record
-	mapGrp := map[int]int{}
-	for i, record := range records {
-		rgrp := recordsGrp[record.ID]
-		if grp, ok := mapGrp[rgrp]; ok {
-			// The group already exists
-			datasetsByRecord[grp] = append(datasetsByRecord[grp], datasetsByRecord[i]...)
-			grecords[grp] = append(grecords[grp], records[i])
-		} else {
-			mapGrp[rgrp] = len(grecords)
-			datasetsByRecord[len(grecords)] = datasetsByRecord[i]
-			grecords = append(grecords, records[i:i+1])
+// getCubeGroupByRecordsGroup groups datasets and records according to the original recordGroups
+func getCubeGroupByRecordsGroup(datasetsByRecord [][]*internalImage.Dataset, records []*geocube.Record, recordIdx map[string]int, recordGroups [][]string) ([][]*internalImage.Dataset, [][]*geocube.Record) {
+	grecords := make([][]*geocube.Record, len(recordGroups))
+	newDatasetsByRecord := make([][]*internalImage.Dataset, len(recordGroups))
+	i := 0
+	for _, grecord := range recordGroups {
+		for _, recordID := range grecord {
+			if idx, ok := recordIdx[recordID]; ok {
+				grecords[i] = append(grecords[i], records[idx])
+				newDatasetsByRecord[i] = append(newDatasetsByRecord[i], datasetsByRecord[idx]...)
+			}
+		}
+		if len(grecords[i]) > 0 {
+			i += 1
 		}
 	}
-	return datasetsByRecord[0:len(grecords)], grecords
+	return newDatasetsByRecord[0:i], grecords[0:i]
 }
 
 // getCubeGroupByRecords groups datasets by record.ID
-func (svc *Service) getCubeGroupByRecords(ctx context.Context, datasets []*geocube.Dataset) ([][]*internalImage.Dataset, []*geocube.Record, error) {
+func (svc *Service) getCubeGroupByRecord(ctx context.Context, datasets []*geocube.Dataset) ([][]*internalImage.Dataset, []*geocube.Record, error) {
 	// Group datasets by records
 	var recordsID []string
 	var datasetsByRecord [][]*internalImage.Dataset
