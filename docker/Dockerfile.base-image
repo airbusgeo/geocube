@@ -18,7 +18,7 @@ RUN apk update && \
 
 WORKDIR /build
 
-ARG PROJVERSION=7.1.0
+ARG PROJVERSION=7.2.1
 RUN mkdir proj && cd proj &&\
     curl -sL https://github.com/OSGeo/proj.4/releases/download/$PROJVERSION/proj-$PROJVERSION.tar.gz -o proj-$PROJVERSION.tar.gz &&\
 	mkdir proj && \
@@ -41,14 +41,12 @@ RUN mkdir geos && cd geos &&\
     make install &&\
     cd /build && rm -rf geos
 
-#master from 2019/05/10
-#ARG GDALVERSION=ceb3e55a35159a705fd1f2712d5ee4c1965b00da
-ARG GDALVERSION=release/3.2
+ARG GDALVERSION=3.4.1
 RUN mkdir gdal && cd gdal &&\
-    curl -sL https://github.com/OSGeo/gdal/archive/$GDALVERSION.tar.gz -o gdal.tar.gz &&\
+    curl -sL https://github.com/OSGeo/gdal/releases/download/v$GDALVERSION/gdal-$GDALVERSION.tar.gz -o gdal.tar.gz &&\
 	mkdir gdal && \
 	tar  xzf gdal.tar.gz -C gdal --strip-components 1 &&\
-    cd gdal/gdal && \
+    cd gdal && \
 	./configure CFLAGS="-O2" CXXFLAGS="-O2" \
 	    --disable-lto \
 		--disable-static \
