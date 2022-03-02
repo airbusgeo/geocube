@@ -21,7 +21,7 @@ func main() {
 		argproject  = flag.String("psProject", "", "pubsub subscription project")
 		argsub      = flag.String("psSubscription", "", "pubsub subscription to configure the backlog for autoscaling (needs --psProject)")
 		argrc       = flag.String("rc", "", "K8S replication controller")
-		argns       = flag.String("ns", "default", "replication controller namespace")
+		argns       = flag.String("ns", "default", "K8S replication controller namespace")
 		argratio    = flag.Float64("ratio", 10.0, "job/worker ratio over which instances will be added")
 		argminratio = flag.Float64("minratio", 0.0, "job/worker under which instances will be deleted")
 		argstep     = flag.Uint("step", 3, "max worker increment/decrement")
