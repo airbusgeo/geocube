@@ -210,10 +210,10 @@ func run(ctx context.Context) error {
 
 	go func() {
 		var err error
-		if serverConfig.Local {
-			err = srv.ListenAndServe()
-		} else {
+		if serverConfig.TLS && !serverConfig.Local {
 			err = srv.ListenAndServeTLS("/tls/tls.crt", "/tls/tls.key")
+		} else {
+			err = srv.ListenAndServe()
 		}
 		if err != nil && err != http.ErrServerClosed {
 			log.Logger(ctx).Fatal("srv.ListenAndServe", zap.Error(err))
@@ -283,6 +283,7 @@ func (pm pngMarshaler) NewEncoder(w io.Writer) runtime.Encoder {
 func newServerAppConfig() (*serverConfig, error) {
 	serverConfig := serverConfig{}
 	flag.BoolVar(&serverConfig.Local, "local", false, "execute geocube in local environment")
+	flag.BoolVar(&serverConfig.TLS, "tls", false, "enable TLS protocol")
 	flag.StringVar(&serverConfig.AppPort, "port", "8080", "geocube port to use")
 	flag.StringVar(&serverConfig.DbConnection, "dbConnection", "", "database connection (ex: postgresql://user:password@localhost:5432/geocube)")
 	flag.StringVar(&serverConfig.DbName, "dbName", "", "database name (to connect with User, Host & Password)")
@@ -320,6 +321,7 @@ type serverConfig struct {
 	PsEventsTopic                 string
 	PsConsolidationsTopic         string
 	Local                         bool
+	TLS                           bool
 	AppPort                       string
 	DbConnection                  string
 	DbName                        string
