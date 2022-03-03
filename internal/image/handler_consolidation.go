@@ -2,7 +2,6 @@ package image
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"math"
 	"os"
@@ -79,14 +78,14 @@ func (h *handlerConsolidation) Consolidate(ctx context.Context, cEvent *geocube.
 	records := make(chan struct {
 		string
 		int
-	})
+	}, len(cEvent.Records))
 	// Start download workers
 	g, gCtx := errgroup.WithContext(ctx)
 	for w := 0; w < h.workers; w++ {
 		g.Go(func() error {
 			for record := range records {
 				if h.isCancelled(gCtx, cEvent) {
-					return errors.New("consolidation event is cancelled")
+					return fmt.Errorf("consolidation event is cancelled")
 				}
 				recordID, recordIdx := record.string, record.int
 				localDatasetsByRecords := datasetsByRecords[recordID]
