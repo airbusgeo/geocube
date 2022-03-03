@@ -32,6 +32,11 @@ type Service struct {
 }
 
 // New returns a new business service
+// db : an interface to the database of metadata on the images indexed in the Geocube
+// eventPublisher : message publisher to handle the asynchrone jobs. The messages will be pushed to a service implementing HandleEvent (see messaging configuration)
+// consolidationPublisher : message publisher to handle the consolidation tasks. The messages will be pulled by Consolidation workers (see consolidater).
+// ingestionStoragePath : location to store images created by the Geocube (consolidation or ingestion). Must be reachable by the Geocube with read/write/delete permissions.
+// cancelledConsolidationPath : location to store temporary files to inform Consolidation Workers that a job is cancelled. Must be reachable by the Geocube with write permission and by the Consolidation Workers with read permission.
 func New(ctx context.Context, db database.GeocubeDBBackend, eventPublisher messaging.Publisher, consolidationPublisher messaging.Publisher, ingestionStoragePath, cancelledConsolidationPath string, catalogWorkers int) (*Service, error) {
 	// Check parameters
 	if (ingestionStoragePath == "") != (consolidationPublisher == nil) {
