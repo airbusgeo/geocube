@@ -174,6 +174,10 @@ type GeocubeBackend interface {
 	// SaveContainerLayout saves the layout that defines the container
 	SaveContainerLayout(ctx context.Context, containerURI string, layoutName string) error
 
+	// DeleteContainerLayout removes the layout that defines the container
+	// Raise geocube.EntityNotFound (it can be ignored)
+	DeleteContainerLayout(ctx context.Context, containerURI string) error
+
 	/******************** Grids *************************/
 	// CreateGrid creates a grid in the database
 	CreateGrid(ctx context.Context, grid *geocube.Grid) error

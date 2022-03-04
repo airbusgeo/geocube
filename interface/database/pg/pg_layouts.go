@@ -94,3 +94,8 @@ func (b Backend) SaveContainerLayout(ctx context.Context, containerURI string, l
 
 	return nil
 }
+
+// DeleteContainerLayout implements GeocubeBackend
+func (b Backend) DeleteContainerLayout(ctx context.Context, containerURI string) error {
+	return b.delete(ctx, "container_layouts", "container_uri", containerURI)
+}

@@ -341,6 +341,18 @@ func (_m *GeocubeBackend) SaveContainerLayout(ctx context.Context, containerURI 
 
 	return r0
 }
+func (_m *GeocubeBackend) DeleteContainerLayout(ctx context.Context, containerURI string) error {
+	ret := _m.Called(ctx, containerURI)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(ctx, containerURI)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
 
 func (_m *GeocubeBackend) CreateGrid(ctx context.Context, grid *geocube.Grid) error {
 	panic("implement me")

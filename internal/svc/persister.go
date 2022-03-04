@@ -195,6 +195,11 @@ func (svc *Service) saveContainer(ctx context.Context, txn database.GeocubeTxBac
 		if container.Managed {
 			return geocube.NewDependencyStillExists("Container", "", "uri", container.URI, "Attempt to delete a managed container from the database")
 		}
+		if err := txn.DeleteContainerLayout(ctx, container.URI); err != nil {
+			if !geocube.IsError(err, geocube.EntityNotFound) {
+				return fmt.Errorf("saveContainer.%w", err)
+			}
+		}
 		if err := txn.DeleteContainer(ctx, container.URI); err != nil {
 			return fmt.Errorf("saveContainer.%w", err)
 		}
