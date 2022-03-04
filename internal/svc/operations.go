@@ -348,7 +348,7 @@ func (svc *Service) delDeleteContainers(ctx context.Context, job *geocube.Job) e
 						return err
 					}
 					status := geocube.TaskSuccessful
-					if err := svc.opSubFncDeleteContainer(ctx, containerURI); err != nil {
+					if err = svc.opSubFncDeleteContainer(ctx, containerURI); err != nil {
 						status = geocube.TaskFailed
 					}
 					mutex.Lock()
