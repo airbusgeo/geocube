@@ -167,8 +167,8 @@ func createGeometryFromWKB(g *geom.MultiPolygon, crs *godal.SpatialRef) (*godal.
 
 // Covers implements Grid
 func (rg *RegularGrid) Covers(ctx context.Context, geomAOI *geom.MultiPolygon) (<-chan StreamedURI, error) {
-	if geomAOI.NumCoords() == 0 {
-		return nil, nil
+	if geomAOI.Stride() == 0 || geomAOI.NumCoords() == 0 {
+		return nil, fmt.Errorf("Covers: empty AOI")
 	}
 	// Transform coordinates from (lon, lat) to CRS coordinates
 	if err := rg.initLonLatToCRS(); err != nil {

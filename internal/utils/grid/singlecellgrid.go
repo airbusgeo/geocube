@@ -47,8 +47,8 @@ type SingleCellGrid struct {
 
 // Covers
 func (cg *SingleCellGrid) Covers(ctx context.Context, geomAOI *geom.MultiPolygon) (<-chan StreamedURI, error) {
-	if geomAOI.NumCoords() == 0 {
-		return nil, nil
+	if geomAOI.Stride() == 0 || geomAOI.NumCoords() == 0 {
+		return nil, fmt.Errorf("SingleCellGrid.Covers: empty AOI")
 	}
 
 	lonLatToCRS, err := proj.CreateLonLatProj(cg.crs, false)

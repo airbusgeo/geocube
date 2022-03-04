@@ -121,7 +121,7 @@ func (c *Container) AddDataset(d *Dataset) error {
 			}
 			bs := utils.JoinInt64(d.Bands, "-")
 			return NewEntityAlreadyExists("dataset", "subdir/bands", d.ContainerSubDir+"/"+bs,
-				"A different dataset already refers to the container "+c.URI+", the subdir '"+d.ContainerSubDir+"' and one of the bands among: "+bs)
+				"A different dataset (record, instance or dformat) already refers to the container "+c.URI+", the subdir '"+d.ContainerSubDir+"' and one of the bands among: "+bs)
 		}
 	}
 

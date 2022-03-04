@@ -311,15 +311,16 @@ func (svc *Service) csldPrepareOrders(ctx context.Context, job *geocube.Job) err
 				for ; i < len(datasets) && record.ID == datasets[i].RecordID; i++ {
 					record.Datasets = append(record.Datasets, datasets[i].Event)
 					datasetIDS = append(datasetIDS, datasets[i].ID)
-					datasetsToBeConsolidated.Push(datasets[i].ID)
 				}
-
 				if record.ValidShape, err = svc.db.ComputeValidShapeFromCell(ctx, datasetIDS, cell.Cell); err != nil {
 					if geocube.IsError(err, geocube.EntityNotFound) {
 						log.Logger(ctx).Sugar().Debugf("csldPrepareOrders: skip record %v: %v", record.DateTime, err)
 						continue
 					}
 					return fmt.Errorf("csldPrepareOrders: failed to compute valid shape from cell (%v): %w", cell.Ring.Coords(), err)
+				}
+				for _, datasetID := range datasetIDS {
+					datasetsToBeConsolidated.Push(datasetID)
 				}
 				records = append(records, record)
 			}
