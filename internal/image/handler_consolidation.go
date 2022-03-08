@@ -62,7 +62,7 @@ func (h *handlerConsolidation) Consolidate(ctx context.Context, cEvent *geocube.
 
 	id := uuid.New()
 	workDir := path.Join(workspace, id.String())
-	if err := os.Mkdir(workDir, 0777); err != nil {
+	if err := os.MkdirAll(workDir, 0777); err != nil {
 		return err
 	}
 	defer h.cleanWorkspace(ctx, workDir)

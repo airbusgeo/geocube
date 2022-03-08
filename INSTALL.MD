@@ -3,9 +3,6 @@
 ## Table of Contents
 
 
-- [Geocube Installation Guide](#geocube-installation-guide)
-  - [Table of Contents](#table-of-contents)
-  - [Prerequisites](#prerequisites)
 - [Architecture](#architecture)
 - [Interfaces](#interfaces)
   - [Storage](#storage)
@@ -27,7 +24,10 @@
     - [RabbitMq](#rabbitmq)
     - [Pub/Sub (Emulator)](#pubsub-emulator)
 - [Installation - Docker](#installation---docker)
+  - [Base-image](#base-image)
+  - [Server, Consolidater and Downloader](#server-consolidater-and-downloader)
   - [Messaging Broker](#messaging-broker-1)
+  - [Docker-compose](#docker-compose)
 - [Installation - Kubernetes Cluster](#installation---kubernetes-cluster)
   - [IAM & Security](#iam--security)
   - [Container Registry](#container-registry)
@@ -369,7 +369,8 @@ In order to run geocube with the PubSub emulator, you must define the `PUBSUB_EM
 
 All dockerfile are available in the `docker` folder.
 
-The Dockerfiles of the two services depend on a `base-image`:
+## Base-image
+The Dockerfiles of the other services depend on a `base-image`:
 
 ```bash
 $ docker build -f docker/Dockerfile.base-image -t geocube-base-image .
@@ -377,7 +378,9 @@ $ docker build -f docker/Dockerfile.base-image -t geocube-base-image .
 Successfully built 62eb9e6d2c0e
 ```
 
-Then, the `BASE_IMAGE` must be passed as a parameter in order to build consolidater and server dockerfile:
+## Server, Consolidater and Downloader
+
+Then, the `BASE_IMAGE` must be passed as a parameter in order to build server, consolidater or downloader dockerfile:
 
 ```bash
 $ docker build -f docker/Dockerfile.server -t geocube . --build-arg BASE_IMAGE=geocube-base-image
@@ -385,6 +388,10 @@ $ docker build -f docker/Dockerfile.server -t geocube . --build-arg BASE_IMAGE=g
 
 ```bash
 $ docker build -f docker/Dockerfile.consolidater -t geocube-consolidater . --build-arg BASE_IMAGE=geocube-base-image
+```
+
+```bash
+$ docker build -f docker/Dockerfile.downloader -t geocube-downloader . --build-arg BASE_IMAGE=geocube-base-image
 ```
 
 You can run “docker run” command in order to start the application.
@@ -410,6 +417,16 @@ For more information concerning running option, see: https://docs.docker.com/eng
 ## Messaging Broker
 
 cf [Local environment - Messaging Broker](#messaging-broker)
+
+## Docker-compose
+
+A docker-compose file is provided as example. It's a minimal example, so feel free to edit it to take advantage of the full power of the Geocube.
+
+- Copy the `./docker/.env.example` to `./docker/.env`
+- Edit `./docker/.env` to set the `STORAGE_URI` (it will be mount as a volume to access and store images).
+- Build the [base image](#base-image)
+- `cd docker` and `docker-compose up`
+
 
 # Installation - Kubernetes Cluster
 

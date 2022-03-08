@@ -23,7 +23,7 @@ func main() {
 	ctx := context.Background()
 
 	endPoint := flag.String("geocube-server", "http://127.0.0.1:8080", "geocube server uri")
-	projectID := flag.String("geocube-emulator", "geocube-emulator", "emulator project id")
+	projectID := flag.String("project", "geocube-emulator", "emulator project id")
 	flag.Parse()
 
 	os.Setenv("PUBSUB_EMULATOR_HOST", "localhost:8085")

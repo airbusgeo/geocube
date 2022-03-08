@@ -30,7 +30,7 @@ func main() {
 	ctx := context.Background()
 	err := run(ctx)
 	if err != nil {
-		log.Logger(ctx).Error("exit on error", zap.Error(err))
+		log.Logger(ctx).Fatal("exit on error", zap.Error(err))
 	} else {
 		log.Logger(ctx).Info("exiting")
 	}

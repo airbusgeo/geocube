@@ -1,7 +1,5 @@
-ARG BASE_IMAGE=eu.gcr.io/d-gcb-geocuberd/geocube-base:v1-downloader
+ARG BASE_IMAGE=$(CONTAINER_REGISTRY)/geocube-base:latest
 FROM $BASE_IMAGE AS builder
-
-RUN apk update
 
 WORKDIR /build
 COPY go.* /build/

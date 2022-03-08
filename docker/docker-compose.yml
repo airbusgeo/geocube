@@ -1,0 +1,55 @@
+version: "3.7"
+services:
+  geocube:
+    build:
+      context: ..
+      dockerfile: ./docker/Dockerfile.server
+      args:
+        BASE_IMAGE: geocube-base-image
+    image: geocube-apiserver:$GEOCUBE_VERSION
+    command: --dbConnection=postgresql://postgres:1234@postgis:5432/postgres?binary_parameters=yes&sslmode=disable --pgqConnection=postgresql://postgres:1234@postgis:5432/postgres?sslmode=disable --ingestionStorage=$STORAGE_URI --project=geocube-emulator --eventsQueue=events --consolidationsQueue=consolidations --cancelledJobs=$STORAGE_URI/jobs --workers=$GEOCUBE_WORKERS
+    ports:
+      - "8080:$GEOCUBE_PORT"
+    links:
+      - postgis
+    volumes:
+      - $STORAGE_URI:$STORAGE_URI
+    restart: always
+
+  consolidater:
+    build:
+      context: ..
+      dockerfile: ./docker/Dockerfile.consolidater
+      args:
+        BASE_IMAGE: geocube-base-image
+    image: geocube-consolidater:$GEOCUBE_VERSION
+    command: ./consolidater --pgqConnection=postgresql://postgres:1234@postgis:5432/postgres?sslmode=disable --eventsQueue events --consolidationsQueue consolidations --workdir=$STORAGE_URI/tmp --cancelledJobs=$STORAGE_URI/jobs --workers=$CONSOLIDATER_WORKERS
+    volumes:
+      - $STORAGE_URI:$STORAGE_URI
+    restart: always
+
+  downloader:
+    build:
+      context: ..
+      dockerfile: ./docker/Dockerfile.downloader
+      args:
+        BASE_IMAGE: geocube-base-image
+    image: geocube-downloader:$GEOCUBE_VERSION
+    command: --workers=$GEOCUBE_WORKERS --port 8082
+    ports:
+      - "8082:$DOWNLOADER_PORT"
+    volumes:
+      - $STORAGE_URI:$STORAGE_URI
+    restart: always
+
+  postgis:
+    image: postgis/postgis
+    environment:
+      - POSTGRES_PASSWORD=1234
+    volumes:
+      - ../interface/database/pg/create.sql:/docker-entrypoint-initdb.d/init.sql
+      - ../interface/messaging/pgqueue/create_table.sql:/docker-entrypoint-initdb.d/init_pgqueue.sql
+      - postgis-data:/var/lib/postgresql
+
+volumes:
+  postgis-data:
