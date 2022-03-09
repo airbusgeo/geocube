@@ -651,8 +651,6 @@ Downloader available options:
         gdal blockcache value (default 500) (default 500)
   -gdalStorageDebug
         enable storage debug to use custom gdal storage strategy
-  -local
-        execute geocube downloader in local environment
   -maxConnectionAge int
         grpc max age connection
   -port string
@@ -665,22 +663,22 @@ Downloader available options:
         number of parallel workers per catalog request (default 1)
 ```
 
-Basic local example:
+Basic example:
 
 ```shell
-docker run --rm -p 127.0.0.1:8081:8081/tcp geocube-downloader -local -port 8081 -workers 4
+docker run --rm -p 127.0.0.1:8081:8081/tcp geocube-downloader -port 8081 -workers 4
 ```
 
 Example with GCS support:
 
 With GOOGLE_APPLICATION_CREDENTIALS:
 ```shell
-docker run --rm -e GOOGLE_APPLICATION_CREDENTIALS=/account/geocube_server.json -p 127.0.0.1:8081:8081/tcp --mount type=bind,src=~/Documents/account/geocube,dst=/account 65cddc550e9a geocube-downloader -local -port 8081 -with-gcs -workers 4 -gdalBlockSize 2Mb
+docker run --rm -e GOOGLE_APPLICATION_CREDENTIALS=/account/geocube_server.json -p 127.0.0.1:8081:8081/tcp --mount type=bind,src=~/Documents/account/geocube,dst=/account 65cddc550e9a geocube-downloader -port 8081 -with-gcs -workers 4 -gdalBlockSize 2Mb
 ```
 
 With application_default_credentials.json:
 ```bash
-docker run --rm -v ~/.config/gcloud:/root/.config/gcloud -p 127.0.0.1:8081:8081/tcp geocube-downloader -local -port 8081 -with-gcs -workers 4 -gdalBlockSize 2Mb
+docker run --rm -v ~/.config/gcloud:/root/.config/gcloud -p 127.0.0.1:8081:8081/tcp geocube-downloader -port 8081 -with-gcs -workers 4 -gdalBlockSize 2Mb
 ```
 
 Storage Debug (GCP only):

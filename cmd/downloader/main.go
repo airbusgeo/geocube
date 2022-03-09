@@ -80,10 +80,10 @@ func run(ctx context.Context) error {
 
 	go func() {
 		var err error
-		if downloaderConfig.Local {
-			err = srv.ListenAndServe()
-		} else {
+		if downloaderConfig.TLS {
 			err = srv.ListenAndServeTLS("/tls/tls.crt", "/tls/tls.key")
+		} else {
+			err = srv.ListenAndServe()
 		}
 		if err != nil && err != http.ErrServerClosed {
 			log.Logger(ctx).Fatal("srv.ListenAndServe", zap.Error(err))
@@ -117,7 +117,7 @@ func newGrpcServer(svc geogrpc.GeocubeDownloaderService, maxConnectionAgeValue i
 func newDownloaderAppConfig() (*serverConfig, error) {
 	serverConfig := serverConfig{}
 
-	flag.BoolVar(&serverConfig.Local, "local", false, "execute geocube downloader in local environment")
+	flag.BoolVar(&serverConfig.TLS, "tls", false, "enable TLS protocol")
 	flag.StringVar(&serverConfig.AppPort, "port", "8080", "geocube downloader port to use")
 	flag.IntVar(&serverConfig.MaxConnectionAge, "maxConnectionAge", 0, "grpc max age connection")
 	flag.IntVar(&serverConfig.CatalogWorkers, "workers", 1, "number of parallel workers per catalog request")
@@ -133,7 +133,7 @@ func newDownloaderAppConfig() (*serverConfig, error) {
 }
 
 type serverConfig struct {
-	Local            bool
+	TLS              bool
 	AppPort          string
 	MaxConnectionAge int
 	CatalogWorkers   int
