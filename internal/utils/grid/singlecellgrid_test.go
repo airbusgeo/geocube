@@ -16,14 +16,17 @@ var _ = Describe("SingleCellGrid", func() {
 		singleCellGrid Grid
 		geomAoi        *geom.MultiPolygon
 		crs            *godal.SpatialRef
+		err            error
 	)
 
 	BeforeEach(func() {
-		crs, _ = godal.NewSpatialRefFromEPSG(32631)
-		singleCellGrid, _ = NewGrid([]string{}, map[string]string{
+		crs, err = godal.NewSpatialRefFromEPSG(32631)
+		Expect(err).To(BeNil())
+		singleCellGrid, err = NewGrid([]string{}, map[string]string{
 			"grid":       "singlecell",
-			"crs":        "+proj=utm +zone=31",
+			"crs":        "32631",
 			"resolution": "10"})
+		Expect(err).To(BeNil())
 
 		geomAoi = toMultiPolygon([][2]float64{{5.8, 45.1}, {5.8, 44.5}, {6.6, 44.5}, {6.6, 45.1}, {5.8, 45.1}})
 	})

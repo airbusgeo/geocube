@@ -102,11 +102,10 @@ func Srid(crs *godal.SpatialRef) int {
 				return res
 			}
 		}
-		if i == 0 && crs.AutoIdentifyEPSG() != nil {
-			break
+		if i == 0 {
+			crs.AutoIdentifyEPSG()
 		}
 	}
-
 	return 0
 }
 

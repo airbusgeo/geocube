@@ -30,7 +30,7 @@ func toMultiPolygon(c [][2]float64) *geom.MultiPolygon {
 func createRegularGrid(cellSize, resolution, ox, oy, memoryLimit int) (grid.Grid, error) {
 	params := map[string]string{
 		"grid":       "regular",
-		"crs":        "+proj=utm +zone=31",
+		"crs":        "32631",
 		"cell_size":  strconv.Itoa(cellSize),
 		"resolution": strconv.Itoa(resolution),
 		"ox":         strconv.Itoa(ox),
