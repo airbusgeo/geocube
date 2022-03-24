@@ -171,21 +171,30 @@ func (h *handlerConsolidation) Consolidate(ctx context.Context, cEvent *geocube.
 }
 
 type FileToDownload struct {
-	URI, LocalURI string
+	URI      uri.DefaultUri
+	LocalURI string
 }
 
-// getLocalDatasetsByRecord download all datasets in local filesystem.
+// getLocalDatasetsByRecord references all datasets and download them in local filesystem.
 func (h *handlerConsolidation) getLocalDatasetsByRecord(ctx context.Context, cEvent *geocube.ConsolidationEvent, workDir string) (map[string][]*Dataset, error) {
 	// Prepare local dataset and list files to download
 	datasetsByRecord := map[string][]*Dataset{}
-	filesToDownload := map[string]string{}
+	filesToDownload := map[uri.DefaultUri]string{}
 	for _, record := range cEvent.Records {
 		var datasets []*Dataset
 		for _, dataset := range record.Datasets {
-			localUri, ok := filesToDownload[dataset.URI]
+			sourceUri, err := uri.ParseUri(dataset.URI)
+			if err != nil {
+				return nil, fmt.Errorf("getLocalDatasetsByRecord: %w", err)
+			}
+			localUri, ok := filesToDownload[sourceUri]
 			if !ok {
-				localUri = path.Join(workDir, uuid.New().String())
-				filesToDownload[dataset.URI] = localUri
+				if sourceUri.Protocol() == "" {
+					localUri = dataset.URI
+				} else {
+					localUri = path.Join(workDir, uuid.New().String())
+				}
+				filesToDownload[sourceUri] = localUri
 			}
 			gDataset := &Dataset{
 				URI:         localUri,
@@ -202,7 +211,9 @@ func (h *handlerConsolidation) getLocalDatasetsByRecord(ctx context.Context, cEv
 	log.Logger(ctx).Sugar().Debugf("downloading datasets")
 	files := make(chan FileToDownload, len(filesToDownload))
 	for uri, localUri := range filesToDownload {
-		files <- FileToDownload{URI: uri, LocalURI: localUri}
+		if uri.String() != localUri {
+			files <- FileToDownload{URI: uri, LocalURI: localUri}
+		}
 	}
 	close(files)
 
@@ -211,8 +222,8 @@ func (h *handlerConsolidation) getLocalDatasetsByRecord(ctx context.Context, cEv
 	for i := 0; i < 20; i++ {
 		g.Go(func() error {
 			for file := range files {
-				if err := h.downloadFile(gCtx, file.URI, file.LocalURI); err != nil {
-					return err
+				if err := file.URI.DownloadToFile(gCtx, file.LocalURI); err != nil {
+					return fmt.Errorf("failed to download dataset %s: %w", file.URI.String(), err)
 				}
 			}
 			return nil
@@ -224,20 +235,6 @@ func (h *handlerConsolidation) getLocalDatasetsByRecord(ctx context.Context, cEv
 	}
 
 	return datasetsByRecord, nil
-}
-
-// downloadFile download content from storage file (URI) to local destination.
-func (h *handlerConsolidation) downloadFile(ctx context.Context, source, destination string) error {
-	sourceUri, err := uri.ParseUri(source)
-	if err != nil {
-		return fmt.Errorf("failed to parse source uri %s: %w", source, err)
-	}
-
-	if err = sourceUri.DownloadToFile(ctx, destination); err != nil {
-		return fmt.Errorf("failed to download dataset %s: %w", source, err)
-	}
-
-	return nil
 }
 
 // uploadFile upload content from local file to storage file (URI) destination.

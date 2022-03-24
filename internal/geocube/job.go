@@ -75,7 +75,7 @@ var jobStateInfo = map[JobState]JobStateInfo{
 	JobStateFAILED:                  {StepByStepNever, false},
 	JobStateINITIALISATIONFAILED:    {StepByStepAll, false},
 	JobStateCANCELLATIONFAILED:      {StepByStepAll, false},
-	JobStateABORTED:                 {StepByStepCritical, true},
+	JobStateABORTED:                 {StepByStepMajor, true},
 	JobStateROLLBACKFAILED:          {StepByStepAll, false},
 	JobStateDONEBUTUNTIDY:           {StepByStepNever, false},
 }
