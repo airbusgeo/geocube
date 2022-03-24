@@ -111,6 +111,7 @@ func ErrLogger(fn ErrorHandler) interface {
 	GeometryWKTOption
 	GetGeoTransformOption
 	HistogramOption
+	IntersectsOption
 	MetadataOption
 	NewFeatureOption
 	NewGeometryOption
@@ -133,6 +134,9 @@ func ErrLogger(fn ErrorHandler) interface {
 	VSIOpenOption
 	VSIUnlinkOption
 	WKTExportOption
+	StatisticsOption
+	SetStatisticsOption
+	ClearStatisticsOption
 } {
 	return errorCallback{fn}
 }
@@ -153,6 +157,9 @@ func (ec errorCallback) setBoundsOpt(o *boundsOpts) {
 }
 */
 func (ec errorCallback) setBufferOpt(o *bufferOpts) {
+	o.errorHandler = ec.fn
+}
+func (ec errorCallback) setIntersectsOpt(o *intersectsOpts) {
 	o.errorHandler = ec.fn
 }
 func (ec errorCallback) setBuildOverviewsOpt(o *buildOvrOpts) {
@@ -292,6 +299,18 @@ func (ec errorCallback) setVSIUnlinkOpt(o *vsiUnlinkOpts) {
 	o.errorHandler = ec.fn
 }
 func (ec errorCallback) setWKTExportOpt(o *srWKTOpts) {
+	o.errorHandler = ec.fn
+}
+
+func (ec errorCallback) setStatisticsOpt(o *statisticsOpts) {
+	o.errorHandler = ec.fn
+}
+
+func (ec errorCallback) setSetStatisticsOpt(o *setStatisticsOpt) {
+	o.errorHandler = ec.fn
+}
+
+func (ec errorCallback) setClearStatisticsOpt(o *clearStatisticsOpt) {
 	o.errorHandler = ec.fn
 }
 

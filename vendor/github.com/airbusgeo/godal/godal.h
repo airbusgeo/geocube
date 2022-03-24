@@ -36,6 +36,7 @@ extern "C" {
 		char **configOptions;
 	} cctx;
 	void godalSetMetadataItem(cctx *ctx, GDALMajorObjectH mo, char *ckey, char *cval, char *cdom);
+	void godalClearMetadata(cctx *ctx, GDALMajorObjectH mo, char *cdom);
 	GDALDatasetH godalOpen(cctx *ctx, const char *name, unsigned int nOpenFlags, const char *const *papszAllowedDrivers,
 						   const char *const *papszOpenOptions, const char *const *papszSiblingFiles);
 
@@ -49,7 +50,7 @@ extern "C" {
 	//returns a null terminated list of bands. the caller must free the returned list
 	GDALRasterBandH *godalRasterBands(GDALDatasetH ds);
 	OGRLayerH *godalVectorLayers(GDALDatasetH ds);
-	
+
 	GDALRasterBandH* godalBandOverviews(GDALRasterBandH bnd);
 
 	void godalSetRasterNoDataValue(cctx *ctx, GDALRasterBandH bnd, double nd);
@@ -108,6 +109,8 @@ extern "C" {
 	size_t godalVSIRead(VSILFILE *f, void *buf, int len, char **errmsg);
 	OGRGeometryH godal_OGR_G_Simplify(cctx *ctx, OGRGeometryH in, double tolerance);
 	OGRGeometryH godal_OGR_G_Buffer(cctx *ctx, OGRGeometryH in, double tolerance, int segments);
+	int godal_OGR_G_Intersects(cctx *ctx, OGRGeometryH geom1, OGRGeometryH geom2);
+	OGRGeometryH godalNewGeometryFromGeoJSON(cctx *ctx, char *geoJSON);
 	OGRGeometryH godalNewGeometryFromWKT(cctx *ctx, char *wkt, OGRSpatialReferenceH sr);
 	OGRGeometryH godalNewGeometryFromWKB(cctx *ctx, void *wkb, int wkbLen,OGRSpatialReferenceH sr);
 	char* godalExportGeometryWKT(cctx *ctx, OGRGeometryH in);
@@ -119,6 +122,10 @@ extern "C" {
 	GDALDatasetH godalBuildVRT(cctx *ctx, char *dstname, char **sources, char **switches);
 
 	void test_godal_error_handling(cctx *ctx);
+    void godalClearRasterStatistics(cctx *ctx, GDALDatasetH ds);
+    void godalComputeRasterStatistics(cctx *ctx, GDALRasterBandH bnd, int bApproxOK, double *pdfMin, double *pdfMax, double *pdfMean, double *pdfStdDev);
+    int godalGetRasterStatistics(cctx *ctx, GDALRasterBandH bnd, int bApproxOK, double *pdfMin, double *pdfMax, double *pdfMean, double *pdfStdDev);
+    void godalSetRasterStatistics(cctx *ctx, GDALRasterBandH bnd, double dfMin, double dfMax, double dfMean, double dfStdDev);
 #ifdef __cplusplus
 }
 #endif

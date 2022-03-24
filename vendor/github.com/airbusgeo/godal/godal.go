@@ -437,6 +437,86 @@ func (band Band) Histogram(opts ...HistogramOption) (Histogram, error) {
 	return h, nil
 }
 
+//GetStatistics returns if present and flag as true.
+//
+//Only cached statistics are returned and no new statistics are computed.
+//Return false and no error if no statistics are availables.
+//Available options are:
+// - Aproximate() to allow the satistics to be computed on overviews or a subset of all tiles.
+// - ErrLogger
+func (band Band) GetStatistics(opts ...StatisticsOption) (Statistics, bool, error) {
+	sopt := statisticsOpts{}
+	for _, s := range opts {
+		s.setStatisticsOpt(&sopt)
+	}
+	var min, max, mean, std C.double
+	cgc := createCGOContext(nil, sopt.errorHandler)
+	ret := C.godalGetRasterStatistics(cgc.cPointer(), band.handle(),
+		(C.int)(sopt.approx), &min, &max, &mean, &std)
+	if err := cgc.close(); err != nil {
+		return Statistics{}, false, err
+	}
+	if ret == 0 {
+		return Statistics{}, false, nil
+	}
+	var ap bool = sopt.approx != 0
+	s := Statistics{
+		Approximate: ap,
+		Min:         float64(min),
+		Max:         float64(max),
+		Mean:        float64(mean),
+		Std:         float64(std),
+	}
+	return s, true, nil
+}
+
+//ComputeStatistics returns from exact computation or approximation.
+//
+//Band full scan might be necessary.
+//Available options are:
+// - Aproximate() to allow the satistics to be computed on overviews or a subset of all tiles.
+// - ErrLogger
+func (band Band) ComputeStatistics(opts ...StatisticsOption) (Statistics, error) {
+	sopt := statisticsOpts{}
+	for _, s := range opts {
+		s.setStatisticsOpt(&sopt)
+	}
+	var min, max, mean, std C.double
+	cgc := createCGOContext(nil, sopt.errorHandler)
+	C.godalComputeRasterStatistics(cgc.cPointer(), band.handle(),
+		(C.int)(sopt.approx), &min, &max, &mean, &std)
+	if err := cgc.close(); err != nil {
+		return Statistics{}, err
+	}
+	var ap bool = sopt.approx != 0
+	s := Statistics{
+		Min:         float64(min),
+		Max:         float64(max),
+		Mean:        float64(mean),
+		Std:         float64(std),
+		Approximate: ap,
+	}
+	return s, nil
+}
+
+//SetStatistics set statistics (Min, Max, Mean & STD).
+//
+//Available options are:
+//  -ErrLogger
+func (band Band) SetStatistics(min, max, mean, std float64, opts ...SetStatisticsOption) error {
+	stso := setStatisticsOpt{}
+	for _, opt := range opts {
+		opt.setSetStatisticsOpt(&stso)
+	}
+	cgc := createCGOContext(nil, stso.errorHandler)
+	C.godalSetRasterStatistics(cgc.cPointer(), band.handle(), C.double(min),
+		C.double(max), C.double(mean), C.double(std))
+	if err := cgc.close(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func cIntArray(in []int) *C.int {
 	ret := make([]C.int, len(in))
 	for i := range in {
@@ -949,6 +1029,21 @@ func (ds *Dataset) ClearOverviews(opts ...ClearOverviewsOption) error {
 	}
 	cgc := createCGOContext(nil, co.errorHandler)
 	C.godalClearOverviews(cgc.cPointer(), ds.handle())
+	return cgc.close()
+}
+
+//ClearStatistics delete dataset statisitics
+//
+//Since GDAL 3.2
+//Available options are:
+//  -ErrLogger
+func (ds *Dataset) ClearStatistics(opts ...ClearStatisticsOption) error {
+	cls := &clearStatisticsOpt{}
+	for _, o := range opts {
+		o.setClearStatisticsOpt(cls)
+	}
+	cgc := createCGOContext(nil, cls.errorHandler)
+	C.godalClearRasterStatistics(cgc.cPointer(), ds.handle())
 	return cgc.close()
 }
 
@@ -1627,6 +1722,18 @@ func (mo majorObject) SetMetadata(key, value string, opts ...MetadataOption) err
 	return cgc.close()
 }
 
+func (mo majorObject) ClearMetadata(opts ...MetadataOption) error {
+	mopts := metadataOpts{}
+	for _, opt := range opts {
+		opt.setMetadataOpt(&mopts)
+	}
+	cdom := C.CString(mopts.domain)
+	defer C.free(unsafe.Pointer(cdom))
+	cgc := createCGOContext(nil, mopts.errorHandler)
+	C.godalClearMetadata(cgc.cPointer(), mo.cHandle, cdom)
+	return cgc.close()
+}
+
 func (mo majorObject) MetadataDomains() []string {
 	strs := C.GDALGetMetadataDomainList(mo.cHandle)
 	return cStringArrayToSlice(strs)
@@ -2208,6 +2315,22 @@ func (g *Geometry) Buffer(distance float64, segments int, opts ...BufferOption) 
 	}, nil
 }
 
+// Intersects determines whether two geometries intersect. If GEOS is enabled, then
+// this is done in rigorous fashion otherwise TRUE is returned if the
+// envelopes (bounding boxes) of the two geometries overlap.
+func (g *Geometry) Intersects(other *Geometry, opts ...IntersectsOption) (bool, error) {
+	bo := &intersectsOpts{}
+	for _, o := range opts {
+		o.setIntersectsOpt(bo)
+	}
+	cgc := createCGOContext(nil, bo.errorHandler)
+	ret := C.godal_OGR_G_Intersects(cgc.cPointer(), g.handle, other.handle)
+	if err := cgc.close(); err != nil {
+		return false, err
+	}
+	return ret != 0, nil
+}
+
 //Empty retruens wether the underlying geometry is empty
 func (g *Geometry) Empty() bool {
 	e := C.OGR_G_IsEmpty(g.handle)
@@ -2484,6 +2607,23 @@ func (ds *Dataset) CreateLayer(name string, sr *SpatialRef, gtype GeometryType, 
 		}
 	}
 	return Layer{majorObject{C.GDALMajorObjectH(hndl)}}, nil
+}
+
+// NewGeometryFromGeoJSON creates a new Geometry from its GeoJSON representation
+func NewGeometryFromGeoJSON(geoJSON string, opts ...NewGeometryOption) (*Geometry, error) {
+	no := &newGeometryOpts{}
+	for _, o := range opts {
+		o.setNewGeometryOpt(no)
+	}
+
+	cgeoJSON := C.CString(geoJSON)
+	defer C.free(unsafe.Pointer(cgeoJSON))
+	cgc := createCGOContext(nil, no.errorHandler)
+	hndl := C.godalNewGeometryFromGeoJSON(cgc.cPointer(), (*C.char)(unsafe.Pointer(cgeoJSON)))
+	if err := cgc.close(); err != nil {
+		return nil, err
+	}
+	return &Geometry{isOwned: true, handle: hndl}, nil
 }
 
 // NewGeometryFromWKT creates a new Geometry from its WKT representation

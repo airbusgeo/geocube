@@ -224,7 +224,7 @@ func (ifd *ifd) structure(bigtiff bool) (tagCount, ifdSize, strileSize, planeCou
 	}
 	if len(ifd.Colormap) > 0 {
 		cnt++
-		size += arrayFieldSize(ifd.BitsPerSample, bigtiff)
+		size += arrayFieldSize(ifd.Colormap, bigtiff)
 	}
 	if ifd.TileWidth > 0 {
 		cnt++
@@ -473,6 +473,11 @@ func (cog *cog) computeImageryOffsets() error {
 			} else {
 				if dataOffset > uint64(^uint32(0)) { //^uint32(0) is max uint32
 					//rerun with bigtiff support
+
+					//first empty out the tiles channel to avoid a goroutine leak
+					for range tiles {
+						//skip
+					}
 					cog.bigtiff = true
 					return cog.computeImageryOffsets()
 				}

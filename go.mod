@@ -8,8 +8,8 @@ require (
 	cloud.google.com/go/pubsub v1.6.1
 	cloud.google.com/go/secretmanager v1.0.0
 	cloud.google.com/go/storage v1.18.2
-	github.com/airbusgeo/cogger v0.0.5
-	github.com/airbusgeo/godal v0.0.6-0.20211104110613-d49205b11c58
+	github.com/airbusgeo/cogger v0.0.7
+	github.com/airbusgeo/godal v0.0.6
 	github.com/airbusgeo/mucog v0.0.0-20210928135728-43d5e17d5a2a
 	github.com/airbusgeo/osio v0.1.2
 	github.com/aws/aws-sdk-go-v2 v1.7.0
@@ -18,6 +18,7 @@ require (
 	github.com/golang/glog v0.0.0-20210429001901-424d2337a529 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.2
+	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/tiff v0.0.0-20161109161721-4b31f3041d9a
 	github.com/google/uuid v1.1.2
 	github.com/googleapis/gnostic v0.2.0 // indirect
