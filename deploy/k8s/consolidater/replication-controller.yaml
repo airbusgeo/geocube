@@ -43,7 +43,7 @@ spec:
               UUID=`uuid`;
               WORKDIR=/local-ssd/$UUID;
               mkdir -p $WORKDIR;
-              /consolidater -psEventsTopic events -psConsolidationsSubscription consolidations -workdir $WORKDIR -cancelledJobs={{CANCELLED_JOBS_STORAGE}} || true;
+              /consolidater -eventsQueue events -consolidationsQueue consolidations -workdir $WORKDIR -cancelledJobs={{CANCELLED_JOBS_STORAGE}} || true;
               exitcode=$?;
               rm -rf $WORKDIR;
               exit $exitcode;

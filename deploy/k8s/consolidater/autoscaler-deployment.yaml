@@ -19,7 +19,7 @@ spec:
           imagePullPolicy: Always
           args:
             - -update=30s
-            - -psSubscription=consolidations-worker
+            - -queue=consolidations-worker
             - -rc=consolidater
             - -ns=default
             - -ratio=1

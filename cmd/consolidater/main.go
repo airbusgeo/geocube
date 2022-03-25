@@ -11,6 +11,7 @@ import (
 
 	"github.com/airbusgeo/geocube/cmd"
 	"github.com/airbusgeo/geocube/interface/messaging"
+	"github.com/airbusgeo/geocube/interface/messaging/pgqueue"
 	"github.com/airbusgeo/geocube/interface/messaging/pubsub"
 	"github.com/airbusgeo/geocube/internal/geocube"
 	"github.com/airbusgeo/geocube/internal/image"
@@ -60,25 +61,44 @@ func run(ctx context.Context) error {
 	// Create Messaging Service
 	var logMessaging string
 	{
-		// Connection to pubsub
-		if consolidaterConfig.PsConsolidationsSubscription != "" {
-			logMessaging += fmt.Sprintf(" pulling on %s/%s", consolidaterConfig.Project, consolidaterConfig.PsConsolidationsSubscription)
-			consumer, err := pubsub.NewConsumer(consolidaterConfig.Project, consolidaterConfig.PsConsolidationsSubscription)
+		if consolidaterConfig.PgqDbConnection != "" {
+			db, w, err := pgqueue.SqlConnect(ctx, consolidaterConfig.PgqDbConnection)
 			if err != nil {
-				return fmt.Errorf("pubsub.new: %w", err)
+				return fmt.Errorf("pgqMessaging: %w", err)
 			}
-			consumer.SetProcessOption(pubsub.OnErrorRetryDelay(60 * time.Second))
-			taskConsumer = consumer
-		}
+			if consolidaterConfig.ConsolidationsQueue != "" {
+				logMessaging += fmt.Sprintf(" pulling on pgqueue:%s", consolidaterConfig.ConsolidationsQueue)
+				consumer := pgqueue.NewConsumer(db, consolidaterConfig.ConsolidationsQueue)
+				defer consumer.Stop()
+				//consumer.SetProcessOption(pubsub.OnErrorRetryDelay(60 * time.Second))
+				taskConsumer = consumer
+			}
 
-		if consolidaterConfig.PsEventsTopic != "" {
-			logMessaging += fmt.Sprintf(" pushing on %s/%s", consolidaterConfig.Project, consolidaterConfig.PsEventsTopic)
-			p, err := pubsub.NewPublisher(ctx, consolidaterConfig.Project, consolidaterConfig.PsEventsTopic)
-			if err != nil {
-				return fmt.Errorf("pubsub.newpublisher: %w", err)
+			if consolidaterConfig.EventsQueue != "" {
+				logMessaging += fmt.Sprintf(" publishing on pgqueue:%s", consolidaterConfig.EventsQueue)
+				eventPublisher = pgqueue.NewPublisher(w, consolidaterConfig.EventsQueue)
 			}
-			defer p.Stop()
-			eventPublisher = p
+		} else {
+			// Connection to pubsub
+			if consolidaterConfig.ConsolidationsQueue != "" {
+				logMessaging += fmt.Sprintf(" pulling on pubsub:%s/%s", consolidaterConfig.Project, consolidaterConfig.ConsolidationsQueue)
+				consumer, err := pubsub.NewConsumer(consolidaterConfig.Project, consolidaterConfig.ConsolidationsQueue)
+				if err != nil {
+					return fmt.Errorf("pubsub.new: %w", err)
+				}
+				consumer.SetProcessOption(pubsub.OnErrorRetryDelay(60 * time.Second))
+				taskConsumer = consumer
+			}
+
+			if consolidaterConfig.EventsQueue != "" {
+				logMessaging += fmt.Sprintf(" publishing on pubsub:%s/%s", consolidaterConfig.Project, consolidaterConfig.EventsQueue)
+				p, err := pubsub.NewPublisher(ctx, consolidaterConfig.Project, consolidaterConfig.EventsQueue)
+				if err != nil {
+					return fmt.Errorf("pubsub.newpublisher: %w", err)
+				}
+				defer p.Stop()
+				eventPublisher = p
+			}
 		}
 	}
 	if taskConsumer == nil {
@@ -148,13 +168,19 @@ func run(ctx context.Context) error {
 func newConsolidationAppConfig() (*consolidaterConfig, error) {
 	consolidaterConfig := consolidaterConfig{}
 
-	flag.StringVar(&consolidaterConfig.Project, "psProject", "", "subscription project (gcp pubSub only)")
-	flag.StringVar(&consolidaterConfig.PsConsolidationsSubscription, "psConsolidationsSubscription", "", "pubsub consolidation subscription name")
-	flag.StringVar(&consolidaterConfig.PsEventsTopic, "psEventsTopic", "", "pubsub events topic name")
+	// Configuration
 	flag.StringVar(&consolidaterConfig.WorkDir, "workdir", "", "scratch work directory")
 	flag.StringVar(&consolidaterConfig.CancelledJobsStorage, "cancelledJobs", "", "storage where cancelled jobs are referenced")
 	flag.IntVar(&consolidaterConfig.RetryCount, "retryCount", 1, "number of retries when consolidation job failed with a temporary error")
 	flag.IntVar(&consolidaterConfig.Workers, "workers", 1, "number of workers for parallel tasks")
+
+	// Messaging
+	flag.StringVar(&consolidaterConfig.PgqDbConnection, "pgqConnection", "", "url of the postgres database to enable pgqueue messaging system (pgqueue only)")
+	flag.StringVar(&consolidaterConfig.Project, "psProject", "", "subscription project (gcp pubSub only)")
+	flag.StringVar(&consolidaterConfig.ConsolidationsQueue, "consolidationsQueue", "", "name of the messaging queue for consolidation jobs (pgqueue or pubsub subscription)")
+	flag.StringVar(&consolidaterConfig.EventsQueue, "eventsQueue", "", "name of the messaging queue for job events (pgquue or pubsub topic)")
+
+	// GDAL
 	consolidaterConfig.GDALConfig = cmd.GDALConfigFlags()
 
 	flag.Parse()
@@ -170,14 +196,15 @@ func newConsolidationAppConfig() (*consolidaterConfig, error) {
 }
 
 type consolidaterConfig struct {
-	Project                      string
-	PsEventsTopic                string
-	WorkDir                      string
-	PsConsolidationsSubscription string
-	CancelledJobsStorage         string
-	RetryCount                   int
-	Workers                      int
-	GDALConfig                   *cmd.GDALConfig
+	Project              string
+	EventsQueue          string
+	PgqDbConnection      string
+	WorkDir              string
+	ConsolidationsQueue  string
+	CancelledJobsStorage string
+	RetryCount           int
+	Workers              int
+	GDALConfig           *cmd.GDALConfig
 }
 
 func notify(ctx context.Context, evt *geocube.ConsolidationEvent, taskStatus geocube.TaskStatus, taskError error) error {

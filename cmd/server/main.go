@@ -18,6 +18,7 @@ import (
 	"github.com/airbusgeo/geocube/interface/database/pg"
 	"github.com/airbusgeo/geocube/interface/database/pg/secrets"
 	"github.com/airbusgeo/geocube/interface/messaging"
+	"github.com/airbusgeo/geocube/interface/messaging/pgqueue"
 	"github.com/airbusgeo/geocube/interface/messaging/pubsub"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"go.uber.org/zap"
@@ -114,25 +115,40 @@ func run(ctx context.Context) error {
 	var eventPublisher, consolidationPublisher messaging.Publisher
 	var eventConsumer messaging.Consumer
 	{
-		// Connection to pubsub
-		if serverConfig.PsEventsTopic != "" {
-			publisher, err := pubsub.NewPublisher(ctx, serverConfig.Project, serverConfig.PsEventsTopic)
+		if serverConfig.PgqDbConnection != "" {
+			// Connection to pgqueue
+			db, w, err := pgqueue.SqlConnect(ctx, serverConfig.PgqDbConnection)
 			if err != nil {
-				return fmt.Errorf("pubsub.NewPublisher: %w", err)
+				return fmt.Errorf("pgqueue.Open: %w", err)
+
 			}
-			defer publisher.Stop()
-			eventPublisher = publisher
-		}
-		if serverConfig.PsConsolidationsTopic != "" {
-			publisher, err := pubsub.NewPublisher(ctx, serverConfig.Project, serverConfig.PsConsolidationsTopic)
-			if err != nil {
-				return fmt.Errorf("pubsub.NewPublisher: %w", err)
+			if serverConfig.EventsQueue != "" {
+				eventPublisher = pgqueue.NewPublisher(w, serverConfig.EventsQueue)
+				consumer := pgqueue.NewConsumer(db, serverConfig.EventsQueue)
+				defer consumer.Stop()
+				eventConsumer = consumer
 			}
-			defer publisher.Stop()
-			consolidationPublisher = publisher
-		}
-		if eventConsumer, err = pubsub.NewConsumer(serverConfig.Project, ""); err != nil {
-			return fmt.Errorf("pubsub.NewConsumer: %w", err)
+			if serverConfig.ConsolidationsQueue != "" {
+				consolidationPublisher = pgqueue.NewPublisher(w, serverConfig.ConsolidationsQueue)
+			}
+		} else if serverConfig.Project != "" {
+			// Connection to pubsub
+			if serverConfig.EventsQueue != "" {
+				publisher, err := pubsub.NewPublisher(ctx, serverConfig.Project, serverConfig.EventsQueue)
+				if err != nil {
+					return fmt.Errorf("pubsub.NewPublisher: %w", err)
+				}
+				defer publisher.Stop()
+				eventPublisher = publisher
+			}
+			if serverConfig.ConsolidationsQueue != "" {
+				publisher, err := pubsub.NewPublisher(ctx, serverConfig.Project, serverConfig.ConsolidationsQueue)
+				if err != nil {
+					return fmt.Errorf("pubsub.NewPublisher: %w", err)
+				}
+				defer publisher.Stop()
+				consolidationPublisher = publisher
+			}
 		}
 	}
 
@@ -168,7 +184,7 @@ func run(ctx context.Context) error {
 				fmt.Fprint(w, err.Error())
 				return
 			}
-			code, err := eventConsumer.Consume(*r, eventHandler)
+			code, err := messaging.Consume(*r, eventHandler)
 			if err != nil {
 				handleError(ctx, w, r, code, err)
 			} else {
@@ -217,6 +233,14 @@ func run(ctx context.Context) error {
 		}
 		if err != nil && err != http.ErrServerClosed {
 			log.Logger(ctx).Fatal("srv.ListenAndServe", zap.Error(err))
+		}
+	}()
+
+	go func() {
+		if eventConsumer != nil {
+			if err := eventConsumer.Pull(ctx, eventHandler); err != nil {
+				log.Logger(ctx).Fatal("eventConsumer.Pull", zap.Error(err))
+			}
 		}
 	}()
 
@@ -282,23 +306,32 @@ func (pm pngMarshaler) NewEncoder(w io.Writer) runtime.Encoder {
 
 func newServerAppConfig() (*serverConfig, error) {
 	serverConfig := serverConfig{}
-	flag.BoolVar(&serverConfig.Local, "local", false, "execute geocube in local environment")
-	flag.BoolVar(&serverConfig.TLS, "tls", false, "enable TLS protocol")
+	// Configuration
 	flag.StringVar(&serverConfig.AppPort, "port", "8080", "geocube port to use")
+	flag.BoolVar(&serverConfig.TLS, "tls", false, "enable TLS protocol")
+	flag.IntVar(&serverConfig.MaxConnectionAge, "maxConnectionAge", 0, "grpc max age connection")
+	flag.IntVar(&serverConfig.CatalogWorkers, "workers", 1, "number of parallel workers per catalog request")
+	flag.StringVar(&serverConfig.CancelledConsolidationStorage, "cancelledJobs", "", "storage where cancelled jobs are referenced. Must be reachable by the Consolidation Workers and the Geocube with read/write permissions")
+	flag.StringVar(&serverConfig.IngestionStorage, "ingestionStorage", "", "path to the storage where ingested and consolidated datasets will be stored. Must be reachable with read/write/delete permissions. (local/gs)")
+
+	// BearerAuth
+	flag.StringVar(&serverConfig.BearerAuthSecretName, "baSecretName", "", "name of the secret that stores the bearer authentication (admin & user) (gcp only)")
+
+	// Database
 	flag.StringVar(&serverConfig.DbConnection, "dbConnection", "", "database connection (ex: postgresql://user:password@localhost:5432/geocube)")
 	flag.StringVar(&serverConfig.DbName, "dbName", "", "database name (to connect with User, Host & Password)")
 	flag.StringVar(&serverConfig.DbUser, "dbUser", "", "database user (see dbName)")
 	flag.StringVar(&serverConfig.DbHost, "dbHost", "", "database host (see dbName)")
 	flag.StringVar(&serverConfig.DbPassword, "dbPassword", "", "database password (see dbName)")
-	flag.StringVar(&serverConfig.Project, "project", "", "project name (gcp only/not required in local usage)")
 	flag.StringVar(&serverConfig.DbSecretName, "dbSecretName", "", "name of the secret that stores credentials to connect to the database (gcp only)")
-	flag.StringVar(&serverConfig.BearerAuthSecretName, "baSecretName", "", "name of the secret that stores the bearer authentication (admin & user) (gcp only)")
-	flag.StringVar(&serverConfig.PsEventsTopic, "psEventsTopic", "", "name of the topic to send the asynchronous job events (pubsub only)")
-	flag.StringVar(&serverConfig.PsConsolidationsTopic, "psConsolidationsTopic", "", "name of the topic to send the consolidation orders (pubsub only)")
-	flag.IntVar(&serverConfig.MaxConnectionAge, "maxConnectionAge", 0, "grpc max age connection")
-	flag.StringVar(&serverConfig.IngestionStorage, "ingestionStorage", "", "path to the storage where ingested and consolidated datasets will be stored. Must be reachable with read/write/delete permissions. (local/gs)")
-	flag.IntVar(&serverConfig.CatalogWorkers, "workers", 1, "number of parallel workers per catalog request")
-	flag.StringVar(&serverConfig.CancelledConsolidationStorage, "cancelledJobs", "", "storage where cancelled jobs are referenced. Must be reachable by the Consolidation Workers and the Geocube with read/write permissions")
+
+	// Messaging
+	flag.StringVar(&serverConfig.Project, "project", "", "project name (gcp only/not required in local usage)")
+	flag.StringVar(&serverConfig.PgqDbConnection, "pgqConnection", "", "url of the postgres database to enable pgqueue messaging system (pgqueue only)")
+	flag.StringVar(&serverConfig.EventsQueue, "eventsQueue", "", "name of the pgqueue or the pubsub topic to send the asynchronous job events")
+	flag.StringVar(&serverConfig.ConsolidationsQueue, "consolidationsQueue", "", "name of the pgqueue or the pubsub topic to send the consolidation orders")
+
+	// GDAL
 	serverConfig.GDALConfig = cmd.GDALConfigFlags()
 
 	flag.Parse()
@@ -318,8 +351,9 @@ func newServerAppConfig() (*serverConfig, error) {
 
 type serverConfig struct {
 	Project                       string
-	PsEventsTopic                 string
-	PsConsolidationsTopic         string
+	EventsQueue                   string
+	ConsolidationsQueue           string
+	PgqDbConnection               string
 	Local                         bool
 	TLS                           bool
 	AppPort                       string

@@ -21,8 +21,8 @@ spec:
             - -dbUser={{DB_USER}}
             - -dbPassword={{DB_PASSWORD}}
             - -dbHost={{BD_HOST}}
-            - -psEventsTopic=events
-            - -psConsolidationsTopic=consolidations
+            - -eventsQueue=events
+            - -consolidationsQueue=consolidations
             - -ingestionStorage={{INGESTION_STORAGE}}
             - -maxConnectionAge=3600
             - -workers=1
