@@ -234,7 +234,7 @@ func (svc *Service) validateRemoteContainer(ctx context.Context, container *geoc
 	if strings.EqualFold(containerURI.Protocol(), "gs") {
 		attrs, err := containerURI.GetAttrs(ctx)
 		if err != nil {
-			return geocube.NewValidationError(container.URI + " is not reachable.")
+			return geocube.NewValidationError("%s is not reachable: %v", container.URI, err)
 		}
 
 		// Validate storage class
@@ -259,7 +259,7 @@ func (svc *Service) validateAndSetRemoteDataset(ctx context.Context, dataset *ge
 	datasetURI := dataset.GDALURI()
 	ds, err := godal.Open(datasetURI, image.ErrLoger)
 	if err != nil {
-		return geocube.NewValidationError("%s is not reachable", datasetURI)
+		return geocube.NewValidationError("%s is not reachable: %v", datasetURI, err)
 	}
 	defer ds.Close()
 
