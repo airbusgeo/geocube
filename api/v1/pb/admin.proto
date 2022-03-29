@@ -57,10 +57,11 @@ message UpdateDatasetsResponse{
   */
 message DeleteDatasetsRequest{
     //bool            simulate     = 1; // DEPRECATED If true, a simulation is done, nothing is actually deleted. Use StepByStep=2 instead
-    repeated string record_ids      = 2; // Instance id that references the datasets to be deleted
-    repeated string instance_ids    = 3; // Record ids that reference the datasets to be deleted
-    ExecutionLevel  execution_level = 4; // Execution level (see enum)
-    string          job_name        = 5; // Name of the job (if empty, a name will be generated)
+    repeated string record_ids       = 2; // Instance id that references the datasets to be deleted
+    repeated string instance_ids     = 3; // Record ids that reference the datasets to be deleted
+    repeated string dataset_patterns = 6; // Dataset file patterns (support * and ? for all or any characters and trailing (?i) for case-insensitiveness) (or empty to ignore)
+    ExecutionLevel  execution_level  = 4; // Execution level (see enum)
+    string          job_name         = 5; // Name of the job (if empty, a name will be generated)
 }
 
 /**

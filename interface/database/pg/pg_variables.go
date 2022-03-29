@@ -130,7 +130,7 @@ func (b Backend) FindVariables(ctx context.Context, namelike string, page, limit
 	query := sqlSelectVariable + " FROM geocube.variable_definitions v"
 
 	// Create the Where clause
-	wc := whereClause{}
+	wc := joinClause{}
 	if namelike != "" {
 		namelike, operator := parseLike(namelike)
 		wc.append("v.name "+operator+" $%d", namelike)

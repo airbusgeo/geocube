@@ -95,14 +95,14 @@ func (svc *Service) UpdateDatasets(ctx context.Context, simulate bool, instanceI
 }
 
 // DeleteDatasets implements ServiceAdmin
-func (svc *Service) DeleteDatasets(ctx context.Context, jobName string, instancesID, recordsID []string, executionLevel geocube.ExecutionLevel) (*geocube.Job, error) {
+func (svc *Service) DeleteDatasets(ctx context.Context, jobName string, instanceIDs, recordIDs, datasetPatterns []string, executionLevel geocube.ExecutionLevel) (*geocube.Job, error) {
 	// Create the job
 	if jobName == "" {
 		jobName = uuid.New().String()
 	}
 	job := geocube.NewDeletionJob(jobName, executionLevel)
 
-	if err := svc.delInit(ctx, job, instancesID, recordsID); err != nil {
+	if err := svc.delInit(ctx, job, instanceIDs, recordIDs, datasetPatterns); err != nil {
 		return nil, fmt.Errorf("DeleteDatasets.%w", err)
 	}
 	return job, nil

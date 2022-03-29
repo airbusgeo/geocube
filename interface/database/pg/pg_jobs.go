@@ -11,7 +11,7 @@ import (
 
 // FindJobs implements GeocubeBackend
 func (b Backend) FindJobs(ctx context.Context, nameLike string) ([]*geocube.Job, error) {
-	wc := whereClause{}
+	wc := joinClause{}
 	if nameLike != "" {
 		nameLike, operator := parseLike(nameLike)
 		wc.append(" name "+operator+" $%d", nameLike)
@@ -120,7 +120,7 @@ func (b Backend) UpdateJob(ctx context.Context, job *geocube.Job) error {
 
 // ListJobsID implements GeocubeBackend
 func (b Backend) ListJobsID(ctx context.Context, nameLike string, states []geocube.JobState) ([]string, error) {
-	wc := whereClause{}
+	wc := joinClause{}
 
 	strStates := make([]string, len(states))
 	for i, state := range states {

@@ -11,6 +11,7 @@ import (
 	"github.com/airbusgeo/geocube/internal/geocube"
 	"github.com/airbusgeo/geocube/internal/log"
 	"github.com/airbusgeo/geocube/internal/utils"
+	"go.uber.org/zap"
 )
 
 // HandleEvent handles TaskEvent and JobEvent for a job
@@ -34,6 +35,7 @@ func (svc *Service) handleJobEvt(ctx context.Context, evt geocube.JobEvent) erro
 	if err != nil {
 		return fmt.Errorf("handleJobEvt.%w", err)
 	}
+	ctx = log.WithFields(ctx, zap.String("job", job.ID))
 
 	// Trigger the event
 	if err = job.Trigger(evt); err != nil {
@@ -168,14 +170,14 @@ func (svc *Service) delOnEnterNewState(ctx context.Context, job *geocube.Job) er
 	return nil
 }
 
-func (svc *Service) delInit(ctx context.Context, job *geocube.Job, instancesID, recordsID []string) error {
+func (svc *Service) delInit(ctx context.Context, job *geocube.Job, instanceIDs, recordIDs, datasetPatterns []string) error {
 	if err := svc.unitOfWork(ctx, func(txn database.GeocubeTxBackend) (err error) {
-		datasets, err := txn.FindDatasets(ctx, geocube.DatasetStatusACTIVE, "", "", instancesID, recordsID, geocube.Metadata{}, time.Time{}, time.Time{}, nil, nil, 0, 0, false)
+		datasets, err := txn.FindDatasets(ctx, geocube.DatasetStatusACTIVE, datasetPatterns, "", instanceIDs, recordIDs, geocube.Metadata{}, time.Time{}, time.Time{}, nil, nil, 0, 0, false)
 		if err != nil {
 			return err
 		}
 		if len(datasets) == 0 {
-			return geocube.NewEntityNotFound("", "", "", "No dataset found for theses records and instances")
+			return geocube.NewEntityNotFound("", "", "", "No dataset found for theses records, instances and/or pattern")
 		}
 		datasetsID := make([]string, len(datasets))
 		for i, dataset := range datasets {
@@ -231,6 +233,7 @@ func (svc *Service) delRemoveDatasets(ctx context.Context, job *geocube.Job) err
 			return err
 		}
 		// Create deletion tasks
+		log.Logger(ctx).Sugar().Debugf("Create %d deletion tasks", len(containersURI))
 		for _, uri := range containersURI {
 			job.LogMsgf(geocube.DEBUG, "Create task to delete: %s", uri)
 			if err := job.CreateDeletionTask(uri); err != nil {
@@ -238,6 +241,7 @@ func (svc *Service) delRemoveDatasets(ctx context.Context, job *geocube.Job) err
 			}
 		}
 		// Persist changes in db
+		log.Logger(ctx).Debug("Save job")
 		return svc.saveJob(ctx, txn, job)
 	})
 }
@@ -254,10 +258,12 @@ func (svc *Service) opSubFncRemoveDatasetsAndContainers(ctx context.Context, txn
 	}
 
 	// Find the datasets of the job with the given status
-	datasets, err := txn.FindDatasets(ctx, datasetStatus, "", job.ID, nil, nil, geocube.Metadata{}, time.Time{}, time.Time{}, nil, nil, 0, 0, true)
+	datasets, err := txn.FindDatasets(ctx, datasetStatus, nil, job.ID, nil, nil, geocube.Metadata{}, time.Time{}, time.Time{}, nil, nil, 0, 0, true)
 	if err != nil {
 		return nil, fmt.Errorf("opRemoveJobDatasetsAndContainers.%w", err)
 	}
+
+	log.Logger(ctx).Sugar().Debugf("Found %d datasets to delete", len(datasets))
 	job.LogMsgf(geocube.DEBUG, "%d datasets to delete", len(datasets))
 	// First, release the datasets (otherwise the database cannot delete them)
 	job.ReleaseDatasets(lockFlag)
@@ -282,7 +288,9 @@ func (svc *Service) opSubFncRemoveDatasets(ctx context.Context, txn database.Geo
 			containersURI = append(containersURI, dataset.ContainerURI)
 		}
 	}
+
 	// Fetch containers
+	log.Logger(ctx).Sugar().Debugf("Read %d containers to delete", len(containersURI))
 	cs, err := txn.ReadContainers(ctx, containersURI)
 	if err != nil {
 		return nil, fmt.Errorf("opSubFncRemoveDatasets.%w", err)
@@ -293,6 +301,7 @@ func (svc *Service) opSubFncRemoveDatasets(ctx context.Context, txn database.Geo
 	}
 
 	// Delete datasets
+	log.Logger(ctx).Debug("Remove datasets from containers...")
 	for _, dataset := range datasets {
 		container := containers[dataset.ContainerURI]
 		if empty, err := container.RemoveDataset(dataset.ID); empty || err != nil {
@@ -309,6 +318,7 @@ func (svc *Service) opSubFncRemoveDatasets(ctx context.Context, txn database.Geo
 	}
 
 	// Save containers
+	log.Logger(ctx).Debug("Save containers...")
 	for _, container := range containers {
 		if err = svc.saveContainer(ctx, txn, container); err != nil {
 			return nil, fmt.Errorf("opSubFncRemoveDatasets.%w", err)

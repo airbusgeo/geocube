@@ -861,6 +861,9 @@ func (svc *Service) GetCube(req *pb.GetCubeRequest, stream pb.Geocube_GetCubeSer
 			}
 		}
 	}
+	if !req.GetHeadersOnly() {
+		log.Logger(ctx).Sugar().Infof("GetCube: %d images streamed from %d datasets (%v)\n", info.NbImages, info.NbDatasets, time.Since(start))
+	}
 	defer gcs.GetMetrics(ctx)
 	return ctx.Err()
 }

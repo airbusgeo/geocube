@@ -138,7 +138,7 @@ func (svc *Service) GetCubeFromRecords(ctx context.Context, grecordsID [][]strin
 	}
 
 	// Find the datasets that fit
-	datasets, err := svc.db.FindDatasets(ctx, geocube.DatasetStatusACTIVE, "", "", instancesID, recordsID, geocube.Metadata{}, time.Time{}, time.Time{}, geogExtent, nil, 0, 0, true)
+	datasets, err := svc.db.FindDatasets(ctx, geocube.DatasetStatusACTIVE, nil, "", instancesID, recordsID, geocube.Metadata{}, time.Time{}, time.Time{}, geogExtent, nil, 0, 0, true)
 	if err != nil {
 		return CubeInfo{}, nil, fmt.Errorf("GetCubeFromRecords.%w", err)
 	}
@@ -173,7 +173,7 @@ func (svc *Service) GetCubeFromFilters(ctx context.Context, recordTags geocube.M
 	}
 
 	// Find the datasets that fit
-	datasets, err := svc.db.FindDatasets(ctx, geocube.DatasetStatusACTIVE, "", "", instancesID, nil, recordTags, fromTime, toTime, geogExtent, nil, 0, 0, true)
+	datasets, err := svc.db.FindDatasets(ctx, geocube.DatasetStatusACTIVE, nil, "", instancesID, nil, recordTags, fromTime, toTime, geogExtent, nil, 0, 0, true)
 	if err != nil {
 		return CubeInfo{}, nil, fmt.Errorf("GetCubeFromFilters.%w", err)
 	}
@@ -548,7 +548,7 @@ func (svc *Service) getMosaic(ctx context.Context, recordsID, instancesID []stri
 	}
 
 	// Retrieve datasets
-	datasets, err := svc.db.FindDatasets(ctx, geocube.DatasetStatusACTIVE, "", "", instancesID, recordsID, geocube.Metadata{}, time.Time{}, time.Time{}, &geogExtent, nil, 0, 0, true)
+	datasets, err := svc.db.FindDatasets(ctx, geocube.DatasetStatusACTIVE, nil, "", instancesID, recordsID, geocube.Metadata{}, time.Time{}, time.Time{}, &geogExtent, nil, 0, 0, true)
 	if err != nil {
 		return nil, fmt.Errorf("GetMosaic.%w", err)
 	}

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/twpayne/go-geom"
+	"go.uber.org/zap"
 
 	geomGeojson "github.com/twpayne/go-geom/encoding/geojson"
 
@@ -16,6 +17,7 @@ import (
 	mocksMessaging "github.com/airbusgeo/geocube/interface/messaging/mocks"
 
 	"github.com/airbusgeo/geocube/internal/geocube"
+	"github.com/airbusgeo/geocube/internal/log"
 	"github.com/airbusgeo/geocube/internal/svc"
 	"github.com/airbusgeo/godal"
 	. "github.com/onsi/ginkgo"
@@ -257,6 +259,7 @@ var _ = Describe("Consolidater", func() {
 		})
 
 		JustBeforeEach(func() {
+			ctx := log.WithFields(ctx, zap.String("job", jobToUse.ID))
 			mockDatabase.On("ListActiveDatasetsID", ctx, jobToUse.Payload.InstanceID, recordIDS, mock.Anything, mock.Anything, mock.Anything).Return(datasetListReturned, listErrorReturned)
 			mockDatabase.On("StartTransaction", ctx).Return(geocubeTxBackendReturned, geocubeTxBackendErrorReturned)
 			geocubeTxBackendReturned.On("Rollback").Return(rollbackErrorReturned)
@@ -315,6 +318,7 @@ var _ = Describe("Consolidater", func() {
 				if err != nil {
 					panic(err)
 				}
+				ctx := log.WithFields(ctx, zap.String("job", jobToUse.ID))
 				multipolygon := geom.NewMultiPolygonFlat(inputFeature.Geometry.Layout(), inputFeature.Geometry.FlatCoords(), inputFeature.Geometry.Endss())
 				geocubeTxBackendReturned.On("FindRecords", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(findRecordReturned, findRecordErrorReturned)
 				geocubeTxBackendReturned.On("GetDatasetsGeometryUnion", ctx, mock.Anything).Return(multipolygon, nil)

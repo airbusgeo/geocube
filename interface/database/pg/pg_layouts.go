@@ -56,7 +56,7 @@ func (b Backend) ReadLayout(ctx context.Context, name string) (*geocube.Layout, 
 
 // FindLayouts implements GeocubeBackend
 func (b Backend) FindLayouts(ctx context.Context, nameLike string) ([]*geocube.Layout, error) {
-	wc := whereClause{}
+	wc := joinClause{}
 	if nameLike != "" {
 		nameLike, operator := parseLike(nameLike)
 		wc.append(" name "+operator+" $%d", nameLike)

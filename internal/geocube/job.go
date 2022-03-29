@@ -553,9 +553,6 @@ func (j *Job) triggerDeletion(evt JobEvent) bool {
 	case JobStateDELETIONINPROGRESS:
 		switch evt.Status {
 		case CancelledByUserForced:
-			if !j.Waiting {
-				j.LogMsg(WARN, "Deletion has been cancelled, but files may have already been deleted")
-			}
 			return j.changeState(JobStateABORTED)
 		case CancelledByUser:
 			if j.Waiting {
@@ -568,6 +565,11 @@ func (j *Job) triggerDeletion(evt JobEvent) bool {
 		}
 	case JobStateDELETIONEFFECTIVE:
 		switch evt.Status {
+		case CancelledByUserForced:
+			if !j.Waiting {
+				j.LogMsg(WARN, "Deletion has been cancelled, but files may have already been deleted")
+			}
+			return j.changeState(JobStateABORTED)
 		case DeletionFailed:
 			return j.changeState(JobStateDONEBUTUNTIDY)
 		case DeletionDone:

@@ -234,7 +234,7 @@ func (svc *Service) csldPrepareOrders(ctx context.Context, job *geocube.Job) err
 			uniqueDatasetsID := utils.StringSet{}
 			{
 				// Retrieve all the datasets covering the cell
-				ds, err := txn.FindDatasets(ctx, geocube.DatasetStatusACTIVE, "", job.ID, nil, nil, geocube.Metadata{},
+				ds, err := txn.FindDatasets(ctx, geocube.DatasetStatusACTIVE, nil, job.ID, nil, nil, geocube.Metadata{},
 					time.Time{}, time.Time{}, &cell.GeographicRing, &cell.Ring, 0, 0, true)
 				if err != nil {
 					return fmt.Errorf("csldPrepareOrders.%w", err)
@@ -615,7 +615,7 @@ func (svc *Service) csldDeleteDatasets(ctx context.Context, job *geocube.Job) er
 	// Persist the jobs
 	return svc.unitOfWork(ctx, func(txn database.GeocubeTxBackend) error {
 		// Get Dataset to delete
-		datasets, err := txn.FindDatasets(ctx, geocube.DatasetStatusTODELETE, "", job.ID, nil, nil, geocube.Metadata{}, time.Time{}, time.Time{}, nil, nil, 0, 0, true)
+		datasets, err := txn.FindDatasets(ctx, geocube.DatasetStatusTODELETE, nil, job.ID, nil, nil, geocube.Metadata{}, time.Time{}, time.Time{}, nil, nil, 0, 0, true)
 		if err != nil {
 			return fmt.Errorf("DeleteDatasets.%w", err)
 		}

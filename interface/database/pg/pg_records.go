@@ -54,7 +54,7 @@ func (b Backend) CreateRecords(ctx context.Context, records []*geocube.Record) (
 	return nil
 }
 
-func appendTimeFilters(wc *whereClause, fromTime, toTime time.Time) {
+func appendTimeFilters(wc *joinClause, fromTime, toTime time.Time) {
 	if !fromTime.IsZero() {
 		wc.append("r.datetime >= $%d", fromTime)
 	}
@@ -63,7 +63,7 @@ func appendTimeFilters(wc *whereClause, fromTime, toTime time.Time) {
 	}
 }
 
-func appendTagsFilters(wc *whereClause, tags geocube.Metadata) {
+func appendTagsFilters(wc *joinClause, tags geocube.Metadata) {
 	for k, v := range tags {
 		if v == "" {
 			wc.append("r.tags ? $%d", k)
@@ -97,7 +97,7 @@ func (b Backend) FindRecords(ctx context.Context, namelike string, tags geocube.
 	}
 
 	// Create the Where clause
-	wc := whereClause{}
+	wc := joinClause{}
 	if jobID != "" {
 		wc.append("l.job_id = $%d", jobID)
 	}

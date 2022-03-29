@@ -143,13 +143,14 @@ type GeocubeBackend interface {
 	ListActiveDatasetsID(ctx context.Context, instanceID string, recordsID []string,
 		recordTags geocube.Metadata, fromTime, toTime time.Time) ([]string, error)
 	// FindDatasets fetches all the datasets that match the criterias
-	// [Optional] containerURI, lockedByJobID: filter by container, or those locked by job
+	// [Optional] containerURIPatterns: filter by container (support "*?"" and "(?i)" suffix for case insensitivity)
+	// [Optional] lockedByJobID: filter by containers locked by job
 	// [Optional] instancesID, recordsID: filter by list of variable instances/records
 	// [Optional] recordTags: filter by record's tags
 	// [Optional] fromTime, toTime: filter by record's datetime
 	// [Optional] geog, [refined]: filter the datasets that intersect the geographic ring, and optionally, refine with "refined" iif the dataset has the same SRID.
 	// order : by record.datetime (ascending) and record.id
-	FindDatasets(ctx context.Context, status geocube.DatasetStatus, containerURI, lockedByJobID string, instancesID, recordsID []string,
+	FindDatasets(ctx context.Context, status geocube.DatasetStatus, containerURIPatterns []string, lockedByJobID string, instanceIDs, recordIDs []string,
 		recordTags geocube.Metadata, fromTime, toTime time.Time, geog *proj.GeographicRing, refined *proj.Ring, page, limit int, order bool) ([]*geocube.Dataset, error)
 	// GetDatasetsGeometryUnion returns the union of AOI of all the locked datasets
 	GetDatasetsGeometryUnion(ctx context.Context, lockedByJobID string) (*geom.MultiPolygon, error)

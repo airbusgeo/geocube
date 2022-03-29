@@ -253,19 +253,19 @@ func (_m *GeocubeBackend) ListActiveDatasetsID(ctx context.Context, instanceID s
 	return r0, r1
 }
 
-func (_m *GeocubeBackend) FindDatasets(ctx context.Context, status geocube.DatasetStatus, containerURI, lockedByJobID string, instancesID, recordsID []string, recordTags geocube.Metadata, fromTime, toTime time.Time, geog *proj.GeographicRing, refined *proj.Ring, page, limit int, order bool) ([]*geocube.Dataset, error) {
-	ret := _m.Called(ctx, status, containerURI, lockedByJobID, instancesID, recordsID, recordTags, fromTime, toTime, geog, refined, page, limit, order)
+func (_m *GeocubeBackend) FindDatasets(ctx context.Context, status geocube.DatasetStatus, containerURIs []string, lockedByJobID string, instanceIDs, recordIDs []string, recordTags geocube.Metadata, fromTime, toTime time.Time, geog *proj.GeographicRing, refined *proj.Ring, page, limit int, order bool) ([]*geocube.Dataset, error) {
+	ret := _m.Called(ctx, status, containerURIs, lockedByJobID, instanceIDs, recordIDs, recordTags, fromTime, toTime, geog, refined, page, limit, order)
 
 	var r0 []*geocube.Dataset
-	if rf, ok := ret.Get(0).(func(context.Context, geocube.DatasetStatus, string, string, []string, []string, geocube.Metadata, time.Time, time.Time, *proj.GeographicRing, *proj.Ring, int, int, bool) []*geocube.Dataset); ok {
-		r0 = rf(ctx, status, containerURI, lockedByJobID, instancesID, recordsID, recordTags, fromTime, toTime, geog, refined, page, limit, order)
+	if rf, ok := ret.Get(0).(func(context.Context, geocube.DatasetStatus, []string, string, []string, []string, geocube.Metadata, time.Time, time.Time, *proj.GeographicRing, *proj.Ring, int, int, bool) []*geocube.Dataset); ok {
+		r0 = rf(ctx, status, containerURIs, lockedByJobID, instanceIDs, recordIDs, recordTags, fromTime, toTime, geog, refined, page, limit, order)
 	} else {
 		r0 = ret.Get(0).([]*geocube.Dataset)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, geocube.DatasetStatus, string, string, []string, []string, geocube.Metadata, time.Time, time.Time, *proj.GeographicRing, *proj.Ring, int, int, bool) error); ok {
-		r1 = rf(ctx, status, containerURI, lockedByJobID, instancesID, recordsID, recordTags, fromTime, toTime, geog, refined, page, limit, order)
+	if rf, ok := ret.Get(1).(func(context.Context, geocube.DatasetStatus, []string, string, []string, []string, geocube.Metadata, time.Time, time.Time, *proj.GeographicRing, *proj.Ring, int, int, bool) error); ok {
+		r1 = rf(ctx, status, containerURIs, lockedByJobID, instanceIDs, recordIDs, recordTags, fromTime, toTime, geog, refined, page, limit, order)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -713,19 +713,19 @@ func (_m *GeocubeTxBackend) ReadLayout(ctx context.Context, layoutID string) (*g
 	return r0, r1
 }
 
-func (_m *GeocubeTxBackend) FindDatasets(ctx context.Context, status geocube.DatasetStatus, containerURI, lockedByJobID string, instancesID, recordsID []string, recordTags geocube.Metadata, fromTime, toTime time.Time, geog *proj.GeographicRing, refined *proj.Ring, page, limit int, order bool) ([]*geocube.Dataset, error) {
-	ret := _m.Called(ctx, status, containerURI, lockedByJobID, instancesID, recordsID, recordTags, fromTime, toTime, geog, refined, page, limit, order)
+func (_m *GeocubeTxBackend) FindDatasets(ctx context.Context, status geocube.DatasetStatus, containerURIs []string, lockedByJobID string, instanceIDs, recordIDs []string, recordTags geocube.Metadata, fromTime, toTime time.Time, geog *proj.GeographicRing, refined *proj.Ring, page, limit int, order bool) ([]*geocube.Dataset, error) {
+	ret := _m.Called(ctx, status, containerURIs, lockedByJobID, instanceIDs, recordIDs, recordTags, fromTime, toTime, geog, refined, page, limit, order)
 
 	var r0 []*geocube.Dataset
-	if rf, ok := ret.Get(0).(func(context.Context, geocube.DatasetStatus, string, string, []string, []string, geocube.Metadata, time.Time, time.Time, *proj.GeographicRing, *proj.Ring, int, int, bool) []*geocube.Dataset); ok {
-		r0 = rf(ctx, status, containerURI, lockedByJobID, instancesID, recordsID, recordTags, fromTime, toTime, geog, refined, page, limit, order)
+	if rf, ok := ret.Get(0).(func(context.Context, geocube.DatasetStatus, []string, string, []string, []string, geocube.Metadata, time.Time, time.Time, *proj.GeographicRing, *proj.Ring, int, int, bool) []*geocube.Dataset); ok {
+		r0 = rf(ctx, status, containerURIs, lockedByJobID, instanceIDs, recordIDs, recordTags, fromTime, toTime, geog, refined, page, limit, order)
 	} else {
 		r0 = ret.Get(0).([]*geocube.Dataset)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, geocube.DatasetStatus, string, string, []string, []string, geocube.Metadata, time.Time, time.Time, *proj.GeographicRing, *proj.Ring, int, int, bool) error); ok {
-		r1 = rf(ctx, status, containerURI, lockedByJobID, instancesID, recordsID, recordTags, fromTime, toTime, geog, refined, page, limit, order)
+	if rf, ok := ret.Get(1).(func(context.Context, geocube.DatasetStatus, []string, string, []string, []string, geocube.Metadata, time.Time, time.Time, *proj.GeographicRing, *proj.Ring, int, int, bool) error); ok {
+		r1 = rf(ctx, status, containerURIs, lockedByJobID, instanceIDs, recordIDs, recordTags, fromTime, toTime, geog, refined, page, limit, order)
 	} else {
 		r1 = ret.Error(1)
 	}

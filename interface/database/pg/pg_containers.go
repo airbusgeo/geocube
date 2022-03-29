@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/airbusgeo/geocube/internal/log"
 	"github.com/airbusgeo/geocube/internal/utils/grid"
 
 	"github.com/airbusgeo/geocube/internal/geocube"
@@ -160,17 +161,13 @@ func (b Backend) DeleteDatasets(ctx context.Context, datasetsID []string) error 
 }
 
 // FindDatasets implements GeocubeBackend
-func (b Backend) FindDatasets(ctx context.Context, status geocube.DatasetStatus, containerURI, lockedByJobID string, instancesID, recordsID []string,
+func (b Backend) FindDatasets(ctx context.Context, status geocube.DatasetStatus, containerURIPatterns []string, lockedByJobID string, instancesID, recordsID []string,
 	recordTags geocube.Metadata, fromTime, toTime time.Time, geog *proj.GeographicRing, refined *proj.Ring, page, limit int, order bool) (datasets []*geocube.Dataset, err error) {
-	var containersURI []string
-	if containerURI != "" {
-		containersURI = []string{containerURI}
-	}
-	return b.findDatasets(ctx, []geocube.DatasetStatus{status}, containersURI, lockedByJobID, instancesID, recordsID, recordTags, fromTime, toTime, geog, refined, page, limit, order)
+	return b.findDatasets(ctx, []geocube.DatasetStatus{status}, containerURIPatterns, lockedByJobID, instancesID, recordsID, recordTags, fromTime, toTime, geog, refined, page, limit, order)
 }
 
 // findDatasets is identical to FindDatasets but it can take a list of datasetStatus
-func (b Backend) findDatasets(ctx context.Context, status []geocube.DatasetStatus, containersURI []string, lockedByJobID string, instancesID, recordsID []string,
+func (b Backend) findDatasets(ctx context.Context, status []geocube.DatasetStatus, containerURIPatterns []string, lockedByJobID string, instancesID, recordsID []string,
 	recordTags geocube.Metadata, fromTime, toTime time.Time, geog *proj.GeographicRing, refined *proj.Ring, page, limit int, order bool) (datasets []*geocube.Dataset, err error) {
 	// Create the selectClause
 	query := "SELECT d.id, d.record_id, d.instance_id, d.container_uri, d.geog, d.geom, d.shape, d.subdir, d.bands, d.status, " +
@@ -186,7 +183,7 @@ func (b Backend) findDatasets(ctx context.Context, status []geocube.DatasetStatu
 	}
 
 	// Create the Where clause
-	wc := whereClause{}
+	wc := joinClause{}
 
 	if len(status) == 1 {
 		wc.append("d.status = $%d", status[0])
@@ -198,8 +195,21 @@ func (b Backend) findDatasets(ctx context.Context, status []geocube.DatasetStatu
 		wc.append("l.job_id = $%d", lockedByJobID)
 	}
 
-	if len(containersURI) > 0 {
-		wc.append("d.container_uri = ANY($%d)", pq.Array(containersURI))
+	orClause := joinClause{}
+	equals, likes, ilikes := parseLikes(containerURIPatterns)
+	if len(equals) > 0 {
+		orClause.appendWithoutPlacement("d.container_uri = ANY($%d)", pq.Array(equals))
+	}
+	if len(likes) > 0 {
+		log.Logger(ctx).Sugar().Debugf("LIKE %v", likes)
+		orClause.appendWithoutPlacement("d.container_uri LIKE ANY($%d)", pq.Array(likes))
+	}
+	if len(ilikes) > 0 {
+		log.Logger(ctx).Sugar().Debugf("ILIKE %v", ilikes)
+		orClause.appendWithoutPlacement("d.container_uri ILIKE ANY($%d)", pq.Array(ilikes))
+	}
+	if len(orClause.Parameters) > 0 {
+		wc.append(orClause.Clause("(", " OR ", ")"), orClause.Parameters...)
 	}
 
 	if len(instancesID) > 0 {
@@ -271,7 +281,7 @@ func (b Backend) ListActiveDatasetsID(ctx context.Context, instanceID string, re
 	}
 
 	// Create the Where clause
-	wc := whereClause{}
+	wc := joinClause{}
 	wc.append("d.instance_id = $%d AND status='ACTIVE'", instanceID)
 
 	if len(recordsID) > 0 {

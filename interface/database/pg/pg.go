@@ -236,36 +236,74 @@ func preserveOrder(ids []string) map[string]int {
 	return idx
 }
 
+// parseString to be used by LIKE
+// * will be replace by %, "?" by "_", "_" by "\\_" and (?i) suffix for case-insensitivity
+// Return false if the string does not have ? or *
+func parseString(s string) (string, bool) {
+	s = strings.ReplaceAll(s, "_", "\\_")
+	news := strings.ReplaceAll(strings.ReplaceAll(s, "*", "%"), "?", "_")
+	return news, s != news
+}
+
 // parse value to be used by LIKE
 // * will be replace by %, "?" by "_" and (?i) suffix for case-insensitivity
-// Return operator LIKE or ILIKE
+// Return operator =, LIKE or ILIKE
 func parseLike(value string) (string, string) {
-	operator := "LIKE"
 	if strings.HasSuffix(value, "(?i)") {
-		value = value[0 : len(value)-4]
-		operator = "ILIKE"
+		s, _ := parseString(value[0 : len(value)-4])
+		return s, "ILIKE"
 	}
-	return strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(value, "*", "%"), "_", "\\_"), "?", "_"), operator
+	if newv, parsed := parseString(value); parsed {
+		return newv, "LIKE"
+	}
+	return value, "="
 }
 
-type whereClause struct {
-	Parameters  []interface{}
-	whereClause []string
+// parse value to be used by LIKE
+// * will be replace by %, "?" by "_" and (?i) suffix for case-insensitivity
+// Return values to be used with equal, LIKE or ILIKE
+func parseLikes(values []string) ([]string, []string, []string) {
+	var equals, likes, ilikes []string
+	for _, value := range values {
+		if strings.HasSuffix(value, "(?i)") {
+			value, _ = parseString(value[0 : len(value)-4])
+			ilikes = append(ilikes, value)
+		} else if newvalue, parsed := parseString(value); parsed {
+			likes = append(likes, newvalue)
+		} else {
+			equals = append(equals, value)
+		}
+	}
+	return equals, likes, ilikes
 }
 
-func (wc *whereClause) append(whereClause string, parameters ...interface{}) {
+type joinClause struct {
+	Parameters []interface{}
+	clause     []string
+}
+
+func (wc *joinClause) append(clause string, parameters ...interface{}) {
 	positions := []interface{}{}
 	for i := range parameters {
 		positions = append(positions, len(wc.Parameters)+i+1)
 	}
 
 	wc.Parameters = append(wc.Parameters, parameters...)
-	wc.whereClause = append(wc.whereClause, fmt.Sprintf(whereClause, positions...))
+	wc.clause = append(wc.clause, fmt.Sprintf(clause, positions...))
 }
 
-func (wc whereClause) WhereClause() string {
-	if len(wc.whereClause) > 0 {
-		return " WHERE " + strings.Join(wc.whereClause, " AND ")
+func (wc *joinClause) appendWithoutPlacement(clause string, parameters ...interface{}) {
+	wc.Parameters = append(wc.Parameters, parameters...)
+	wc.clause = append(wc.clause, clause)
+}
+
+func (wc joinClause) WhereClause() string {
+	return wc.Clause(" WHERE ", " AND ", "")
+}
+
+func (wc joinClause) Clause(prefix, sep, suffix string) string {
+	if len(wc.clause) > 0 {
+		return prefix + strings.Join(wc.clause, sep) + suffix
 	}
 	return ""
 }

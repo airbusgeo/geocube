@@ -87,7 +87,7 @@ func (b Backend) ReadGrid(ctx context.Context, name string) (*geocube.Grid, erro
 
 // FindGrids implements GeocubeBackend
 func (b Backend) FindGrids(ctx context.Context, nameLike string) ([]*geocube.Grid, error) {
-	wc := whereClause{}
+	wc := joinClause{}
 	if nameLike != "" {
 		nameLike, operator := parseLike(nameLike)
 		wc.append(" name "+operator+" $%d", nameLike)
