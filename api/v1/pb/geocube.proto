@@ -61,10 +61,11 @@ service Geocube {
     }
 
 // @exclude Layout
-    rpc CreateLayout(CreateLayoutRequest)        returns (CreateLayoutResponse){}
-    rpc DeleteLayout(DeleteLayoutRequest)        returns (DeleteLayoutResponse){}
-    rpc ListLayouts(ListLayoutsRequest)          returns (ListLayoutsResponse){}
-    rpc TileAOI(TileAOIRequest)                  returns (stream TileAOIResponse){}
+    rpc CreateLayout(CreateLayoutRequest)                 returns (CreateLayoutResponse){}
+    rpc DeleteLayout(DeleteLayoutRequest)                 returns (DeleteLayoutResponse){}
+    rpc ListLayouts(ListLayoutsRequest)                   returns (ListLayoutsResponse){}
+    rpc FindContainerLayouts(FindContainerLayoutsRequest) returns (stream FindContainerLayoutsResponse){}
+    rpc TileAOI(TileAOIRequest)                           returns (stream TileAOIResponse){}
 
 // @exclude Grid
     rpc CreateGrid(stream CreateGridRequest)     returns (CreateGridResponse){}

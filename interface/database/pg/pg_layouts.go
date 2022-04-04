@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"time"
 
 	"github.com/airbusgeo/geocube/internal/geocube"
 	"github.com/lib/pq"
@@ -78,6 +79,71 @@ func (b Backend) FindLayouts(ctx context.Context, nameLike string) ([]*geocube.L
 		layouts = append(layouts, &l)
 	}
 	return layouts, nil
+}
+
+// FindContainerLayouts implements GeocubeBackend
+func (b Backend) FindContainerLayouts(ctx context.Context, instanceId string, geomAOI *geocube.AOI, recordIds []string, recordTags map[string]string, fromTime, toTime time.Time) ([]string, [][]string, error) {
+	// Create the selectClause
+	query := "SELECT DISTINCT cl.layout_name, cl.container_uri FROM geocube.container_layouts cl JOIN geocube.datasets d ON d.container_uri = cl.container_uri"
+
+	if geomAOI != nil || !fromTime.IsZero() || !toTime.IsZero() || len(recordTags) > 0 {
+		query += " JOIN geocube.records r ON d.record_id = r.id"
+	}
+
+	if geomAOI != nil {
+		query += " JOIN geocube.aoi a ON r.aoi_id = a.id"
+	}
+
+	// Create the Where clause
+	wc := joinClause{}
+
+	wc.append("d.instance_id = $%d", instanceId)
+
+	if len(recordIds) > 0 {
+		wc.append("d.record_id = ANY($%d)", pq.Array(recordIds))
+	}
+
+	appendTimeFilters(&wc, fromTime, toTime)
+
+	appendTagsFilters(&wc, recordTags)
+
+	if geomAOI != nil {
+		wc.append("ST_Intersects(a.geom, ST_GeomFromWKB($%d,4326))", geomAOI.Geometry)
+	}
+
+	// Append the whereClause to the query and the order
+	query += wc.WhereClause() + " ORDER BY cl.layout_name"
+
+	// Execute the query
+	rows, err := b.pg.QueryContext(ctx, query, wc.Parameters...)
+	if err != nil {
+		return nil, nil, pqErrorFormat("FindContainerLayouts.querycontext: %w", err)
+	}
+	defer func() {
+		if e := rows.Close(); e != nil && err == nil {
+			err = e
+		}
+	}()
+
+	// Parse rows
+	var layouts []string
+	var containers [][]string
+	var prevLayout string
+	for rows.Next() {
+		var layout, container string
+		if err := rows.Scan(&layout, &container); err != nil {
+			return nil, nil, pqErrorFormat("FindContainerLayouts.scan: %w", err)
+		}
+		if layout == prevLayout {
+			containers[len(containers)-1] = append(containers[len(containers)-1], container)
+		} else {
+			prevLayout = layout
+			layouts = append(layouts, layout)
+			containers = append(containers, []string{container})
+		}
+	}
+
+	return layouts, containers, nil
 }
 
 // SaveContainerLayout implements GeocubeBackend

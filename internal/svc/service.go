@@ -463,6 +463,10 @@ func (svc *Service) ListLayouts(ctx context.Context, nameLike string) ([]*geocub
 	return svc.db.FindLayouts(ctx, nameLike)
 }
 
+func (svc *Service) FindContainerLayouts(ctx context.Context, instanceId string, aoi *geocube.AOI, recordIds []string, tags map[string]string, fromTime, toTime time.Time) ([]string, [][]string, error) {
+	return svc.db.FindContainerLayouts(ctx, instanceId, aoi, recordIds, tags, fromTime, toTime)
+}
+
 // TileAOI implements GeocubeService
 func (svc *Service) TileAOI(ctx context.Context, aoi *geocube.AOI, layoutName string, layout *geocube.Layout) (<-chan geocube.StreamedCell, error) {
 	if layout == nil {

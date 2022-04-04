@@ -602,8 +602,155 @@ func (x *ListLayoutsResponse) GetLayouts() []*Layout {
 }
 
 //*
+// Find all the layouts used by the datasets on an AOI or a set of records
+// It can be used to tile the AOI with an optimal layout.
+type FindContainerLayoutsRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	InstanceId string `protobuf:"bytes,1,opt,name=instance_id,json=instanceId,proto3" json:"instance_id,omitempty"`
+	// Types that are assignable to Identifier:
+	//	*FindContainerLayoutsRequest_Records
+	//	*FindContainerLayoutsRequest_Filters
+	Identifier isFindContainerLayoutsRequest_Identifier `protobuf_oneof:"identifier"`
+}
+
+func (x *FindContainerLayoutsRequest) Reset() {
+	*x = FindContainerLayoutsRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_pb_layouts_proto_msgTypes[10]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *FindContainerLayoutsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FindContainerLayoutsRequest) ProtoMessage() {}
+
+func (x *FindContainerLayoutsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_pb_layouts_proto_msgTypes[10]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FindContainerLayoutsRequest.ProtoReflect.Descriptor instead.
+func (*FindContainerLayoutsRequest) Descriptor() ([]byte, []int) {
+	return file_pb_layouts_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *FindContainerLayoutsRequest) GetInstanceId() string {
+	if x != nil {
+		return x.InstanceId
+	}
+	return ""
+}
+
+func (m *FindContainerLayoutsRequest) GetIdentifier() isFindContainerLayoutsRequest_Identifier {
+	if m != nil {
+		return m.Identifier
+	}
+	return nil
+}
+
+func (x *FindContainerLayoutsRequest) GetRecords() *RecordIdList {
+	if x, ok := x.GetIdentifier().(*FindContainerLayoutsRequest_Records); ok {
+		return x.Records
+	}
+	return nil
+}
+
+func (x *FindContainerLayoutsRequest) GetFilters() *RecordFiltersWithAOI {
+	if x, ok := x.GetIdentifier().(*FindContainerLayoutsRequest_Filters); ok {
+		return x.Filters
+	}
+	return nil
+}
+
+type isFindContainerLayoutsRequest_Identifier interface {
+	isFindContainerLayoutsRequest_Identifier()
+}
+
+type FindContainerLayoutsRequest_Records struct {
+	Records *RecordIdList `protobuf:"bytes,2,opt,name=records,proto3,oneof"` // List of record ids
+}
+
+type FindContainerLayoutsRequest_Filters struct {
+	Filters *RecordFiltersWithAOI `protobuf:"bytes,3,opt,name=filters,proto3,oneof"` // Filters to select records
+}
+
+func (*FindContainerLayoutsRequest_Records) isFindContainerLayoutsRequest_Identifier() {}
+
+func (*FindContainerLayoutsRequest_Filters) isFindContainerLayoutsRequest_Identifier() {}
+
+//*
+// Stream the name of the layout and the associated containers
+type FindContainerLayoutsResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	LayoutName    string   `protobuf:"bytes,1,opt,name=layout_name,json=layoutName,proto3" json:"layout_name,omitempty"`          // Name of the layout
+	ContainerUris []string `protobuf:"bytes,2,rep,name=container_uris,json=containerUris,proto3" json:"container_uris,omitempty"` // List of containers having the layout
+}
+
+func (x *FindContainerLayoutsResponse) Reset() {
+	*x = FindContainerLayoutsResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_pb_layouts_proto_msgTypes[11]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *FindContainerLayoutsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FindContainerLayoutsResponse) ProtoMessage() {}
+
+func (x *FindContainerLayoutsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_pb_layouts_proto_msgTypes[11]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FindContainerLayoutsResponse.ProtoReflect.Descriptor instead.
+func (*FindContainerLayoutsResponse) Descriptor() ([]byte, []int) {
+	return file_pb_layouts_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *FindContainerLayoutsResponse) GetLayoutName() string {
+	if x != nil {
+		return x.LayoutName
+	}
+	return ""
+}
+
+func (x *FindContainerLayoutsResponse) GetContainerUris() []string {
+	if x != nil {
+		return x.ContainerUris
+	}
+	return nil
+}
+
+//*
 // Tile an AOI, covering it with cells defined by a grid.
-// Currently, only support user-defined layout.
 // In the future, it will be able to find the best tiling given the internal layout of datasets.
 type TileAOIRequest struct {
 	state         protoimpl.MessageState
@@ -620,7 +767,7 @@ type TileAOIRequest struct {
 func (x *TileAOIRequest) Reset() {
 	*x = TileAOIRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pb_layouts_proto_msgTypes[10]
+		mi := &file_pb_layouts_proto_msgTypes[12]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -633,7 +780,7 @@ func (x *TileAOIRequest) String() string {
 func (*TileAOIRequest) ProtoMessage() {}
 
 func (x *TileAOIRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_pb_layouts_proto_msgTypes[10]
+	mi := &file_pb_layouts_proto_msgTypes[12]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -646,7 +793,7 @@ func (x *TileAOIRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TileAOIRequest.ProtoReflect.Descriptor instead.
 func (*TileAOIRequest) Descriptor() ([]byte, []int) {
-	return file_pb_layouts_proto_rawDescGZIP(), []int{10}
+	return file_pb_layouts_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *TileAOIRequest) GetAoi() *AOI {
@@ -706,7 +853,7 @@ type TileAOIResponse struct {
 func (x *TileAOIResponse) Reset() {
 	*x = TileAOIResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pb_layouts_proto_msgTypes[11]
+		mi := &file_pb_layouts_proto_msgTypes[13]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -719,7 +866,7 @@ func (x *TileAOIResponse) String() string {
 func (*TileAOIResponse) ProtoMessage() {}
 
 func (x *TileAOIResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_pb_layouts_proto_msgTypes[11]
+	mi := &file_pb_layouts_proto_msgTypes[13]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -732,7 +879,7 @@ func (x *TileAOIResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TileAOIResponse.ProtoReflect.Descriptor instead.
 func (*TileAOIResponse) Descriptor() ([]byte, []int) {
-	return file_pb_layouts_proto_rawDescGZIP(), []int{11}
+	return file_pb_layouts_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *TileAOIResponse) GetTiles() []*Tile {
@@ -757,7 +904,7 @@ type Grid struct {
 func (x *Grid) Reset() {
 	*x = Grid{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pb_layouts_proto_msgTypes[12]
+		mi := &file_pb_layouts_proto_msgTypes[14]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -770,7 +917,7 @@ func (x *Grid) String() string {
 func (*Grid) ProtoMessage() {}
 
 func (x *Grid) ProtoReflect() protoreflect.Message {
-	mi := &file_pb_layouts_proto_msgTypes[12]
+	mi := &file_pb_layouts_proto_msgTypes[14]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -783,7 +930,7 @@ func (x *Grid) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Grid.ProtoReflect.Descriptor instead.
 func (*Grid) Descriptor() ([]byte, []int) {
-	return file_pb_layouts_proto_rawDescGZIP(), []int{12}
+	return file_pb_layouts_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *Grid) GetName() string {
@@ -822,7 +969,7 @@ type Cell struct {
 func (x *Cell) Reset() {
 	*x = Cell{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pb_layouts_proto_msgTypes[13]
+		mi := &file_pb_layouts_proto_msgTypes[15]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -835,7 +982,7 @@ func (x *Cell) String() string {
 func (*Cell) ProtoMessage() {}
 
 func (x *Cell) ProtoReflect() protoreflect.Message {
-	mi := &file_pb_layouts_proto_msgTypes[13]
+	mi := &file_pb_layouts_proto_msgTypes[15]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -848,7 +995,7 @@ func (x *Cell) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Cell.ProtoReflect.Descriptor instead.
 func (*Cell) Descriptor() ([]byte, []int) {
-	return file_pb_layouts_proto_rawDescGZIP(), []int{13}
+	return file_pb_layouts_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *Cell) GetId() string {
@@ -885,7 +1032,7 @@ type CreateGridRequest struct {
 func (x *CreateGridRequest) Reset() {
 	*x = CreateGridRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pb_layouts_proto_msgTypes[14]
+		mi := &file_pb_layouts_proto_msgTypes[16]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -898,7 +1045,7 @@ func (x *CreateGridRequest) String() string {
 func (*CreateGridRequest) ProtoMessage() {}
 
 func (x *CreateGridRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_pb_layouts_proto_msgTypes[14]
+	mi := &file_pb_layouts_proto_msgTypes[16]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -911,7 +1058,7 @@ func (x *CreateGridRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateGridRequest.ProtoReflect.Descriptor instead.
 func (*CreateGridRequest) Descriptor() ([]byte, []int) {
-	return file_pb_layouts_proto_rawDescGZIP(), []int{14}
+	return file_pb_layouts_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *CreateGridRequest) GetGrid() *Grid {
@@ -932,7 +1079,7 @@ type CreateGridResponse struct {
 func (x *CreateGridResponse) Reset() {
 	*x = CreateGridResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pb_layouts_proto_msgTypes[15]
+		mi := &file_pb_layouts_proto_msgTypes[17]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -945,7 +1092,7 @@ func (x *CreateGridResponse) String() string {
 func (*CreateGridResponse) ProtoMessage() {}
 
 func (x *CreateGridResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_pb_layouts_proto_msgTypes[15]
+	mi := &file_pb_layouts_proto_msgTypes[17]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -958,7 +1105,7 @@ func (x *CreateGridResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateGridResponse.ProtoReflect.Descriptor instead.
 func (*CreateGridResponse) Descriptor() ([]byte, []int) {
-	return file_pb_layouts_proto_rawDescGZIP(), []int{15}
+	return file_pb_layouts_proto_rawDescGZIP(), []int{17}
 }
 
 //*
@@ -974,7 +1121,7 @@ type DeleteGridRequest struct {
 func (x *DeleteGridRequest) Reset() {
 	*x = DeleteGridRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pb_layouts_proto_msgTypes[16]
+		mi := &file_pb_layouts_proto_msgTypes[18]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -987,7 +1134,7 @@ func (x *DeleteGridRequest) String() string {
 func (*DeleteGridRequest) ProtoMessage() {}
 
 func (x *DeleteGridRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_pb_layouts_proto_msgTypes[16]
+	mi := &file_pb_layouts_proto_msgTypes[18]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1000,7 +1147,7 @@ func (x *DeleteGridRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteGridRequest.ProtoReflect.Descriptor instead.
 func (*DeleteGridRequest) Descriptor() ([]byte, []int) {
-	return file_pb_layouts_proto_rawDescGZIP(), []int{16}
+	return file_pb_layouts_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *DeleteGridRequest) GetName() string {
@@ -1021,7 +1168,7 @@ type DeleteGridResponse struct {
 func (x *DeleteGridResponse) Reset() {
 	*x = DeleteGridResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pb_layouts_proto_msgTypes[17]
+		mi := &file_pb_layouts_proto_msgTypes[19]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1034,7 +1181,7 @@ func (x *DeleteGridResponse) String() string {
 func (*DeleteGridResponse) ProtoMessage() {}
 
 func (x *DeleteGridResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_pb_layouts_proto_msgTypes[17]
+	mi := &file_pb_layouts_proto_msgTypes[19]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1047,7 +1194,7 @@ func (x *DeleteGridResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteGridResponse.ProtoReflect.Descriptor instead.
 func (*DeleteGridResponse) Descriptor() ([]byte, []int) {
-	return file_pb_layouts_proto_rawDescGZIP(), []int{17}
+	return file_pb_layouts_proto_rawDescGZIP(), []int{19}
 }
 
 //*
@@ -1063,7 +1210,7 @@ type ListGridsRequest struct {
 func (x *ListGridsRequest) Reset() {
 	*x = ListGridsRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pb_layouts_proto_msgTypes[18]
+		mi := &file_pb_layouts_proto_msgTypes[20]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1076,7 +1223,7 @@ func (x *ListGridsRequest) String() string {
 func (*ListGridsRequest) ProtoMessage() {}
 
 func (x *ListGridsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_pb_layouts_proto_msgTypes[18]
+	mi := &file_pb_layouts_proto_msgTypes[20]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1089,7 +1236,7 @@ func (x *ListGridsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListGridsRequest.ProtoReflect.Descriptor instead.
 func (*ListGridsRequest) Descriptor() ([]byte, []int) {
-	return file_pb_layouts_proto_rawDescGZIP(), []int{18}
+	return file_pb_layouts_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *ListGridsRequest) GetNameLike() string {
@@ -1112,7 +1259,7 @@ type ListGridsResponse struct {
 func (x *ListGridsResponse) Reset() {
 	*x = ListGridsResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pb_layouts_proto_msgTypes[19]
+		mi := &file_pb_layouts_proto_msgTypes[21]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1125,7 +1272,7 @@ func (x *ListGridsResponse) String() string {
 func (*ListGridsResponse) ProtoMessage() {}
 
 func (x *ListGridsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_pb_layouts_proto_msgTypes[19]
+	mi := &file_pb_layouts_proto_msgTypes[21]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1138,7 +1285,7 @@ func (x *ListGridsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListGridsResponse.ProtoReflect.Descriptor instead.
 func (*ListGridsResponse) Descriptor() ([]byte, []int) {
-	return file_pb_layouts_proto_rawDescGZIP(), []int{19}
+	return file_pb_layouts_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *ListGridsResponse) GetGrids() []*Grid {
@@ -1207,48 +1354,67 @@ var file_pb_layouts_proto_rawDesc = []byte{
 	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x29, 0x0a, 0x07, 0x6c, 0x61, 0x79, 0x6f, 0x75,
 	0x74, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x0f, 0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75,
 	0x62, 0x65, 0x2e, 0x4c, 0x61, 0x79, 0x6f, 0x75, 0x74, 0x52, 0x07, 0x6c, 0x61, 0x79, 0x6f, 0x75,
-	0x74, 0x73, 0x22, 0x8c, 0x01, 0x0a, 0x0e, 0x54, 0x69, 0x6c, 0x65, 0x41, 0x4f, 0x49, 0x52, 0x65,
-	0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x1e, 0x0a, 0x03, 0x61, 0x6f, 0x69, 0x18, 0x01, 0x20, 0x01,
-	0x28, 0x0b, 0x32, 0x0c, 0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75, 0x62, 0x65, 0x2e, 0x41, 0x4f, 0x49,
-	0x52, 0x03, 0x61, 0x6f, 0x69, 0x12, 0x21, 0x0a, 0x0b, 0x6c, 0x61, 0x79, 0x6f, 0x75, 0x74, 0x5f,
-	0x6e, 0x61, 0x6d, 0x65, 0x18, 0x05, 0x20, 0x01, 0x28, 0x09, 0x48, 0x00, 0x52, 0x0a, 0x6c, 0x61,
-	0x79, 0x6f, 0x75, 0x74, 0x4e, 0x61, 0x6d, 0x65, 0x12, 0x29, 0x0a, 0x06, 0x6c, 0x61, 0x79, 0x6f,
-	0x75, 0x74, 0x18, 0x06, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0f, 0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75,
-	0x62, 0x65, 0x2e, 0x4c, 0x61, 0x79, 0x6f, 0x75, 0x74, 0x48, 0x00, 0x52, 0x06, 0x6c, 0x61, 0x79,
-	0x6f, 0x75, 0x74, 0x42, 0x0c, 0x0a, 0x0a, 0x69, 0x64, 0x65, 0x6e, 0x74, 0x69, 0x66, 0x69, 0x65,
-	0x72, 0x22, 0x36, 0x0a, 0x0f, 0x54, 0x69, 0x6c, 0x65, 0x41, 0x4f, 0x49, 0x52, 0x65, 0x73, 0x70,
-	0x6f, 0x6e, 0x73, 0x65, 0x12, 0x23, 0x0a, 0x05, 0x74, 0x69, 0x6c, 0x65, 0x73, 0x18, 0x01, 0x20,
-	0x03, 0x28, 0x0b, 0x32, 0x0d, 0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75, 0x62, 0x65, 0x2e, 0x54, 0x69,
-	0x6c, 0x65, 0x52, 0x05, 0x74, 0x69, 0x6c, 0x65, 0x73, 0x22, 0x61, 0x0a, 0x04, 0x47, 0x72, 0x69,
-	0x64, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52,
-	0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x20, 0x0a, 0x0b, 0x64, 0x65, 0x73, 0x63, 0x72, 0x69, 0x70,
-	0x74, 0x69, 0x6f, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x64, 0x65, 0x73, 0x63,
-	0x72, 0x69, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x23, 0x0a, 0x05, 0x63, 0x65, 0x6c, 0x6c, 0x73,
-	0x18, 0x03, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x0d, 0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75, 0x62, 0x65,
-	0x2e, 0x43, 0x65, 0x6c, 0x6c, 0x52, 0x05, 0x63, 0x65, 0x6c, 0x6c, 0x73, 0x22, 0x5f, 0x0a, 0x04,
-	0x43, 0x65, 0x6c, 0x6c, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09,
-	0x52, 0x02, 0x69, 0x64, 0x12, 0x10, 0x0a, 0x03, 0x63, 0x72, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28,
-	0x09, 0x52, 0x03, 0x63, 0x72, 0x73, 0x12, 0x35, 0x0a, 0x0b, 0x63, 0x6f, 0x6f, 0x72, 0x64, 0x69,
-	0x6e, 0x61, 0x74, 0x65, 0x73, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x13, 0x2e, 0x67, 0x65,
-	0x6f, 0x63, 0x75, 0x62, 0x65, 0x2e, 0x4c, 0x69, 0x6e, 0x65, 0x61, 0x72, 0x52, 0x69, 0x6e, 0x67,
-	0x52, 0x0b, 0x63, 0x6f, 0x6f, 0x72, 0x64, 0x69, 0x6e, 0x61, 0x74, 0x65, 0x73, 0x22, 0x36, 0x0a,
-	0x11, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x47, 0x72, 0x69, 0x64, 0x52, 0x65, 0x71, 0x75, 0x65,
-	0x73, 0x74, 0x12, 0x21, 0x0a, 0x04, 0x67, 0x72, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b,
-	0x32, 0x0d, 0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75, 0x62, 0x65, 0x2e, 0x47, 0x72, 0x69, 0x64, 0x52,
-	0x04, 0x67, 0x72, 0x69, 0x64, 0x22, 0x14, 0x0a, 0x12, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x47,
-	0x72, 0x69, 0x64, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x27, 0x0a, 0x11, 0x44,
-	0x65, 0x6c, 0x65, 0x74, 0x65, 0x47, 0x72, 0x69, 0x64, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
-	0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04,
-	0x6e, 0x61, 0x6d, 0x65, 0x22, 0x14, 0x0a, 0x12, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x47, 0x72,
-	0x69, 0x64, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x2f, 0x0a, 0x10, 0x4c, 0x69,
-	0x73, 0x74, 0x47, 0x72, 0x69, 0x64, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x1b,
-	0x0a, 0x09, 0x6e, 0x61, 0x6d, 0x65, 0x5f, 0x6c, 0x69, 0x6b, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28,
-	0x09, 0x52, 0x08, 0x6e, 0x61, 0x6d, 0x65, 0x4c, 0x69, 0x6b, 0x65, 0x22, 0x38, 0x0a, 0x11, 0x4c,
-	0x69, 0x73, 0x74, 0x47, 0x72, 0x69, 0x64, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
-	0x12, 0x23, 0x0a, 0x05, 0x67, 0x72, 0x69, 0x64, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32,
-	0x0d, 0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75, 0x62, 0x65, 0x2e, 0x47, 0x72, 0x69, 0x64, 0x52, 0x05,
-	0x67, 0x72, 0x69, 0x64, 0x73, 0x42, 0x0e, 0x5a, 0x0c, 0x2e, 0x2f, 0x70, 0x62, 0x3b, 0x67, 0x65,
-	0x6f, 0x63, 0x75, 0x62, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x74, 0x73, 0x22, 0xba, 0x01, 0x0a, 0x1b, 0x46, 0x69, 0x6e, 0x64, 0x43, 0x6f, 0x6e, 0x74, 0x61,
+	0x69, 0x6e, 0x65, 0x72, 0x4c, 0x61, 0x79, 0x6f, 0x75, 0x74, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65,
+	0x73, 0x74, 0x12, 0x1f, 0x0a, 0x0b, 0x69, 0x6e, 0x73, 0x74, 0x61, 0x6e, 0x63, 0x65, 0x5f, 0x69,
+	0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0a, 0x69, 0x6e, 0x73, 0x74, 0x61, 0x6e, 0x63,
+	0x65, 0x49, 0x64, 0x12, 0x31, 0x0a, 0x07, 0x72, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x73, 0x18, 0x02,
+	0x20, 0x01, 0x28, 0x0b, 0x32, 0x15, 0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75, 0x62, 0x65, 0x2e, 0x52,
+	0x65, 0x63, 0x6f, 0x72, 0x64, 0x49, 0x64, 0x4c, 0x69, 0x73, 0x74, 0x48, 0x00, 0x52, 0x07, 0x72,
+	0x65, 0x63, 0x6f, 0x72, 0x64, 0x73, 0x12, 0x39, 0x0a, 0x07, 0x66, 0x69, 0x6c, 0x74, 0x65, 0x72,
+	0x73, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1d, 0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75, 0x62,
+	0x65, 0x2e, 0x52, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x46, 0x69, 0x6c, 0x74, 0x65, 0x72, 0x73, 0x57,
+	0x69, 0x74, 0x68, 0x41, 0x4f, 0x49, 0x48, 0x00, 0x52, 0x07, 0x66, 0x69, 0x6c, 0x74, 0x65, 0x72,
+	0x73, 0x42, 0x0c, 0x0a, 0x0a, 0x69, 0x64, 0x65, 0x6e, 0x74, 0x69, 0x66, 0x69, 0x65, 0x72, 0x22,
+	0x66, 0x0a, 0x1c, 0x46, 0x69, 0x6e, 0x64, 0x43, 0x6f, 0x6e, 0x74, 0x61, 0x69, 0x6e, 0x65, 0x72,
+	0x4c, 0x61, 0x79, 0x6f, 0x75, 0x74, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12,
+	0x1f, 0x0a, 0x0b, 0x6c, 0x61, 0x79, 0x6f, 0x75, 0x74, 0x5f, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x0a, 0x6c, 0x61, 0x79, 0x6f, 0x75, 0x74, 0x4e, 0x61, 0x6d, 0x65,
+	0x12, 0x25, 0x0a, 0x0e, 0x63, 0x6f, 0x6e, 0x74, 0x61, 0x69, 0x6e, 0x65, 0x72, 0x5f, 0x75, 0x72,
+	0x69, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x09, 0x52, 0x0d, 0x63, 0x6f, 0x6e, 0x74, 0x61, 0x69,
+	0x6e, 0x65, 0x72, 0x55, 0x72, 0x69, 0x73, 0x22, 0x8c, 0x01, 0x0a, 0x0e, 0x54, 0x69, 0x6c, 0x65,
+	0x41, 0x4f, 0x49, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x1e, 0x0a, 0x03, 0x61, 0x6f,
+	0x69, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0c, 0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75, 0x62,
+	0x65, 0x2e, 0x41, 0x4f, 0x49, 0x52, 0x03, 0x61, 0x6f, 0x69, 0x12, 0x21, 0x0a, 0x0b, 0x6c, 0x61,
+	0x79, 0x6f, 0x75, 0x74, 0x5f, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x05, 0x20, 0x01, 0x28, 0x09, 0x48,
+	0x00, 0x52, 0x0a, 0x6c, 0x61, 0x79, 0x6f, 0x75, 0x74, 0x4e, 0x61, 0x6d, 0x65, 0x12, 0x29, 0x0a,
+	0x06, 0x6c, 0x61, 0x79, 0x6f, 0x75, 0x74, 0x18, 0x06, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0f, 0x2e,
+	0x67, 0x65, 0x6f, 0x63, 0x75, 0x62, 0x65, 0x2e, 0x4c, 0x61, 0x79, 0x6f, 0x75, 0x74, 0x48, 0x00,
+	0x52, 0x06, 0x6c, 0x61, 0x79, 0x6f, 0x75, 0x74, 0x42, 0x0c, 0x0a, 0x0a, 0x69, 0x64, 0x65, 0x6e,
+	0x74, 0x69, 0x66, 0x69, 0x65, 0x72, 0x22, 0x36, 0x0a, 0x0f, 0x54, 0x69, 0x6c, 0x65, 0x41, 0x4f,
+	0x49, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x23, 0x0a, 0x05, 0x74, 0x69, 0x6c,
+	0x65, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x0d, 0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75,
+	0x62, 0x65, 0x2e, 0x54, 0x69, 0x6c, 0x65, 0x52, 0x05, 0x74, 0x69, 0x6c, 0x65, 0x73, 0x22, 0x61,
+	0x0a, 0x04, 0x47, 0x72, 0x69, 0x64, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x20, 0x0a, 0x0b, 0x64, 0x65,
+	0x73, 0x63, 0x72, 0x69, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x0b, 0x64, 0x65, 0x73, 0x63, 0x72, 0x69, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x23, 0x0a, 0x05,
+	0x63, 0x65, 0x6c, 0x6c, 0x73, 0x18, 0x03, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x0d, 0x2e, 0x67, 0x65,
+	0x6f, 0x63, 0x75, 0x62, 0x65, 0x2e, 0x43, 0x65, 0x6c, 0x6c, 0x52, 0x05, 0x63, 0x65, 0x6c, 0x6c,
+	0x73, 0x22, 0x5f, 0x0a, 0x04, 0x43, 0x65, 0x6c, 0x6c, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x02, 0x69, 0x64, 0x12, 0x10, 0x0a, 0x03, 0x63, 0x72, 0x73,
+	0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x63, 0x72, 0x73, 0x12, 0x35, 0x0a, 0x0b, 0x63,
+	0x6f, 0x6f, 0x72, 0x64, 0x69, 0x6e, 0x61, 0x74, 0x65, 0x73, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b,
+	0x32, 0x13, 0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75, 0x62, 0x65, 0x2e, 0x4c, 0x69, 0x6e, 0x65, 0x61,
+	0x72, 0x52, 0x69, 0x6e, 0x67, 0x52, 0x0b, 0x63, 0x6f, 0x6f, 0x72, 0x64, 0x69, 0x6e, 0x61, 0x74,
+	0x65, 0x73, 0x22, 0x36, 0x0a, 0x11, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x47, 0x72, 0x69, 0x64,
+	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x21, 0x0a, 0x04, 0x67, 0x72, 0x69, 0x64, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0d, 0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75, 0x62, 0x65, 0x2e,
+	0x47, 0x72, 0x69, 0x64, 0x52, 0x04, 0x67, 0x72, 0x69, 0x64, 0x22, 0x14, 0x0a, 0x12, 0x43, 0x72,
+	0x65, 0x61, 0x74, 0x65, 0x47, 0x72, 0x69, 0x64, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
+	0x22, 0x27, 0x0a, 0x11, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x47, 0x72, 0x69, 0x64, 0x52, 0x65,
+	0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01, 0x20,
+	0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x22, 0x14, 0x0a, 0x12, 0x44, 0x65, 0x6c,
+	0x65, 0x74, 0x65, 0x47, 0x72, 0x69, 0x64, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22,
+	0x2f, 0x0a, 0x10, 0x4c, 0x69, 0x73, 0x74, 0x47, 0x72, 0x69, 0x64, 0x73, 0x52, 0x65, 0x71, 0x75,
+	0x65, 0x73, 0x74, 0x12, 0x1b, 0x0a, 0x09, 0x6e, 0x61, 0x6d, 0x65, 0x5f, 0x6c, 0x69, 0x6b, 0x65,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x6e, 0x61, 0x6d, 0x65, 0x4c, 0x69, 0x6b, 0x65,
+	0x22, 0x38, 0x0a, 0x11, 0x4c, 0x69, 0x73, 0x74, 0x47, 0x72, 0x69, 0x64, 0x73, 0x52, 0x65, 0x73,
+	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x23, 0x0a, 0x05, 0x67, 0x72, 0x69, 0x64, 0x73, 0x18, 0x01,
+	0x20, 0x03, 0x28, 0x0b, 0x32, 0x0d, 0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75, 0x62, 0x65, 0x2e, 0x47,
+	0x72, 0x69, 0x64, 0x52, 0x05, 0x67, 0x72, 0x69, 0x64, 0x73, 0x42, 0x0e, 0x5a, 0x0c, 0x2e, 0x2f,
+	0x70, 0x62, 0x3b, 0x67, 0x65, 0x6f, 0x63, 0x75, 0x62, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74,
+	0x6f, 0x33,
 }
 
 var (
@@ -1263,50 +1429,56 @@ func file_pb_layouts_proto_rawDescGZIP() []byte {
 	return file_pb_layouts_proto_rawDescData
 }
 
-var file_pb_layouts_proto_msgTypes = make([]protoimpl.MessageInfo, 21)
+var file_pb_layouts_proto_msgTypes = make([]protoimpl.MessageInfo, 23)
 var file_pb_layouts_proto_goTypes = []interface{}{
-	(*Size)(nil),                 // 0: geocube.Size
-	(*GeoTransform)(nil),         // 1: geocube.GeoTransform
-	(*Tile)(nil),                 // 2: geocube.Tile
-	(*Layout)(nil),               // 3: geocube.Layout
-	(*CreateLayoutRequest)(nil),  // 4: geocube.CreateLayoutRequest
-	(*CreateLayoutResponse)(nil), // 5: geocube.CreateLayoutResponse
-	(*DeleteLayoutRequest)(nil),  // 6: geocube.DeleteLayoutRequest
-	(*DeleteLayoutResponse)(nil), // 7: geocube.DeleteLayoutResponse
-	(*ListLayoutsRequest)(nil),   // 8: geocube.ListLayoutsRequest
-	(*ListLayoutsResponse)(nil),  // 9: geocube.ListLayoutsResponse
-	(*TileAOIRequest)(nil),       // 10: geocube.TileAOIRequest
-	(*TileAOIResponse)(nil),      // 11: geocube.TileAOIResponse
-	(*Grid)(nil),                 // 12: geocube.Grid
-	(*Cell)(nil),                 // 13: geocube.Cell
-	(*CreateGridRequest)(nil),    // 14: geocube.CreateGridRequest
-	(*CreateGridResponse)(nil),   // 15: geocube.CreateGridResponse
-	(*DeleteGridRequest)(nil),    // 16: geocube.DeleteGridRequest
-	(*DeleteGridResponse)(nil),   // 17: geocube.DeleteGridResponse
-	(*ListGridsRequest)(nil),     // 18: geocube.ListGridsRequest
-	(*ListGridsResponse)(nil),    // 19: geocube.ListGridsResponse
-	nil,                          // 20: geocube.Layout.GridParametersEntry
-	(*AOI)(nil),                  // 21: geocube.AOI
-	(*LinearRing)(nil),           // 22: geocube.LinearRing
+	(*Size)(nil),                         // 0: geocube.Size
+	(*GeoTransform)(nil),                 // 1: geocube.GeoTransform
+	(*Tile)(nil),                         // 2: geocube.Tile
+	(*Layout)(nil),                       // 3: geocube.Layout
+	(*CreateLayoutRequest)(nil),          // 4: geocube.CreateLayoutRequest
+	(*CreateLayoutResponse)(nil),         // 5: geocube.CreateLayoutResponse
+	(*DeleteLayoutRequest)(nil),          // 6: geocube.DeleteLayoutRequest
+	(*DeleteLayoutResponse)(nil),         // 7: geocube.DeleteLayoutResponse
+	(*ListLayoutsRequest)(nil),           // 8: geocube.ListLayoutsRequest
+	(*ListLayoutsResponse)(nil),          // 9: geocube.ListLayoutsResponse
+	(*FindContainerLayoutsRequest)(nil),  // 10: geocube.FindContainerLayoutsRequest
+	(*FindContainerLayoutsResponse)(nil), // 11: geocube.FindContainerLayoutsResponse
+	(*TileAOIRequest)(nil),               // 12: geocube.TileAOIRequest
+	(*TileAOIResponse)(nil),              // 13: geocube.TileAOIResponse
+	(*Grid)(nil),                         // 14: geocube.Grid
+	(*Cell)(nil),                         // 15: geocube.Cell
+	(*CreateGridRequest)(nil),            // 16: geocube.CreateGridRequest
+	(*CreateGridResponse)(nil),           // 17: geocube.CreateGridResponse
+	(*DeleteGridRequest)(nil),            // 18: geocube.DeleteGridRequest
+	(*DeleteGridResponse)(nil),           // 19: geocube.DeleteGridResponse
+	(*ListGridsRequest)(nil),             // 20: geocube.ListGridsRequest
+	(*ListGridsResponse)(nil),            // 21: geocube.ListGridsResponse
+	nil,                                  // 22: geocube.Layout.GridParametersEntry
+	(*RecordIdList)(nil),                 // 23: geocube.RecordIdList
+	(*RecordFiltersWithAOI)(nil),         // 24: geocube.RecordFiltersWithAOI
+	(*AOI)(nil),                          // 25: geocube.AOI
+	(*LinearRing)(nil),                   // 26: geocube.LinearRing
 }
 var file_pb_layouts_proto_depIdxs = []int32{
 	1,  // 0: geocube.Tile.transform:type_name -> geocube.GeoTransform
 	0,  // 1: geocube.Tile.size_px:type_name -> geocube.Size
-	20, // 2: geocube.Layout.grid_parameters:type_name -> geocube.Layout.GridParametersEntry
+	22, // 2: geocube.Layout.grid_parameters:type_name -> geocube.Layout.GridParametersEntry
 	3,  // 3: geocube.CreateLayoutRequest.layout:type_name -> geocube.Layout
 	3,  // 4: geocube.ListLayoutsResponse.layouts:type_name -> geocube.Layout
-	21, // 5: geocube.TileAOIRequest.aoi:type_name -> geocube.AOI
-	3,  // 6: geocube.TileAOIRequest.layout:type_name -> geocube.Layout
-	2,  // 7: geocube.TileAOIResponse.tiles:type_name -> geocube.Tile
-	13, // 8: geocube.Grid.cells:type_name -> geocube.Cell
-	22, // 9: geocube.Cell.coordinates:type_name -> geocube.LinearRing
-	12, // 10: geocube.CreateGridRequest.grid:type_name -> geocube.Grid
-	12, // 11: geocube.ListGridsResponse.grids:type_name -> geocube.Grid
-	12, // [12:12] is the sub-list for method output_type
-	12, // [12:12] is the sub-list for method input_type
-	12, // [12:12] is the sub-list for extension type_name
-	12, // [12:12] is the sub-list for extension extendee
-	0,  // [0:12] is the sub-list for field type_name
+	23, // 5: geocube.FindContainerLayoutsRequest.records:type_name -> geocube.RecordIdList
+	24, // 6: geocube.FindContainerLayoutsRequest.filters:type_name -> geocube.RecordFiltersWithAOI
+	25, // 7: geocube.TileAOIRequest.aoi:type_name -> geocube.AOI
+	3,  // 8: geocube.TileAOIRequest.layout:type_name -> geocube.Layout
+	2,  // 9: geocube.TileAOIResponse.tiles:type_name -> geocube.Tile
+	15, // 10: geocube.Grid.cells:type_name -> geocube.Cell
+	26, // 11: geocube.Cell.coordinates:type_name -> geocube.LinearRing
+	14, // 12: geocube.CreateGridRequest.grid:type_name -> geocube.Grid
+	14, // 13: geocube.ListGridsResponse.grids:type_name -> geocube.Grid
+	14, // [14:14] is the sub-list for method output_type
+	14, // [14:14] is the sub-list for method input_type
+	14, // [14:14] is the sub-list for extension type_name
+	14, // [14:14] is the sub-list for extension extendee
+	0,  // [0:14] is the sub-list for field type_name
 }
 
 func init() { file_pb_layouts_proto_init() }
@@ -1437,7 +1609,7 @@ func file_pb_layouts_proto_init() {
 			}
 		}
 		file_pb_layouts_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*TileAOIRequest); i {
+			switch v := v.(*FindContainerLayoutsRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1449,7 +1621,7 @@ func file_pb_layouts_proto_init() {
 			}
 		}
 		file_pb_layouts_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*TileAOIResponse); i {
+			switch v := v.(*FindContainerLayoutsResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1461,7 +1633,7 @@ func file_pb_layouts_proto_init() {
 			}
 		}
 		file_pb_layouts_proto_msgTypes[12].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Grid); i {
+			switch v := v.(*TileAOIRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1473,7 +1645,7 @@ func file_pb_layouts_proto_init() {
 			}
 		}
 		file_pb_layouts_proto_msgTypes[13].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Cell); i {
+			switch v := v.(*TileAOIResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1485,7 +1657,7 @@ func file_pb_layouts_proto_init() {
 			}
 		}
 		file_pb_layouts_proto_msgTypes[14].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*CreateGridRequest); i {
+			switch v := v.(*Grid); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1497,7 +1669,7 @@ func file_pb_layouts_proto_init() {
 			}
 		}
 		file_pb_layouts_proto_msgTypes[15].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*CreateGridResponse); i {
+			switch v := v.(*Cell); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1509,7 +1681,7 @@ func file_pb_layouts_proto_init() {
 			}
 		}
 		file_pb_layouts_proto_msgTypes[16].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*DeleteGridRequest); i {
+			switch v := v.(*CreateGridRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1521,7 +1693,7 @@ func file_pb_layouts_proto_init() {
 			}
 		}
 		file_pb_layouts_proto_msgTypes[17].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*DeleteGridResponse); i {
+			switch v := v.(*CreateGridResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1533,7 +1705,7 @@ func file_pb_layouts_proto_init() {
 			}
 		}
 		file_pb_layouts_proto_msgTypes[18].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListGridsRequest); i {
+			switch v := v.(*DeleteGridRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1545,6 +1717,30 @@ func file_pb_layouts_proto_init() {
 			}
 		}
 		file_pb_layouts_proto_msgTypes[19].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*DeleteGridResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_pb_layouts_proto_msgTypes[20].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ListGridsRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_pb_layouts_proto_msgTypes[21].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*ListGridsResponse); i {
 			case 0:
 				return &v.state
@@ -1558,6 +1754,10 @@ func file_pb_layouts_proto_init() {
 		}
 	}
 	file_pb_layouts_proto_msgTypes[10].OneofWrappers = []interface{}{
+		(*FindContainerLayoutsRequest_Records)(nil),
+		(*FindContainerLayoutsRequest_Filters)(nil),
+	}
+	file_pb_layouts_proto_msgTypes[12].OneofWrappers = []interface{}{
 		(*TileAOIRequest_LayoutName)(nil),
 		(*TileAOIRequest_Layout)(nil),
 	}
@@ -1567,7 +1767,7 @@ func file_pb_layouts_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_pb_layouts_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   21,
+			NumMessages:   23,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

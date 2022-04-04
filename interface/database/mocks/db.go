@@ -329,6 +329,10 @@ func (_m *GeocubeBackend) FindLayouts(ctx context.Context, nameLike string) ([]*
 	panic("implement me")
 }
 
+func (_m *GeocubeBackend) FindContainerLayouts(ctx context.Context, instanceId string, geomAOI *geocube.AOI, recordIds []string, recordTags map[string]string, fromTime, toTime time.Time) ([]string, [][]string, error) {
+	panic("implement me")
+}
+
 func (_m *GeocubeBackend) SaveContainerLayout(ctx context.Context, containerURI string, layoutName string) error {
 	ret := _m.Called(ctx, containerURI, layoutName)
 

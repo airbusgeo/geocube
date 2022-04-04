@@ -78,6 +78,7 @@ type GeocubeService interface {
 	CreateLayout(ctx context.Context, layout *geocube.Layout) error
 	DeleteLayout(ctx context.Context, name string) error
 	ListLayouts(ctx context.Context, nameLike string) ([]*geocube.Layout, error)
+	FindContainerLayouts(ctx context.Context, instanceId string, aoi *geocube.AOI, recordIds []string, tags map[string]string, fromTime, toTime time.Time) ([]string, [][]string, error)
 	TileAOI(ctx context.Context, aoi *geocube.AOI, layoutName string, layout *geocube.Layout) (<-chan geocube.StreamedCell, error)
 
 	GetXYZTile(ctx context.Context, recordsID []string, instanceID string, a, b, z int) ([]byte, error)
@@ -1100,6 +1101,49 @@ func (svc *Service) ListLayouts(ctx context.Context, req *pb.ListLayoutsRequest)
 	}
 
 	return &resp, nil
+}
+
+// FindContainerLayouts find the layouts of the containers defined by several identifiers
+func (svc *Service) FindContainerLayouts(req *pb.FindContainerLayoutsRequest, stream pb.Geocube_FindContainerLayoutsServer) error {
+	// Check that id is uuid
+	if _, err := uuid.Parse(req.GetInstanceId()); err != nil {
+		return newValidationError("invalid Instance.uuid " + req.GetInstanceId() + ": " + err.Error())
+	}
+	var (
+		aoi              *geocube.AOI
+		fromTime, toTime time.Time
+		err              error
+	)
+	if req.GetRecords() != nil {
+		// Check that ids are uuid
+		if len(req.GetRecords().Ids) == 0 {
+			return newValidationError("invalid record id list: cannot be empty")
+		}
+	} else {
+		fromTime = timeFromTimestamp(req.GetFilters().Filters.GetFromTime())
+		toTime = timeFromTimestamp(req.GetFilters().Filters.GetToTime())
+		if req.GetFilters().Aoi != nil {
+			if aoi, err = geocube.NewAOIFromProtobuf(req.GetFilters().GetAoi().Polygons, false); err != nil {
+				return newValidationError("invalid aoi: " + err.Error())
+			}
+		}
+	}
+	layouts, containers, err := svc.gsvc.FindContainerLayouts(stream.Context(), req.InstanceId, aoi, req.GetRecords().GetIds(), req.GetFilters().GetFilters().GetTags(), fromTime, toTime)
+	if err != nil {
+		return formatError("backend.%w", err)
+	}
+
+	// Format response
+	for i, layout := range layouts {
+		if err := stream.Send(&pb.FindContainerLayoutsResponse{
+			LayoutName:    layout,
+			ContainerUris: containers[i],
+		}); err != nil {
+			return formatError("backend.FindContainerLayouts.send: %w", err)
+		}
+	}
+
+	return nil
 }
 
 // TileAOI creates tiles from an aoi

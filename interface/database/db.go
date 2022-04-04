@@ -172,9 +172,11 @@ type GeocubeBackend interface {
 	// Raise geocube.EntityNotFound
 	FindLayouts(ctx context.Context, nameLike string) ([]*geocube.Layout, error)
 
+	// FindContainerLayouts retrieves the layouts of the containers defined by the instance and the following filters
+	// Returns list of layout names and the corresponding list of containers
+	FindContainerLayouts(ctx context.Context, instanceId string, geomAOI *geocube.AOI, recordIds []string, recordTags map[string]string, fromTime, toTime time.Time) ([]string, [][]string, error)
 	// SaveContainerLayout saves the layout that defines the container
 	SaveContainerLayout(ctx context.Context, containerURI string, layoutName string) error
-
 	// DeleteContainerLayout removes the layout that defines the container
 	// Raise geocube.EntityNotFound (it can be ignored)
 	DeleteContainerLayout(ctx context.Context, containerURI string) error

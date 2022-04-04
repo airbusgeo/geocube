@@ -64,12 +64,14 @@ func appendTimeFilters(wc *joinClause, fromTime, toTime time.Time) {
 }
 
 func appendTagsFilters(wc *joinClause, tags geocube.Metadata) {
-	for k, v := range tags {
-		if v == "" {
-			wc.append("r.tags ? $%d", k)
-		} else {
-			v, operator := parseLike(v)
-			wc.append("r.tags -> $%d "+operator+" $%d", k, v)
+	if len(tags) != 0 {
+		for k, v := range tags {
+			if v == "" {
+				wc.append("r.tags ? $%d", k)
+			} else {
+				v, operator := parseLike(v)
+				wc.append("r.tags -> $%d "+operator+" $%d", k, v)
+			}
 		}
 	}
 }

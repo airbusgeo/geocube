@@ -37,7 +37,7 @@ var file_pb_geocube_proto_rawDesc = []byte{
 	0x12, 0x70, 0x62, 0x2f, 0x76, 0x61, 0x72, 0x69, 0x61, 0x62, 0x6c, 0x65, 0x73, 0x2e, 0x70, 0x72,
 	0x6f, 0x74, 0x6f, 0x1a, 0x10, 0x70, 0x62, 0x2f, 0x6c, 0x61, 0x79, 0x6f, 0x75, 0x74, 0x73, 0x2e,
 	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x13, 0x70, 0x62, 0x2f, 0x6f, 0x70, 0x65, 0x72, 0x61, 0x74,
-	0x69, 0x6f, 0x6e, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x32, 0xd8, 0x16, 0x0a, 0x07, 0x47,
+	0x69, 0x6f, 0x6e, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x32, 0xc1, 0x17, 0x0a, 0x07, 0x47,
 	0x65, 0x6f, 0x63, 0x75, 0x62, 0x65, 0x12, 0x50, 0x0a, 0x0b, 0x4c, 0x69, 0x73, 0x74, 0x52, 0x65,
 	0x63, 0x6f, 0x72, 0x64, 0x73, 0x12, 0x1b, 0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75, 0x62, 0x65, 0x2e,
 	0x4c, 0x69, 0x73, 0x74, 0x52, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65,
@@ -197,30 +197,37 @@ var file_pb_geocube_proto_rawDesc = []byte{
 	0x2e, 0x4c, 0x69, 0x73, 0x74, 0x4c, 0x61, 0x79, 0x6f, 0x75, 0x74, 0x73, 0x52, 0x65, 0x71, 0x75,
 	0x65, 0x73, 0x74, 0x1a, 0x1c, 0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75, 0x62, 0x65, 0x2e, 0x4c, 0x69,
 	0x73, 0x74, 0x4c, 0x61, 0x79, 0x6f, 0x75, 0x74, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
-	0x65, 0x22, 0x00, 0x12, 0x40, 0x0a, 0x07, 0x54, 0x69, 0x6c, 0x65, 0x41, 0x4f, 0x49, 0x12, 0x17,
-	0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75, 0x62, 0x65, 0x2e, 0x54, 0x69, 0x6c, 0x65, 0x41, 0x4f, 0x49,
-	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x18, 0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75, 0x62,
-	0x65, 0x2e, 0x54, 0x69, 0x6c, 0x65, 0x41, 0x4f, 0x49, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
-	0x65, 0x22, 0x00, 0x30, 0x01, 0x12, 0x49, 0x0a, 0x0a, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x47,
-	0x72, 0x69, 0x64, 0x12, 0x1a, 0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75, 0x62, 0x65, 0x2e, 0x43, 0x72,
-	0x65, 0x61, 0x74, 0x65, 0x47, 0x72, 0x69, 0x64, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a,
-	0x1b, 0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75, 0x62, 0x65, 0x2e, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65,
-	0x47, 0x72, 0x69, 0x64, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x28, 0x01,
-	0x12, 0x47, 0x0a, 0x0a, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x47, 0x72, 0x69, 0x64, 0x12, 0x1a,
-	0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75, 0x62, 0x65, 0x2e, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x47,
-	0x72, 0x69, 0x64, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1b, 0x2e, 0x67, 0x65, 0x6f,
-	0x63, 0x75, 0x62, 0x65, 0x2e, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x47, 0x72, 0x69, 0x64, 0x52,
-	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x44, 0x0a, 0x09, 0x4c, 0x69, 0x73,
-	0x74, 0x47, 0x72, 0x69, 0x64, 0x73, 0x12, 0x19, 0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75, 0x62, 0x65,
-	0x2e, 0x4c, 0x69, 0x73, 0x74, 0x47, 0x72, 0x69, 0x64, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
-	0x74, 0x1a, 0x1a, 0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75, 0x62, 0x65, 0x2e, 0x4c, 0x69, 0x73, 0x74,
-	0x47, 0x72, 0x69, 0x64, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12,
-	0x44, 0x0a, 0x07, 0x56, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x12, 0x1a, 0x2e, 0x67, 0x65, 0x6f,
-	0x63, 0x75, 0x62, 0x65, 0x2e, 0x47, 0x65, 0x74, 0x56, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x52,
-	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1b, 0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75, 0x62, 0x65,
-	0x2e, 0x47, 0x65, 0x74, 0x56, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x73, 0x70, 0x6f,
-	0x6e, 0x73, 0x65, 0x22, 0x00, 0x42, 0x0e, 0x5a, 0x0c, 0x2e, 0x2f, 0x70, 0x62, 0x3b, 0x67, 0x65,
-	0x6f, 0x63, 0x75, 0x62, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x65, 0x22, 0x00, 0x12, 0x67, 0x0a, 0x14, 0x46, 0x69, 0x6e, 0x64, 0x43, 0x6f, 0x6e, 0x74, 0x61,
+	0x69, 0x6e, 0x65, 0x72, 0x4c, 0x61, 0x79, 0x6f, 0x75, 0x74, 0x73, 0x12, 0x24, 0x2e, 0x67, 0x65,
+	0x6f, 0x63, 0x75, 0x62, 0x65, 0x2e, 0x46, 0x69, 0x6e, 0x64, 0x43, 0x6f, 0x6e, 0x74, 0x61, 0x69,
+	0x6e, 0x65, 0x72, 0x4c, 0x61, 0x79, 0x6f, 0x75, 0x74, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x74, 0x1a, 0x25, 0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75, 0x62, 0x65, 0x2e, 0x46, 0x69, 0x6e, 0x64,
+	0x43, 0x6f, 0x6e, 0x74, 0x61, 0x69, 0x6e, 0x65, 0x72, 0x4c, 0x61, 0x79, 0x6f, 0x75, 0x74, 0x73,
+	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x30, 0x01, 0x12, 0x40, 0x0a, 0x07,
+	0x54, 0x69, 0x6c, 0x65, 0x41, 0x4f, 0x49, 0x12, 0x17, 0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75, 0x62,
+	0x65, 0x2e, 0x54, 0x69, 0x6c, 0x65, 0x41, 0x4f, 0x49, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
+	0x1a, 0x18, 0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75, 0x62, 0x65, 0x2e, 0x54, 0x69, 0x6c, 0x65, 0x41,
+	0x4f, 0x49, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x30, 0x01, 0x12, 0x49,
+	0x0a, 0x0a, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x47, 0x72, 0x69, 0x64, 0x12, 0x1a, 0x2e, 0x67,
+	0x65, 0x6f, 0x63, 0x75, 0x62, 0x65, 0x2e, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x47, 0x72, 0x69,
+	0x64, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1b, 0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75,
+	0x62, 0x65, 0x2e, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x47, 0x72, 0x69, 0x64, 0x52, 0x65, 0x73,
+	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x28, 0x01, 0x12, 0x47, 0x0a, 0x0a, 0x44, 0x65, 0x6c,
+	0x65, 0x74, 0x65, 0x47, 0x72, 0x69, 0x64, 0x12, 0x1a, 0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75, 0x62,
+	0x65, 0x2e, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x47, 0x72, 0x69, 0x64, 0x52, 0x65, 0x71, 0x75,
+	0x65, 0x73, 0x74, 0x1a, 0x1b, 0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75, 0x62, 0x65, 0x2e, 0x44, 0x65,
+	0x6c, 0x65, 0x74, 0x65, 0x47, 0x72, 0x69, 0x64, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
+	0x22, 0x00, 0x12, 0x44, 0x0a, 0x09, 0x4c, 0x69, 0x73, 0x74, 0x47, 0x72, 0x69, 0x64, 0x73, 0x12,
+	0x19, 0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75, 0x62, 0x65, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x47, 0x72,
+	0x69, 0x64, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1a, 0x2e, 0x67, 0x65, 0x6f,
+	0x63, 0x75, 0x62, 0x65, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x47, 0x72, 0x69, 0x64, 0x73, 0x52, 0x65,
+	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x44, 0x0a, 0x07, 0x56, 0x65, 0x72, 0x73,
+	0x69, 0x6f, 0x6e, 0x12, 0x1a, 0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75, 0x62, 0x65, 0x2e, 0x47, 0x65,
+	0x74, 0x56, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a,
+	0x1b, 0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75, 0x62, 0x65, 0x2e, 0x47, 0x65, 0x74, 0x56, 0x65, 0x72,
+	0x73, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x42, 0x0e,
+	0x5a, 0x0c, 0x2e, 0x2f, 0x70, 0x62, 0x3b, 0x67, 0x65, 0x6f, 0x63, 0x75, 0x62, 0x65, 0x62, 0x06,
+	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var file_pb_geocube_proto_goTypes = []interface{}{
@@ -255,47 +262,49 @@ var file_pb_geocube_proto_goTypes = []interface{}{
 	(*CreateLayoutRequest)(nil),            // 28: geocube.CreateLayoutRequest
 	(*DeleteLayoutRequest)(nil),            // 29: geocube.DeleteLayoutRequest
 	(*ListLayoutsRequest)(nil),             // 30: geocube.ListLayoutsRequest
-	(*TileAOIRequest)(nil),                 // 31: geocube.TileAOIRequest
-	(*CreateGridRequest)(nil),              // 32: geocube.CreateGridRequest
-	(*DeleteGridRequest)(nil),              // 33: geocube.DeleteGridRequest
-	(*ListGridsRequest)(nil),               // 34: geocube.ListGridsRequest
-	(*GetVersionRequest)(nil),              // 35: geocube.GetVersionRequest
-	(*ListRecordsResponseItem)(nil),        // 36: geocube.ListRecordsResponseItem
-	(*CreateRecordsResponse)(nil),          // 37: geocube.CreateRecordsResponse
-	(*DeleteRecordsResponse)(nil),          // 38: geocube.DeleteRecordsResponse
-	(*AddRecordsTagsResponse)(nil),         // 39: geocube.AddRecordsTagsResponse
-	(*RemoveRecordsTagsResponse)(nil),      // 40: geocube.RemoveRecordsTagsResponse
-	(*CreateAOIResponse)(nil),              // 41: geocube.CreateAOIResponse
-	(*GetAOIResponse)(nil),                 // 42: geocube.GetAOIResponse
-	(*CreateVariableResponse)(nil),         // 43: geocube.CreateVariableResponse
-	(*InstantiateVariableResponse)(nil),    // 44: geocube.InstantiateVariableResponse
-	(*GetVariableResponse)(nil),            // 45: geocube.GetVariableResponse
-	(*ListVariablesResponseItem)(nil),      // 46: geocube.ListVariablesResponseItem
-	(*UpdateVariableResponse)(nil),         // 47: geocube.UpdateVariableResponse
-	(*UpdateInstanceResponse)(nil),         // 48: geocube.UpdateInstanceResponse
-	(*DeleteVariableResponse)(nil),         // 49: geocube.DeleteVariableResponse
-	(*DeleteInstanceResponse)(nil),         // 50: geocube.DeleteInstanceResponse
-	(*CreatePaletteResponse)(nil),          // 51: geocube.CreatePaletteResponse
-	(*IndexDatasetsResponse)(nil),          // 52: geocube.IndexDatasetsResponse
-	(*ConfigConsolidationResponse)(nil),    // 53: geocube.ConfigConsolidationResponse
-	(*GetConsolidationParamsResponse)(nil), // 54: geocube.GetConsolidationParamsResponse
-	(*ConsolidateResponse)(nil),            // 55: geocube.ConsolidateResponse
-	(*ListJobsResponse)(nil),               // 56: geocube.ListJobsResponse
-	(*GetJobResponse)(nil),                 // 57: geocube.GetJobResponse
-	(*CleanJobsResponse)(nil),              // 58: geocube.CleanJobsResponse
-	(*RetryJobResponse)(nil),               // 59: geocube.RetryJobResponse
-	(*CancelJobResponse)(nil),              // 60: geocube.CancelJobResponse
-	(*ContinueJobResponse)(nil),            // 61: geocube.ContinueJobResponse
-	(*GetCubeResponse)(nil),                // 62: geocube.GetCubeResponse
-	(*GetTileResponse)(nil),                // 63: geocube.GetTileResponse
-	(*CreateLayoutResponse)(nil),           // 64: geocube.CreateLayoutResponse
-	(*DeleteLayoutResponse)(nil),           // 65: geocube.DeleteLayoutResponse
-	(*ListLayoutsResponse)(nil),            // 66: geocube.ListLayoutsResponse
-	(*TileAOIResponse)(nil),                // 67: geocube.TileAOIResponse
-	(*CreateGridResponse)(nil),             // 68: geocube.CreateGridResponse
-	(*DeleteGridResponse)(nil),             // 69: geocube.DeleteGridResponse
-	(*ListGridsResponse)(nil),              // 70: geocube.ListGridsResponse
-	(*GetVersionResponse)(nil),             // 71: geocube.GetVersionResponse
+	(*FindContainerLayoutsRequest)(nil),    // 31: geocube.FindContainerLayoutsRequest
+	(*TileAOIRequest)(nil),                 // 32: geocube.TileAOIRequest
+	(*CreateGridRequest)(nil),              // 33: geocube.CreateGridRequest
+	(*DeleteGridRequest)(nil),              // 34: geocube.DeleteGridRequest
+	(*ListGridsRequest)(nil),               // 35: geocube.ListGridsRequest
+	(*GetVersionRequest)(nil),              // 36: geocube.GetVersionRequest
+	(*ListRecordsResponseItem)(nil),        // 37: geocube.ListRecordsResponseItem
+	(*CreateRecordsResponse)(nil),          // 38: geocube.CreateRecordsResponse
+	(*DeleteRecordsResponse)(nil),          // 39: geocube.DeleteRecordsResponse
+	(*AddRecordsTagsResponse)(nil),         // 40: geocube.AddRecordsTagsResponse
+	(*RemoveRecordsTagsResponse)(nil),      // 41: geocube.RemoveRecordsTagsResponse
+	(*CreateAOIResponse)(nil),              // 42: geocube.CreateAOIResponse
+	(*GetAOIResponse)(nil),                 // 43: geocube.GetAOIResponse
+	(*CreateVariableResponse)(nil),         // 44: geocube.CreateVariableResponse
+	(*InstantiateVariableResponse)(nil),    // 45: geocube.InstantiateVariableResponse
+	(*GetVariableResponse)(nil),            // 46: geocube.GetVariableResponse
+	(*ListVariablesResponseItem)(nil),      // 47: geocube.ListVariablesResponseItem
+	(*UpdateVariableResponse)(nil),         // 48: geocube.UpdateVariableResponse
+	(*UpdateInstanceResponse)(nil),         // 49: geocube.UpdateInstanceResponse
+	(*DeleteVariableResponse)(nil),         // 50: geocube.DeleteVariableResponse
+	(*DeleteInstanceResponse)(nil),         // 51: geocube.DeleteInstanceResponse
+	(*CreatePaletteResponse)(nil),          // 52: geocube.CreatePaletteResponse
+	(*IndexDatasetsResponse)(nil),          // 53: geocube.IndexDatasetsResponse
+	(*ConfigConsolidationResponse)(nil),    // 54: geocube.ConfigConsolidationResponse
+	(*GetConsolidationParamsResponse)(nil), // 55: geocube.GetConsolidationParamsResponse
+	(*ConsolidateResponse)(nil),            // 56: geocube.ConsolidateResponse
+	(*ListJobsResponse)(nil),               // 57: geocube.ListJobsResponse
+	(*GetJobResponse)(nil),                 // 58: geocube.GetJobResponse
+	(*CleanJobsResponse)(nil),              // 59: geocube.CleanJobsResponse
+	(*RetryJobResponse)(nil),               // 60: geocube.RetryJobResponse
+	(*CancelJobResponse)(nil),              // 61: geocube.CancelJobResponse
+	(*ContinueJobResponse)(nil),            // 62: geocube.ContinueJobResponse
+	(*GetCubeResponse)(nil),                // 63: geocube.GetCubeResponse
+	(*GetTileResponse)(nil),                // 64: geocube.GetTileResponse
+	(*CreateLayoutResponse)(nil),           // 65: geocube.CreateLayoutResponse
+	(*DeleteLayoutResponse)(nil),           // 66: geocube.DeleteLayoutResponse
+	(*ListLayoutsResponse)(nil),            // 67: geocube.ListLayoutsResponse
+	(*FindContainerLayoutsResponse)(nil),   // 68: geocube.FindContainerLayoutsResponse
+	(*TileAOIResponse)(nil),                // 69: geocube.TileAOIResponse
+	(*CreateGridResponse)(nil),             // 70: geocube.CreateGridResponse
+	(*DeleteGridResponse)(nil),             // 71: geocube.DeleteGridResponse
+	(*ListGridsResponse)(nil),              // 72: geocube.ListGridsResponse
+	(*GetVersionResponse)(nil),             // 73: geocube.GetVersionResponse
 }
 var file_pb_geocube_proto_depIdxs = []int32{
 	0,  // 0: geocube.Geocube.ListRecords:input_type -> geocube.ListRecordsRequest
@@ -329,49 +338,51 @@ var file_pb_geocube_proto_depIdxs = []int32{
 	28, // 28: geocube.Geocube.CreateLayout:input_type -> geocube.CreateLayoutRequest
 	29, // 29: geocube.Geocube.DeleteLayout:input_type -> geocube.DeleteLayoutRequest
 	30, // 30: geocube.Geocube.ListLayouts:input_type -> geocube.ListLayoutsRequest
-	31, // 31: geocube.Geocube.TileAOI:input_type -> geocube.TileAOIRequest
-	32, // 32: geocube.Geocube.CreateGrid:input_type -> geocube.CreateGridRequest
-	33, // 33: geocube.Geocube.DeleteGrid:input_type -> geocube.DeleteGridRequest
-	34, // 34: geocube.Geocube.ListGrids:input_type -> geocube.ListGridsRequest
-	35, // 35: geocube.Geocube.Version:input_type -> geocube.GetVersionRequest
-	36, // 36: geocube.Geocube.ListRecords:output_type -> geocube.ListRecordsResponseItem
-	37, // 37: geocube.Geocube.CreateRecords:output_type -> geocube.CreateRecordsResponse
-	38, // 38: geocube.Geocube.DeleteRecords:output_type -> geocube.DeleteRecordsResponse
-	39, // 39: geocube.Geocube.AddRecordsTags:output_type -> geocube.AddRecordsTagsResponse
-	40, // 40: geocube.Geocube.RemoveRecordsTags:output_type -> geocube.RemoveRecordsTagsResponse
-	41, // 41: geocube.Geocube.CreateAOI:output_type -> geocube.CreateAOIResponse
-	42, // 42: geocube.Geocube.GetAOI:output_type -> geocube.GetAOIResponse
-	43, // 43: geocube.Geocube.CreateVariable:output_type -> geocube.CreateVariableResponse
-	44, // 44: geocube.Geocube.InstantiateVariable:output_type -> geocube.InstantiateVariableResponse
-	45, // 45: geocube.Geocube.GetVariable:output_type -> geocube.GetVariableResponse
-	46, // 46: geocube.Geocube.ListVariables:output_type -> geocube.ListVariablesResponseItem
-	47, // 47: geocube.Geocube.UpdateVariable:output_type -> geocube.UpdateVariableResponse
-	48, // 48: geocube.Geocube.UpdateInstance:output_type -> geocube.UpdateInstanceResponse
-	49, // 49: geocube.Geocube.DeleteVariable:output_type -> geocube.DeleteVariableResponse
-	50, // 50: geocube.Geocube.DeleteInstance:output_type -> geocube.DeleteInstanceResponse
-	51, // 51: geocube.Geocube.CreatePalette:output_type -> geocube.CreatePaletteResponse
-	52, // 52: geocube.Geocube.IndexDatasets:output_type -> geocube.IndexDatasetsResponse
-	53, // 53: geocube.Geocube.ConfigConsolidation:output_type -> geocube.ConfigConsolidationResponse
-	54, // 54: geocube.Geocube.GetConsolidationParams:output_type -> geocube.GetConsolidationParamsResponse
-	55, // 55: geocube.Geocube.Consolidate:output_type -> geocube.ConsolidateResponse
-	56, // 56: geocube.Geocube.ListJobs:output_type -> geocube.ListJobsResponse
-	57, // 57: geocube.Geocube.GetJob:output_type -> geocube.GetJobResponse
-	58, // 58: geocube.Geocube.CleanJobs:output_type -> geocube.CleanJobsResponse
-	59, // 59: geocube.Geocube.RetryJob:output_type -> geocube.RetryJobResponse
-	60, // 60: geocube.Geocube.CancelJob:output_type -> geocube.CancelJobResponse
-	61, // 61: geocube.Geocube.ContinueJob:output_type -> geocube.ContinueJobResponse
-	62, // 62: geocube.Geocube.GetCube:output_type -> geocube.GetCubeResponse
-	63, // 63: geocube.Geocube.GetXYZTile:output_type -> geocube.GetTileResponse
-	64, // 64: geocube.Geocube.CreateLayout:output_type -> geocube.CreateLayoutResponse
-	65, // 65: geocube.Geocube.DeleteLayout:output_type -> geocube.DeleteLayoutResponse
-	66, // 66: geocube.Geocube.ListLayouts:output_type -> geocube.ListLayoutsResponse
-	67, // 67: geocube.Geocube.TileAOI:output_type -> geocube.TileAOIResponse
-	68, // 68: geocube.Geocube.CreateGrid:output_type -> geocube.CreateGridResponse
-	69, // 69: geocube.Geocube.DeleteGrid:output_type -> geocube.DeleteGridResponse
-	70, // 70: geocube.Geocube.ListGrids:output_type -> geocube.ListGridsResponse
-	71, // 71: geocube.Geocube.Version:output_type -> geocube.GetVersionResponse
-	36, // [36:72] is the sub-list for method output_type
-	0,  // [0:36] is the sub-list for method input_type
+	31, // 31: geocube.Geocube.FindContainerLayouts:input_type -> geocube.FindContainerLayoutsRequest
+	32, // 32: geocube.Geocube.TileAOI:input_type -> geocube.TileAOIRequest
+	33, // 33: geocube.Geocube.CreateGrid:input_type -> geocube.CreateGridRequest
+	34, // 34: geocube.Geocube.DeleteGrid:input_type -> geocube.DeleteGridRequest
+	35, // 35: geocube.Geocube.ListGrids:input_type -> geocube.ListGridsRequest
+	36, // 36: geocube.Geocube.Version:input_type -> geocube.GetVersionRequest
+	37, // 37: geocube.Geocube.ListRecords:output_type -> geocube.ListRecordsResponseItem
+	38, // 38: geocube.Geocube.CreateRecords:output_type -> geocube.CreateRecordsResponse
+	39, // 39: geocube.Geocube.DeleteRecords:output_type -> geocube.DeleteRecordsResponse
+	40, // 40: geocube.Geocube.AddRecordsTags:output_type -> geocube.AddRecordsTagsResponse
+	41, // 41: geocube.Geocube.RemoveRecordsTags:output_type -> geocube.RemoveRecordsTagsResponse
+	42, // 42: geocube.Geocube.CreateAOI:output_type -> geocube.CreateAOIResponse
+	43, // 43: geocube.Geocube.GetAOI:output_type -> geocube.GetAOIResponse
+	44, // 44: geocube.Geocube.CreateVariable:output_type -> geocube.CreateVariableResponse
+	45, // 45: geocube.Geocube.InstantiateVariable:output_type -> geocube.InstantiateVariableResponse
+	46, // 46: geocube.Geocube.GetVariable:output_type -> geocube.GetVariableResponse
+	47, // 47: geocube.Geocube.ListVariables:output_type -> geocube.ListVariablesResponseItem
+	48, // 48: geocube.Geocube.UpdateVariable:output_type -> geocube.UpdateVariableResponse
+	49, // 49: geocube.Geocube.UpdateInstance:output_type -> geocube.UpdateInstanceResponse
+	50, // 50: geocube.Geocube.DeleteVariable:output_type -> geocube.DeleteVariableResponse
+	51, // 51: geocube.Geocube.DeleteInstance:output_type -> geocube.DeleteInstanceResponse
+	52, // 52: geocube.Geocube.CreatePalette:output_type -> geocube.CreatePaletteResponse
+	53, // 53: geocube.Geocube.IndexDatasets:output_type -> geocube.IndexDatasetsResponse
+	54, // 54: geocube.Geocube.ConfigConsolidation:output_type -> geocube.ConfigConsolidationResponse
+	55, // 55: geocube.Geocube.GetConsolidationParams:output_type -> geocube.GetConsolidationParamsResponse
+	56, // 56: geocube.Geocube.Consolidate:output_type -> geocube.ConsolidateResponse
+	57, // 57: geocube.Geocube.ListJobs:output_type -> geocube.ListJobsResponse
+	58, // 58: geocube.Geocube.GetJob:output_type -> geocube.GetJobResponse
+	59, // 59: geocube.Geocube.CleanJobs:output_type -> geocube.CleanJobsResponse
+	60, // 60: geocube.Geocube.RetryJob:output_type -> geocube.RetryJobResponse
+	61, // 61: geocube.Geocube.CancelJob:output_type -> geocube.CancelJobResponse
+	62, // 62: geocube.Geocube.ContinueJob:output_type -> geocube.ContinueJobResponse
+	63, // 63: geocube.Geocube.GetCube:output_type -> geocube.GetCubeResponse
+	64, // 64: geocube.Geocube.GetXYZTile:output_type -> geocube.GetTileResponse
+	65, // 65: geocube.Geocube.CreateLayout:output_type -> geocube.CreateLayoutResponse
+	66, // 66: geocube.Geocube.DeleteLayout:output_type -> geocube.DeleteLayoutResponse
+	67, // 67: geocube.Geocube.ListLayouts:output_type -> geocube.ListLayoutsResponse
+	68, // 68: geocube.Geocube.FindContainerLayouts:output_type -> geocube.FindContainerLayoutsResponse
+	69, // 69: geocube.Geocube.TileAOI:output_type -> geocube.TileAOIResponse
+	70, // 70: geocube.Geocube.CreateGrid:output_type -> geocube.CreateGridResponse
+	71, // 71: geocube.Geocube.DeleteGrid:output_type -> geocube.DeleteGridResponse
+	72, // 72: geocube.Geocube.ListGrids:output_type -> geocube.ListGridsResponse
+	73, // 73: geocube.Geocube.Version:output_type -> geocube.GetVersionResponse
+	37, // [37:74] is the sub-list for method output_type
+	0,  // [0:37] is the sub-list for method input_type
 	0,  // [0:0] is the sub-list for extension type_name
 	0,  // [0:0] is the sub-list for extension extendee
 	0,  // [0:0] is the sub-list for field type_name
@@ -455,6 +466,7 @@ type GeocubeClient interface {
 	CreateLayout(ctx context.Context, in *CreateLayoutRequest, opts ...grpc.CallOption) (*CreateLayoutResponse, error)
 	DeleteLayout(ctx context.Context, in *DeleteLayoutRequest, opts ...grpc.CallOption) (*DeleteLayoutResponse, error)
 	ListLayouts(ctx context.Context, in *ListLayoutsRequest, opts ...grpc.CallOption) (*ListLayoutsResponse, error)
+	FindContainerLayouts(ctx context.Context, in *FindContainerLayoutsRequest, opts ...grpc.CallOption) (Geocube_FindContainerLayoutsClient, error)
 	TileAOI(ctx context.Context, in *TileAOIRequest, opts ...grpc.CallOption) (Geocube_TileAOIClient, error)
 	// @exclude Grid
 	CreateGrid(ctx context.Context, opts ...grpc.CallOption) (Geocube_CreateGridClient, error)
@@ -820,8 +832,40 @@ func (c *geocubeClient) ListLayouts(ctx context.Context, in *ListLayoutsRequest,
 	return out, nil
 }
 
+func (c *geocubeClient) FindContainerLayouts(ctx context.Context, in *FindContainerLayoutsRequest, opts ...grpc.CallOption) (Geocube_FindContainerLayoutsClient, error) {
+	stream, err := c.cc.NewStream(ctx, &_Geocube_serviceDesc.Streams[3], "/geocube.Geocube/FindContainerLayouts", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &geocubeFindContainerLayoutsClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type Geocube_FindContainerLayoutsClient interface {
+	Recv() (*FindContainerLayoutsResponse, error)
+	grpc.ClientStream
+}
+
+type geocubeFindContainerLayoutsClient struct {
+	grpc.ClientStream
+}
+
+func (x *geocubeFindContainerLayoutsClient) Recv() (*FindContainerLayoutsResponse, error) {
+	m := new(FindContainerLayoutsResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 func (c *geocubeClient) TileAOI(ctx context.Context, in *TileAOIRequest, opts ...grpc.CallOption) (Geocube_TileAOIClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_Geocube_serviceDesc.Streams[3], "/geocube.Geocube/TileAOI", opts...)
+	stream, err := c.cc.NewStream(ctx, &_Geocube_serviceDesc.Streams[4], "/geocube.Geocube/TileAOI", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -853,7 +897,7 @@ func (x *geocubeTileAOIClient) Recv() (*TileAOIResponse, error) {
 }
 
 func (c *geocubeClient) CreateGrid(ctx context.Context, opts ...grpc.CallOption) (Geocube_CreateGridClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_Geocube_serviceDesc.Streams[4], "/geocube.Geocube/CreateGrid", opts...)
+	stream, err := c.cc.NewStream(ctx, &_Geocube_serviceDesc.Streams[5], "/geocube.Geocube/CreateGrid", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -951,6 +995,7 @@ type GeocubeServer interface {
 	CreateLayout(context.Context, *CreateLayoutRequest) (*CreateLayoutResponse, error)
 	DeleteLayout(context.Context, *DeleteLayoutRequest) (*DeleteLayoutResponse, error)
 	ListLayouts(context.Context, *ListLayoutsRequest) (*ListLayoutsResponse, error)
+	FindContainerLayouts(*FindContainerLayoutsRequest, Geocube_FindContainerLayoutsServer) error
 	TileAOI(*TileAOIRequest, Geocube_TileAOIServer) error
 	// @exclude Grid
 	CreateGrid(Geocube_CreateGridServer) error
@@ -1056,6 +1101,9 @@ func (*UnimplementedGeocubeServer) DeleteLayout(context.Context, *DeleteLayoutRe
 }
 func (*UnimplementedGeocubeServer) ListLayouts(context.Context, *ListLayoutsRequest) (*ListLayoutsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListLayouts not implemented")
+}
+func (*UnimplementedGeocubeServer) FindContainerLayouts(*FindContainerLayoutsRequest, Geocube_FindContainerLayoutsServer) error {
+	return status.Errorf(codes.Unimplemented, "method FindContainerLayouts not implemented")
 }
 func (*UnimplementedGeocubeServer) TileAOI(*TileAOIRequest, Geocube_TileAOIServer) error {
 	return status.Errorf(codes.Unimplemented, "method TileAOI not implemented")
@@ -1644,6 +1692,27 @@ func _Geocube_ListLayouts_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Geocube_FindContainerLayouts_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(FindContainerLayoutsRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(GeocubeServer).FindContainerLayouts(m, &geocubeFindContainerLayoutsServer{stream})
+}
+
+type Geocube_FindContainerLayoutsServer interface {
+	Send(*FindContainerLayoutsResponse) error
+	grpc.ServerStream
+}
+
+type geocubeFindContainerLayoutsServer struct {
+	grpc.ServerStream
+}
+
+func (x *geocubeFindContainerLayoutsServer) Send(m *FindContainerLayoutsResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
 func _Geocube_TileAOI_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(TileAOIRequest)
 	if err := stream.RecvMsg(m); err != nil {
@@ -1888,6 +1957,11 @@ var _Geocube_serviceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "GetCube",
 			Handler:       _Geocube_GetCube_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "FindContainerLayouts",
+			Handler:       _Geocube_FindContainerLayouts_Handler,
 			ServerStreams: true,
 		},
 		{

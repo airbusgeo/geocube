@@ -64,14 +64,14 @@ message NewRecord{
 }
 
 /**
-  * Records that are considered as one
+  * Records that are considered as a unique, merged record (e.g. all records of a given date, whatever the time of the day)
   */
 message GroupedRecords {
     repeated Record records = 1;
 }
 
 /**
-  * Record ids that are considered as one
+  * Record ids that are considered as a unique, merged record (e.g. all records of a given date, whatever the time of the day)
   */
 message GroupedRecordIds {
     repeated string ids = 1;
@@ -85,35 +85,35 @@ message GroupedRecordIdsList {
 }
 
 /**
-  * 
+  * Create new records
   */
 message CreateRecordsRequest {
     repeated NewRecord records = 1;
 }
 
 /**
-  * 
+  * Returns the ID of the created records 
   */
 message CreateRecordsResponse {
     repeated string ids = 1;
 }
 
 /**
-  * 
+  * Delete records by ID
   */
 message DeleteRecordsRequest {
     repeated string ids = 1;
 }
 
 /**
-  * 
+  * Return the number of deleted records
   */
 message DeleteRecordsResponse {
     int64 nb = 1;
 }
 
 /**
-  * 
+  * Add the given tags to a set of records
   */
 message AddRecordsTagsRequest {
     repeated string     ids  = 1;
@@ -121,14 +121,14 @@ message AddRecordsTagsRequest {
 }
 
 /**
-  * 
+  * Returns the number of records impacted by the addition
   */
 message AddRecordsTagsResponse {
     int64 nb = 1;
 }
 
 /**
-  * 
+  * Remove the given tags for a set of records
   */
 message RemoveRecordsTagsRequest {
     repeated string ids = 1;
@@ -136,52 +136,53 @@ message RemoveRecordsTagsRequest {
 }
 
 /**
-  * 
+  * Returns the number of records impacted by the removal
   */
 message RemoveRecordsTagsResponse {
     int64 nb = 1;
 }
 
 /**
-  * 
+  * Create a new AOI
   */
 message CreateAOIRequest {
     AOI aoi = 1;
 }
 
 /**
-  * 
+  * Returns the ID of the AOI
   */
 message CreateAOIResponse {
     string id = 1;
 }
 
 /**
-  * 
+  * Request the AOI given its ID
   */
 message GetAOIRequest {
     string id = 1;
 }
 
 /**
-  * 
+  * Returns a geometric AOI
   */
 message GetAOIResponse {
     AOI aoi = 1;
 }
 
 /**
-  * 
+  * Request to find the list of records corresponding to multiple filters (inclusive)
   */
 message ListRecordsRequest {
-    string                    name       = 1;
-    map<string, string>       tags       = 3;
-    google.protobuf.Timestamp from_time  = 4;
-    google.protobuf.Timestamp to_time    = 5;
-    AOI                       aoi        = 8;
+    string                    name       = 1; // Name pattern (support * and ? for all or any characters and trailing (?i) for case-insensitiveness)
+    map<string, string>       tags       = 3; // cf RecordFilters
+    google.protobuf.Timestamp from_time  = 4; // cf RecordFilters
+    google.protobuf.Timestamp to_time    = 5; // cf RecordFilters
+    AOI                       aoi        = 8; // cf RecordFiltersWithAOI
     int32                     limit      = 6;
     int32                     page       = 7;
     bool                      with_aoi   = 9; // Also returns the AOI (may be big)
+    //RecordFiltersWithAOI      filters    = 10;
 }
 
 /**
@@ -192,10 +193,18 @@ message ListRecordsResponseItem {
 }
 
 /**
-  * 
+  * RecordFilters defines some filters to identify records
   */
 message RecordFilters {
-    map<string, string>       tags       = 1;
-    google.protobuf.Timestamp from_time  = 2;
-    google.protobuf.Timestamp to_time    = 3;
+    map<string, string>       tags       = 1; // Tags of the records
+    google.protobuf.Timestamp from_time  = 2; // Minimum date of the records
+    google.protobuf.Timestamp to_time    = 3; // Maximum date of the records
+}
+
+/**
+  * RecordFiltersWithAOI defines some filters to identify records, including an AOI in geometric coordinates
+  */
+message RecordFiltersWithAOI {
+    RecordFilters filters = 1;
+    AOI           aoi     = 2; // Geometric coordinates of an AOI that intersects the AOI of the records
 }

@@ -93,16 +93,36 @@ message ListLayoutsResponse{
 }
 
 /**
+  * Find all the layouts used by the datasets on an AOI or a set of records
+  * It can be used to tile the AOI with an optimal layout.
+  */
+message FindContainerLayoutsRequest{
+  string instance_id = 1;
+  oneof identifier{
+    RecordIdList         records = 2; // List of record ids
+    RecordFiltersWithAOI filters = 3; // Filters to select records
+  }
+}
+
+/**
+  * Stream the name of the layout and the associated containers
+  */
+message FindContainerLayoutsResponse{
+  string          layout_name    = 1; // Name of the layout
+  repeated string container_uris = 2; // List of containers having the layout
+}
+
+/**
   * Tile an AOI, covering it with cells defined by a grid.
-  * Currently, only support user-defined layout.
   * In the future, it will be able to find the best tiling given the internal layout of datasets.
   */
 message TileAOIRequest{
-    AOI    aoi        = 1;
+    AOI aoi = 1;
     oneof identifier{
       string  layout_name = 5; // Name of an existing layout
       Layout  layout      = 6; // User-defined layout
-    }}
+    }
+}
 
 /**
   * Return tiles, thousand by thousand.
