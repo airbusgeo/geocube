@@ -521,7 +521,14 @@ func (svc *Service) mergeDatasetsWorker(ctx context.Context, jobs <-chan mergeDa
 		select {
 		case <-ctx.Done():
 			return
-		case slicesOut[job.ID] <- CubeSlice{Image: bitmap, Err: err, Records: job.Records, Metadata: metadata}:
+		case slicesOut[job.ID] <- CubeSlice{
+			Image:    bitmap,
+			Err:      err,
+			Records:  job.Records,
+			Metadata: metadata,
+			DatasetsMeta: SliceMeta{
+				Datasets: job.Datasets,
+			}}:
 		}
 	}
 }
