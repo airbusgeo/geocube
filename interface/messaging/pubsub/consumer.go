@@ -284,7 +284,7 @@ func (c *Client) Process(ctx context.Context, cb messaging.Callback) error {
 func (c *Client) Backlog(ctx context.Context) (int64, error) {
 	if c.m == nil {
 		var err error
-		if c.m, err = monitoring.NewMetricClient(context.Background(), option.WithEndpoint("localhost:8085"), option.WithoutAuthentication(), option.WithGRPCDialOption(grpc.WithInsecure())); err != nil {
+		if c.m, err = monitoring.NewMetricClient(context.Background()); err != nil {
 			return 0, fmt.Errorf("create metric client: %w", err)
 		}
 	}

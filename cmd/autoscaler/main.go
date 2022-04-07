@@ -51,17 +51,19 @@ func main() {
 	controller.CostPort = int(*podCostPort)
 
 	var queue qbas.Queue
-
+	var logMessage string
 	if *argpgqconn != "" {
 		db, _, err := pgqueue.SqlConnect(ctx, *argpgqconn)
 		if err != nil {
 			panic(err)
 		}
 		queue = pgqueue.NewConsumer(db, *argsub)
+		logMessage += " from pgqueue:" + *argsub
 	} else if *argproject != "" {
 		if queue, err = pubsub.NewConsumer(*argproject, *argsub); err != nil {
 			panic(err)
 		}
+		logMessage += " from pubsub:" + *argsub
 	}
 	if queue == nil {
 		panic("missing backlog configuration (e.g. queue, ps-project or pgq-connection)")
@@ -74,6 +76,6 @@ func main() {
 		MaxStep:      int64(*argstep),
 	}
 	as := autoscaler.New(queue, controller, cfg, log.Logger(ctx))
-	log.Logger(ctx).Sugar().Infof("starting autoscaler with refresh %s", argupd.String())
+	log.Logger(ctx).Sugar().Infof("starting autoscaler with refresh %s "+logMessage, argupd.String())
 	as.Run(ctx, *argupd)
 }
