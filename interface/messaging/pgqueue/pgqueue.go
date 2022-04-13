@@ -36,6 +36,7 @@ type Consumer struct {
 	db        *sql.DB
 	worker    *pgq.Worker
 	queueName string
+	run       bool
 }
 
 func SetDefaultLogger() pgq.WorkerOption {
@@ -125,11 +126,14 @@ func (c *Consumer) Pull(ctx context.Context, cb messaging.Callback) error {
 	if err := c.worker.RegisterQueue(c.queueName, cbwc.handler); err != nil {
 		return fmt.Errorf("pgQueue.Pull.RegisterQueue: %w", err)
 	}
+	c.run = true
 	return c.worker.Run()
 }
 
 func (c *Consumer) Stop() {
-	c.worker.StopChan <- true
+	if c.run {
+		c.worker.StopChan <- true
+	}
 }
 
 type CallbackWithContext struct {
