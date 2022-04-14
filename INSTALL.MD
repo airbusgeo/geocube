@@ -10,6 +10,7 @@
     - [Currently supported storages](#currently-supported-storages)
   - [Messaging](#messaging)
     - [Interface](#interface-1)
+    - [Pgqueue implementation](#pgqueue-implementation)
     - [Pubsub implementation](#pubsub-implementation)
   - [Database](#database)
     - [Interface](#interface-2)
@@ -21,6 +22,7 @@
     - [Apiserver](#apiserver)
     - [Consolidater](#consolidater)
   - [Messaging Broker](#messaging-broker)
+    - [PGQueue](#pgqueue)
     - [RabbitMq](#rabbitmq)
     - [Pub/Sub (Emulator)](#pubsub-emulator)
 - [Installation - Docker](#installation---docker)
@@ -109,11 +111,16 @@ The storage is infered from the prefix of the uri (protocol). The user can add a
 ### Interface
 
 The messaging interface is available here : `interface/messaging/`.
-It is used to communicate between the ApiServer and the Consolidater. It's a parameter of the constructor of the Service and it is configured in the following files: `cmd/apiserver/main.go` and `cmd/consolidater/main.go`.
+It is used to communicate between the ApiServer and the Consolidater, and it can be used as a metric to autoscale the consolidater. It's a parameter of the constructor of the Service and it is configured in the following files: `cmd/apiserver/main.go` and `cmd/consolidater/main.go`.
+
+### Pgqueue implementation
+
+A messaging interface based on postgres is implemented using the [btubbs/pgq](https://github.com/btubbs/pgq) library: `interface/messaging/pgqueue`. This implementation has autoscaling capabilities.
+
 
 ### Pubsub implementation
 
-Geocube supports PubSub (Google Cloud Platform) messaging broker : `vendor/github.com/geocube/interface/messaging/pubsub`.
+Geocube supports PubSub (Google Cloud Platform) messaging broker : `interface/messaging/pubsub`.
 
 Topics and subscriptions are to be created.
 
@@ -316,6 +323,22 @@ $  ./consolidater -workdir=/tmp -psProject geocube-emulator -eventsQueue events 
 ```
 
 ## Messaging Broker
+
+### PGQueue
+
+To use this messaging broker, create the `pgq_jobs` table in your postgres database using the following script `interface/messaging/pgqueue/create_table.sql`.
+
+```bash
+$ psql -h <database_host> -d <database_name> -f interface/messaging/pgqueue/create_table.sql
+```
+
+Then, start the apiserver and the consolidater with the corresponding arguments:
+- `--pgqConnection`: connection uri to the postgres database (e.g. `postgresql://user:password@localhost:5432/geocube`)
+- `--consolidationQueue consolidations`
+- `--eventsQueue events`
+And the Autoscaler, with:
+- `--pgq-connection`: connection uri to the postgres database (e.g. `postgresql://user:password@localhost:5432/geocube`)
+- `--queue consolidations`
 
 ### RabbitMq
 
