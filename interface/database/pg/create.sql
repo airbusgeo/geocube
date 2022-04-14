@@ -71,11 +71,13 @@ CREATE TABLE geocube.variable_instances (
 CREATE INDEX idx_instance_definition ON geocube.variable_instances (definition_id);
 
 CREATE TABLE geocube.containers (
+  id SERIAL,
 	uri TEXT NOT NULL,
 	managed BOOLEAN NOT NULL,
 	storage_class geocube.storage_class,
 	PRIMARY KEY (uri)
 );
+CREATE INDEX idx_containers_id ON geocube.containers (id);
 
 CREATE TABLE geocube.datasets (
 	id UUID NOT NULL,

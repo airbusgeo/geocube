@@ -129,7 +129,7 @@ type GeocubeBackend interface {
 	ReadContainers(ctx context.Context, containersURI []string) ([]*geocube.Container, error)
 	// DeleteContainer deletes empty container
 	// Raise an error geocube.DependencyStillExists
-	DeleteContainer(ctx context.Context, containerURI string) error
+	DeleteContainer(ctx context.Context, container *geocube.Container) error
 	// DeletePendingContainers deletes containers that are not linked to any dataset
 	DeletePendingContainers(ctx context.Context) (int64, error)
 	// CreateDatasets creates the batch of datasets in database

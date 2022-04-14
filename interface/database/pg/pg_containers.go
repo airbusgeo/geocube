@@ -2,6 +2,7 @@ package pg
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/airbusgeo/geocube/internal/log"
@@ -21,7 +22,7 @@ func (b Backend) ReadContainers(ctx context.Context, containersURI []string) (co
 	}
 
 	// Get Containers
-	rows, err := b.pg.QueryContext(ctx, "SELECT uri, managed, storage_class FROM geocube.containers WHERE uri = ANY($1)", pq.Array(containersURI))
+	rows, err := b.pg.QueryContext(ctx, "SELECT id, uri, managed, storage_class FROM geocube.containers WHERE uri = ANY($1)", pq.Array(containersURI))
 	if err != nil {
 		return nil, pqErrorFormat("ReadContainers: %w", err)
 	}
@@ -37,7 +38,7 @@ func (b Backend) ReadContainers(ctx context.Context, containersURI []string) (co
 	containers = make([]*geocube.Container, len(idx))
 	for rows.Next() {
 		c := geocube.Container{}
-		if err := rows.Scan(&c.URI, &c.Managed, &c.StorageClass); err != nil {
+		if err := rows.Scan(&c.ID, &c.URI, &c.Managed, &c.StorageClass); err != nil {
 			return nil, pqErrorFormat("ReadContainers.scan: %w", err)
 		}
 		containers[idx[c.URI]] = &c
@@ -88,8 +89,8 @@ func (b Backend) UpdateContainer(ctx context.Context, container *geocube.Contain
 }
 
 // DeleteContainer implements GeocubeBackend
-func (b Backend) DeleteContainer(ctx context.Context, containerURI string) error {
-	return b.delete(ctx, "containers", "uri", containerURI)
+func (b Backend) DeleteContainer(ctx context.Context, container *geocube.Container) error {
+	return b.delete(ctx, "containers", "id", fmt.Sprintf("%d", container.ID))
 }
 
 // DeletePendingContainers implements GeocubeBackend

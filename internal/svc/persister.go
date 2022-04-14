@@ -217,7 +217,7 @@ func (svc *Service) saveContainer(ctx context.Context, txn database.GeocubeTxBac
 				return fmt.Errorf("saveContainer.%w", err)
 			}
 		}
-		if err := txn.DeleteContainer(ctx, container.URI); err != nil {
+		if err := txn.DeleteContainer(ctx, container); err != nil {
 			return fmt.Errorf("saveContainer.%w", err)
 		}
 	}

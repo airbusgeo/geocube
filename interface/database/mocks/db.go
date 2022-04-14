@@ -217,7 +217,7 @@ func (_m *GeocubeBackend) ReadContainers(ctx context.Context, containersURI []st
 	panic("implement me")
 }
 
-func (_m *GeocubeBackend) DeleteContainer(ctx context.Context, containerURI string) error {
+func (_m *GeocubeBackend) DeleteContainer(ctx context.Context, container *geocube.Container) error {
 	panic("implement me")
 }
 

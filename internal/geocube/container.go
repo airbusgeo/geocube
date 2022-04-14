@@ -21,6 +21,7 @@ const (
 
 type Container struct {
 	persistenceState
+	ID           int
 	URI          string
 	Managed      bool
 	StorageClass StorageClass

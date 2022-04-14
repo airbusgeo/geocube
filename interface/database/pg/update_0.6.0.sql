@@ -14,3 +14,6 @@ CREATE TABLE geocube.job_logs (
 -- drop logs column on geocube.jobs
 ALTER TABLE geocube.jobs DROP COLUMN logs;
 
+-- add id column on geocube.containers
+ALTER TABLE geocube.containers ADD COLUMN id SERIAL;
+CREATE INDEX idx_containers_id ON geocube.containers (id);
