@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/airbusgeo/geocube/interface/database/pg/secrets"
+	"github.com/airbusgeo/geocube/interface/secrets"
 	"github.com/airbusgeo/geocube/internal/utils"
 
 	"google.golang.org/grpc"
@@ -21,11 +21,7 @@ var eventTokenKey = "event"
 var bearerAuths map[string]utils.TokenAuth
 
 func loadBearerAuths(ctx context.Context, project, secretName string) (map[string]utils.TokenAuth, error) {
-	secret, err := secrets.NewClient(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("loadBearerAuths: failed to create secret client (%w)", err)
-	}
-	ba, err := secret.GetSecret(ctx, project, secretName)
+	ba, err := secrets.GetSecret(ctx, project, secretName)
 	if err != nil {
 		return nil, fmt.Errorf("loadBearerAuths: failed to load basic auth secret (%w)", err)
 	}

@@ -16,10 +16,10 @@ import (
 	"github.com/airbusgeo/geocube/cmd"
 	"github.com/airbusgeo/geocube/interface/database"
 	"github.com/airbusgeo/geocube/interface/database/pg"
-	"github.com/airbusgeo/geocube/interface/database/pg/secrets"
 	"github.com/airbusgeo/geocube/interface/messaging"
 	"github.com/airbusgeo/geocube/interface/messaging/pgqueue"
 	"github.com/airbusgeo/geocube/interface/messaging/pubsub"
+	"github.com/airbusgeo/geocube/interface/secrets"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"go.uber.org/zap"
 	"golang.org/x/net/http2"
@@ -388,11 +388,7 @@ func PgConnString(ctx context.Context, serverConfig *serverConfig) (string, erro
 		return "", fmt.Errorf("missing project flag")
 	}
 
-	scl, err := secrets.NewClient(ctx)
-	if err != nil {
-		return "", fmt.Errorf("gsecrets.new: %w", err)
-	}
-	credsb, err := scl.GetSecret(ctx, serverConfig.Project, serverConfig.DbSecretName)
+	credsb, err := secrets.GetSecret(ctx, serverConfig.Project, serverConfig.DbSecretName)
 	if err != nil {
 		return "", fmt.Errorf("getsecret %s/%s: %w", serverConfig.Project, serverConfig.DbSecretName, err)
 	}
