@@ -66,7 +66,7 @@ func (d *ReplicationController) listPods(ctx context.Context, namespace, name st
 	lbls := make(map[string]string)
 	lbls[PMLABEL] = name
 	opts.LabelSelector = labels.Set(lbls).AsSelector().String()
-	pods, err := d.client.CoreV1().Pods(namespace).List(opts)
+	pods, err := d.client.CoreV1().Pods(namespace).List(ctx, opts)
 	if err != nil {
 		return nil, fmt.Errorf("list (%s) pods : %w", name, err)
 	}
@@ -88,7 +88,7 @@ func (d *ReplicationController) listActivePods(ctx context.Context, namespace, n
 
 func (d *ReplicationController) createPod(ctx context.Context, namespace, name string) (apiv1.Pod, error) {
 
-	depl, err := d.client.CoreV1().ReplicationControllers(namespace).Get(name, metav1.GetOptions{})
+	depl, err := d.client.CoreV1().ReplicationControllers(namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
 		return apiv1.Pod{}, fmt.Errorf("get replication controller: %w", err)
 	}
@@ -151,10 +151,10 @@ func (d *ReplicationController) Resize(ctx context.Context, newSize int64) error
 
 	if newSize == 0 {
 		for _, pod := range allpods {
-			del := &metav1.DeleteOptions{
+			del := metav1.DeleteOptions{
 				GracePeriodSeconds: new(int64), //0
 			}
-			err = d.client.CoreV1().Pods(d.rcnamespace).Delete(pod.Name, del)
+			err = d.client.CoreV1().Pods(d.rcnamespace).Delete(ctx, pod.Name, del)
 			if err != nil {
 				return fmt.Errorf("delete pod: %w", err)
 			}
@@ -172,11 +172,11 @@ func (d *ReplicationController) Resize(ctx context.Context, newSize int64) error
 		}
 	}
 	for _, pod := range inactive {
-		del := &metav1.DeleteOptions{
+		del := metav1.DeleteOptions{
 			GracePeriodSeconds: new(int64), //0
 		}
 		log.Logger(ctx).Sugar().Infof("delete %s pod %s", pod.Status.Phase, pod.Name)
-		err = d.client.CoreV1().Pods(d.rcnamespace).Delete(pod.Name, del)
+		err = d.client.CoreV1().Pods(d.rcnamespace).Delete(ctx, pod.Name, del)
 		if err != nil {
 			log.Logger(ctx).Error("delete "+pod.Name, zap.Error(err))
 		}
@@ -193,7 +193,7 @@ func (d *ReplicationController) Resize(ctx context.Context, newSize int64) error
 			if err != nil {
 				return fmt.Errorf("createPod: %w", err)
 			}
-			_, err = d.client.CoreV1().Pods(d.rcnamespace).Create(&pod)
+			_, err = d.client.CoreV1().Pods(d.rcnamespace).Create(ctx, &pod, metav1.CreateOptions{})
 			if err != nil {
 				return fmt.Errorf("createPod: %w", err)
 			}
@@ -202,11 +202,11 @@ func (d *ReplicationController) Resize(ctx context.Context, newSize int64) error
 
 	if int(newSize) < len(active) {
 		for i := int(newSize); i < len(active); i++ {
-			del := &metav1.DeleteOptions{
+			del := metav1.DeleteOptions{
 				GracePeriodSeconds: new(int64), //0
 			}
 			//log.Printf("delete pod %s", pods[i].Name)
-			err = d.client.CoreV1().Pods(d.rcnamespace).Delete(active[i].Name, del)
+			err = d.client.CoreV1().Pods(d.rcnamespace).Delete(ctx, active[i].Name, del)
 			if err != nil {
 				return fmt.Errorf("deletePod: %w", err)
 			}
@@ -420,12 +420,12 @@ func (d *ReplicationController) ScaleDown(ctx context.Context, newSize int64) er
 	}
 	pd, err := d.orderedPodsCandidateForDeletion(ctx, pods, delta)
 	for _, p := range pd {
-		del := &metav1.DeleteOptions{
+		del := metav1.DeleteOptions{
 			GracePeriodSeconds: new(int64), //0
 		}
 		//log.Printf("scale down pods %s", p.Name)
 		log.Logger(ctx).Sugar().Debugf("scaling down pod %s", p.Name)
-		err = d.client.CoreV1().Pods(d.rcnamespace).Delete(p.Name, del)
+		err = d.client.CoreV1().Pods(d.rcnamespace).Delete(ctx, p.Name, del)
 		if err != nil {
 			return fmt.Errorf("delete idle pod %s: %w", p.Name, err)
 		}

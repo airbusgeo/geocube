@@ -12,10 +12,11 @@ import (
 	smithyhttp "github.com/aws/smithy-go/transport/http"
 )
 
-// Returns the cors configuration information set for the bucket. To use this
-// operation, you must have permission to perform the s3:GetBucketCORS action. By
-// default, the bucket owner has this permission and can grant it to others. For
-// more information about cors, see  Enabling Cross-Origin Resource Sharing
+// Returns the Cross-Origin Resource Sharing (CORS) configuration information set
+// for the bucket. To use this operation, you must have permission to perform the
+// s3:GetBucketCORS action. By default, the bucket owner has this permission and
+// can grant it to others. For more information about CORS, see  Enabling
+// Cross-Origin Resource Sharing
 // (https://docs.aws.amazon.com/AmazonS3/latest/dev/cors.html). The following
 // operations are related to GetBucketCors:
 //
@@ -48,8 +49,11 @@ type GetBucketCorsInput struct {
 	Bucket *string
 
 	// The account ID of the expected bucket owner. If the bucket is owned by a
-	// different account, the request will fail with an HTTP 403 (Access Denied) error.
+	// different account, the request fails with the HTTP status code 403 Forbidden
+	// (access denied).
 	ExpectedBucketOwner *string
+
+	noSmithyDocumentSerde
 }
 
 type GetBucketCorsOutput struct {
@@ -60,6 +64,8 @@ type GetBucketCorsOutput struct {
 
 	// Metadata pertaining to the operation's result.
 	ResultMetadata middleware.Metadata
+
+	noSmithyDocumentSerde
 }
 
 func (c *Client) addOperationGetBucketCorsMiddlewares(stack *middleware.Stack, options Options) (err error) {
@@ -105,6 +111,9 @@ func (c *Client) addOperationGetBucketCorsMiddlewares(stack *middleware.Stack, o
 		return err
 	}
 	if err = smithyhttp.AddCloseResponseBodyMiddleware(stack); err != nil {
+		return err
+	}
+	if err = swapWithCustomHTTPSignerMiddleware(stack, options); err != nil {
 		return err
 	}
 	if err = addOpGetBucketCorsValidationMiddleware(stack); err != nil {
@@ -158,13 +167,13 @@ func addGetBucketCorsUpdateEndpoint(stack *middleware.Stack, options Options) er
 		Accessor: s3cust.UpdateEndpointParameterAccessor{
 			GetBucketFromInput: getGetBucketCorsBucketMember,
 		},
-		UsePathStyle:            options.UsePathStyle,
-		UseAccelerate:           options.UseAccelerate,
-		SupportsAccelerate:      true,
-		TargetS3ObjectLambda:    false,
-		EndpointResolver:        options.EndpointResolver,
-		EndpointResolverOptions: options.EndpointOptions,
-		UseDualstack:            options.UseDualstack,
-		UseARNRegion:            options.UseARNRegion,
+		UsePathStyle:                   options.UsePathStyle,
+		UseAccelerate:                  options.UseAccelerate,
+		SupportsAccelerate:             true,
+		TargetS3ObjectLambda:           false,
+		EndpointResolver:               options.EndpointResolver,
+		EndpointResolverOptions:        options.EndpointOptions,
+		UseARNRegion:                   options.UseARNRegion,
+		DisableMultiRegionAccessPoints: options.DisableMultiRegionAccessPoints,
 	})
 }

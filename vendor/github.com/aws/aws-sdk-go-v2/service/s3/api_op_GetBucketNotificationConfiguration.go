@@ -50,15 +50,21 @@ type GetBucketNotificationConfigurationInput struct {
 	Bucket *string
 
 	// The account ID of the expected bucket owner. If the bucket is owned by a
-	// different account, the request will fail with an HTTP 403 (Access Denied) error.
+	// different account, the request fails with the HTTP status code 403 Forbidden
+	// (access denied).
 	ExpectedBucketOwner *string
+
+	noSmithyDocumentSerde
 }
 
 // A container for specifying the notification configuration of the bucket. If this
 // element is empty, notifications are turned off for the bucket.
 type GetBucketNotificationConfigurationOutput struct {
 
-	// Describes the AWS Lambda functions to invoke and the events for which to invoke
+	// Enables delivery of events to Amazon EventBridge.
+	EventBridgeConfiguration *types.EventBridgeConfiguration
+
+	// Describes the Lambda functions to invoke and the events for which to invoke
 	// them.
 	LambdaFunctionConfigurations []types.LambdaFunctionConfiguration
 
@@ -72,6 +78,8 @@ type GetBucketNotificationConfigurationOutput struct {
 
 	// Metadata pertaining to the operation's result.
 	ResultMetadata middleware.Metadata
+
+	noSmithyDocumentSerde
 }
 
 func (c *Client) addOperationGetBucketNotificationConfigurationMiddlewares(stack *middleware.Stack, options Options) (err error) {
@@ -117,6 +125,9 @@ func (c *Client) addOperationGetBucketNotificationConfigurationMiddlewares(stack
 		return err
 	}
 	if err = smithyhttp.AddCloseResponseBodyMiddleware(stack); err != nil {
+		return err
+	}
+	if err = swapWithCustomHTTPSignerMiddleware(stack, options); err != nil {
 		return err
 	}
 	if err = addOpGetBucketNotificationConfigurationValidationMiddleware(stack); err != nil {
@@ -170,13 +181,13 @@ func addGetBucketNotificationConfigurationUpdateEndpoint(stack *middleware.Stack
 		Accessor: s3cust.UpdateEndpointParameterAccessor{
 			GetBucketFromInput: getGetBucketNotificationConfigurationBucketMember,
 		},
-		UsePathStyle:            options.UsePathStyle,
-		UseAccelerate:           options.UseAccelerate,
-		SupportsAccelerate:      true,
-		TargetS3ObjectLambda:    false,
-		EndpointResolver:        options.EndpointResolver,
-		EndpointResolverOptions: options.EndpointOptions,
-		UseDualstack:            options.UseDualstack,
-		UseARNRegion:            options.UseARNRegion,
+		UsePathStyle:                   options.UsePathStyle,
+		UseAccelerate:                  options.UseAccelerate,
+		SupportsAccelerate:             true,
+		TargetS3ObjectLambda:           false,
+		EndpointResolver:               options.EndpointResolver,
+		EndpointResolverOptions:        options.EndpointOptions,
+		UseARNRegion:                   options.UseARNRegion,
+		DisableMultiRegionAccessPoints: options.DisableMultiRegionAccessPoints,
 	})
 }

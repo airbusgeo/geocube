@@ -17,7 +17,8 @@ import (
 // individual objects of up to 5 TB in Amazon S3. You create a copy of your object
 // up to 5 GB in size in a single atomic action using this API. However, to copy an
 // object greater than 5 GB, you must use the multipart upload Upload Part - Copy
-// API. For more information, see Copy Object Using the REST Multipart Upload API
+// (UploadPartCopy) API. For more information, see Copy Object Using the REST
+// Multipart Upload API
 // (https://docs.aws.amazon.com/AmazonS3/latest/dev/CopyingObjctsUsingRESTMPUapi.html).
 // All copy requests must be authenticated. Additionally, you must have read access
 // to the source object and write access to the destination bucket. For more
@@ -94,11 +95,12 @@ import (
 // All headers with the x-amz- prefix, including
 // x-amz-copy-source, must be signed. Server-side encryption When you perform a
 // CopyObject operation, you can optionally use the appropriate encryption-related
-// headers to encrypt the object using server-side encryption with AWS managed
-// encryption keys (SSE-S3 or SSE-KMS) or a customer-provided encryption key. With
-// server-side encryption, Amazon S3 encrypts your data as it writes it to disks in
-// its data centers and decrypts the data when you access it. For more information
-// about server-side encryption, see Using Server-Side Encryption
+// headers to encrypt the object using server-side encryption with Amazon Web
+// Services managed encryption keys (SSE-S3 or SSE-KMS) or a customer-provided
+// encryption key. With server-side encryption, Amazon S3 encrypts your data as it
+// writes it to disks in its data centers and decrypts the data when you access it.
+// For more information about server-side encryption, see Using Server-Side
+// Encryption
 // (https://docs.aws.amazon.com/AmazonS3/latest/dev/serv-side-encryption.html). If
 // a target object uses SSE-KMS, you can enable an S3 Bucket Key for the object.
 // For more information, see Amazon S3 Bucket Keys
@@ -106,15 +108,30 @@ import (
 // S3 User Guide. Access Control List (ACL)-Specific Request Headers When copying
 // an object, you can optionally use headers to grant ACL-based permissions. By
 // default, all objects are private. Only the owner has full access control. When
-// adding a new object, you can grant permissions to individual AWS accounts or to
-// predefined groups defined by Amazon S3. These permissions are then added to the
-// ACL on the object. For more information, see Access Control List (ACL) Overview
+// adding a new object, you can grant permissions to individual Amazon Web Services
+// accounts or to predefined groups defined by Amazon S3. These permissions are
+// then added to the ACL on the object. For more information, see Access Control
+// List (ACL) Overview
 // (https://docs.aws.amazon.com/AmazonS3/latest/dev/acl-overview.html) and Managing
 // ACLs Using the REST API
-// (https://docs.aws.amazon.com/AmazonS3/latest/dev/acl-using-rest-api.html).
-// Storage Class Options You can use the CopyObject action to change the storage
-// class of an object that is already stored in Amazon S3 using the StorageClass
-// parameter. For more information, see Storage Classes
+// (https://docs.aws.amazon.com/AmazonS3/latest/dev/acl-using-rest-api.html). If
+// the bucket that you're copying objects to uses the bucket owner enforced setting
+// for S3 Object Ownership, ACLs are disabled and no longer affect permissions.
+// Buckets that use this setting only accept PUT requests that don't specify an ACL
+// or PUT requests that specify bucket owner full control ACLs, such as the
+// bucket-owner-full-control canned ACL or an equivalent form of this ACL expressed
+// in the XML format. For more information, see  Controlling ownership of objects
+// and disabling ACLs
+// (https://docs.aws.amazon.com/AmazonS3/latest/userguide/about-object-ownership.html)
+// in the Amazon S3 User Guide. If your bucket uses the bucket owner enforced
+// setting for Object Ownership, all objects written to the bucket by any account
+// will be owned by the bucket owner. Checksums When copying an object, if it has a
+// checksum, that checksum will be copied to the new object by default. When you
+// copy the object over, you may optionally specify a different checksum algorithm
+// to use with the x-amz-checksum-algorithm header. Storage Class Options You can
+// use the CopyObject action to change the storage class of an object that is
+// already stored in Amazon S3 using the StorageClass parameter. For more
+// information, see Storage Classes
 // (https://docs.aws.amazon.com/AmazonS3/latest/dev/storage-class-intro.html) in
 // the Amazon S3 User Guide. Versioning By default, x-amz-copy-source identifies
 // the current version of an object to copy. If the current version is a delete
@@ -161,17 +178,17 @@ type CopyObjectInput struct {
 	// The name of the destination bucket. When using this action with an access point,
 	// you must direct requests to the access point hostname. The access point hostname
 	// takes the form AccessPointName-AccountId.s3-accesspoint.Region.amazonaws.com.
-	// When using this action with an access point through the AWS SDKs, you provide
-	// the access point ARN in place of the bucket name. For more information about
-	// access point ARNs, see Using access points
+	// When using this action with an access point through the Amazon Web Services
+	// SDKs, you provide the access point ARN in place of the bucket name. For more
+	// information about access point ARNs, see Using access points
 	// (https://docs.aws.amazon.com/AmazonS3/latest/userguide/using-access-points.html)
 	// in the Amazon S3 User Guide. When using this action with Amazon S3 on Outposts,
 	// you must direct requests to the S3 on Outposts hostname. The S3 on Outposts
 	// hostname takes the form
 	// AccessPointName-AccountId.outpostID.s3-outposts.Region.amazonaws.com. When using
-	// this action using S3 on Outposts through the AWS SDKs, you provide the Outposts
-	// bucket ARN in place of the bucket name. For more information about S3 on
-	// Outposts ARNs, see Using S3 on Outposts
+	// this action with S3 on Outposts through the Amazon Web Services SDKs, you
+	// provide the Outposts bucket ARN in place of the bucket name. For more
+	// information about S3 on Outposts ARNs, see Using Amazon S3 on Outposts
 	// (https://docs.aws.amazon.com/AmazonS3/latest/userguide/S3onOutposts.html) in the
 	// Amazon S3 User Guide.
 	//
@@ -187,7 +204,7 @@ type CopyObjectInput struct {
 	// For objects not accessed through an access point, specify the name of the source
 	// bucket and the key of the source object, separated by a slash (/). For example,
 	// to copy the object reports/january.pdf from the bucket awsexamplebucket, use
-	// awsexamplebucket/reports/january.pdf. The value must be URL encoded.
+	// awsexamplebucket/reports/january.pdf. The value must be URL-encoded.
 	//
 	// * For
 	// objects accessed through access points, specify the Amazon Resource Name (ARN)
@@ -197,14 +214,14 @@ type CopyObjectInput struct {
 	// 123456789012 in Region us-west-2, use the URL encoding of
 	// arn:aws:s3:us-west-2:123456789012:accesspoint/my-access-point/object/reports/january.pdf.
 	// The value must be URL encoded. Amazon S3 supports copy operations using access
-	// points only when the source and destination buckets are in the same AWS Region.
-	// Alternatively, for objects accessed through Amazon S3 on Outposts, specify the
-	// ARN of the object as accessed in the format
+	// points only when the source and destination buckets are in the same Amazon Web
+	// Services Region. Alternatively, for objects accessed through Amazon S3 on
+	// Outposts, specify the ARN of the object as accessed in the format
 	// arn:aws:s3-outposts:::outpost//object/. For example, to copy the object
 	// reports/january.pdf through outpost my-outpost owned by account 123456789012 in
 	// Region us-west-2, use the URL encoding of
 	// arn:aws:s3-outposts:us-west-2:123456789012:outpost/my-outpost/object/reports/january.pdf.
-	// The value must be URL encoded.
+	// The value must be URL-encoded.
 	//
 	// To copy a specific version of an object, append
 	// ?versionId= to the value (for example,
@@ -233,6 +250,12 @@ type CopyObjectInput struct {
 
 	// Specifies caching behavior along the request/reply chain.
 	CacheControl *string
+
+	// Indicates the algorithm you want Amazon S3 to use to create the checksum for the
+	// object. For more information, see Checking object integrity
+	// (https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html)
+	// in the Amazon S3 User Guide.
+	ChecksumAlgorithm types.ChecksumAlgorithm
 
 	// Specifies presentational information for the object.
 	ContentDisposition *string
@@ -275,13 +298,13 @@ type CopyObjectInput struct {
 	CopySourceSSECustomerKeyMD5 *string
 
 	// The account ID of the expected destination bucket owner. If the destination
-	// bucket is owned by a different account, the request will fail with an HTTP 403
-	// (Access Denied) error.
+	// bucket is owned by a different account, the request fails with the HTTP status
+	// code 403 Forbidden (access denied).
 	ExpectedBucketOwner *string
 
 	// The account ID of the expected source bucket owner. If the source bucket is
-	// owned by a different account, the request will fail with an HTTP 403 (Access
-	// Denied) error.
+	// owned by a different account, the request fails with the HTTP status code 403
+	// Forbidden (access denied).
 	ExpectedSourceBucketOwner *string
 
 	// The date and time at which the object is no longer cacheable.
@@ -310,7 +333,7 @@ type CopyObjectInput struct {
 	// metadata provided in the request.
 	MetadataDirective types.MetadataDirective
 
-	// Specifies whether you want to apply a Legal Hold to the copied object.
+	// Specifies whether you want to apply a legal hold to the copied object.
 	ObjectLockLegalHoldStatus types.ObjectLockLegalHoldStatus
 
 	// The Object Lock mode that you want to apply to the copied object.
@@ -321,8 +344,8 @@ type CopyObjectInput struct {
 
 	// Confirms that the requester knows that they will be charged for the request.
 	// Bucket owners need not specify this parameter in their requests. For information
-	// about downloading objects from requester pays buckets, see Downloading Objects
-	// in Requestor Pays Buckets
+	// about downloading objects from Requester Pays buckets, see Downloading Objects
+	// in Requester Pays Buckets
 	// (https://docs.aws.amazon.com/AmazonS3/latest/dev/ObjectsinRequesterPaysBuckets.html)
 	// in the Amazon S3 User Guide.
 	RequestPayer types.RequestPayer
@@ -343,16 +366,16 @@ type CopyObjectInput struct {
 	// encryption key was transmitted without error.
 	SSECustomerKeyMD5 *string
 
-	// Specifies the AWS KMS Encryption Context to use for object encryption. The value
-	// of this header is a base64-encoded UTF-8 string holding JSON with the encryption
-	// context key-value pairs.
+	// Specifies the Amazon Web Services KMS Encryption Context to use for object
+	// encryption. The value of this header is a base64-encoded UTF-8 string holding
+	// JSON with the encryption context key-value pairs.
 	SSEKMSEncryptionContext *string
 
-	// Specifies the AWS KMS key ID to use for object encryption. All GET and PUT
-	// requests for an object protected by AWS KMS will fail if not made via SSL or
-	// using SigV4. For information about configuring using any of the officially
-	// supported AWS SDKs and AWS CLI, see Specifying the Signature Version in Request
-	// Authentication
+	// Specifies the Amazon Web Services KMS key ID to use for object encryption. All
+	// GET and PUT requests for an object protected by Amazon Web Services KMS will
+	// fail if not made via SSL or using SigV4. For information about configuring using
+	// any of the officially supported Amazon Web Services SDKs and Amazon Web Services
+	// CLI, see Specifying the Signature Version in Request Authentication
 	// (https://docs.aws.amazon.com/AmazonS3/latest/dev/UsingAWSSDK.html#specify-signature-version)
 	// in the Amazon S3 User Guide.
 	SSEKMSKeyId *string
@@ -383,12 +406,14 @@ type CopyObjectInput struct {
 	// another object in the same bucket or to an external URL. Amazon S3 stores the
 	// value of this header in the object metadata.
 	WebsiteRedirectLocation *string
+
+	noSmithyDocumentSerde
 }
 
 type CopyObjectOutput struct {
 
 	// Indicates whether the copied object uses an S3 Bucket Key for server-side
-	// encryption with AWS KMS (SSE-KMS).
+	// encryption with Amazon Web Services KMS (SSE-KMS).
 	BucketKeyEnabled bool
 
 	// Container for all response elements.
@@ -413,13 +438,13 @@ type CopyObjectOutput struct {
 	// verification of the customer-provided encryption key.
 	SSECustomerKeyMD5 *string
 
-	// If present, specifies the AWS KMS Encryption Context to use for object
-	// encryption. The value of this header is a base64-encoded UTF-8 string holding
-	// JSON with the encryption context key-value pairs.
+	// If present, specifies the Amazon Web Services KMS Encryption Context to use for
+	// object encryption. The value of this header is a base64-encoded UTF-8 string
+	// holding JSON with the encryption context key-value pairs.
 	SSEKMSEncryptionContext *string
 
-	// If present, specifies the ID of the AWS Key Management Service (AWS KMS)
-	// symmetric customer managed customer master key (CMK) that was used for the
+	// If present, specifies the ID of the Amazon Web Services Key Management Service
+	// (Amazon Web Services KMS) symmetric customer managed key that was used for the
 	// object.
 	SSEKMSKeyId *string
 
@@ -432,6 +457,8 @@ type CopyObjectOutput struct {
 
 	// Metadata pertaining to the operation's result.
 	ResultMetadata middleware.Metadata
+
+	noSmithyDocumentSerde
 }
 
 func (c *Client) addOperationCopyObjectMiddlewares(stack *middleware.Stack, options Options) (err error) {
@@ -477,6 +504,9 @@ func (c *Client) addOperationCopyObjectMiddlewares(stack *middleware.Stack, opti
 		return err
 	}
 	if err = smithyhttp.AddCloseResponseBodyMiddleware(stack); err != nil {
+		return err
+	}
+	if err = swapWithCustomHTTPSignerMiddleware(stack, options); err != nil {
 		return err
 	}
 	if err = addOpCopyObjectValidationMiddleware(stack); err != nil {
@@ -532,13 +562,13 @@ func addCopyObjectUpdateEndpoint(stack *middleware.Stack, options Options) error
 		Accessor: s3cust.UpdateEndpointParameterAccessor{
 			GetBucketFromInput: getCopyObjectBucketMember,
 		},
-		UsePathStyle:            options.UsePathStyle,
-		UseAccelerate:           options.UseAccelerate,
-		SupportsAccelerate:      true,
-		TargetS3ObjectLambda:    false,
-		EndpointResolver:        options.EndpointResolver,
-		EndpointResolverOptions: options.EndpointOptions,
-		UseDualstack:            options.UseDualstack,
-		UseARNRegion:            options.UseARNRegion,
+		UsePathStyle:                   options.UsePathStyle,
+		UseAccelerate:                  options.UseAccelerate,
+		SupportsAccelerate:             true,
+		TargetS3ObjectLambda:           false,
+		EndpointResolver:               options.EndpointResolver,
+		EndpointResolverOptions:        options.EndpointOptions,
+		UseARNRegion:                   options.UseARNRegion,
+		DisableMultiRegionAccessPoints: options.DisableMultiRegionAccessPoints,
 	})
 }

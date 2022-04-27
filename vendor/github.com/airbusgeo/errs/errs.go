@@ -22,6 +22,7 @@ import (
 	"strings"
 	"syscall"
 
+	"cloud.google.com/go/compute/metadata"
 	"google.golang.org/api/googleapi"
 )
 
@@ -54,6 +55,15 @@ func Temporary(err error) bool {
 		}
 	}
 
+	//errors raised when querying compute-engine metadata server
+	var metaErr *metadata.Error
+	if errors.As(err, &metaErr) {
+		switch metaErr.Code {
+		case 429, 500, 502, 503, 504:
+			return true
+		}
+	}
+
 	//not really needed, as context.DeadlineExceeded implements Temporary()
 	if errors.Is(err, os.ErrDeadlineExceeded) {
 		return true
@@ -68,7 +78,8 @@ func Temporary(err error) bool {
 	errmsg := err.Error()
 	if strings.Contains(errmsg, "i/o timeout") ||
 		strings.Contains(errmsg, "connection reset by peer") ||
-		strings.Contains(errmsg, "TLS handshake timeout") {
+		strings.Contains(errmsg, "TLS handshake timeout") ||
+		strings.Contains(errmsg, "oauth2: cannot fetch token") {
 		return true
 	}
 

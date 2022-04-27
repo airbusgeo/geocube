@@ -651,6 +651,14 @@ func (a *Adapter) Size(key string) (int64, error) {
 		_, err = a.ReadAt(key, []byte{0}, 0) //ignore errors as we just want to populate the size cache
 		si, ok = a.sizeCache.Get(key)
 	}
+	if err == nil && !ok {
+		//first block may be in the block cache, but the size was evicted from the size cache, so we force
+		//a direct read to the source to repopulate the size cache. This should happen extremely
+		//unfrequently.
+		_, err = a.srcReadAt(key, []byte{0}, 0)
+		si, ok = a.sizeCache.Get(key)
+	}
+
 	if ok {
 		size := si.(int64)
 		if size == -1 {

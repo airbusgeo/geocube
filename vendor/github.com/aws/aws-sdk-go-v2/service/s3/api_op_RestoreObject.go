@@ -6,6 +6,7 @@ import (
 	"context"
 	awsmiddleware "github.com/aws/aws-sdk-go-v2/aws/middleware"
 	"github.com/aws/aws-sdk-go-v2/aws/signer/v4"
+	internalChecksum "github.com/aws/aws-sdk-go-v2/service/internal/checksum"
 	s3cust "github.com/aws/aws-sdk-go-v2/service/s3/internal/customizations"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/aws/smithy-go/middleware"
@@ -41,11 +42,11 @@ import (
 //
 // *
 // Define an output location for the select query's output. This must be an Amazon
-// S3 bucket in the same AWS Region as the bucket that contains the archive object
-// that is being queried. The AWS account that initiates the job must have
-// permissions to write to the S3 bucket. You can specify the storage class and
-// encryption for the output objects stored in the bucket. For more information
-// about output, see Querying Archived Objects
+// S3 bucket in the same Amazon Web Services Region as the bucket that contains the
+// archive object that is being queried. The Amazon Web Services account that
+// initiates the job must have permissions to write to the S3 bucket. You can
+// specify the storage class and encryption for the output objects stored in the
+// bucket. For more information about output, see Querying Archived Objects
 // (https://docs.aws.amazon.com/AmazonS3/latest/dev/querying-glacier-archives.html)
 // in the Amazon S3 User Guide. For more information about the S3 structure in the
 // request body, see the following:
@@ -251,17 +252,17 @@ type RestoreObjectInput struct {
 	// access point, you must direct requests to the access point hostname. The access
 	// point hostname takes the form
 	// AccessPointName-AccountId.s3-accesspoint.Region.amazonaws.com. When using this
-	// action with an access point through the AWS SDKs, you provide the access point
-	// ARN in place of the bucket name. For more information about access point ARNs,
-	// see Using access points
+	// action with an access point through the Amazon Web Services SDKs, you provide
+	// the access point ARN in place of the bucket name. For more information about
+	// access point ARNs, see Using access points
 	// (https://docs.aws.amazon.com/AmazonS3/latest/userguide/using-access-points.html)
 	// in the Amazon S3 User Guide. When using this action with Amazon S3 on Outposts,
 	// you must direct requests to the S3 on Outposts hostname. The S3 on Outposts
 	// hostname takes the form
 	// AccessPointName-AccountId.outpostID.s3-outposts.Region.amazonaws.com. When using
-	// this action using S3 on Outposts through the AWS SDKs, you provide the Outposts
-	// bucket ARN in place of the bucket name. For more information about S3 on
-	// Outposts ARNs, see Using S3 on Outposts
+	// this action with S3 on Outposts through the Amazon Web Services SDKs, you
+	// provide the Outposts bucket ARN in place of the bucket name. For more
+	// information about S3 on Outposts ARNs, see Using Amazon S3 on Outposts
 	// (https://docs.aws.amazon.com/AmazonS3/latest/userguide/S3onOutposts.html) in the
 	// Amazon S3 User Guide.
 	//
@@ -273,14 +274,26 @@ type RestoreObjectInput struct {
 	// This member is required.
 	Key *string
 
+	// Indicates the algorithm used to create the checksum for the object when using
+	// the SDK. This header will not provide any additional functionality if not using
+	// the SDK. When sending this header, there must be a corresponding x-amz-checksum
+	// or x-amz-trailer header sent. Otherwise, Amazon S3 fails the request with the
+	// HTTP status code 400 Bad Request. For more information, see Checking object
+	// integrity
+	// (https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html)
+	// in the Amazon S3 User Guide. If you provide an individual checksum, Amazon S3
+	// ignores any provided ChecksumAlgorithm parameter.
+	ChecksumAlgorithm types.ChecksumAlgorithm
+
 	// The account ID of the expected bucket owner. If the bucket is owned by a
-	// different account, the request will fail with an HTTP 403 (Access Denied) error.
+	// different account, the request fails with the HTTP status code 403 Forbidden
+	// (access denied).
 	ExpectedBucketOwner *string
 
 	// Confirms that the requester knows that they will be charged for the request.
 	// Bucket owners need not specify this parameter in their requests. For information
-	// about downloading objects from requester pays buckets, see Downloading Objects
-	// in Requestor Pays Buckets
+	// about downloading objects from Requester Pays buckets, see Downloading Objects
+	// in Requester Pays Buckets
 	// (https://docs.aws.amazon.com/AmazonS3/latest/dev/ObjectsinRequesterPaysBuckets.html)
 	// in the Amazon S3 User Guide.
 	RequestPayer types.RequestPayer
@@ -290,6 +303,8 @@ type RestoreObjectInput struct {
 
 	// VersionId used to reference a specific version of the object.
 	VersionId *string
+
+	noSmithyDocumentSerde
 }
 
 type RestoreObjectOutput struct {
@@ -304,6 +319,8 @@ type RestoreObjectOutput struct {
 
 	// Metadata pertaining to the operation's result.
 	ResultMetadata middleware.Metadata
+
+	noSmithyDocumentSerde
 }
 
 func (c *Client) addOperationRestoreObjectMiddlewares(stack *middleware.Stack, options Options) (err error) {
@@ -351,6 +368,9 @@ func (c *Client) addOperationRestoreObjectMiddlewares(stack *middleware.Stack, o
 	if err = smithyhttp.AddCloseResponseBodyMiddleware(stack); err != nil {
 		return err
 	}
+	if err = swapWithCustomHTTPSignerMiddleware(stack, options); err != nil {
+		return err
+	}
 	if err = addOpRestoreObjectValidationMiddleware(stack); err != nil {
 		return err
 	}
@@ -358,6 +378,9 @@ func (c *Client) addOperationRestoreObjectMiddlewares(stack *middleware.Stack, o
 		return err
 	}
 	if err = addMetadataRetrieverMiddleware(stack); err != nil {
+		return err
+	}
+	if err = addRestoreObjectInputChecksumMiddlewares(stack, options); err != nil {
 		return err
 	}
 	if err = addRestoreObjectUpdateEndpoint(stack, options); err != nil {
@@ -387,6 +410,26 @@ func newServiceMetadataMiddleware_opRestoreObject(region string) *awsmiddleware.
 	}
 }
 
+// getRestoreObjectRequestAlgorithmMember gets the request checksum algorithm value
+// provided as input.
+func getRestoreObjectRequestAlgorithmMember(input interface{}) (string, bool) {
+	in := input.(*RestoreObjectInput)
+	if len(in.ChecksumAlgorithm) == 0 {
+		return "", false
+	}
+	return string(in.ChecksumAlgorithm), true
+}
+
+func addRestoreObjectInputChecksumMiddlewares(stack *middleware.Stack, options Options) error {
+	return internalChecksum.AddInputMiddleware(stack, internalChecksum.InputMiddlewareOptions{
+		GetAlgorithm:                     getRestoreObjectRequestAlgorithmMember,
+		RequireChecksum:                  false,
+		EnableTrailingChecksum:           false,
+		EnableComputeSHA256PayloadHash:   true,
+		EnableDecodedContentLengthHeader: true,
+	})
+}
+
 // getRestoreObjectBucketMember returns a pointer to string denoting a provided
 // bucket member valueand a boolean indicating if the input has a modeled bucket
 // name,
@@ -402,13 +445,13 @@ func addRestoreObjectUpdateEndpoint(stack *middleware.Stack, options Options) er
 		Accessor: s3cust.UpdateEndpointParameterAccessor{
 			GetBucketFromInput: getRestoreObjectBucketMember,
 		},
-		UsePathStyle:            options.UsePathStyle,
-		UseAccelerate:           options.UseAccelerate,
-		SupportsAccelerate:      true,
-		TargetS3ObjectLambda:    false,
-		EndpointResolver:        options.EndpointResolver,
-		EndpointResolverOptions: options.EndpointOptions,
-		UseDualstack:            options.UseDualstack,
-		UseARNRegion:            options.UseARNRegion,
+		UsePathStyle:                   options.UsePathStyle,
+		UseAccelerate:                  options.UseAccelerate,
+		SupportsAccelerate:             true,
+		TargetS3ObjectLambda:           false,
+		EndpointResolver:               options.EndpointResolver,
+		EndpointResolverOptions:        options.EndpointOptions,
+		UseARNRegion:                   options.UseARNRegion,
+		DisableMultiRegionAccessPoints: options.DisableMultiRegionAccessPoints,
 	})
 }

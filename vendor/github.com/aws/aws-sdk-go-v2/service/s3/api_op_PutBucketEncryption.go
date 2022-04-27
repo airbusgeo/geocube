@@ -6,6 +6,7 @@ import (
 	"context"
 	awsmiddleware "github.com/aws/aws-sdk-go-v2/aws/middleware"
 	"github.com/aws/aws-sdk-go-v2/aws/signer/v4"
+	internalChecksum "github.com/aws/aws-sdk-go-v2/service/internal/checksum"
 	s3cust "github.com/aws/aws-sdk-go-v2/service/s3/internal/customizations"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/aws/smithy-go/middleware"
@@ -14,15 +15,19 @@ import (
 
 // This action uses the encryption subresource to configure default encryption and
 // Amazon S3 Bucket Key for an existing bucket. Default encryption for a bucket can
-// use server-side encryption with Amazon S3-managed keys (SSE-S3) or AWS KMS
-// customer master keys (SSE-KMS). If you specify default encryption using SSE-KMS,
-// you can also configure Amazon S3 Bucket Key. For information about default
-// encryption, see Amazon S3 default bucket encryption
+// use server-side encryption with Amazon S3-managed keys (SSE-S3) or customer
+// managed keys (SSE-KMS). If you specify default encryption using SSE-KMS, you can
+// also configure Amazon S3 Bucket Key. When the default encryption is SSE-KMS, if
+// you upload an object to the bucket and do not specify the KMS key to use for
+// encryption, Amazon S3 uses the default Amazon Web Services managed KMS key for
+// your account. For information about default encryption, see Amazon S3 default
+// bucket encryption
 // (https://docs.aws.amazon.com/AmazonS3/latest/dev/bucket-encryption.html) in the
 // Amazon S3 User Guide. For more information about S3 Bucket Keys, see Amazon S3
 // Bucket Keys (https://docs.aws.amazon.com/AmazonS3/latest/dev/bucket-key.html) in
-// the Amazon S3 User Guide. This action requires AWS Signature Version 4. For more
-// information, see  Authenticating Requests (AWS Signature Version 4)
+// the Amazon S3 User Guide. This action requires Amazon Web Services Signature
+// Version 4. For more information, see  Authenticating Requests (Amazon Web
+// Services Signature Version 4)
 // (https://docs.aws.amazon.com/AmazonS3/latest/API/sig-v4-authenticating-requests.html).
 // To use this operation, you must have permissions to perform the
 // s3:PutEncryptionConfiguration action. The bucket owner has this permission by
@@ -58,9 +63,9 @@ func (c *Client) PutBucketEncryption(ctx context.Context, params *PutBucketEncry
 type PutBucketEncryptionInput struct {
 
 	// Specifies default encryption for a bucket using server-side encryption with
-	// Amazon S3-managed keys (SSE-S3) or customer master keys stored in AWS KMS
-	// (SSE-KMS). For information about the Amazon S3 default encryption feature, see
-	// Amazon S3 Default Bucket Encryption
+	// Amazon S3-managed keys (SSE-S3) or customer managed keys (SSE-KMS). For
+	// information about the Amazon S3 default encryption feature, see Amazon S3
+	// Default Bucket Encryption
 	// (https://docs.aws.amazon.com/AmazonS3/latest/dev/bucket-encryption.html) in the
 	// Amazon S3 User Guide.
 	//
@@ -72,19 +77,36 @@ type PutBucketEncryptionInput struct {
 	// This member is required.
 	ServerSideEncryptionConfiguration *types.ServerSideEncryptionConfiguration
 
+	// Indicates the algorithm used to create the checksum for the object when using
+	// the SDK. This header will not provide any additional functionality if not using
+	// the SDK. When sending this header, there must be a corresponding x-amz-checksum
+	// or x-amz-trailer header sent. Otherwise, Amazon S3 fails the request with the
+	// HTTP status code 400 Bad Request. For more information, see Checking object
+	// integrity
+	// (https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html)
+	// in the Amazon S3 User Guide. If you provide an individual checksum, Amazon S3
+	// ignores any provided ChecksumAlgorithm parameter.
+	ChecksumAlgorithm types.ChecksumAlgorithm
+
 	// The base64-encoded 128-bit MD5 digest of the server-side encryption
-	// configuration. For requests made using the AWS Command Line Interface (CLI) or
-	// AWS SDKs, this field is calculated automatically.
+	// configuration. For requests made using the Amazon Web Services Command Line
+	// Interface (CLI) or Amazon Web Services SDKs, this field is calculated
+	// automatically.
 	ContentMD5 *string
 
 	// The account ID of the expected bucket owner. If the bucket is owned by a
-	// different account, the request will fail with an HTTP 403 (Access Denied) error.
+	// different account, the request fails with the HTTP status code 403 Forbidden
+	// (access denied).
 	ExpectedBucketOwner *string
+
+	noSmithyDocumentSerde
 }
 
 type PutBucketEncryptionOutput struct {
 	// Metadata pertaining to the operation's result.
 	ResultMetadata middleware.Metadata
+
+	noSmithyDocumentSerde
 }
 
 func (c *Client) addOperationPutBucketEncryptionMiddlewares(stack *middleware.Stack, options Options) (err error) {
@@ -132,6 +154,9 @@ func (c *Client) addOperationPutBucketEncryptionMiddlewares(stack *middleware.St
 	if err = smithyhttp.AddCloseResponseBodyMiddleware(stack); err != nil {
 		return err
 	}
+	if err = swapWithCustomHTTPSignerMiddleware(stack, options); err != nil {
+		return err
+	}
 	if err = addOpPutBucketEncryptionValidationMiddleware(stack); err != nil {
 		return err
 	}
@@ -139,6 +164,9 @@ func (c *Client) addOperationPutBucketEncryptionMiddlewares(stack *middleware.St
 		return err
 	}
 	if err = addMetadataRetrieverMiddleware(stack); err != nil {
+		return err
+	}
+	if err = addPutBucketEncryptionInputChecksumMiddlewares(stack, options); err != nil {
 		return err
 	}
 	if err = addPutBucketEncryptionUpdateEndpoint(stack, options); err != nil {
@@ -156,9 +184,6 @@ func (c *Client) addOperationPutBucketEncryptionMiddlewares(stack *middleware.St
 	if err = addRequestResponseLogging(stack, options); err != nil {
 		return err
 	}
-	if err = smithyhttp.AddContentChecksumMiddleware(stack); err != nil {
-		return err
-	}
 	return nil
 }
 
@@ -169,6 +194,26 @@ func newServiceMetadataMiddleware_opPutBucketEncryption(region string) *awsmiddl
 		SigningName:   "s3",
 		OperationName: "PutBucketEncryption",
 	}
+}
+
+// getPutBucketEncryptionRequestAlgorithmMember gets the request checksum algorithm
+// value provided as input.
+func getPutBucketEncryptionRequestAlgorithmMember(input interface{}) (string, bool) {
+	in := input.(*PutBucketEncryptionInput)
+	if len(in.ChecksumAlgorithm) == 0 {
+		return "", false
+	}
+	return string(in.ChecksumAlgorithm), true
+}
+
+func addPutBucketEncryptionInputChecksumMiddlewares(stack *middleware.Stack, options Options) error {
+	return internalChecksum.AddInputMiddleware(stack, internalChecksum.InputMiddlewareOptions{
+		GetAlgorithm:                     getPutBucketEncryptionRequestAlgorithmMember,
+		RequireChecksum:                  true,
+		EnableTrailingChecksum:           false,
+		EnableComputeSHA256PayloadHash:   true,
+		EnableDecodedContentLengthHeader: true,
+	})
 }
 
 // getPutBucketEncryptionBucketMember returns a pointer to string denoting a
@@ -186,13 +231,13 @@ func addPutBucketEncryptionUpdateEndpoint(stack *middleware.Stack, options Optio
 		Accessor: s3cust.UpdateEndpointParameterAccessor{
 			GetBucketFromInput: getPutBucketEncryptionBucketMember,
 		},
-		UsePathStyle:            options.UsePathStyle,
-		UseAccelerate:           options.UseAccelerate,
-		SupportsAccelerate:      true,
-		TargetS3ObjectLambda:    false,
-		EndpointResolver:        options.EndpointResolver,
-		EndpointResolverOptions: options.EndpointOptions,
-		UseDualstack:            options.UseDualstack,
-		UseARNRegion:            options.UseARNRegion,
+		UsePathStyle:                   options.UsePathStyle,
+		UseAccelerate:                  options.UseAccelerate,
+		SupportsAccelerate:             true,
+		TargetS3ObjectLambda:           false,
+		EndpointResolver:               options.EndpointResolver,
+		EndpointResolverOptions:        options.EndpointOptions,
+		UseARNRegion:                   options.UseARNRegion,
+		DisableMultiRegionAccessPoints: options.DisableMultiRegionAccessPoints,
 	})
 }

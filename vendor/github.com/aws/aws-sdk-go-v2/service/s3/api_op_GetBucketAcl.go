@@ -16,7 +16,13 @@ import (
 // access control list (ACL) of a bucket. To use GET to return the ACL of the
 // bucket, you must have READ_ACP access to the bucket. If READ_ACP permission is
 // granted to the anonymous user, you can return the ACL of the bucket without
-// using an authorization header. Related Resources
+// using an authorization header. If your bucket uses the bucket owner enforced
+// setting for S3 Object Ownership, requests to read ACLs are still supported and
+// return the bucket-owner-full-control ACL with the owner being the account that
+// created the bucket. For more information, see  Controlling object ownership and
+// disabling ACLs
+// (https://docs.aws.amazon.com/AmazonS3/latest/userguide/about-object-ownership.html)
+// in the Amazon S3 User Guide. Related Resources
 //
 // * ListObjects
 // (https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjects.html)
@@ -43,8 +49,11 @@ type GetBucketAclInput struct {
 	Bucket *string
 
 	// The account ID of the expected bucket owner. If the bucket is owned by a
-	// different account, the request will fail with an HTTP 403 (Access Denied) error.
+	// different account, the request fails with the HTTP status code 403 Forbidden
+	// (access denied).
 	ExpectedBucketOwner *string
+
+	noSmithyDocumentSerde
 }
 
 type GetBucketAclOutput struct {
@@ -57,6 +66,8 @@ type GetBucketAclOutput struct {
 
 	// Metadata pertaining to the operation's result.
 	ResultMetadata middleware.Metadata
+
+	noSmithyDocumentSerde
 }
 
 func (c *Client) addOperationGetBucketAclMiddlewares(stack *middleware.Stack, options Options) (err error) {
@@ -102,6 +113,9 @@ func (c *Client) addOperationGetBucketAclMiddlewares(stack *middleware.Stack, op
 		return err
 	}
 	if err = smithyhttp.AddCloseResponseBodyMiddleware(stack); err != nil {
+		return err
+	}
+	if err = swapWithCustomHTTPSignerMiddleware(stack, options); err != nil {
 		return err
 	}
 	if err = addOpGetBucketAclValidationMiddleware(stack); err != nil {
@@ -155,13 +169,13 @@ func addGetBucketAclUpdateEndpoint(stack *middleware.Stack, options Options) err
 		Accessor: s3cust.UpdateEndpointParameterAccessor{
 			GetBucketFromInput: getGetBucketAclBucketMember,
 		},
-		UsePathStyle:            options.UsePathStyle,
-		UseAccelerate:           options.UseAccelerate,
-		SupportsAccelerate:      true,
-		TargetS3ObjectLambda:    false,
-		EndpointResolver:        options.EndpointResolver,
-		EndpointResolverOptions: options.EndpointOptions,
-		UseDualstack:            options.UseDualstack,
-		UseARNRegion:            options.UseARNRegion,
+		UsePathStyle:                   options.UsePathStyle,
+		UseAccelerate:                  options.UseAccelerate,
+		SupportsAccelerate:             true,
+		TargetS3ObjectLambda:           false,
+		EndpointResolver:               options.EndpointResolver,
+		EndpointResolverOptions:        options.EndpointOptions,
+		UseARNRegion:                   options.UseARNRegion,
+		DisableMultiRegionAccessPoints: options.DisableMultiRegionAccessPoints,
 	})
 }

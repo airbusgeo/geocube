@@ -35,17 +35,18 @@ func (c *Client) GetCallerIdentity(ctx context.Context, params *GetCallerIdentit
 }
 
 type GetCallerIdentityInput struct {
+	noSmithyDocumentSerde
 }
 
 // Contains the response to a successful GetCallerIdentity request, including
 // information about the entity making the request.
 type GetCallerIdentityOutput struct {
 
-	// The AWS account ID number of the account that owns or contains the calling
-	// entity.
+	// The Amazon Web Services account ID number of the account that owns or contains
+	// the calling entity.
 	Account *string
 
-	// The AWS ARN associated with the calling entity.
+	// The Amazon Web Services ARN associated with the calling entity.
 	Arn *string
 
 	// The unique identifier of the calling entity. The exact value depends on the type
@@ -57,6 +58,8 @@ type GetCallerIdentityOutput struct {
 
 	// Metadata pertaining to the operation's result.
 	ResultMetadata middleware.Metadata
+
+	noSmithyDocumentSerde
 }
 
 func (c *Client) addOperationGetCallerIdentityMiddlewares(stack *middleware.Stack, options Options) (err error) {

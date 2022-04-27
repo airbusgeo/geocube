@@ -3,14 +3,14 @@ module github.com/aws/aws-sdk-go-v2/config
 go 1.15
 
 require (
-	github.com/aws/aws-sdk-go-v2 v1.7.0
-	github.com/aws/aws-sdk-go-v2/credentials v1.3.0
-	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.2.0
-	github.com/aws/aws-sdk-go-v2/internal/ini v1.0.1
-	github.com/aws/aws-sdk-go-v2/service/sso v1.3.0
-	github.com/aws/aws-sdk-go-v2/service/sts v1.5.0
-	github.com/aws/smithy-go v1.5.0
-	github.com/google/go-cmp v0.5.4
+	github.com/aws/aws-sdk-go-v2 v1.16.3
+	github.com/aws/aws-sdk-go-v2/credentials v1.12.0
+	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.12.4
+	github.com/aws/aws-sdk-go-v2/internal/ini v1.3.11
+	github.com/aws/aws-sdk-go-v2/service/sso v1.11.4
+	github.com/aws/aws-sdk-go-v2/service/sts v1.16.4
+	github.com/aws/smithy-go v1.11.2
+	github.com/google/go-cmp v0.5.7
 )
 
 replace github.com/aws/aws-sdk-go-v2 => ../
@@ -18,6 +18,10 @@ replace github.com/aws/aws-sdk-go-v2 => ../
 replace github.com/aws/aws-sdk-go-v2/credentials => ../credentials/
 
 replace github.com/aws/aws-sdk-go-v2/feature/ec2/imds => ../feature/ec2/imds/
+
+replace github.com/aws/aws-sdk-go-v2/internal/configsources => ../internal/configsources/
+
+replace github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 => ../internal/endpoints/v2/
 
 replace github.com/aws/aws-sdk-go-v2/internal/ini => ../internal/ini/
 

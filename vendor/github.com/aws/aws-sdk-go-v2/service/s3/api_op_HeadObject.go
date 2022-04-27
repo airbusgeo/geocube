@@ -44,16 +44,16 @@ import (
 //
 // *
 // Encryption request headers, like x-amz-server-side-encryption, should not be
-// sent for GET requests if your object uses server-side encryption with CMKs
-// stored in AWS KMS (SSE-KMS) or server-side encryption with Amazon S3–managed
-// encryption keys (SSE-S3). If your object does use these types of keys, you’ll
-// get an HTTP 400 BadRequest error.
+// sent for GET requests if your object uses server-side encryption with KMS keys
+// (SSE-KMS) or server-side encryption with Amazon S3–managed encryption keys
+// (SSE-S3). If your object does use these types of keys, you’ll get an HTTP 400
+// BadRequest error.
 //
-// * The last modified property in this case is
-// the creation date of the object.
+// * The last modified property in this case is the creation
+// date of the object.
 //
-// Request headers are limited to 8 KB in size.
-// For more information, see Common Request Headers
+// Request headers are limited to 8 KB in size. For more
+// information, see Common Request Headers
 // (https://docs.aws.amazon.com/AmazonS3/latest/API/RESTCommonRequestHeaders.html).
 // Consider the following when using request headers:
 //
@@ -82,9 +82,9 @@ import (
 // code.
 //
 // For more information about conditional requests, see RFC 7232
-// (https://tools.ietf.org/html/rfc7232). Permissions You need the s3:GetObject
-// permission for this operation. For more information, see Specifying Permissions
-// in a Policy
+// (https://tools.ietf.org/html/rfc7232). Permissions You need the relevant read
+// object (or version) permission for this operation. For more information, see
+// Specifying Permissions in a Policy
 // (https://docs.aws.amazon.com/AmazonS3/latest/dev/using-with-s3-actions.html). If
 // the object you request does not exist, the error Amazon S3 returns depends on
 // whether you also have the s3:ListBucket permission.
@@ -97,10 +97,14 @@ import (
 // Amazon S3 returns an HTTP status code 403 ("access denied") error.
 //
 // The
-// following action is related to HeadObject:
+// following actions are related to HeadObject:
 //
 // * GetObject
 // (https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObject.html)
+//
+// *
+// GetObjectAttributes
+// (https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObjectAttributes.html)
 func (c *Client) HeadObject(ctx context.Context, params *HeadObjectInput, optFns ...func(*Options)) (*HeadObjectOutput, error) {
 	if params == nil {
 		params = &HeadObjectInput{}
@@ -122,17 +126,17 @@ type HeadObjectInput struct {
 	// access point, you must direct requests to the access point hostname. The access
 	// point hostname takes the form
 	// AccessPointName-AccountId.s3-accesspoint.Region.amazonaws.com. When using this
-	// action with an access point through the AWS SDKs, you provide the access point
-	// ARN in place of the bucket name. For more information about access point ARNs,
-	// see Using access points
+	// action with an access point through the Amazon Web Services SDKs, you provide
+	// the access point ARN in place of the bucket name. For more information about
+	// access point ARNs, see Using access points
 	// (https://docs.aws.amazon.com/AmazonS3/latest/userguide/using-access-points.html)
 	// in the Amazon S3 User Guide. When using this action with Amazon S3 on Outposts,
 	// you must direct requests to the S3 on Outposts hostname. The S3 on Outposts
 	// hostname takes the form
 	// AccessPointName-AccountId.outpostID.s3-outposts.Region.amazonaws.com. When using
-	// this action using S3 on Outposts through the AWS SDKs, you provide the Outposts
-	// bucket ARN in place of the bucket name. For more information about S3 on
-	// Outposts ARNs, see Using S3 on Outposts
+	// this action with S3 on Outposts through the Amazon Web Services SDKs, you
+	// provide the Outposts bucket ARN in place of the bucket name. For more
+	// information about S3 on Outposts ARNs, see Using Amazon S3 on Outposts
 	// (https://docs.aws.amazon.com/AmazonS3/latest/userguide/S3onOutposts.html) in the
 	// Amazon S3 User Guide.
 	//
@@ -144,24 +148,31 @@ type HeadObjectInput struct {
 	// This member is required.
 	Key *string
 
+	// To retrieve the checksum, this parameter must be enabled. In addition, if you
+	// enable ChecksumMode and the object is encrypted with Amazon Web Services Key
+	// Management Service (Amazon Web Services KMS), you must have permission to use
+	// the kms:Decrypt action for the request to succeed.
+	ChecksumMode types.ChecksumMode
+
 	// The account ID of the expected bucket owner. If the bucket is owned by a
-	// different account, the request will fail with an HTTP 403 (Access Denied) error.
+	// different account, the request fails with the HTTP status code 403 Forbidden
+	// (access denied).
 	ExpectedBucketOwner *string
 
 	// Return the object only if its entity tag (ETag) is the same as the one
-	// specified, otherwise return a 412 (precondition failed).
+	// specified; otherwise, return a 412 (precondition failed) error.
 	IfMatch *string
 
-	// Return the object only if it has been modified since the specified time,
-	// otherwise return a 304 (not modified).
+	// Return the object only if it has been modified since the specified time;
+	// otherwise, return a 304 (not modified) error.
 	IfModifiedSince *time.Time
 
 	// Return the object only if its entity tag (ETag) is different from the one
-	// specified, otherwise return a 304 (not modified).
+	// specified; otherwise, return a 304 (not modified) error.
 	IfNoneMatch *string
 
-	// Return the object only if it has not been modified since the specified time,
-	// otherwise return a 412 (precondition failed).
+	// Return the object only if it has not been modified since the specified time;
+	// otherwise, return a 412 (precondition failed) error.
 	IfUnmodifiedSince *time.Time
 
 	// Part number of the object being read. This is a positive integer between 1 and
@@ -170,17 +181,14 @@ type HeadObjectInput struct {
 	// object.
 	PartNumber int32
 
-	// Downloads the specified range bytes of an object. For more information about the
-	// HTTP Range header, see
-	// http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.35
-	// (http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.35). Amazon S3
-	// doesn't support retrieving multiple ranges of data per GET request.
+	// Because HeadObject returns only the metadata for an object, this parameter has
+	// no effect.
 	Range *string
 
 	// Confirms that the requester knows that they will be charged for the request.
 	// Bucket owners need not specify this parameter in their requests. For information
-	// about downloading objects from requester pays buckets, see Downloading Objects
-	// in Requestor Pays Buckets
+	// about downloading objects from Requester Pays buckets, see Downloading Objects
+	// in Requester Pays Buckets
 	// (https://docs.aws.amazon.com/AmazonS3/latest/dev/ObjectsinRequesterPaysBuckets.html)
 	// in the Amazon S3 User Guide.
 	RequestPayer types.RequestPayer
@@ -203,6 +211,8 @@ type HeadObjectInput struct {
 
 	// VersionId used to reference a specific version of the object.
 	VersionId *string
+
+	noSmithyDocumentSerde
 }
 
 type HeadObjectOutput struct {
@@ -214,11 +224,43 @@ type HeadObjectOutput struct {
 	ArchiveStatus types.ArchiveStatus
 
 	// Indicates whether the object uses an S3 Bucket Key for server-side encryption
-	// with AWS KMS (SSE-KMS).
+	// with Amazon Web Services KMS (SSE-KMS).
 	BucketKeyEnabled bool
 
 	// Specifies caching behavior along the request/reply chain.
 	CacheControl *string
+
+	// The base64-encoded, 32-bit CRC32 checksum of the object. This will only be
+	// present if it was uploaded with the object. With multipart uploads, this may not
+	// be a checksum value of the object. For more information about how checksums are
+	// calculated with multipart uploads, see  Checking object integrity
+	// (https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html#large-object-checksums)
+	// in the Amazon S3 User Guide.
+	ChecksumCRC32 *string
+
+	// The base64-encoded, 32-bit CRC32C checksum of the object. This will only be
+	// present if it was uploaded with the object. With multipart uploads, this may not
+	// be a checksum value of the object. For more information about how checksums are
+	// calculated with multipart uploads, see  Checking object integrity
+	// (https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html#large-object-checksums)
+	// in the Amazon S3 User Guide.
+	ChecksumCRC32C *string
+
+	// The base64-encoded, 160-bit SHA-1 digest of the object. This will only be
+	// present if it was uploaded with the object. With multipart uploads, this may not
+	// be a checksum value of the object. For more information about how checksums are
+	// calculated with multipart uploads, see  Checking object integrity
+	// (https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html#large-object-checksums)
+	// in the Amazon S3 User Guide.
+	ChecksumSHA1 *string
+
+	// The base64-encoded, 256-bit SHA-256 digest of the object. This will only be
+	// present if it was uploaded with the object. With multipart uploads, this may not
+	// be a checksum value of the object. For more information about how checksums are
+	// calculated with multipart uploads, see  Checking object integrity
+	// (https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html#large-object-checksums)
+	// in the Amazon S3 User Guide.
+	ChecksumSHA256 *string
 
 	// Specifies presentational information for the object.
 	ContentDisposition *string
@@ -241,14 +283,14 @@ type HeadObjectOutput struct {
 	// Marker. If false, this response header does not appear in the response.
 	DeleteMarker bool
 
-	// An ETag is an opaque identifier assigned by a web server to a specific version
-	// of a resource found at a URL.
+	// An entity tag (ETag) is an opaque identifier assigned by a web server to a
+	// specific version of a resource found at a URL.
 	ETag *string
 
 	// If the object expiration is configured (see PUT Bucket lifecycle), the response
 	// includes this header. It includes the expiry-date and rule-id key-value pairs
-	// providing object expiration information. The value of the rule-id is URL
-	// encoded.
+	// providing object expiration information. The value of the rule-id is
+	// URL-encoded.
 	Expiration *string
 
 	// The date and time at which the object is no longer cacheable.
@@ -285,7 +327,8 @@ type HeadObjectOutput struct {
 	// only returned if the requester has the s3:GetObjectRetention permission.
 	ObjectLockRetainUntilDate *time.Time
 
-	// The count of parts this object has.
+	// The count of parts this object has. This value is only returned if you specify
+	// partNumber in your request and the object was uploaded as a multipart upload.
 	PartsCount int32
 
 	// Amazon S3 can return this header if your request involves a bucket that is
@@ -296,7 +339,7 @@ type HeadObjectOutput struct {
 	// return the x-amz-replication-status header in the response as follows:
 	//
 	// * If
-	// requesting an object from the source bucket — Amazon S3 will return the
+	// requesting an object from the source bucket, Amazon S3 will return the
 	// x-amz-replication-status header if the object in your request is eligible for
 	// replication. For example, suppose that in your replication configuration, you
 	// specify object prefix TaxDocs requesting Amazon S3 to replicate objects with key
@@ -306,13 +349,13 @@ type HeadObjectOutput struct {
 	// with value PENDING, COMPLETED or FAILED indicating object replication status.
 	//
 	// *
-	// If requesting an object from a destination bucket — Amazon S3 will return the
+	// If requesting an object from a destination bucket, Amazon S3 will return the
 	// x-amz-replication-status header with value REPLICA if the object in your request
 	// is a replica that Amazon S3 created and there is no replica modification
 	// replication in progress.
 	//
 	// * When replicating objects to multiple destination
-	// buckets the x-amz-replication-status header acts differently. The header of the
+	// buckets, the x-amz-replication-status header acts differently. The header of the
 	// source object will only return a value of COMPLETED when replication is
 	// successful to all destinations. The header will remain at value PENDING until
 	// replication has completed for all destinations. If one or more destinations
@@ -349,15 +392,15 @@ type HeadObjectOutput struct {
 	// verification of the customer-provided encryption key.
 	SSECustomerKeyMD5 *string
 
-	// If present, specifies the ID of the AWS Key Management Service (AWS KMS)
-	// symmetric customer managed customer master key (CMK) that was used for the
+	// If present, specifies the ID of the Amazon Web Services Key Management Service
+	// (Amazon Web Services KMS) symmetric customer managed key that was used for the
 	// object.
 	SSEKMSKeyId *string
 
-	// If the object is stored using server-side encryption either with an AWS KMS
-	// customer master key (CMK) or an Amazon S3-managed encryption key, the response
-	// includes this header with the value of the server-side encryption algorithm used
-	// when storing this object in Amazon S3 (for example, AES256, aws:kms).
+	// If the object is stored using server-side encryption either with an Amazon Web
+	// Services KMS key or an Amazon S3-managed encryption key, the response includes
+	// this header with the value of the server-side encryption algorithm used when
+	// storing this object in Amazon S3 (for example, AES256, aws:kms).
 	ServerSideEncryption types.ServerSideEncryption
 
 	// Provides storage class information of the object. Amazon S3 returns this header
@@ -376,6 +419,8 @@ type HeadObjectOutput struct {
 
 	// Metadata pertaining to the operation's result.
 	ResultMetadata middleware.Metadata
+
+	noSmithyDocumentSerde
 }
 
 func (c *Client) addOperationHeadObjectMiddlewares(stack *middleware.Stack, options Options) (err error) {
@@ -421,6 +466,9 @@ func (c *Client) addOperationHeadObjectMiddlewares(stack *middleware.Stack, opti
 		return err
 	}
 	if err = smithyhttp.AddCloseResponseBodyMiddleware(stack); err != nil {
+		return err
+	}
+	if err = swapWithCustomHTTPSignerMiddleware(stack, options); err != nil {
 		return err
 	}
 	if err = addOpHeadObjectValidationMiddleware(stack); err != nil {
@@ -516,8 +564,16 @@ func NewObjectExistsWaiter(client HeadObjectAPIClient, optFns ...func(*ObjectExi
 // maximum wait duration the waiter will wait. The maxWaitDur is required and must
 // be greater than zero.
 func (w *ObjectExistsWaiter) Wait(ctx context.Context, params *HeadObjectInput, maxWaitDur time.Duration, optFns ...func(*ObjectExistsWaiterOptions)) error {
+	_, err := w.WaitForOutput(ctx, params, maxWaitDur, optFns...)
+	return err
+}
+
+// WaitForOutput calls the waiter function for ObjectExists waiter and returns the
+// output of the successful operation. The maxWaitDur is the maximum wait duration
+// the waiter will wait. The maxWaitDur is required and must be greater than zero.
+func (w *ObjectExistsWaiter) WaitForOutput(ctx context.Context, params *HeadObjectInput, maxWaitDur time.Duration, optFns ...func(*ObjectExistsWaiterOptions)) (*HeadObjectOutput, error) {
 	if maxWaitDur <= 0 {
-		return fmt.Errorf("maximum wait time for waiter must be greater than zero")
+		return nil, fmt.Errorf("maximum wait time for waiter must be greater than zero")
 	}
 
 	options := w.options
@@ -530,7 +586,7 @@ func (w *ObjectExistsWaiter) Wait(ctx context.Context, params *HeadObjectInput, 
 	}
 
 	if options.MinDelay > options.MaxDelay {
-		return fmt.Errorf("minimum waiter delay %v must be lesser than or equal to maximum waiter delay of %v.", options.MinDelay, options.MaxDelay)
+		return nil, fmt.Errorf("minimum waiter delay %v must be lesser than or equal to maximum waiter delay of %v.", options.MinDelay, options.MaxDelay)
 	}
 
 	ctx, cancelFn := context.WithTimeout(ctx, maxWaitDur)
@@ -558,10 +614,10 @@ func (w *ObjectExistsWaiter) Wait(ctx context.Context, params *HeadObjectInput, 
 
 		retryable, err := options.Retryable(ctx, params, out, err)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		if !retryable {
-			return nil
+			return out, nil
 		}
 
 		remainingTime -= time.Since(start)
@@ -574,16 +630,16 @@ func (w *ObjectExistsWaiter) Wait(ctx context.Context, params *HeadObjectInput, 
 			attempt, options.MinDelay, options.MaxDelay, remainingTime,
 		)
 		if err != nil {
-			return fmt.Errorf("error computing waiter delay, %w", err)
+			return nil, fmt.Errorf("error computing waiter delay, %w", err)
 		}
 
 		remainingTime -= delay
 		// sleep for the delay amount before invoking a request
 		if err := smithytime.SleepWithContext(ctx, delay); err != nil {
-			return fmt.Errorf("request cancelled while waiting, %w", err)
+			return nil, fmt.Errorf("request cancelled while waiting, %w", err)
 		}
 	}
-	return fmt.Errorf("exceeded max wait time for ObjectExists waiter")
+	return nil, fmt.Errorf("exceeded max wait time for ObjectExists waiter")
 }
 
 func objectExistsStateRetryable(ctx context.Context, input *HeadObjectInput, output *HeadObjectOutput, err error) (bool, error) {
@@ -666,8 +722,17 @@ func NewObjectNotExistsWaiter(client HeadObjectAPIClient, optFns ...func(*Object
 // maximum wait duration the waiter will wait. The maxWaitDur is required and must
 // be greater than zero.
 func (w *ObjectNotExistsWaiter) Wait(ctx context.Context, params *HeadObjectInput, maxWaitDur time.Duration, optFns ...func(*ObjectNotExistsWaiterOptions)) error {
+	_, err := w.WaitForOutput(ctx, params, maxWaitDur, optFns...)
+	return err
+}
+
+// WaitForOutput calls the waiter function for ObjectNotExists waiter and returns
+// the output of the successful operation. The maxWaitDur is the maximum wait
+// duration the waiter will wait. The maxWaitDur is required and must be greater
+// than zero.
+func (w *ObjectNotExistsWaiter) WaitForOutput(ctx context.Context, params *HeadObjectInput, maxWaitDur time.Duration, optFns ...func(*ObjectNotExistsWaiterOptions)) (*HeadObjectOutput, error) {
 	if maxWaitDur <= 0 {
-		return fmt.Errorf("maximum wait time for waiter must be greater than zero")
+		return nil, fmt.Errorf("maximum wait time for waiter must be greater than zero")
 	}
 
 	options := w.options
@@ -680,7 +745,7 @@ func (w *ObjectNotExistsWaiter) Wait(ctx context.Context, params *HeadObjectInpu
 	}
 
 	if options.MinDelay > options.MaxDelay {
-		return fmt.Errorf("minimum waiter delay %v must be lesser than or equal to maximum waiter delay of %v.", options.MinDelay, options.MaxDelay)
+		return nil, fmt.Errorf("minimum waiter delay %v must be lesser than or equal to maximum waiter delay of %v.", options.MinDelay, options.MaxDelay)
 	}
 
 	ctx, cancelFn := context.WithTimeout(ctx, maxWaitDur)
@@ -708,10 +773,10 @@ func (w *ObjectNotExistsWaiter) Wait(ctx context.Context, params *HeadObjectInpu
 
 		retryable, err := options.Retryable(ctx, params, out, err)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		if !retryable {
-			return nil
+			return out, nil
 		}
 
 		remainingTime -= time.Since(start)
@@ -724,16 +789,16 @@ func (w *ObjectNotExistsWaiter) Wait(ctx context.Context, params *HeadObjectInpu
 			attempt, options.MinDelay, options.MaxDelay, remainingTime,
 		)
 		if err != nil {
-			return fmt.Errorf("error computing waiter delay, %w", err)
+			return nil, fmt.Errorf("error computing waiter delay, %w", err)
 		}
 
 		remainingTime -= delay
 		// sleep for the delay amount before invoking a request
 		if err := smithytime.SleepWithContext(ctx, delay); err != nil {
-			return fmt.Errorf("request cancelled while waiting, %w", err)
+			return nil, fmt.Errorf("request cancelled while waiting, %w", err)
 		}
 	}
-	return fmt.Errorf("exceeded max wait time for ObjectNotExists waiter")
+	return nil, fmt.Errorf("exceeded max wait time for ObjectNotExists waiter")
 }
 
 func objectNotExistsStateRetryable(ctx context.Context, input *HeadObjectInput, output *HeadObjectOutput, err error) (bool, error) {
@@ -776,13 +841,44 @@ func addHeadObjectUpdateEndpoint(stack *middleware.Stack, options Options) error
 		Accessor: s3cust.UpdateEndpointParameterAccessor{
 			GetBucketFromInput: getHeadObjectBucketMember,
 		},
-		UsePathStyle:            options.UsePathStyle,
-		UseAccelerate:           options.UseAccelerate,
-		SupportsAccelerate:      true,
-		TargetS3ObjectLambda:    false,
-		EndpointResolver:        options.EndpointResolver,
-		EndpointResolverOptions: options.EndpointOptions,
-		UseDualstack:            options.UseDualstack,
-		UseARNRegion:            options.UseARNRegion,
+		UsePathStyle:                   options.UsePathStyle,
+		UseAccelerate:                  options.UseAccelerate,
+		SupportsAccelerate:             true,
+		TargetS3ObjectLambda:           false,
+		EndpointResolver:               options.EndpointResolver,
+		EndpointResolverOptions:        options.EndpointOptions,
+		UseARNRegion:                   options.UseARNRegion,
+		DisableMultiRegionAccessPoints: options.DisableMultiRegionAccessPoints,
 	})
+}
+
+// PresignHeadObject is used to generate a presigned HTTP Request which contains
+// presigned URL, signed headers and HTTP method used.
+func (c *PresignClient) PresignHeadObject(ctx context.Context, params *HeadObjectInput, optFns ...func(*PresignOptions)) (*v4.PresignedHTTPRequest, error) {
+	if params == nil {
+		params = &HeadObjectInput{}
+	}
+	options := c.options.copy()
+	for _, fn := range optFns {
+		fn(&options)
+	}
+	clientOptFns := append(options.ClientOptions, withNopHTTPClientAPIOption)
+
+	result, _, err := c.client.invokeOperation(ctx, "HeadObject", params, clientOptFns,
+		c.client.addOperationHeadObjectMiddlewares,
+		presignConverter(options).convertToPresignMiddleware,
+		addHeadObjectPayloadAsUnsigned,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	out := result.(*v4.PresignedHTTPRequest)
+	return out, nil
+}
+
+func addHeadObjectPayloadAsUnsigned(stack *middleware.Stack, options Options) error {
+	v4.RemoveContentSHA256HeaderMiddleware(stack)
+	v4.RemoveComputePayloadSHA256Middleware(stack)
+	return v4.AddUnsignedPayloadMiddleware(stack)
 }

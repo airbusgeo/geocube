@@ -23,10 +23,12 @@ import (
 // LocationConstraint request parameter in a CreateBucket request. For more
 // information, see CreateBucket
 // (https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateBucket.html). To use
-// this implementation of the operation, you must be the bucket owner. The
-// following operations are related to GetBucketLocation:
+// this implementation of the operation, you must be the bucket owner. To use this
+// API against an access point, provide the alias of the access point in place of
+// the bucket name. The following operations are related to GetBucketLocation:
 //
-// * GetObject
+// *
+// GetObject
 // (https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObject.html)
 //
 // *
@@ -55,8 +57,11 @@ type GetBucketLocationInput struct {
 	Bucket *string
 
 	// The account ID of the expected bucket owner. If the bucket is owned by a
-	// different account, the request will fail with an HTTP 403 (Access Denied) error.
+	// different account, the request fails with the HTTP status code 403 Forbidden
+	// (access denied).
 	ExpectedBucketOwner *string
+
+	noSmithyDocumentSerde
 }
 
 type GetBucketLocationOutput struct {
@@ -69,6 +74,8 @@ type GetBucketLocationOutput struct {
 
 	// Metadata pertaining to the operation's result.
 	ResultMetadata middleware.Metadata
+
+	noSmithyDocumentSerde
 }
 
 func (c *Client) addOperationGetBucketLocationMiddlewares(stack *middleware.Stack, options Options) (err error) {
@@ -117,6 +124,9 @@ func (c *Client) addOperationGetBucketLocationMiddlewares(stack *middleware.Stac
 		return err
 	}
 	if err = swapDeserializerHelper(stack); err != nil {
+		return err
+	}
+	if err = swapWithCustomHTTPSignerMiddleware(stack, options); err != nil {
 		return err
 	}
 	if err = addOpGetBucketLocationValidationMiddleware(stack); err != nil {
@@ -226,13 +236,13 @@ func addGetBucketLocationUpdateEndpoint(stack *middleware.Stack, options Options
 		Accessor: s3cust.UpdateEndpointParameterAccessor{
 			GetBucketFromInput: getGetBucketLocationBucketMember,
 		},
-		UsePathStyle:            options.UsePathStyle,
-		UseAccelerate:           options.UseAccelerate,
-		SupportsAccelerate:      true,
-		TargetS3ObjectLambda:    false,
-		EndpointResolver:        options.EndpointResolver,
-		EndpointResolverOptions: options.EndpointOptions,
-		UseDualstack:            options.UseDualstack,
-		UseARNRegion:            options.UseARNRegion,
+		UsePathStyle:                   options.UsePathStyle,
+		UseAccelerate:                  options.UseAccelerate,
+		SupportsAccelerate:             true,
+		TargetS3ObjectLambda:           false,
+		EndpointResolver:               options.EndpointResolver,
+		EndpointResolverOptions:        options.EndpointOptions,
+		UseARNRegion:                   options.UseARNRegion,
+		DisableMultiRegionAccessPoints: options.DisableMultiRegionAccessPoints,
 	})
 }

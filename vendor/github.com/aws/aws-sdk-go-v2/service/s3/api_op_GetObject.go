@@ -6,6 +6,7 @@ import (
 	"context"
 	awsmiddleware "github.com/aws/aws-sdk-go-v2/aws/middleware"
 	"github.com/aws/aws-sdk-go-v2/aws/signer/v4"
+	internalChecksum "github.com/aws/aws-sdk-go-v2/service/internal/checksum"
 	s3cust "github.com/aws/aws-sdk-go-v2/service/s3/internal/customizations"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/aws/smithy-go/middleware"
@@ -29,10 +30,7 @@ import (
 // specify the resource as /examplebucket/photos/2006/February/sample.jpg. For more
 // information about request types, see HTTP Host Header Bucket Specification
 // (https://docs.aws.amazon.com/AmazonS3/latest/dev/VirtualHosting.html#VirtualHostingSpecifyBucket).
-// To distribute large files to many people, you can save bandwidth costs by using
-// BitTorrent. For more information, see Amazon S3 Torrent
-// (https://docs.aws.amazon.com/AmazonS3/latest/dev/S3Torrent.html). For more
-// information about returning the ACL of an object, see GetObjectAcl
+// For more information about returning the ACL of an object, see GetObjectAcl
 // (https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObjectAcl.html). If the
 // object you are retrieving is stored in the S3 Glacier or S3 Glacier Deep Archive
 // storage class, or S3 Intelligent-Tiering Archive or S3 Intelligent-Tiering Deep
@@ -43,15 +41,15 @@ import (
 // about restoring archived objects, see Restoring Archived Objects
 // (https://docs.aws.amazon.com/AmazonS3/latest/dev/restoring-objects.html).
 // Encryption request headers, like x-amz-server-side-encryption, should not be
-// sent for GET requests if your object uses server-side encryption with CMKs
-// stored in AWS KMS (SSE-KMS) or server-side encryption with Amazon S3–managed
-// encryption keys (SSE-S3). If your object does use these types of keys, you’ll
-// get an HTTP 400 BadRequest error. If you encrypt an object by using server-side
-// encryption with customer-provided encryption keys (SSE-C) when you store the
-// object in Amazon S3, then when you GET the object, you must use the following
-// headers:
+// sent for GET requests if your object uses server-side encryption with KMS keys
+// (SSE-KMS) or server-side encryption with Amazon S3–managed encryption keys
+// (SSE-S3). If your object does use these types of keys, you’ll get an HTTP 400
+// BadRequest error. If you encrypt an object by using server-side encryption with
+// customer-provided encryption keys (SSE-C) when you store the object in Amazon
+// S3, then when you GET the object, you must use the following headers:
 //
-// * x-amz-server-side-encryption-customer-algorithm
+// *
+// x-amz-server-side-encryption-customer-algorithm
 //
 // *
 // x-amz-server-side-encryption-customer-key
@@ -62,14 +60,13 @@ import (
 // For more information about SSE-C,
 // see Server-Side Encryption (Using Customer-Provided Encryption Keys)
 // (https://docs.aws.amazon.com/AmazonS3/latest/dev/ServerSideEncryptionCustomerKeys.html).
-// Assuming you have permission to read object tags (permission for the
-// s3:GetObjectVersionTagging action), the response also returns the
-// x-amz-tagging-count header that provides the count of number of tags associated
-// with the object. You can use GetObjectTagging
+// Assuming you have the relevant permission to read object tags, the response also
+// returns the x-amz-tagging-count header that provides the count of number of tags
+// associated with the object. You can use GetObjectTagging
 // (https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObjectTagging.html) to
 // retrieve the tag set associated with an object. Permissions You need the
-// s3:GetObject permission for this operation. For more information, see Specifying
-// Permissions in a Policy
+// relevant read object (or version) permission for this operation. For more
+// information, see Specifying Permissions in a Policy
 // (https://docs.aws.amazon.com/AmazonS3/latest/dev/using-with-s3-actions.html). If
 // the object you request does not exist, the error Amazon S3 returns depends on
 // whether you also have the s3:ListBucket permission.
@@ -83,10 +80,19 @@ import (
 // error.
 //
 // Versioning By default, the GET action returns the current version of an
-// object. To return a different version, use the versionId subresource. If the
-// current version of the object is a delete marker, Amazon S3 behaves as if the
-// object was deleted and includes x-amz-delete-marker: true in the response. For
-// more information about versioning, see PutBucketVersioning
+// object. To return a different version, use the versionId subresource.
+//
+// * If you
+// supply a versionId, you need the s3:GetObjectVersion permission to access a
+// specific version of an object. If you request a specific version, you do not
+// need to have the s3:GetObject permission.
+//
+// * If the current version of the
+// object is a delete marker, Amazon S3 behaves as if the object was deleted and
+// includes x-amz-delete-marker: true in the response.
+//
+// For more information about
+// versioning, see PutBucketVersioning
 // (https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutBucketVersioning.html).
 // Overriding Response Header Values There are times when you want to override
 // certain response header values in a GET response. For example, you might
@@ -155,17 +161,19 @@ type GetObjectInput struct {
 	// point, you must direct requests to the access point hostname. The access point
 	// hostname takes the form
 	// AccessPointName-AccountId.s3-accesspoint.Region.amazonaws.com. When using this
-	// action with an access point through the AWS SDKs, you provide the access point
-	// ARN in place of the bucket name. For more information about access point ARNs,
-	// see Using access points
+	// action with an access point through the Amazon Web Services SDKs, you provide
+	// the access point ARN in place of the bucket name. For more information about
+	// access point ARNs, see Using access points
 	// (https://docs.aws.amazon.com/AmazonS3/latest/userguide/using-access-points.html)
-	// in the Amazon S3 User Guide. When using this action with Amazon S3 on Outposts,
-	// you must direct requests to the S3 on Outposts hostname. The S3 on Outposts
+	// in the Amazon S3 User Guide. When using an Object Lambda access point the
 	// hostname takes the form
+	// AccessPointName-AccountId.s3-object-lambda.Region.amazonaws.com. When using this
+	// action with Amazon S3 on Outposts, you must direct requests to the S3 on
+	// Outposts hostname. The S3 on Outposts hostname takes the form
 	// AccessPointName-AccountId.outpostID.s3-outposts.Region.amazonaws.com. When using
-	// this action using S3 on Outposts through the AWS SDKs, you provide the Outposts
-	// bucket ARN in place of the bucket name. For more information about S3 on
-	// Outposts ARNs, see Using S3 on Outposts
+	// this action with S3 on Outposts through the Amazon Web Services SDKs, you
+	// provide the Outposts bucket ARN in place of the bucket name. For more
+	// information about S3 on Outposts ARNs, see Using Amazon S3 on Outposts
 	// (https://docs.aws.amazon.com/AmazonS3/latest/userguide/S3onOutposts.html) in the
 	// Amazon S3 User Guide.
 	//
@@ -177,24 +185,28 @@ type GetObjectInput struct {
 	// This member is required.
 	Key *string
 
+	// To retrieve the checksum, this mode must be enabled.
+	ChecksumMode types.ChecksumMode
+
 	// The account ID of the expected bucket owner. If the bucket is owned by a
-	// different account, the request will fail with an HTTP 403 (Access Denied) error.
+	// different account, the request fails with the HTTP status code 403 Forbidden
+	// (access denied).
 	ExpectedBucketOwner *string
 
 	// Return the object only if its entity tag (ETag) is the same as the one
-	// specified, otherwise return a 412 (precondition failed).
+	// specified; otherwise, return a 412 (precondition failed) error.
 	IfMatch *string
 
-	// Return the object only if it has been modified since the specified time,
-	// otherwise return a 304 (not modified).
+	// Return the object only if it has been modified since the specified time;
+	// otherwise, return a 304 (not modified) error.
 	IfModifiedSince *time.Time
 
 	// Return the object only if its entity tag (ETag) is different from the one
-	// specified, otherwise return a 304 (not modified).
+	// specified; otherwise, return a 304 (not modified) error.
 	IfNoneMatch *string
 
-	// Return the object only if it has not been modified since the specified time,
-	// otherwise return a 412 (precondition failed).
+	// Return the object only if it has not been modified since the specified time;
+	// otherwise, return a 412 (precondition failed) error.
 	IfUnmodifiedSince *time.Time
 
 	// Part number of the object being read. This is a positive integer between 1 and
@@ -211,8 +223,8 @@ type GetObjectInput struct {
 
 	// Confirms that the requester knows that they will be charged for the request.
 	// Bucket owners need not specify this parameter in their requests. For information
-	// about downloading objects from requester pays buckets, see Downloading Objects
-	// in Requestor Pays Buckets
+	// about downloading objects from Requester Pays buckets, see Downloading Objects
+	// in Requester Pays Buckets
 	// (https://docs.aws.amazon.com/AmazonS3/latest/dev/ObjectsinRequesterPaysBuckets.html)
 	// in the Amazon S3 User Guide.
 	RequestPayer types.RequestPayer
@@ -253,6 +265,8 @@ type GetObjectInput struct {
 
 	// VersionId used to reference a specific version of the object.
 	VersionId *string
+
+	noSmithyDocumentSerde
 }
 
 type GetObjectOutput struct {
@@ -264,11 +278,43 @@ type GetObjectOutput struct {
 	Body io.ReadCloser
 
 	// Indicates whether the object uses an S3 Bucket Key for server-side encryption
-	// with AWS KMS (SSE-KMS).
+	// with Amazon Web Services KMS (SSE-KMS).
 	BucketKeyEnabled bool
 
 	// Specifies caching behavior along the request/reply chain.
 	CacheControl *string
+
+	// The base64-encoded, 32-bit CRC32 checksum of the object. This will only be
+	// present if it was uploaded with the object. With multipart uploads, this may not
+	// be a checksum value of the object. For more information about how checksums are
+	// calculated with multipart uploads, see  Checking object integrity
+	// (https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html#large-object-checksums)
+	// in the Amazon S3 User Guide.
+	ChecksumCRC32 *string
+
+	// The base64-encoded, 32-bit CRC32C checksum of the object. This will only be
+	// present if it was uploaded with the object. With multipart uploads, this may not
+	// be a checksum value of the object. For more information about how checksums are
+	// calculated with multipart uploads, see  Checking object integrity
+	// (https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html#large-object-checksums)
+	// in the Amazon S3 User Guide.
+	ChecksumCRC32C *string
+
+	// The base64-encoded, 160-bit SHA-1 digest of the object. This will only be
+	// present if it was uploaded with the object. With multipart uploads, this may not
+	// be a checksum value of the object. For more information about how checksums are
+	// calculated with multipart uploads, see  Checking object integrity
+	// (https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html#large-object-checksums)
+	// in the Amazon S3 User Guide.
+	ChecksumSHA1 *string
+
+	// The base64-encoded, 256-bit SHA-256 digest of the object. This will only be
+	// present if it was uploaded with the object. With multipart uploads, this may not
+	// be a checksum value of the object. For more information about how checksums are
+	// calculated with multipart uploads, see  Checking object integrity
+	// (https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html#large-object-checksums)
+	// in the Amazon S3 User Guide.
+	ChecksumSHA256 *string
 
 	// Specifies presentational information for the object.
 	ContentDisposition *string
@@ -294,14 +340,14 @@ type GetObjectOutput struct {
 	// Marker. If false, this response header does not appear in the response.
 	DeleteMarker bool
 
-	// An ETag is an opaque identifier assigned by a web server to a specific version
-	// of a resource found at a URL.
+	// An entity tag (ETag) is an opaque identifier assigned by a web server to a
+	// specific version of a resource found at a URL.
 	ETag *string
 
 	// If the object expiration is configured (see PUT Bucket lifecycle), the response
 	// includes this header. It includes the expiry-date and rule-id key-value pairs
-	// providing object expiration information. The value of the rule-id is URL
-	// encoded.
+	// providing object expiration information. The value of the rule-id is
+	// URL-encoded.
 	Expiration *string
 
 	// The date and time at which the object is no longer cacheable.
@@ -331,7 +377,8 @@ type GetObjectOutput struct {
 	// The date and time when this object's Object Lock will expire.
 	ObjectLockRetainUntilDate *time.Time
 
-	// The count of parts this object has.
+	// The count of parts this object has. This value is only returned if you specify
+	// partNumber in your request and the object was uploaded as a multipart upload.
 	PartsCount int32
 
 	// Amazon S3 can return this if your request involves a bucket that is either a
@@ -355,8 +402,8 @@ type GetObjectOutput struct {
 	// verification of the customer-provided encryption key.
 	SSECustomerKeyMD5 *string
 
-	// If present, specifies the ID of the AWS Key Management Service (AWS KMS)
-	// symmetric customer managed customer master key (CMK) that was used for the
+	// If present, specifies the ID of the Amazon Web Services Key Management Service
+	// (Amazon Web Services KMS) symmetric customer managed key that was used for the
 	// object.
 	SSEKMSKeyId *string
 
@@ -381,6 +428,8 @@ type GetObjectOutput struct {
 
 	// Metadata pertaining to the operation's result.
 	ResultMetadata middleware.Metadata
+
+	noSmithyDocumentSerde
 }
 
 func (c *Client) addOperationGetObjectMiddlewares(stack *middleware.Stack, options Options) (err error) {
@@ -425,6 +474,9 @@ func (c *Client) addOperationGetObjectMiddlewares(stack *middleware.Stack, optio
 	if err = smithyhttp.AddErrorCloseResponseBodyMiddleware(stack); err != nil {
 		return err
 	}
+	if err = swapWithCustomHTTPSignerMiddleware(stack, options); err != nil {
+		return err
+	}
 	if err = addOpGetObjectValidationMiddleware(stack); err != nil {
 		return err
 	}
@@ -432,6 +484,9 @@ func (c *Client) addOperationGetObjectMiddlewares(stack *middleware.Stack, optio
 		return err
 	}
 	if err = addMetadataRetrieverMiddleware(stack); err != nil {
+		return err
+	}
+	if err = addGetObjectOutputChecksumMiddlewares(stack, options); err != nil {
 		return err
 	}
 	if err = addGetObjectUpdateEndpoint(stack, options); err != nil {
@@ -461,6 +516,26 @@ func newServiceMetadataMiddleware_opGetObject(region string) *awsmiddleware.Regi
 	}
 }
 
+// getGetObjectRequestValidationModeMember gets the request checksum validation
+// mode provided as input.
+func getGetObjectRequestValidationModeMember(input interface{}) (string, bool) {
+	in := input.(*GetObjectInput)
+	if len(in.ChecksumMode) == 0 {
+		return "", false
+	}
+	return string(in.ChecksumMode), true
+}
+
+func addGetObjectOutputChecksumMiddlewares(stack *middleware.Stack, options Options) error {
+	return internalChecksum.AddOutputMiddleware(stack, internalChecksum.OutputMiddlewareOptions{
+		GetValidationMode:             getGetObjectRequestValidationModeMember,
+		ValidationAlgorithms:          []string{"CRC32", "CRC32C", "SHA256", "SHA1"},
+		IgnoreMultipartValidation:     true,
+		LogValidationSkipped:          true,
+		LogMultipartValidationSkipped: true,
+	})
+}
+
 // getGetObjectBucketMember returns a pointer to string denoting a provided bucket
 // member valueand a boolean indicating if the input has a modeled bucket name,
 func getGetObjectBucketMember(input interface{}) (*string, bool) {
@@ -475,14 +550,14 @@ func addGetObjectUpdateEndpoint(stack *middleware.Stack, options Options) error 
 		Accessor: s3cust.UpdateEndpointParameterAccessor{
 			GetBucketFromInput: getGetObjectBucketMember,
 		},
-		UsePathStyle:            options.UsePathStyle,
-		UseAccelerate:           options.UseAccelerate,
-		SupportsAccelerate:      true,
-		TargetS3ObjectLambda:    false,
-		EndpointResolver:        options.EndpointResolver,
-		EndpointResolverOptions: options.EndpointOptions,
-		UseDualstack:            options.UseDualstack,
-		UseARNRegion:            options.UseARNRegion,
+		UsePathStyle:                   options.UsePathStyle,
+		UseAccelerate:                  options.UseAccelerate,
+		SupportsAccelerate:             true,
+		TargetS3ObjectLambda:           false,
+		EndpointResolver:               options.EndpointResolver,
+		EndpointResolverOptions:        options.EndpointOptions,
+		UseARNRegion:                   options.UseARNRegion,
+		DisableMultiRegionAccessPoints: options.DisableMultiRegionAccessPoints,
 	})
 }
 

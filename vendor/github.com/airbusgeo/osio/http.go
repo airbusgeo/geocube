@@ -22,9 +22,13 @@ import (
 	"syscall"
 )
 
+type Client interface {
+	Do(*http.Request) (*http.Response, error)
+}
+
 type HTTPHandler struct {
 	ctx                context.Context
-	client             *http.Client
+	client             Client
 	requestMiddlewares []func(*http.Request)
 }
 
@@ -32,7 +36,7 @@ type HTTPHandler struct {
 type HTTPOption func(o *HTTPHandler)
 
 // HTTPClient sets the http.Client that will be used by the handler
-func HTTPClient(cl *http.Client) HTTPOption {
+func HTTPClient(cl Client) HTTPOption {
 	return func(o *HTTPHandler) {
 		o.client = cl
 	}
@@ -85,8 +89,7 @@ func (h *HTTPHandler) StreamAt(key string, off int64, n int64) (io.ReadCloser, i
 	// HEAD request to get object size as it is not returned in range requests
 	var size int64
 	if off == 0 {
-		req, _ := http.NewRequest("HEAD", key, nil)
-		req = req.WithContext(h.ctx)
+		req, _ := http.NewRequestWithContext(h.ctx, "HEAD", key, nil)
 		for _, mw := range h.requestMiddlewares {
 			mw(req)
 		}
@@ -102,8 +105,7 @@ func (h *HTTPHandler) StreamAt(key string, off int64, n int64) (io.ReadCloser, i
 	}
 
 	// GET request to fetch range
-	req, _ := http.NewRequest("GET", key, nil)
-	req = req.WithContext(h.ctx)
+	req, _ := http.NewRequestWithContext(h.ctx, "GET", key, nil)
 	for _, mw := range h.requestMiddlewares {
 		mw(req)
 	}
