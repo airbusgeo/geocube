@@ -69,12 +69,24 @@ var _ = Describe("Merge error", func() {
 		}
 	)
 
-	Describe("nil then err", func() {
+	Describe("nil then err, priority to temporary", func() {
 		JustBeforeEach(func() {
 			err = utils.MergeErrors(false, nil, fatalErr)
 		})
 
-		Context("Return temporary", func() {
+		Context("Return error", func() {
+			It("it should return an error", func() {
+				Expect(err).To(Equal(fatalErr))
+			})
+		})
+	})
+
+	Describe("nil then err, priority to fatal", func() {
+		JustBeforeEach(func() {
+			err = utils.MergeErrors(true, nil, fatalErr)
+		})
+
+		Context("Return error", func() {
 			It("it should return an error", func() {
 				Expect(err).To(Equal(fatalErr))
 			})
@@ -94,6 +106,16 @@ var _ = Describe("Merge error", func() {
 	Describe("Temporary then fatal then nil, priority to temporary", func() {
 		JustBeforeEach(func() {
 			err = utils.MergeErrors(false, tmpErr, fatalErr, nil)
+		})
+
+		Context("Return nil", func() {
+			itShouldReturnNil()
+		})
+	})
+
+	Describe("nil then nil then fatal, priority to temporary", func() {
+		JustBeforeEach(func() {
+			err = utils.MergeErrors(false, nil, nil, fatalErr)
 		})
 
 		Context("Return nil", func() {

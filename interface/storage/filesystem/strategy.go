@@ -3,6 +3,7 @@ package filesystem
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -21,11 +22,19 @@ func NewFileSystemStrategy(ctx context.Context) (geocubeStorage.Strategy, error)
 	return fileSystemStrategy{}, nil
 }
 
+func formatError(err error) error {
+	var epath *os.PathError
+	if errors.As(err, &epath) && os.IsNotExist(epath) {
+		return geocubeStorage.ErrFileNotFound
+	}
+	return err
+}
+
 func (s fileSystemStrategy) Download(ctx context.Context, uri string, options ...geocubeStorage.Option) ([]byte, error) {
 	uri = strings.Replace(uri, "file://", "", -1)
 	f, err := os.Open(uri)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open file: %w", err)
+		return nil, fmt.Errorf("failed to open file: %w", formatError(err))
 	}
 
 	defer f.Close()
@@ -37,7 +46,7 @@ func (s fileSystemStrategy) DownloadToFile(ctx context.Context, source, destinat
 	destURI := strings.Replace(destination, "file://", "", -1)
 	sourceFile, err := os.Open(sourceURI)
 	if err != nil {
-		return fmt.Errorf("failed to open file: %w", err)
+		return fmt.Errorf("failed to open file: %w", formatError(err))
 	}
 
 	defer sourceFile.Close()
@@ -121,7 +130,7 @@ func (s fileSystemStrategy) Exist(ctx context.Context, uri string) (bool, error)
 func (s fileSystemStrategy) GetAttrs(ctx context.Context, uri string) (geocubeStorage.Attrs, error) {
 	f, err := os.Open(uri)
 	if err != nil {
-		return geocubeStorage.Attrs{}, fmt.Errorf("failed to open file: %w", err)
+		return geocubeStorage.Attrs{}, fmt.Errorf("failed to open file: %w", formatError(err))
 	}
 	defer f.Close()
 
@@ -151,7 +160,7 @@ func (s fileSystemStrategy) GetAttrs(ctx context.Context, uri string) (geocubeSt
 func (s fileSystemStrategy) StreamAt(key string, off int64, n int64) (io.ReadCloser, int64, error) {
 	f, err := os.Open(key)
 	if err != nil {
-		return nil, 0, fmt.Errorf("failed to open file: %w", err)
+		return nil, 0, fmt.Errorf("failed to open file: %w", formatError(err))
 	}
 	defer f.Close()
 

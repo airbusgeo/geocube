@@ -98,12 +98,12 @@ func MergeErrors(priorityToError bool, err error, newErrs ...error) error {
 	}
 	newErr := newErrs[0]
 
-	if err == nil {
-		err = newErr
-	} else if newErr == nil {
+	if newErr == nil {
 		if !priorityToError {
-			err = nil
+			return nil
 		}
+	} else if err == nil {
+		err = newErr
 	} else if priorityToError != Temporary(err) {
 		err = fmt.Errorf("%w\n %v", err, newErr)
 	} else {

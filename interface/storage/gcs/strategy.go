@@ -51,6 +51,9 @@ func gsError(err error) error {
 	if err == nil {
 		return nil
 	}
+	if errors.Is(err, storage.ErrObjectNotExist) {
+		return geocubeStorage.ErrFileNotFound
+	}
 	if utils.Temporary(err) {
 		return err
 	}
