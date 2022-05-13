@@ -308,7 +308,7 @@ func newServerAppConfig() (*serverConfig, error) {
 	serverConfig := serverConfig{}
 	// Configuration
 	flag.StringVar(&serverConfig.AppPort, "port", "8080", "geocube port to use")
-	flag.BoolVar(&serverConfig.TLS, "tls", false, "enable TLS protocol")
+	flag.BoolVar(&serverConfig.TLS, "tls", false, "enable TLS protocol (certificate and key must be /tls/tls.crt and /tls/tls.key)")
 	flag.IntVar(&serverConfig.MaxConnectionAge, "maxConnectionAge", 0, "grpc max age connection")
 	flag.IntVar(&serverConfig.CatalogWorkers, "workers", 1, "number of parallel workers per catalog request")
 	flag.StringVar(&serverConfig.CancelledConsolidationStorage, "cancelledJobs", "", "storage where cancelled jobs are referenced. Must be reachable by the Consolidation Workers and the Geocube with read/write permissions")

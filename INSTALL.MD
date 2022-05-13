@@ -249,7 +249,7 @@ Usage of ./server:
   -project string
     	project name (gcp only/not required in local usage)
   -tls
-    	enable TLS protocol
+    	enable TLS protocol (certificate and key must be /tls/tls.crt and /tls/tls.key)
   -with-gcs
     	configure GDAL to use gcs storage (may need authentication)
   -with-s3
