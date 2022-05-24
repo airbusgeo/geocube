@@ -330,19 +330,8 @@ func (svc *Service) csldPrepareOrders(ctx context.Context, job *geocube.Job) err
 
 			// Create all the consolidationContainer
 			nbOfContainers := (len(records)-1)/layout.MaxRecords + 1
-			idx := 0
 			for i := 0; i < nbOfContainers; i++ {
-				// Search for an available URI
-				for {
-					idx++
-					containerBase.URI = fmt.Sprintf("%s/%s", containerBaseName, strconv.Itoa(idx)+".tif")
-					if _, err := txn.ReadContainers(ctx, []string{containerBase.URI}); err != nil {
-						if geocube.IsError(err, geocube.EntityNotFound) {
-							break
-						}
-						return fmt.Errorf("clsdPrepareOrders.%w", err)
-					}
-				}
+				containerBase.URI = fmt.Sprintf("%s/%s", containerBaseName, uuid.New().String()+".tif")
 
 				// Create a consolidation event
 				evt := geocube.ConsolidationEvent{
