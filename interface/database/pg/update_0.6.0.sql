@@ -17,3 +17,8 @@ ALTER TABLE geocube.jobs DROP COLUMN logs;
 -- add id column on geocube.containers
 ALTER TABLE geocube.containers ADD COLUMN id SERIAL;
 CREATE INDEX idx_containers_id ON geocube.containers (id);
+
+-- add locked_by_job_id to optimize FindDatasets request by job_id & geog
+ALTER TABLE geocube.datasets ADD COLUMN locked_by_job_id UUID;
+CREATE INDEX idx_datasets_locked ON geocube.datasets (locked_by_job_id);
+

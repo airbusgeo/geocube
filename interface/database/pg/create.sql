@@ -84,6 +84,7 @@ CREATE TABLE geocube.datasets (
 	record_id UUID NOT NULL,
 	instance_id UUID NOT NULL,
 	container_uri TEXT NOT NULL,
+	locked_by_job_id UUID,
 	geog geography(MULTIPOLYGON,0) NOT NULL,
 	geom geometry(MULTIPOLYGON,4326) NOT NULL,
 	shape geometry(MULTIPOLYGON,0) NOT NULL,
@@ -108,6 +109,7 @@ CREATE INDEX idx_datasets_geom ON geocube.datasets USING GIST (geom);
 CREATE INDEX idx_datasets_container ON geocube.datasets (container_uri);
 CREATE INDEX idx_datasets_record ON geocube.datasets (record_id);
 CREATE INDEX idx_datasets_instance ON geocube.datasets (instance_id);
+CREATE INDEX idx_datasets_locked ON geocube.datasets (locked_by_job_id);
 
 CREATE TABLE geocube.layouts (
 	name TEXT NOT NULL,

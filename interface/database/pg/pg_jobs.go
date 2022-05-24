@@ -251,12 +251,31 @@ func (b Backend) LockDatasets(ctx context.Context, lockedByJobID string, dataset
 		return pqErrorFormat("LockDatasets.exec2: %w", err)
 	}
 
-	return nil
+	// Update datasets table
+	_, err = b.pg.ExecContext(ctx, "UPDATE geocube.datasets SET locked_by_job_id=$1 WHERE id = ANY($2)", lockedByJobID, pq.Array(datasetsID))
+	switch pqErrorCode(err) {
+	case noError:
+		return nil
+	default:
+		return pqErrorFormat("ReleaseDatasets: %w", err)
+	}
 }
 
 // ReleaseDatasets implements GeocubeBackend
 func (b Backend) ReleaseDatasets(ctx context.Context, lockedByJobID string, flag int) error {
-	_, err := b.pg.ExecContext(ctx, "DELETE FROM geocube.locked_datasets WHERE job_id = $1 AND flag = $2", lockedByJobID, flag)
+
+	// Update datasets table
+	_, err := b.pg.ExecContext(ctx,
+		"UPDATE geocube.datasets d SET locked_by_job_id=NULL FROM geocube.locked_datasets l"+
+			" WHERE d.locked_by_job_id = $1 AND d.id = l.dataset_id AND l.flag = $2", lockedByJobID, flag)
+	switch pqErrorCode(err) {
+	case noError:
+	default:
+		return pqErrorFormat("ReleaseDatasets: %w", err)
+	}
+
+	// Release Datasets
+	_, err = b.pg.ExecContext(ctx, "DELETE FROM geocube.locked_datasets WHERE job_id = $1 AND flag = $2", lockedByJobID, flag)
 	switch pqErrorCode(err) {
 	case noError:
 		return nil
@@ -346,8 +365,7 @@ func (b Backend) DeleteTask(ctx context.Context, taskID string) error {
 // ChangeDatasetsStatus implements GeocubeBackend
 func (b Backend) ChangeDatasetsStatus(ctx context.Context, lockedByJobID string, fromStatus geocube.DatasetStatus, toStatus geocube.DatasetStatus) error {
 	_, err := b.pg.ExecContext(ctx,
-		"UPDATE geocube.datasets d SET status = $1 FROM geocube.locked_datasets l "+
-			"WHERE l.job_id = $2 AND l.dataset_id = d.id AND d.status = $3", toStatus, lockedByJobID, fromStatus)
+		"UPDATE geocube.datasets SET status = $1 WHERE locked_by_job_id = $2 AND status = $3", toStatus, lockedByJobID, fromStatus)
 	if err != nil {
 		return pqErrorFormat(fmt.Sprintf("ChangeDatasetsStatus[%s] %s->%s: %%w", lockedByJobID, fromStatus.String(), toStatus.String()), err)
 	}

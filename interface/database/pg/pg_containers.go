@@ -174,11 +174,6 @@ func (b Backend) findDatasets(ctx context.Context, status []geocube.DatasetStatu
 	query := "SELECT d.id, d.record_id, d.instance_id, d.container_uri, d.geog, d.geom, d.shape, d.subdir, d.bands, d.status, " +
 		"d.dtype, d.no_data, d.min_value, d.max_value, d.real_min_value, d.real_max_value, d.exponent, d.overviews FROM geocube.datasets d"
 
-	// Append the Join clause (for the lockedByJobID)
-	if lockedByJobID != "" {
-		query += " JOIN geocube.locked_datasets l ON d.id = l.dataset_id"
-	}
-
 	if order || !fromTime.IsZero() || !toTime.IsZero() || len(recordTags) > 0 {
 		query += " JOIN geocube.records r ON d.record_id = r.id"
 	}
@@ -193,7 +188,7 @@ func (b Backend) findDatasets(ctx context.Context, status []geocube.DatasetStatu
 	}
 
 	if lockedByJobID != "" {
-		wc.append("l.job_id = $%d", lockedByJobID)
+		wc.append("d.locked_by_job_id = $%d", lockedByJobID)
 	}
 
 	orClause := joinClause{}
@@ -307,8 +302,7 @@ func (b Backend) ListActiveDatasetsID(ctx context.Context, instanceID string, re
 func (b Backend) GetDatasetsGeometryUnion(ctx context.Context, lockedByJobID string) (*geom.MultiPolygon, error) {
 	var data []byte
 	err := b.pg.QueryRowContext(ctx,
-		"SELECT ST_AsBinary(ST_MULTI(ST_Union(d.geom))) FROM geocube.datasets d JOIN geocube.locked_datasets l ON l.dataset_id = d.id"+
-			" WHERE l.job_id=$1", lockedByJobID).Scan(&data)
+		"SELECT ST_AsBinary(ST_MULTI(ST_Union(d.geom))) FROM geocube.datasets d WHERE d.locked_by_job_id=$1", lockedByJobID).Scan(&data)
 	if err != nil {
 		return nil, pqErrorFormat("GetDatasetsGeometryUnion.QueryRowContext: %w", err)
 	}

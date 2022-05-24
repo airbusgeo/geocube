@@ -87,7 +87,7 @@ func (b Backend) FindRecords(ctx context.Context, namelike string, tags geocube.
 
 	// Append the Join clause (for the jobID)
 	if jobID != "" {
-		query += " JOIN geocube.datasets d ON r.id = d.record_id JOIN geocube.locked_datasets l ON d.id = l.dataset_id"
+		query += " JOIN geocube.datasets d ON r.id = d.record_id"
 	}
 
 	if aoi != nil && aoi.Geometry.NumPolygons() == 0 {
@@ -101,7 +101,7 @@ func (b Backend) FindRecords(ctx context.Context, namelike string, tags geocube.
 	// Create the Where clause
 	wc := joinClause{}
 	if jobID != "" {
-		wc.append("l.job_id = $%d", jobID)
+		wc.append("d.locked_by_job_id = $%d", jobID)
 	}
 	if aoi != nil {
 		wc.append("ST_Intersects(a.geom, ST_GeomFromWKB($%d,4326))", aoi.Geometry)
