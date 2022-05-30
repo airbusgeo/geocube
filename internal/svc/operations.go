@@ -11,7 +11,6 @@ import (
 	"github.com/airbusgeo/geocube/internal/geocube"
 	"github.com/airbusgeo/geocube/internal/log"
 	"github.com/airbusgeo/geocube/internal/utils"
-	"go.uber.org/zap"
 )
 
 // HandleEvent handles TaskEvent and JobEvent for a job
@@ -30,12 +29,13 @@ func (svc *Service) HandleEvent(ctx context.Context, evt geocube.Event) error {
 }
 
 func (svc *Service) handleJobEvt(ctx context.Context, evt geocube.JobEvent) error {
+	start := time.Now()
 	// Get Job
 	job, err := svc.GetJob(ctx, evt.JobID)
 	if err != nil {
 		return fmt.Errorf("handleJobEvt.%w", err)
 	}
-	ctx = log.WithFields(ctx, zap.String("job", job.ID))
+	ctx = log.With(ctx, "job", job.Name)
 
 	// Trigger the event
 	if err = job.Trigger(evt); err != nil {
@@ -49,19 +49,19 @@ func (svc *Service) handleJobEvt(ctx context.Context, evt geocube.JobEvent) erro
 
 	// Launch the commands associated to the state
 	if !job.Waiting {
-		start := time.Now()
 		switch job.Type {
 		case geocube.JobTypeCONSOLIDATION:
 			err = svc.csldOnEnterNewState(ctx, job)
 		case geocube.JobTypeDELETION:
 			err = svc.delOnEnterNewState(ctx, job)
 		}
-		job.LogMsgf(geocube.DEBUG, "  ... in %v", time.Since(start))
 	}
+	log.Logger(ctx).Sugar().Debugf("evt %s processed in %v", evt.Status.String(), time.Since(start))
 	return err
 }
 
 func (svc *Service) handleTaskEvt(ctx context.Context, evt geocube.TaskEvent) error {
+	start := time.Now()
 	switch evt.Status {
 	case geocube.TaskCancelled:
 		// manage task cancelled
@@ -95,6 +95,7 @@ func (svc *Service) handleTaskEvt(ctx context.Context, evt geocube.TaskEvent) er
 	if err = svc.saveJob(ctx, nil, job); err != nil {
 		return fmt.Errorf("handleTaskEvt(%s).%w", evt.TaskID, err)
 	}
+	log.Logger(ctx).Sugar().Debugf("evt %s processed in %v", evt.Status.String(), time.Since(start))
 
 	if job.ActiveTasks == 0 {
 		if job.State == geocube.JobStateCONSOLIDATIONCANCELLING {
