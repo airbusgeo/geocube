@@ -612,12 +612,14 @@ func (svc *Service) csldSwapDatasets(ctx context.Context, job *geocube.Job) erro
 }
 
 func (svc *Service) csldDeleteDatasets(ctx context.Context, job *geocube.Job) error {
+	var deletionJob *geocube.Job
+
 	// Persist the jobs
-	return svc.unitOfWork(ctx, func(txn database.GeocubeTxBackend) error {
+	if err := svc.unitOfWork(ctx, func(txn database.GeocubeTxBackend) error {
 		// Get Dataset to delete
 		datasets, err := txn.FindDatasets(ctx, geocube.DatasetStatusTODELETE, nil, job.ID, nil, nil, geocube.Metadata{}, time.Time{}, time.Time{}, nil, nil, 0, 0, true)
 		if err != nil {
-			return fmt.Errorf("DeleteDatasets.%w", err)
+			return err
 		}
 		if len(datasets) == 0 {
 			return nil
@@ -628,7 +630,7 @@ func (svc *Service) csldDeleteDatasets(ctx context.Context, job *geocube.Job) er
 		}
 
 		// Create a deletion job
-		deletionJob := geocube.NewDeletionJob(job.Name+"_deletion_"+uuid.New().String(), geocube.ExecutionAsynchronous)
+		deletionJob = geocube.NewDeletionJob(job.Name+"_deletion_"+uuid.New().String(), geocube.ExecutionAsynchronous)
 
 		// Lock datasets for deletion
 		deletionJob.LockDatasets(ids, geocube.LockFlagTODELETE)
@@ -639,16 +641,19 @@ func (svc *Service) csldDeleteDatasets(ctx context.Context, job *geocube.Job) er
 		job.LogMsgf(geocube.INFO, "Create a deletion job to delete %d dataset(s): %s", len(ids), deletionJob.Name)
 
 		if err := svc.saveJob(ctx, txn, job); err != nil {
-			return fmt.Errorf("DeleteDatasets.%w", err)
+			return err
 		}
 		if err := svc.saveJob(ctx, txn, deletionJob); err != nil {
-			return fmt.Errorf("DeleteDatasets.%w", err)
-		}
-		if err := svc.delOnEnterNewState(ctx, deletionJob); err != nil {
-			return fmt.Errorf("DeleteDatasets.%w", err)
+			return err
 		}
 		return nil
-	})
+	}); err != nil {
+		return fmt.Errorf("csldDeleteDatasets.%w", err)
+	}
+	if err := svc.delOnEnterNewState(ctx, deletionJob); err != nil {
+		return fmt.Errorf("csldDeleteDatasets.%w", err)
+	}
+	return nil
 }
 
 // csldSubFncDeletePendingRemoteContainers physically delete remote containers that are not indexed
