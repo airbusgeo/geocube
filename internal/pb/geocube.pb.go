@@ -38,33 +38,33 @@ var file_pb_geocube_proto_rawDesc = []byte{
 	0x6f, 0x74, 0x6f, 0x1a, 0x10, 0x70, 0x62, 0x2f, 0x6c, 0x61, 0x79, 0x6f, 0x75, 0x74, 0x73, 0x2e,
 	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x13, 0x70, 0x62, 0x2f, 0x6f, 0x70, 0x65, 0x72, 0x61, 0x74,
 	0x69, 0x6f, 0x6e, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x32, 0xc1, 0x17, 0x0a, 0x07, 0x47,
-	0x65, 0x6f, 0x63, 0x75, 0x62, 0x65, 0x12, 0x50, 0x0a, 0x0b, 0x4c, 0x69, 0x73, 0x74, 0x52, 0x65,
-	0x63, 0x6f, 0x72, 0x64, 0x73, 0x12, 0x1b, 0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75, 0x62, 0x65, 0x2e,
-	0x4c, 0x69, 0x73, 0x74, 0x52, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65,
-	0x73, 0x74, 0x1a, 0x20, 0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75, 0x62, 0x65, 0x2e, 0x4c, 0x69, 0x73,
-	0x74, 0x52, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
-	0x49, 0x74, 0x65, 0x6d, 0x22, 0x00, 0x30, 0x01, 0x12, 0x50, 0x0a, 0x0d, 0x43, 0x72, 0x65, 0x61,
-	0x74, 0x65, 0x52, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x73, 0x12, 0x1d, 0x2e, 0x67, 0x65, 0x6f, 0x63,
-	0x75, 0x62, 0x65, 0x2e, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x52, 0x65, 0x63, 0x6f, 0x72, 0x64,
-	0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1e, 0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75,
-	0x62, 0x65, 0x2e, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x52, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x73,
-	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x50, 0x0a, 0x0d, 0x44, 0x65,
-	0x6c, 0x65, 0x74, 0x65, 0x52, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x73, 0x12, 0x1d, 0x2e, 0x67, 0x65,
-	0x6f, 0x63, 0x75, 0x62, 0x65, 0x2e, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x52, 0x65, 0x63, 0x6f,
-	0x72, 0x64, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1e, 0x2e, 0x67, 0x65, 0x6f,
-	0x63, 0x75, 0x62, 0x65, 0x2e, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x52, 0x65, 0x63, 0x6f, 0x72,
-	0x64, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x53, 0x0a, 0x0e,
-	0x41, 0x64, 0x64, 0x52, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x73, 0x54, 0x61, 0x67, 0x73, 0x12, 0x1e,
-	0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75, 0x62, 0x65, 0x2e, 0x41, 0x64, 0x64, 0x52, 0x65, 0x63, 0x6f,
-	0x72, 0x64, 0x73, 0x54, 0x61, 0x67, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1f,
-	0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75, 0x62, 0x65, 0x2e, 0x41, 0x64, 0x64, 0x52, 0x65, 0x63, 0x6f,
-	0x72, 0x64, 0x73, 0x54, 0x61, 0x67, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22,
-	0x00, 0x12, 0x5c, 0x0a, 0x11, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x52, 0x65, 0x63, 0x6f, 0x72,
-	0x64, 0x73, 0x54, 0x61, 0x67, 0x73, 0x12, 0x21, 0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75, 0x62, 0x65,
-	0x2e, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x52, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x73, 0x54, 0x61,
-	0x67, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x22, 0x2e, 0x67, 0x65, 0x6f, 0x63,
-	0x75, 0x62, 0x65, 0x2e, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x52, 0x65, 0x63, 0x6f, 0x72, 0x64,
+	0x65, 0x6f, 0x63, 0x75, 0x62, 0x65, 0x12, 0x50, 0x0a, 0x0d, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65,
+	0x52, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x73, 0x12, 0x1d, 0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75, 0x62,
+	0x65, 0x2e, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x52, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x73, 0x52,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1e, 0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75, 0x62, 0x65,
+	0x2e, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x52, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x73, 0x52, 0x65,
+	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x50, 0x0a, 0x0b, 0x4c, 0x69, 0x73, 0x74,
+	0x52, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x73, 0x12, 0x1b, 0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75, 0x62,
+	0x65, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x52, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x73, 0x52, 0x65, 0x71,
+	0x75, 0x65, 0x73, 0x74, 0x1a, 0x20, 0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75, 0x62, 0x65, 0x2e, 0x4c,
+	0x69, 0x73, 0x74, 0x52, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
+	0x73, 0x65, 0x49, 0x74, 0x65, 0x6d, 0x22, 0x00, 0x30, 0x01, 0x12, 0x53, 0x0a, 0x0e, 0x41, 0x64,
+	0x64, 0x52, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x73, 0x54, 0x61, 0x67, 0x73, 0x12, 0x1e, 0x2e, 0x67,
+	0x65, 0x6f, 0x63, 0x75, 0x62, 0x65, 0x2e, 0x41, 0x64, 0x64, 0x52, 0x65, 0x63, 0x6f, 0x72, 0x64,
+	0x73, 0x54, 0x61, 0x67, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1f, 0x2e, 0x67,
+	0x65, 0x6f, 0x63, 0x75, 0x62, 0x65, 0x2e, 0x41, 0x64, 0x64, 0x52, 0x65, 0x63, 0x6f, 0x72, 0x64,
 	0x73, 0x54, 0x61, 0x67, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12,
+	0x5c, 0x0a, 0x11, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x52, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x73,
+	0x54, 0x61, 0x67, 0x73, 0x12, 0x21, 0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75, 0x62, 0x65, 0x2e, 0x52,
+	0x65, 0x6d, 0x6f, 0x76, 0x65, 0x52, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x73, 0x54, 0x61, 0x67, 0x73,
+	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x22, 0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75, 0x62,
+	0x65, 0x2e, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x52, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x73, 0x54,
+	0x61, 0x67, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x50, 0x0a,
+	0x0d, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x52, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x73, 0x12, 0x1d,
+	0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75, 0x62, 0x65, 0x2e, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x52,
+	0x65, 0x63, 0x6f, 0x72, 0x64, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1e, 0x2e,
+	0x67, 0x65, 0x6f, 0x63, 0x75, 0x62, 0x65, 0x2e, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x52, 0x65,
+	0x63, 0x6f, 0x72, 0x64, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12,
 	0x44, 0x0a, 0x09, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x41, 0x4f, 0x49, 0x12, 0x19, 0x2e, 0x67,
 	0x65, 0x6f, 0x63, 0x75, 0x62, 0x65, 0x2e, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x41, 0x4f, 0x49,
 	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1a, 0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75, 0x62,
@@ -78,39 +78,39 @@ var file_pb_geocube_proto_rawDesc = []byte{
 	0x72, 0x65, 0x61, 0x74, 0x65, 0x56, 0x61, 0x72, 0x69, 0x61, 0x62, 0x6c, 0x65, 0x52, 0x65, 0x71,
 	0x75, 0x65, 0x73, 0x74, 0x1a, 0x1f, 0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75, 0x62, 0x65, 0x2e, 0x43,
 	0x72, 0x65, 0x61, 0x74, 0x65, 0x56, 0x61, 0x72, 0x69, 0x61, 0x62, 0x6c, 0x65, 0x52, 0x65, 0x73,
-	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x62, 0x0a, 0x13, 0x49, 0x6e, 0x73, 0x74, 0x61,
-	0x6e, 0x74, 0x69, 0x61, 0x74, 0x65, 0x56, 0x61, 0x72, 0x69, 0x61, 0x62, 0x6c, 0x65, 0x12, 0x23,
-	0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75, 0x62, 0x65, 0x2e, 0x49, 0x6e, 0x73, 0x74, 0x61, 0x6e, 0x74,
-	0x69, 0x61, 0x74, 0x65, 0x56, 0x61, 0x72, 0x69, 0x61, 0x62, 0x6c, 0x65, 0x52, 0x65, 0x71, 0x75,
-	0x65, 0x73, 0x74, 0x1a, 0x24, 0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75, 0x62, 0x65, 0x2e, 0x49, 0x6e,
-	0x73, 0x74, 0x61, 0x6e, 0x74, 0x69, 0x61, 0x74, 0x65, 0x56, 0x61, 0x72, 0x69, 0x61, 0x62, 0x6c,
-	0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x4a, 0x0a, 0x0b, 0x47,
-	0x65, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x62, 0x6c, 0x65, 0x12, 0x1b, 0x2e, 0x67, 0x65, 0x6f,
-	0x63, 0x75, 0x62, 0x65, 0x2e, 0x47, 0x65, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x62, 0x6c, 0x65,
-	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1c, 0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75, 0x62,
-	0x65, 0x2e, 0x47, 0x65, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x62, 0x6c, 0x65, 0x52, 0x65, 0x73,
-	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x56, 0x0a, 0x0d, 0x4c, 0x69, 0x73, 0x74, 0x56,
-	0x61, 0x72, 0x69, 0x61, 0x62, 0x6c, 0x65, 0x73, 0x12, 0x1d, 0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75,
-	0x62, 0x65, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x62, 0x6c, 0x65, 0x73,
-	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x22, 0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75, 0x62,
-	0x65, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x62, 0x6c, 0x65, 0x73, 0x52,
-	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x49, 0x74, 0x65, 0x6d, 0x22, 0x00, 0x30, 0x01, 0x12,
-	0x53, 0x0a, 0x0e, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x56, 0x61, 0x72, 0x69, 0x61, 0x62, 0x6c,
-	0x65, 0x12, 0x1e, 0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75, 0x62, 0x65, 0x2e, 0x55, 0x70, 0x64, 0x61,
+	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x4a, 0x0a, 0x0b, 0x47, 0x65, 0x74, 0x56, 0x61,
+	0x72, 0x69, 0x61, 0x62, 0x6c, 0x65, 0x12, 0x1b, 0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75, 0x62, 0x65,
+	0x2e, 0x47, 0x65, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x62, 0x6c, 0x65, 0x52, 0x65, 0x71, 0x75,
+	0x65, 0x73, 0x74, 0x1a, 0x1c, 0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75, 0x62, 0x65, 0x2e, 0x47, 0x65,
+	0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x62, 0x6c, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
+	0x65, 0x22, 0x00, 0x12, 0x53, 0x0a, 0x0e, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x56, 0x61, 0x72,
+	0x69, 0x61, 0x62, 0x6c, 0x65, 0x12, 0x1e, 0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75, 0x62, 0x65, 0x2e,
+	0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x56, 0x61, 0x72, 0x69, 0x61, 0x62, 0x6c, 0x65, 0x52, 0x65,
+	0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1f, 0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75, 0x62, 0x65, 0x2e,
+	0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x56, 0x61, 0x72, 0x69, 0x61, 0x62, 0x6c, 0x65, 0x52, 0x65,
+	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x53, 0x0a, 0x0e, 0x44, 0x65, 0x6c, 0x65,
+	0x74, 0x65, 0x56, 0x61, 0x72, 0x69, 0x61, 0x62, 0x6c, 0x65, 0x12, 0x1e, 0x2e, 0x67, 0x65, 0x6f,
+	0x63, 0x75, 0x62, 0x65, 0x2e, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x56, 0x61, 0x72, 0x69, 0x61,
+	0x62, 0x6c, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1f, 0x2e, 0x67, 0x65, 0x6f,
+	0x63, 0x75, 0x62, 0x65, 0x2e, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x56, 0x61, 0x72, 0x69, 0x61,
+	0x62, 0x6c, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x56, 0x0a,
+	0x0d, 0x4c, 0x69, 0x73, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x62, 0x6c, 0x65, 0x73, 0x12, 0x1d,
+	0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75, 0x62, 0x65, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x56, 0x61, 0x72,
+	0x69, 0x61, 0x62, 0x6c, 0x65, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x22, 0x2e,
+	0x67, 0x65, 0x6f, 0x63, 0x75, 0x62, 0x65, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x56, 0x61, 0x72, 0x69,
+	0x61, 0x62, 0x6c, 0x65, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x49, 0x74, 0x65,
+	0x6d, 0x22, 0x00, 0x30, 0x01, 0x12, 0x62, 0x0a, 0x13, 0x49, 0x6e, 0x73, 0x74, 0x61, 0x6e, 0x74,
+	0x69, 0x61, 0x74, 0x65, 0x56, 0x61, 0x72, 0x69, 0x61, 0x62, 0x6c, 0x65, 0x12, 0x23, 0x2e, 0x67,
+	0x65, 0x6f, 0x63, 0x75, 0x62, 0x65, 0x2e, 0x49, 0x6e, 0x73, 0x74, 0x61, 0x6e, 0x74, 0x69, 0x61,
 	0x74, 0x65, 0x56, 0x61, 0x72, 0x69, 0x61, 0x62, 0x6c, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
-	0x74, 0x1a, 0x1f, 0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75, 0x62, 0x65, 0x2e, 0x55, 0x70, 0x64, 0x61,
-	0x74, 0x65, 0x56, 0x61, 0x72, 0x69, 0x61, 0x62, 0x6c, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
-	0x73, 0x65, 0x22, 0x00, 0x12, 0x53, 0x0a, 0x0e, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x49, 0x6e,
-	0x73, 0x74, 0x61, 0x6e, 0x63, 0x65, 0x12, 0x1e, 0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75, 0x62, 0x65,
-	0x2e, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x49, 0x6e, 0x73, 0x74, 0x61, 0x6e, 0x63, 0x65, 0x52,
-	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1f, 0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75, 0x62, 0x65,
-	0x2e, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x49, 0x6e, 0x73, 0x74, 0x61, 0x6e, 0x63, 0x65, 0x52,
-	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x53, 0x0a, 0x0e, 0x44, 0x65, 0x6c,
-	0x65, 0x74, 0x65, 0x56, 0x61, 0x72, 0x69, 0x61, 0x62, 0x6c, 0x65, 0x12, 0x1e, 0x2e, 0x67, 0x65,
-	0x6f, 0x63, 0x75, 0x62, 0x65, 0x2e, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x56, 0x61, 0x72, 0x69,
-	0x61, 0x62, 0x6c, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1f, 0x2e, 0x67, 0x65,
-	0x6f, 0x63, 0x75, 0x62, 0x65, 0x2e, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x56, 0x61, 0x72, 0x69,
-	0x61, 0x62, 0x6c, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x53,
+	0x74, 0x1a, 0x24, 0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75, 0x62, 0x65, 0x2e, 0x49, 0x6e, 0x73, 0x74,
+	0x61, 0x6e, 0x74, 0x69, 0x61, 0x74, 0x65, 0x56, 0x61, 0x72, 0x69, 0x61, 0x62, 0x6c, 0x65, 0x52,
+	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x53, 0x0a, 0x0e, 0x55, 0x70, 0x64,
+	0x61, 0x74, 0x65, 0x49, 0x6e, 0x73, 0x74, 0x61, 0x6e, 0x63, 0x65, 0x12, 0x1e, 0x2e, 0x67, 0x65,
+	0x6f, 0x63, 0x75, 0x62, 0x65, 0x2e, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x49, 0x6e, 0x73, 0x74,
+	0x61, 0x6e, 0x63, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1f, 0x2e, 0x67, 0x65,
+	0x6f, 0x63, 0x75, 0x62, 0x65, 0x2e, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x49, 0x6e, 0x73, 0x74,
+	0x61, 0x6e, 0x63, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x53,
 	0x0a, 0x0e, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x49, 0x6e, 0x73, 0x74, 0x61, 0x6e, 0x63, 0x65,
 	0x12, 0x1e, 0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75, 0x62, 0x65, 0x2e, 0x44, 0x65, 0x6c, 0x65, 0x74,
 	0x65, 0x49, 0x6e, 0x73, 0x74, 0x61, 0x6e, 0x63, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
@@ -231,20 +231,20 @@ var file_pb_geocube_proto_rawDesc = []byte{
 }
 
 var file_pb_geocube_proto_goTypes = []interface{}{
-	(*ListRecordsRequest)(nil),             // 0: geocube.ListRecordsRequest
-	(*CreateRecordsRequest)(nil),           // 1: geocube.CreateRecordsRequest
-	(*DeleteRecordsRequest)(nil),           // 2: geocube.DeleteRecordsRequest
-	(*AddRecordsTagsRequest)(nil),          // 3: geocube.AddRecordsTagsRequest
-	(*RemoveRecordsTagsRequest)(nil),       // 4: geocube.RemoveRecordsTagsRequest
+	(*CreateRecordsRequest)(nil),           // 0: geocube.CreateRecordsRequest
+	(*ListRecordsRequest)(nil),             // 1: geocube.ListRecordsRequest
+	(*AddRecordsTagsRequest)(nil),          // 2: geocube.AddRecordsTagsRequest
+	(*RemoveRecordsTagsRequest)(nil),       // 3: geocube.RemoveRecordsTagsRequest
+	(*DeleteRecordsRequest)(nil),           // 4: geocube.DeleteRecordsRequest
 	(*CreateAOIRequest)(nil),               // 5: geocube.CreateAOIRequest
 	(*GetAOIRequest)(nil),                  // 6: geocube.GetAOIRequest
 	(*CreateVariableRequest)(nil),          // 7: geocube.CreateVariableRequest
-	(*InstantiateVariableRequest)(nil),     // 8: geocube.InstantiateVariableRequest
-	(*GetVariableRequest)(nil),             // 9: geocube.GetVariableRequest
-	(*ListVariablesRequest)(nil),           // 10: geocube.ListVariablesRequest
-	(*UpdateVariableRequest)(nil),          // 11: geocube.UpdateVariableRequest
-	(*UpdateInstanceRequest)(nil),          // 12: geocube.UpdateInstanceRequest
-	(*DeleteVariableRequest)(nil),          // 13: geocube.DeleteVariableRequest
+	(*GetVariableRequest)(nil),             // 8: geocube.GetVariableRequest
+	(*UpdateVariableRequest)(nil),          // 9: geocube.UpdateVariableRequest
+	(*DeleteVariableRequest)(nil),          // 10: geocube.DeleteVariableRequest
+	(*ListVariablesRequest)(nil),           // 11: geocube.ListVariablesRequest
+	(*InstantiateVariableRequest)(nil),     // 12: geocube.InstantiateVariableRequest
+	(*UpdateInstanceRequest)(nil),          // 13: geocube.UpdateInstanceRequest
 	(*DeleteInstanceRequest)(nil),          // 14: geocube.DeleteInstanceRequest
 	(*CreatePaletteRequest)(nil),           // 15: geocube.CreatePaletteRequest
 	(*IndexDatasetsRequest)(nil),           // 16: geocube.IndexDatasetsRequest
@@ -268,20 +268,20 @@ var file_pb_geocube_proto_goTypes = []interface{}{
 	(*DeleteGridRequest)(nil),              // 34: geocube.DeleteGridRequest
 	(*ListGridsRequest)(nil),               // 35: geocube.ListGridsRequest
 	(*GetVersionRequest)(nil),              // 36: geocube.GetVersionRequest
-	(*ListRecordsResponseItem)(nil),        // 37: geocube.ListRecordsResponseItem
-	(*CreateRecordsResponse)(nil),          // 38: geocube.CreateRecordsResponse
-	(*DeleteRecordsResponse)(nil),          // 39: geocube.DeleteRecordsResponse
-	(*AddRecordsTagsResponse)(nil),         // 40: geocube.AddRecordsTagsResponse
-	(*RemoveRecordsTagsResponse)(nil),      // 41: geocube.RemoveRecordsTagsResponse
+	(*CreateRecordsResponse)(nil),          // 37: geocube.CreateRecordsResponse
+	(*ListRecordsResponseItem)(nil),        // 38: geocube.ListRecordsResponseItem
+	(*AddRecordsTagsResponse)(nil),         // 39: geocube.AddRecordsTagsResponse
+	(*RemoveRecordsTagsResponse)(nil),      // 40: geocube.RemoveRecordsTagsResponse
+	(*DeleteRecordsResponse)(nil),          // 41: geocube.DeleteRecordsResponse
 	(*CreateAOIResponse)(nil),              // 42: geocube.CreateAOIResponse
 	(*GetAOIResponse)(nil),                 // 43: geocube.GetAOIResponse
 	(*CreateVariableResponse)(nil),         // 44: geocube.CreateVariableResponse
-	(*InstantiateVariableResponse)(nil),    // 45: geocube.InstantiateVariableResponse
-	(*GetVariableResponse)(nil),            // 46: geocube.GetVariableResponse
-	(*ListVariablesResponseItem)(nil),      // 47: geocube.ListVariablesResponseItem
-	(*UpdateVariableResponse)(nil),         // 48: geocube.UpdateVariableResponse
-	(*UpdateInstanceResponse)(nil),         // 49: geocube.UpdateInstanceResponse
-	(*DeleteVariableResponse)(nil),         // 50: geocube.DeleteVariableResponse
+	(*GetVariableResponse)(nil),            // 45: geocube.GetVariableResponse
+	(*UpdateVariableResponse)(nil),         // 46: geocube.UpdateVariableResponse
+	(*DeleteVariableResponse)(nil),         // 47: geocube.DeleteVariableResponse
+	(*ListVariablesResponseItem)(nil),      // 48: geocube.ListVariablesResponseItem
+	(*InstantiateVariableResponse)(nil),    // 49: geocube.InstantiateVariableResponse
+	(*UpdateInstanceResponse)(nil),         // 50: geocube.UpdateInstanceResponse
 	(*DeleteInstanceResponse)(nil),         // 51: geocube.DeleteInstanceResponse
 	(*CreatePaletteResponse)(nil),          // 52: geocube.CreatePaletteResponse
 	(*IndexDatasetsResponse)(nil),          // 53: geocube.IndexDatasetsResponse
@@ -307,20 +307,20 @@ var file_pb_geocube_proto_goTypes = []interface{}{
 	(*GetVersionResponse)(nil),             // 73: geocube.GetVersionResponse
 }
 var file_pb_geocube_proto_depIdxs = []int32{
-	0,  // 0: geocube.Geocube.ListRecords:input_type -> geocube.ListRecordsRequest
-	1,  // 1: geocube.Geocube.CreateRecords:input_type -> geocube.CreateRecordsRequest
-	2,  // 2: geocube.Geocube.DeleteRecords:input_type -> geocube.DeleteRecordsRequest
-	3,  // 3: geocube.Geocube.AddRecordsTags:input_type -> geocube.AddRecordsTagsRequest
-	4,  // 4: geocube.Geocube.RemoveRecordsTags:input_type -> geocube.RemoveRecordsTagsRequest
+	0,  // 0: geocube.Geocube.CreateRecords:input_type -> geocube.CreateRecordsRequest
+	1,  // 1: geocube.Geocube.ListRecords:input_type -> geocube.ListRecordsRequest
+	2,  // 2: geocube.Geocube.AddRecordsTags:input_type -> geocube.AddRecordsTagsRequest
+	3,  // 3: geocube.Geocube.RemoveRecordsTags:input_type -> geocube.RemoveRecordsTagsRequest
+	4,  // 4: geocube.Geocube.DeleteRecords:input_type -> geocube.DeleteRecordsRequest
 	5,  // 5: geocube.Geocube.CreateAOI:input_type -> geocube.CreateAOIRequest
 	6,  // 6: geocube.Geocube.GetAOI:input_type -> geocube.GetAOIRequest
 	7,  // 7: geocube.Geocube.CreateVariable:input_type -> geocube.CreateVariableRequest
-	8,  // 8: geocube.Geocube.InstantiateVariable:input_type -> geocube.InstantiateVariableRequest
-	9,  // 9: geocube.Geocube.GetVariable:input_type -> geocube.GetVariableRequest
-	10, // 10: geocube.Geocube.ListVariables:input_type -> geocube.ListVariablesRequest
-	11, // 11: geocube.Geocube.UpdateVariable:input_type -> geocube.UpdateVariableRequest
-	12, // 12: geocube.Geocube.UpdateInstance:input_type -> geocube.UpdateInstanceRequest
-	13, // 13: geocube.Geocube.DeleteVariable:input_type -> geocube.DeleteVariableRequest
+	8,  // 8: geocube.Geocube.GetVariable:input_type -> geocube.GetVariableRequest
+	9,  // 9: geocube.Geocube.UpdateVariable:input_type -> geocube.UpdateVariableRequest
+	10, // 10: geocube.Geocube.DeleteVariable:input_type -> geocube.DeleteVariableRequest
+	11, // 11: geocube.Geocube.ListVariables:input_type -> geocube.ListVariablesRequest
+	12, // 12: geocube.Geocube.InstantiateVariable:input_type -> geocube.InstantiateVariableRequest
+	13, // 13: geocube.Geocube.UpdateInstance:input_type -> geocube.UpdateInstanceRequest
 	14, // 14: geocube.Geocube.DeleteInstance:input_type -> geocube.DeleteInstanceRequest
 	15, // 15: geocube.Geocube.CreatePalette:input_type -> geocube.CreatePaletteRequest
 	16, // 16: geocube.Geocube.IndexDatasets:input_type -> geocube.IndexDatasetsRequest
@@ -344,20 +344,20 @@ var file_pb_geocube_proto_depIdxs = []int32{
 	34, // 34: geocube.Geocube.DeleteGrid:input_type -> geocube.DeleteGridRequest
 	35, // 35: geocube.Geocube.ListGrids:input_type -> geocube.ListGridsRequest
 	36, // 36: geocube.Geocube.Version:input_type -> geocube.GetVersionRequest
-	37, // 37: geocube.Geocube.ListRecords:output_type -> geocube.ListRecordsResponseItem
-	38, // 38: geocube.Geocube.CreateRecords:output_type -> geocube.CreateRecordsResponse
-	39, // 39: geocube.Geocube.DeleteRecords:output_type -> geocube.DeleteRecordsResponse
-	40, // 40: geocube.Geocube.AddRecordsTags:output_type -> geocube.AddRecordsTagsResponse
-	41, // 41: geocube.Geocube.RemoveRecordsTags:output_type -> geocube.RemoveRecordsTagsResponse
+	37, // 37: geocube.Geocube.CreateRecords:output_type -> geocube.CreateRecordsResponse
+	38, // 38: geocube.Geocube.ListRecords:output_type -> geocube.ListRecordsResponseItem
+	39, // 39: geocube.Geocube.AddRecordsTags:output_type -> geocube.AddRecordsTagsResponse
+	40, // 40: geocube.Geocube.RemoveRecordsTags:output_type -> geocube.RemoveRecordsTagsResponse
+	41, // 41: geocube.Geocube.DeleteRecords:output_type -> geocube.DeleteRecordsResponse
 	42, // 42: geocube.Geocube.CreateAOI:output_type -> geocube.CreateAOIResponse
 	43, // 43: geocube.Geocube.GetAOI:output_type -> geocube.GetAOIResponse
 	44, // 44: geocube.Geocube.CreateVariable:output_type -> geocube.CreateVariableResponse
-	45, // 45: geocube.Geocube.InstantiateVariable:output_type -> geocube.InstantiateVariableResponse
-	46, // 46: geocube.Geocube.GetVariable:output_type -> geocube.GetVariableResponse
-	47, // 47: geocube.Geocube.ListVariables:output_type -> geocube.ListVariablesResponseItem
-	48, // 48: geocube.Geocube.UpdateVariable:output_type -> geocube.UpdateVariableResponse
-	49, // 49: geocube.Geocube.UpdateInstance:output_type -> geocube.UpdateInstanceResponse
-	50, // 50: geocube.Geocube.DeleteVariable:output_type -> geocube.DeleteVariableResponse
+	45, // 45: geocube.Geocube.GetVariable:output_type -> geocube.GetVariableResponse
+	46, // 46: geocube.Geocube.UpdateVariable:output_type -> geocube.UpdateVariableResponse
+	47, // 47: geocube.Geocube.DeleteVariable:output_type -> geocube.DeleteVariableResponse
+	48, // 48: geocube.Geocube.ListVariables:output_type -> geocube.ListVariablesResponseItem
+	49, // 49: geocube.Geocube.InstantiateVariable:output_type -> geocube.InstantiateVariableResponse
+	50, // 50: geocube.Geocube.UpdateInstance:output_type -> geocube.UpdateInstanceResponse
 	51, // 51: geocube.Geocube.DeleteInstance:output_type -> geocube.DeleteInstanceResponse
 	52, // 52: geocube.Geocube.CreatePalette:output_type -> geocube.CreatePaletteResponse
 	53, // 53: geocube.Geocube.IndexDatasets:output_type -> geocube.IndexDatasetsResponse
@@ -430,47 +430,77 @@ const _ = grpc.SupportPackageIsVersion6
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type GeocubeClient interface {
-	// @exclude Records
-	ListRecords(ctx context.Context, in *ListRecordsRequest, opts ...grpc.CallOption) (Geocube_ListRecordsClient, error)
+	// Create one or a list of records
 	CreateRecords(ctx context.Context, in *CreateRecordsRequest, opts ...grpc.CallOption) (*CreateRecordsResponse, error)
-	DeleteRecords(ctx context.Context, in *DeleteRecordsRequest, opts ...grpc.CallOption) (*DeleteRecordsResponse, error)
+	// List records given criterias
+	ListRecords(ctx context.Context, in *ListRecordsRequest, opts ...grpc.CallOption) (Geocube_ListRecordsClient, error)
+	// Update records, adding or updating tags
 	AddRecordsTags(ctx context.Context, in *AddRecordsTagsRequest, opts ...grpc.CallOption) (*AddRecordsTagsResponse, error)
+	// Update records, removing tags
 	RemoveRecordsTags(ctx context.Context, in *RemoveRecordsTagsRequest, opts ...grpc.CallOption) (*RemoveRecordsTagsResponse, error)
+	// Delete records iif no dataset has a reference on
+	DeleteRecords(ctx context.Context, in *DeleteRecordsRequest, opts ...grpc.CallOption) (*DeleteRecordsResponse, error)
+	// Create an AOI if not exists or returns the aoi id of the aoi.
 	CreateAOI(ctx context.Context, in *CreateAOIRequest, opts ...grpc.CallOption) (*CreateAOIResponse, error)
+	// Get an AOI from its ID
 	GetAOI(ctx context.Context, in *GetAOIRequest, opts ...grpc.CallOption) (*GetAOIResponse, error)
-	// @exclude Variables
+	// Create a variable
 	CreateVariable(ctx context.Context, in *CreateVariableRequest, opts ...grpc.CallOption) (*CreateVariableResponse, error)
-	InstantiateVariable(ctx context.Context, in *InstantiateVariableRequest, opts ...grpc.CallOption) (*InstantiateVariableResponse, error)
+	// Get a variable given its id, name or one of its instance id
 	GetVariable(ctx context.Context, in *GetVariableRequest, opts ...grpc.CallOption) (*GetVariableResponse, error)
-	ListVariables(ctx context.Context, in *ListVariablesRequest, opts ...grpc.CallOption) (Geocube_ListVariablesClient, error)
+	// Update some fields of a variable
 	UpdateVariable(ctx context.Context, in *UpdateVariableRequest, opts ...grpc.CallOption) (*UpdateVariableResponse, error)
-	UpdateInstance(ctx context.Context, in *UpdateInstanceRequest, opts ...grpc.CallOption) (*UpdateInstanceResponse, error)
+	// Delete a variable iif no dataset has a reference on
 	DeleteVariable(ctx context.Context, in *DeleteVariableRequest, opts ...grpc.CallOption) (*DeleteVariableResponse, error)
+	// List variables given a name pattern
+	ListVariables(ctx context.Context, in *ListVariablesRequest, opts ...grpc.CallOption) (Geocube_ListVariablesClient, error)
+	// Instantiate a variable
+	InstantiateVariable(ctx context.Context, in *InstantiateVariableRequest, opts ...grpc.CallOption) (*InstantiateVariableResponse, error)
+	// Update metadata of an instance
+	UpdateInstance(ctx context.Context, in *UpdateInstanceRequest, opts ...grpc.CallOption) (*UpdateInstanceResponse, error)
+	// Delete an instance iif no dataset has a reference on
 	DeleteInstance(ctx context.Context, in *DeleteInstanceRequest, opts ...grpc.CallOption) (*DeleteInstanceResponse, error)
+	// Create or update a palette that can be used to create a display of a dataset
 	CreatePalette(ctx context.Context, in *CreatePaletteRequest, opts ...grpc.CallOption) (*CreatePaletteResponse, error)
-	// @exclude Operations
+	// Index new datasets in the Geocube
 	IndexDatasets(ctx context.Context, in *IndexDatasetsRequest, opts ...grpc.CallOption) (*IndexDatasetsResponse, error)
+	// Configurate a consolidation process
 	ConfigConsolidation(ctx context.Context, in *ConfigConsolidationRequest, opts ...grpc.CallOption) (*ConfigConsolidationResponse, error)
+	// Get the configuration of a consolidation
 	GetConsolidationParams(ctx context.Context, in *GetConsolidationParamsRequest, opts ...grpc.CallOption) (*GetConsolidationParamsResponse, error)
+	// Start a consolidation job
 	Consolidate(ctx context.Context, in *ConsolidateRequest, opts ...grpc.CallOption) (*ConsolidateResponse, error)
+	// List the jobs given a name pattern
 	ListJobs(ctx context.Context, in *ListJobsRequest, opts ...grpc.CallOption) (*ListJobsResponse, error)
+	// Get a job given its name
 	GetJob(ctx context.Context, in *GetJobRequest, opts ...grpc.CallOption) (*GetJobResponse, error)
+	// Delete jobs given their status
 	CleanJobs(ctx context.Context, in *CleanJobsRequest, opts ...grpc.CallOption) (*CleanJobsResponse, error)
+	// Retry a job
 	RetryJob(ctx context.Context, in *RetryJobRequest, opts ...grpc.CallOption) (*RetryJobResponse, error)
+	// Cancel a job
 	CancelJob(ctx context.Context, in *CancelJobRequest, opts ...grpc.CallOption) (*CancelJobResponse, error)
+	// Continue a job that is in waiting state
 	ContinueJob(ctx context.Context, in *ContinueJobRequest, opts ...grpc.CallOption) (*ContinueJobResponse, error)
-	// @exclude Catalog
+	// Get a cube of data given a CubeParams
 	GetCube(ctx context.Context, in *GetCubeRequest, opts ...grpc.CallOption) (Geocube_GetCubeClient, error)
+	// Get a XYZTile (can be used with a TileServer, provided a GRPCGateway is up)
 	GetXYZTile(ctx context.Context, in *GetTileRequest, opts ...grpc.CallOption) (*GetTileResponse, error)
-	// @exclude Layout
+	// Create a layout to be used for tiling or consolidation
 	CreateLayout(ctx context.Context, in *CreateLayoutRequest, opts ...grpc.CallOption) (*CreateLayoutResponse, error)
+	// Delete a layout given its name
 	DeleteLayout(ctx context.Context, in *DeleteLayoutRequest, opts ...grpc.CallOption) (*DeleteLayoutResponse, error)
+	// List layouts given a name pattern
 	ListLayouts(ctx context.Context, in *ListLayoutsRequest, opts ...grpc.CallOption) (*ListLayoutsResponse, error)
+	// Find all the layouts known for a set of containers
 	FindContainerLayouts(ctx context.Context, in *FindContainerLayoutsRequest, opts ...grpc.CallOption) (Geocube_FindContainerLayoutsClient, error)
+	// Tile an AOI given a layout
 	TileAOI(ctx context.Context, in *TileAOIRequest, opts ...grpc.CallOption) (Geocube_TileAOIClient, error)
-	// @exclude Grid
+	// Create a grid that can be used to tile an AOI
 	CreateGrid(ctx context.Context, opts ...grpc.CallOption) (Geocube_CreateGridClient, error)
+	// Delete a grid
 	DeleteGrid(ctx context.Context, in *DeleteGridRequest, opts ...grpc.CallOption) (*DeleteGridResponse, error)
+	// List grids given a name pattern
 	ListGrids(ctx context.Context, in *ListGridsRequest, opts ...grpc.CallOption) (*ListGridsResponse, error)
 	// Version of the GeocubeServer
 	Version(ctx context.Context, in *GetVersionRequest, opts ...grpc.CallOption) (*GetVersionResponse, error)
@@ -482,6 +512,15 @@ type geocubeClient struct {
 
 func NewGeocubeClient(cc grpc.ClientConnInterface) GeocubeClient {
 	return &geocubeClient{cc}
+}
+
+func (c *geocubeClient) CreateRecords(ctx context.Context, in *CreateRecordsRequest, opts ...grpc.CallOption) (*CreateRecordsResponse, error) {
+	out := new(CreateRecordsResponse)
+	err := c.cc.Invoke(ctx, "/geocube.Geocube/CreateRecords", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *geocubeClient) ListRecords(ctx context.Context, in *ListRecordsRequest, opts ...grpc.CallOption) (Geocube_ListRecordsClient, error) {
@@ -516,24 +555,6 @@ func (x *geocubeListRecordsClient) Recv() (*ListRecordsResponseItem, error) {
 	return m, nil
 }
 
-func (c *geocubeClient) CreateRecords(ctx context.Context, in *CreateRecordsRequest, opts ...grpc.CallOption) (*CreateRecordsResponse, error) {
-	out := new(CreateRecordsResponse)
-	err := c.cc.Invoke(ctx, "/geocube.Geocube/CreateRecords", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *geocubeClient) DeleteRecords(ctx context.Context, in *DeleteRecordsRequest, opts ...grpc.CallOption) (*DeleteRecordsResponse, error) {
-	out := new(DeleteRecordsResponse)
-	err := c.cc.Invoke(ctx, "/geocube.Geocube/DeleteRecords", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *geocubeClient) AddRecordsTags(ctx context.Context, in *AddRecordsTagsRequest, opts ...grpc.CallOption) (*AddRecordsTagsResponse, error) {
 	out := new(AddRecordsTagsResponse)
 	err := c.cc.Invoke(ctx, "/geocube.Geocube/AddRecordsTags", in, out, opts...)
@@ -546,6 +567,15 @@ func (c *geocubeClient) AddRecordsTags(ctx context.Context, in *AddRecordsTagsRe
 func (c *geocubeClient) RemoveRecordsTags(ctx context.Context, in *RemoveRecordsTagsRequest, opts ...grpc.CallOption) (*RemoveRecordsTagsResponse, error) {
 	out := new(RemoveRecordsTagsResponse)
 	err := c.cc.Invoke(ctx, "/geocube.Geocube/RemoveRecordsTags", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *geocubeClient) DeleteRecords(ctx context.Context, in *DeleteRecordsRequest, opts ...grpc.CallOption) (*DeleteRecordsResponse, error) {
+	out := new(DeleteRecordsResponse)
+	err := c.cc.Invoke(ctx, "/geocube.Geocube/DeleteRecords", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -579,18 +609,27 @@ func (c *geocubeClient) CreateVariable(ctx context.Context, in *CreateVariableRe
 	return out, nil
 }
 
-func (c *geocubeClient) InstantiateVariable(ctx context.Context, in *InstantiateVariableRequest, opts ...grpc.CallOption) (*InstantiateVariableResponse, error) {
-	out := new(InstantiateVariableResponse)
-	err := c.cc.Invoke(ctx, "/geocube.Geocube/InstantiateVariable", in, out, opts...)
+func (c *geocubeClient) GetVariable(ctx context.Context, in *GetVariableRequest, opts ...grpc.CallOption) (*GetVariableResponse, error) {
+	out := new(GetVariableResponse)
+	err := c.cc.Invoke(ctx, "/geocube.Geocube/GetVariable", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *geocubeClient) GetVariable(ctx context.Context, in *GetVariableRequest, opts ...grpc.CallOption) (*GetVariableResponse, error) {
-	out := new(GetVariableResponse)
-	err := c.cc.Invoke(ctx, "/geocube.Geocube/GetVariable", in, out, opts...)
+func (c *geocubeClient) UpdateVariable(ctx context.Context, in *UpdateVariableRequest, opts ...grpc.CallOption) (*UpdateVariableResponse, error) {
+	out := new(UpdateVariableResponse)
+	err := c.cc.Invoke(ctx, "/geocube.Geocube/UpdateVariable", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *geocubeClient) DeleteVariable(ctx context.Context, in *DeleteVariableRequest, opts ...grpc.CallOption) (*DeleteVariableResponse, error) {
+	out := new(DeleteVariableResponse)
+	err := c.cc.Invoke(ctx, "/geocube.Geocube/DeleteVariable", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -629,9 +668,9 @@ func (x *geocubeListVariablesClient) Recv() (*ListVariablesResponseItem, error) 
 	return m, nil
 }
 
-func (c *geocubeClient) UpdateVariable(ctx context.Context, in *UpdateVariableRequest, opts ...grpc.CallOption) (*UpdateVariableResponse, error) {
-	out := new(UpdateVariableResponse)
-	err := c.cc.Invoke(ctx, "/geocube.Geocube/UpdateVariable", in, out, opts...)
+func (c *geocubeClient) InstantiateVariable(ctx context.Context, in *InstantiateVariableRequest, opts ...grpc.CallOption) (*InstantiateVariableResponse, error) {
+	out := new(InstantiateVariableResponse)
+	err := c.cc.Invoke(ctx, "/geocube.Geocube/InstantiateVariable", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -641,15 +680,6 @@ func (c *geocubeClient) UpdateVariable(ctx context.Context, in *UpdateVariableRe
 func (c *geocubeClient) UpdateInstance(ctx context.Context, in *UpdateInstanceRequest, opts ...grpc.CallOption) (*UpdateInstanceResponse, error) {
 	out := new(UpdateInstanceResponse)
 	err := c.cc.Invoke(ctx, "/geocube.Geocube/UpdateInstance", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *geocubeClient) DeleteVariable(ctx context.Context, in *DeleteVariableRequest, opts ...grpc.CallOption) (*DeleteVariableResponse, error) {
-	out := new(DeleteVariableResponse)
-	err := c.cc.Invoke(ctx, "/geocube.Geocube/DeleteVariable", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -959,47 +989,77 @@ func (c *geocubeClient) Version(ctx context.Context, in *GetVersionRequest, opts
 
 // GeocubeServer is the server API for Geocube service.
 type GeocubeServer interface {
-	// @exclude Records
-	ListRecords(*ListRecordsRequest, Geocube_ListRecordsServer) error
+	// Create one or a list of records
 	CreateRecords(context.Context, *CreateRecordsRequest) (*CreateRecordsResponse, error)
-	DeleteRecords(context.Context, *DeleteRecordsRequest) (*DeleteRecordsResponse, error)
+	// List records given criterias
+	ListRecords(*ListRecordsRequest, Geocube_ListRecordsServer) error
+	// Update records, adding or updating tags
 	AddRecordsTags(context.Context, *AddRecordsTagsRequest) (*AddRecordsTagsResponse, error)
+	// Update records, removing tags
 	RemoveRecordsTags(context.Context, *RemoveRecordsTagsRequest) (*RemoveRecordsTagsResponse, error)
+	// Delete records iif no dataset has a reference on
+	DeleteRecords(context.Context, *DeleteRecordsRequest) (*DeleteRecordsResponse, error)
+	// Create an AOI if not exists or returns the aoi id of the aoi.
 	CreateAOI(context.Context, *CreateAOIRequest) (*CreateAOIResponse, error)
+	// Get an AOI from its ID
 	GetAOI(context.Context, *GetAOIRequest) (*GetAOIResponse, error)
-	// @exclude Variables
+	// Create a variable
 	CreateVariable(context.Context, *CreateVariableRequest) (*CreateVariableResponse, error)
-	InstantiateVariable(context.Context, *InstantiateVariableRequest) (*InstantiateVariableResponse, error)
+	// Get a variable given its id, name or one of its instance id
 	GetVariable(context.Context, *GetVariableRequest) (*GetVariableResponse, error)
-	ListVariables(*ListVariablesRequest, Geocube_ListVariablesServer) error
+	// Update some fields of a variable
 	UpdateVariable(context.Context, *UpdateVariableRequest) (*UpdateVariableResponse, error)
-	UpdateInstance(context.Context, *UpdateInstanceRequest) (*UpdateInstanceResponse, error)
+	// Delete a variable iif no dataset has a reference on
 	DeleteVariable(context.Context, *DeleteVariableRequest) (*DeleteVariableResponse, error)
+	// List variables given a name pattern
+	ListVariables(*ListVariablesRequest, Geocube_ListVariablesServer) error
+	// Instantiate a variable
+	InstantiateVariable(context.Context, *InstantiateVariableRequest) (*InstantiateVariableResponse, error)
+	// Update metadata of an instance
+	UpdateInstance(context.Context, *UpdateInstanceRequest) (*UpdateInstanceResponse, error)
+	// Delete an instance iif no dataset has a reference on
 	DeleteInstance(context.Context, *DeleteInstanceRequest) (*DeleteInstanceResponse, error)
+	// Create or update a palette that can be used to create a display of a dataset
 	CreatePalette(context.Context, *CreatePaletteRequest) (*CreatePaletteResponse, error)
-	// @exclude Operations
+	// Index new datasets in the Geocube
 	IndexDatasets(context.Context, *IndexDatasetsRequest) (*IndexDatasetsResponse, error)
+	// Configurate a consolidation process
 	ConfigConsolidation(context.Context, *ConfigConsolidationRequest) (*ConfigConsolidationResponse, error)
+	// Get the configuration of a consolidation
 	GetConsolidationParams(context.Context, *GetConsolidationParamsRequest) (*GetConsolidationParamsResponse, error)
+	// Start a consolidation job
 	Consolidate(context.Context, *ConsolidateRequest) (*ConsolidateResponse, error)
+	// List the jobs given a name pattern
 	ListJobs(context.Context, *ListJobsRequest) (*ListJobsResponse, error)
+	// Get a job given its name
 	GetJob(context.Context, *GetJobRequest) (*GetJobResponse, error)
+	// Delete jobs given their status
 	CleanJobs(context.Context, *CleanJobsRequest) (*CleanJobsResponse, error)
+	// Retry a job
 	RetryJob(context.Context, *RetryJobRequest) (*RetryJobResponse, error)
+	// Cancel a job
 	CancelJob(context.Context, *CancelJobRequest) (*CancelJobResponse, error)
+	// Continue a job that is in waiting state
 	ContinueJob(context.Context, *ContinueJobRequest) (*ContinueJobResponse, error)
-	// @exclude Catalog
+	// Get a cube of data given a CubeParams
 	GetCube(*GetCubeRequest, Geocube_GetCubeServer) error
+	// Get a XYZTile (can be used with a TileServer, provided a GRPCGateway is up)
 	GetXYZTile(context.Context, *GetTileRequest) (*GetTileResponse, error)
-	// @exclude Layout
+	// Create a layout to be used for tiling or consolidation
 	CreateLayout(context.Context, *CreateLayoutRequest) (*CreateLayoutResponse, error)
+	// Delete a layout given its name
 	DeleteLayout(context.Context, *DeleteLayoutRequest) (*DeleteLayoutResponse, error)
+	// List layouts given a name pattern
 	ListLayouts(context.Context, *ListLayoutsRequest) (*ListLayoutsResponse, error)
+	// Find all the layouts known for a set of containers
 	FindContainerLayouts(*FindContainerLayoutsRequest, Geocube_FindContainerLayoutsServer) error
+	// Tile an AOI given a layout
 	TileAOI(*TileAOIRequest, Geocube_TileAOIServer) error
-	// @exclude Grid
+	// Create a grid that can be used to tile an AOI
 	CreateGrid(Geocube_CreateGridServer) error
+	// Delete a grid
 	DeleteGrid(context.Context, *DeleteGridRequest) (*DeleteGridResponse, error)
+	// List grids given a name pattern
 	ListGrids(context.Context, *ListGridsRequest) (*ListGridsResponse, error)
 	// Version of the GeocubeServer
 	Version(context.Context, *GetVersionRequest) (*GetVersionResponse, error)
@@ -1009,20 +1069,20 @@ type GeocubeServer interface {
 type UnimplementedGeocubeServer struct {
 }
 
-func (*UnimplementedGeocubeServer) ListRecords(*ListRecordsRequest, Geocube_ListRecordsServer) error {
-	return status.Errorf(codes.Unimplemented, "method ListRecords not implemented")
-}
 func (*UnimplementedGeocubeServer) CreateRecords(context.Context, *CreateRecordsRequest) (*CreateRecordsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateRecords not implemented")
 }
-func (*UnimplementedGeocubeServer) DeleteRecords(context.Context, *DeleteRecordsRequest) (*DeleteRecordsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DeleteRecords not implemented")
+func (*UnimplementedGeocubeServer) ListRecords(*ListRecordsRequest, Geocube_ListRecordsServer) error {
+	return status.Errorf(codes.Unimplemented, "method ListRecords not implemented")
 }
 func (*UnimplementedGeocubeServer) AddRecordsTags(context.Context, *AddRecordsTagsRequest) (*AddRecordsTagsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddRecordsTags not implemented")
 }
 func (*UnimplementedGeocubeServer) RemoveRecordsTags(context.Context, *RemoveRecordsTagsRequest) (*RemoveRecordsTagsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RemoveRecordsTags not implemented")
+}
+func (*UnimplementedGeocubeServer) DeleteRecords(context.Context, *DeleteRecordsRequest) (*DeleteRecordsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteRecords not implemented")
 }
 func (*UnimplementedGeocubeServer) CreateAOI(context.Context, *CreateAOIRequest) (*CreateAOIResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateAOI not implemented")
@@ -1033,23 +1093,23 @@ func (*UnimplementedGeocubeServer) GetAOI(context.Context, *GetAOIRequest) (*Get
 func (*UnimplementedGeocubeServer) CreateVariable(context.Context, *CreateVariableRequest) (*CreateVariableResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateVariable not implemented")
 }
-func (*UnimplementedGeocubeServer) InstantiateVariable(context.Context, *InstantiateVariableRequest) (*InstantiateVariableResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method InstantiateVariable not implemented")
-}
 func (*UnimplementedGeocubeServer) GetVariable(context.Context, *GetVariableRequest) (*GetVariableResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetVariable not implemented")
-}
-func (*UnimplementedGeocubeServer) ListVariables(*ListVariablesRequest, Geocube_ListVariablesServer) error {
-	return status.Errorf(codes.Unimplemented, "method ListVariables not implemented")
 }
 func (*UnimplementedGeocubeServer) UpdateVariable(context.Context, *UpdateVariableRequest) (*UpdateVariableResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateVariable not implemented")
 }
-func (*UnimplementedGeocubeServer) UpdateInstance(context.Context, *UpdateInstanceRequest) (*UpdateInstanceResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UpdateInstance not implemented")
-}
 func (*UnimplementedGeocubeServer) DeleteVariable(context.Context, *DeleteVariableRequest) (*DeleteVariableResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteVariable not implemented")
+}
+func (*UnimplementedGeocubeServer) ListVariables(*ListVariablesRequest, Geocube_ListVariablesServer) error {
+	return status.Errorf(codes.Unimplemented, "method ListVariables not implemented")
+}
+func (*UnimplementedGeocubeServer) InstantiateVariable(context.Context, *InstantiateVariableRequest) (*InstantiateVariableResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method InstantiateVariable not implemented")
+}
+func (*UnimplementedGeocubeServer) UpdateInstance(context.Context, *UpdateInstanceRequest) (*UpdateInstanceResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateInstance not implemented")
 }
 func (*UnimplementedGeocubeServer) DeleteInstance(context.Context, *DeleteInstanceRequest) (*DeleteInstanceResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteInstance not implemented")
@@ -1125,6 +1185,24 @@ func RegisterGeocubeServer(s *grpc.Server, srv GeocubeServer) {
 	s.RegisterService(&_Geocube_serviceDesc, srv)
 }
 
+func _Geocube_CreateRecords_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateRecordsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GeocubeServer).CreateRecords(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/geocube.Geocube/CreateRecords",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GeocubeServer).CreateRecords(ctx, req.(*CreateRecordsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Geocube_ListRecords_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(ListRecordsRequest)
 	if err := stream.RecvMsg(m); err != nil {
@@ -1144,42 +1222,6 @@ type geocubeListRecordsServer struct {
 
 func (x *geocubeListRecordsServer) Send(m *ListRecordsResponseItem) error {
 	return x.ServerStream.SendMsg(m)
-}
-
-func _Geocube_CreateRecords_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CreateRecordsRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(GeocubeServer).CreateRecords(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/geocube.Geocube/CreateRecords",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GeocubeServer).CreateRecords(ctx, req.(*CreateRecordsRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Geocube_DeleteRecords_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DeleteRecordsRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(GeocubeServer).DeleteRecords(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/geocube.Geocube/DeleteRecords",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GeocubeServer).DeleteRecords(ctx, req.(*DeleteRecordsRequest))
-	}
-	return interceptor(ctx, in, info, handler)
 }
 
 func _Geocube_AddRecordsTags_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -1214,6 +1256,24 @@ func _Geocube_RemoveRecordsTags_Handler(srv interface{}, ctx context.Context, de
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(GeocubeServer).RemoveRecordsTags(ctx, req.(*RemoveRecordsTagsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Geocube_DeleteRecords_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteRecordsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GeocubeServer).DeleteRecords(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/geocube.Geocube/DeleteRecords",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GeocubeServer).DeleteRecords(ctx, req.(*DeleteRecordsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1272,24 +1332,6 @@ func _Geocube_CreateVariable_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Geocube_InstantiateVariable_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(InstantiateVariableRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(GeocubeServer).InstantiateVariable(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/geocube.Geocube/InstantiateVariable",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GeocubeServer).InstantiateVariable(ctx, req.(*InstantiateVariableRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _Geocube_GetVariable_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetVariableRequest)
 	if err := dec(in); err != nil {
@@ -1304,6 +1346,42 @@ func _Geocube_GetVariable_Handler(srv interface{}, ctx context.Context, dec func
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(GeocubeServer).GetVariable(ctx, req.(*GetVariableRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Geocube_UpdateVariable_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateVariableRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GeocubeServer).UpdateVariable(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/geocube.Geocube/UpdateVariable",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GeocubeServer).UpdateVariable(ctx, req.(*UpdateVariableRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Geocube_DeleteVariable_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteVariableRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GeocubeServer).DeleteVariable(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/geocube.Geocube/DeleteVariable",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GeocubeServer).DeleteVariable(ctx, req.(*DeleteVariableRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1329,20 +1407,20 @@ func (x *geocubeListVariablesServer) Send(m *ListVariablesResponseItem) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func _Geocube_UpdateVariable_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UpdateVariableRequest)
+func _Geocube_InstantiateVariable_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(InstantiateVariableRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(GeocubeServer).UpdateVariable(ctx, in)
+		return srv.(GeocubeServer).InstantiateVariable(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/geocube.Geocube/UpdateVariable",
+		FullMethod: "/geocube.Geocube/InstantiateVariable",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GeocubeServer).UpdateVariable(ctx, req.(*UpdateVariableRequest))
+		return srv.(GeocubeServer).InstantiateVariable(ctx, req.(*InstantiateVariableRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1361,24 +1439,6 @@ func _Geocube_UpdateInstance_Handler(srv interface{}, ctx context.Context, dec f
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(GeocubeServer).UpdateInstance(ctx, req.(*UpdateInstanceRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Geocube_DeleteVariable_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DeleteVariableRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(GeocubeServer).DeleteVariable(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/geocube.Geocube/DeleteVariable",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GeocubeServer).DeleteVariable(ctx, req.(*DeleteVariableRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1823,16 +1883,16 @@ var _Geocube_serviceDesc = grpc.ServiceDesc{
 			Handler:    _Geocube_CreateRecords_Handler,
 		},
 		{
-			MethodName: "DeleteRecords",
-			Handler:    _Geocube_DeleteRecords_Handler,
-		},
-		{
 			MethodName: "AddRecordsTags",
 			Handler:    _Geocube_AddRecordsTags_Handler,
 		},
 		{
 			MethodName: "RemoveRecordsTags",
 			Handler:    _Geocube_RemoveRecordsTags_Handler,
+		},
+		{
+			MethodName: "DeleteRecords",
+			Handler:    _Geocube_DeleteRecords_Handler,
 		},
 		{
 			MethodName: "CreateAOI",
@@ -1847,10 +1907,6 @@ var _Geocube_serviceDesc = grpc.ServiceDesc{
 			Handler:    _Geocube_CreateVariable_Handler,
 		},
 		{
-			MethodName: "InstantiateVariable",
-			Handler:    _Geocube_InstantiateVariable_Handler,
-		},
-		{
 			MethodName: "GetVariable",
 			Handler:    _Geocube_GetVariable_Handler,
 		},
@@ -1859,12 +1915,16 @@ var _Geocube_serviceDesc = grpc.ServiceDesc{
 			Handler:    _Geocube_UpdateVariable_Handler,
 		},
 		{
-			MethodName: "UpdateInstance",
-			Handler:    _Geocube_UpdateInstance_Handler,
-		},
-		{
 			MethodName: "DeleteVariable",
 			Handler:    _Geocube_DeleteVariable_Handler,
+		},
+		{
+			MethodName: "InstantiateVariable",
+			Handler:    _Geocube_InstantiateVariable_Handler,
+		},
+		{
+			MethodName: "UpdateInstance",
+			Handler:    _Geocube_UpdateInstance_Handler,
 		},
 		{
 			MethodName: "DeleteInstance",

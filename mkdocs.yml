@@ -1,0 +1,34 @@
+site_name: Geocube Server
+site_url: https://github.com/airbusgeo/geocube
+nav:
+    - 'Home': index.md
+    - 'Getting started': quickstart.md
+    - 'Architecture':
+      - 'Ecosystem': architecture/solution.md
+      - 'Geocube services': architecture/services.md
+      - 'Interfaces': architecture/interfaces.md
+      - 'MuCOG': architecture/mucog.md
+      - 'GRPC documentation': user-guide/grpc.md
+    - 'Installation':
+        - 'Prerequisite': installation/prerequisite.md
+        - 'Local environment': installation/local-install.md
+        - 'Docker': installation/docker-install.md
+        - 'Deploying with Kubernetes': installation/k8s-install.md
+        - 'Customize environment': installation/others.md
+        - 'Upgrade': installation/upgrade.md
+    - 'User guide':
+        - 'Tutorials': user-guide/tutorials.md
+        - 'Entities': user-guide/entities.md
+        - 'Indexation': user-guide/indexation.md
+        - 'Access': user-guide/access.md
+        - 'Consolidation': user-guide/consolidation.md
+        - 'Scaling-up': user-guide/scaleup.md
+    - 'About':
+      - 'Getting help': about/help.md
+      - 'Contributing': about/CONTRIBUTING.md
+      - 'License': about/license.md
+      - 'Release Notes': about/release-notes.md
+theme: readthedocs
+markdown_extensions:
+    - toc:
+        baselevel: 2

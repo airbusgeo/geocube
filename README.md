@@ -5,7 +5,7 @@ Geocube is a geo-spatial imagery database designed as a serverless service to se
 
 ## Installation
 
-Please read the [Installation guide](https://github.com/airbusgeo/geocube/blob/main/INSTALL.MD).
+Please read the [Installation guide](https://airbusgeo.github.io/geocube/installation/prerequisite/).
 
 ## Quickstart
 
@@ -17,7 +17,8 @@ After starting the server, three tutorials explain the basics of Geocube using t
 
 ## Documentation
 
-Coming soon
+- [API](https://airbusgeo.github.io/geocube)
+- [Code](https://pkg.go.dev/github.com/airbusgeo/geocube)
 
 ## Status
 
@@ -25,7 +26,7 @@ Geocube is under development. The API might evolve in backwards incompatible way
 
 ## Contributing
 
-Contributions are welcome. Please read the [contributing guidelines](https://github.com/airbusgeo/geocube/blob/main/CONTRIBUTING.md) before submitting fixes or enhancements.
+Contributions are welcome. Please read the [contributing guidelines](https://airbusgeo.github.io/geocube/about/CONTRIBUTING.md) before submitting fixes or enhancements.
 
 ## Licensing
 

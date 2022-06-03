@@ -15,44 +15,70 @@ import "pb/operations.proto";
 
 /**
   * API
+  * Documentation may be detailed in Request/Response sections.
   */
 service Geocube {
-// @exclude Records
-    rpc ListRecords(ListRecordsRequest)     returns (stream ListRecordsResponseItem) {}
+    // Create one or a list of records
     rpc CreateRecords(CreateRecordsRequest) returns (CreateRecordsResponse) {}
-    rpc DeleteRecords(DeleteRecordsRequest) returns (DeleteRecordsResponse) {} // Delete records iif no dataset has a reference on.
+    // List records given criterias
+    rpc ListRecords(ListRecordsRequest)     returns (stream ListRecordsResponseItem) {}
+    // Update records, adding or updating tags
     rpc AddRecordsTags(AddRecordsTagsRequest) returns (AddRecordsTagsResponse) {}
+    // Update records, removing tags
     rpc RemoveRecordsTags(RemoveRecordsTagsRequest) returns (RemoveRecordsTagsResponse) {}
+    // Delete records iif no dataset has a reference on
+    rpc DeleteRecords(DeleteRecordsRequest) returns (DeleteRecordsResponse) {}
+    
+    // Create an AOI if not exists or returns the aoi id of the aoi.
     rpc CreateAOI(CreateAOIRequest) returns (CreateAOIResponse) {}
+    // Get an AOI from its ID
     rpc GetAOI(GetAOIRequest)       returns (GetAOIResponse)    {}
 
-// @exclude Variables
-    rpc CreateVariable(CreateVariableRequest)           returns (CreateVariableResponse) {}
-    rpc InstantiateVariable(InstantiateVariableRequest) returns (InstantiateVariableResponse) {}
-    rpc GetVariable(GetVariableRequest)                 returns (GetVariableResponse) {}
-
-    rpc ListVariables(ListVariablesRequest)   returns (stream ListVariablesResponseItem){}
+    // Create a variable
+    rpc CreateVariable(CreateVariableRequest) returns (CreateVariableResponse) {}
+    // Get a variable given its id, name or one of its instance id
+    rpc GetVariable(GetVariableRequest)       returns (GetVariableResponse) {}
+    // Update some fields of a variable
     rpc UpdateVariable(UpdateVariableRequest) returns (UpdateVariableResponse) {}
-    rpc UpdateInstance(UpdateInstanceRequest) returns (UpdateInstanceResponse) {}
+    // Delete a variable iif no dataset has a reference on
     rpc DeleteVariable(DeleteVariableRequest) returns (DeleteVariableResponse) {}
+    // List variables given a name pattern
+    rpc ListVariables(ListVariablesRequest)   returns (stream ListVariablesResponseItem){}
+
+    // Instantiate a variable 
+    rpc InstantiateVariable(InstantiateVariableRequest) returns (InstantiateVariableResponse) {}
+    // Update metadata of an instance
+    rpc UpdateInstance(UpdateInstanceRequest) returns (UpdateInstanceResponse) {}
+    // Delete an instance iif no dataset has a reference on
     rpc DeleteInstance(DeleteInstanceRequest) returns (DeleteInstanceResponse) {}
 
+    // Create or update a palette that can be used to create a display of a dataset
     rpc CreatePalette(CreatePaletteRequest)returns (CreatePaletteResponse){}
 
-// @exclude Operations
+    // Index new datasets in the Geocube
     rpc IndexDatasets(IndexDatasetsRequest)                   returns (IndexDatasetsResponse) {}
+    // Configurate a consolidation process
     rpc ConfigConsolidation(ConfigConsolidationRequest)       returns (ConfigConsolidationResponse){}
+    // Get the configuration of a consolidation
     rpc GetConsolidationParams(GetConsolidationParamsRequest) returns (GetConsolidationParamsResponse){}
+    // Start a consolidation job
     rpc Consolidate(ConsolidateRequest)                       returns (ConsolidateResponse){}
+    // List the jobs given a name pattern
     rpc ListJobs(ListJobsRequest)                             returns (ListJobsResponse){}
+    // Get a job given its name
     rpc GetJob(GetJobRequest)                                 returns (GetJobResponse){}
+    // Delete jobs given their status
     rpc CleanJobs(CleanJobsRequest)                           returns (CleanJobsResponse){}
+    // Retry a job
     rpc RetryJob(RetryJobRequest)                             returns (RetryJobResponse){}
+    // Cancel a job
     rpc CancelJob(CancelJobRequest)                           returns (CancelJobResponse){}
+    // Continue a job that is in waiting state
     rpc ContinueJob(ContinueJobRequest)                       returns (ContinueJobResponse){}
 
-// @exclude Catalog
+    // Get a cube of data given a CubeParams
     rpc GetCube(GetCubeRequest)               returns (stream GetCubeResponse){}
+    // Get a XYZTile (can be used with a TileServer, provided a GRPCGateway is up)
     rpc GetXYZTile(GetTileRequest)            returns (GetTileResponse){
         option (google.api.http) = {
             get: "/v1/catalog/mosaic/{instance_id}/{x}/{y}/{z}/png" //?records.ids=XXXXX&records.ids=YYYYYY...
@@ -60,16 +86,22 @@ service Geocube {
         };
     }
 
-// @exclude Layout
+    // Create a layout to be used for tiling or consolidation
     rpc CreateLayout(CreateLayoutRequest)                 returns (CreateLayoutResponse){}
+    // Delete a layout given its name
     rpc DeleteLayout(DeleteLayoutRequest)                 returns (DeleteLayoutResponse){}
+    // List layouts given a name pattern
     rpc ListLayouts(ListLayoutsRequest)                   returns (ListLayoutsResponse){}
+    // Find all the layouts known for a set of containers
     rpc FindContainerLayouts(FindContainerLayoutsRequest) returns (stream FindContainerLayoutsResponse){}
+    // Tile an AOI given a layout
     rpc TileAOI(TileAOIRequest)                           returns (stream TileAOIResponse){}
 
-// @exclude Grid
+    // Create a grid that can be used to tile an AOI
     rpc CreateGrid(stream CreateGridRequest)     returns (CreateGridResponse){}
+    // Delete a grid
     rpc DeleteGrid(DeleteGridRequest)            returns (DeleteGridResponse){}
+    // List grids given a name pattern
     rpc ListGrids(ListGridsRequest)              returns (ListGridsResponse){}
 
     // Version of the GeocubeServer
