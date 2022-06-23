@@ -238,8 +238,10 @@ func run(ctx context.Context) error {
 
 	go func() {
 		if eventConsumer != nil {
-			if err := eventConsumer.Pull(ctx, eventHandler); err != nil {
-				log.Logger(ctx).Fatal("eventConsumer.Pull", zap.Error(err))
+			for {
+				if err := eventConsumer.Pull(ctx, eventHandler); err != nil {
+					log.Logger(ctx).Fatal("eventConsumer.Pull", zap.Error(err))
+				}
 			}
 		}
 	}()

@@ -12,6 +12,7 @@ import (
 	"github.com/airbusgeo/geocube/internal/log"
 	"github.com/airbusgeo/geocube/internal/utils"
 	"github.com/btubbs/pgq"
+	"github.com/joomcode/errorx"
 	"github.com/sirupsen/logrus"
 )
 
@@ -123,11 +124,26 @@ func (c *Consumer) Pull(ctx context.Context, cb messaging.Callback) error {
 		ctx: ctx,
 		cb:  cb,
 	}
-	if err := c.worker.RegisterQueue(c.queueName, cbwc.handler); err != nil {
-		return fmt.Errorf("pgQueue.Pull.RegisterQueue: %w", err)
-	}
+	c.worker.RegisterQueue(c.queueName, cbwc.handler)
 	c.run = true
-	return c.worker.Run()
+	defer func() {
+		c.run = false
+	}()
+
+	for {
+		select {
+		case <-c.worker.StopChan:
+			return nil
+		default:
+			if attemptedJob, err := c.worker.PerformNextJob(); err != nil {
+				return errorx.Decorate(err, "exiting job runner")
+			} else if attemptedJob {
+				return nil
+			}
+			// we didn't find a job.  Take a nap.
+			time.Sleep(time.Second * 10)
+		}
+	}
 }
 
 func (c *Consumer) Stop() {
