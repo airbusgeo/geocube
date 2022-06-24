@@ -7,7 +7,6 @@ COPY vendor vendor
 COPY internal internal
 COPY interface interface
 COPY cmd cmd
-COPY *.go /build/
 COPY cmd/downloader downloader
 
 RUN cd downloader && go build -ldflags="-s -w" .

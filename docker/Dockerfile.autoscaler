@@ -9,11 +9,8 @@ ENV GOFLAGS=-mod=vendor
 WORKDIR /build_dir
 COPY go.* /build_dir/
 COPY vendor vendor
-RUN cd vendor && go install -ldflags="-s -w" ./...
-COPY interface/autoscaler interface/autoscaler
-COPY internal/log internal/log
-COPY internal/utils internal/utils
-COPY interface/messaging interface/messaging
+COPY interface interface
+COPY internal internal
 COPY cmd/autoscaler cmd/autoscaler
 
 RUN cd cmd/autoscaler && go install -ldflags="-s -w" .

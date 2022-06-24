@@ -29,7 +29,7 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.10.0
 	github.com/guregu/null v4.0.0+incompatible // indirect
 	github.com/jmoiron/sqlx v1.3.5 // indirect
-	github.com/joomcode/errorx v1.1.0 // indirect
+	github.com/joomcode/errorx v1.1.0
 	github.com/lib/pq v1.10.5
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/onsi/ginkgo v1.14.0
