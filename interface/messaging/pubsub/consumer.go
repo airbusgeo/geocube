@@ -17,6 +17,7 @@ import (
 	monitoringpb "google.golang.org/genproto/googleapis/monitoring/v3"
 	pubsubpb "google.golang.org/genproto/googleapis/pubsub/v1"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/golang/protobuf/ptypes/timestamp"
 )
@@ -45,7 +46,7 @@ func DefaultSubscriberClient(ctx context.Context) (*gcppubsub.SubscriberClient, 
 	if addr := os.Getenv("PUBSUB_EMULATOR_HOST"); addr != "" {
 		// Environment variables for gcloud emulator:
 		// https://cloud.google.com/sdk/gcloud/reference/beta/emulators/pubsub/
-		conn, err := grpc.Dial(addr, grpc.WithInsecure())
+		conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 		if err != nil {
 			return nil, fmt.Errorf("grpc.Dial: %v", err)
 		}
@@ -233,7 +234,6 @@ func (c *Client) Process(ctx context.Context, cb messaging.Callback) error {
 				return
 			case <-time.After(next):
 				if time.Now().After(deadline) {
-					cncl() //stop cb
 					keepAliveError <- fmt.Errorf("failed to extend past deadline")
 					return
 				}
@@ -247,8 +247,7 @@ func (c *Client) Process(ctx context.Context, cb messaging.Callback) error {
 					if next < time.Second {
 						next = time.Second
 					}
-					log.Logger(ctx).With(zap.Error(err)).Sugar().Warnf(
-						"error extending, will retry in %v", next)
+					log.Logger(ctx).With(zap.Error(err)).Sugar().Warnf("error extending, will retry in %v", next)
 				} else {
 					deadline = time.Now().Add(c.processOpts.ExtensionPeriod) //when the task will expire
 					next = c.processOpts.ExtensionPeriod / 2
