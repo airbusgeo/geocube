@@ -50,43 +50,43 @@ func (c *cogGenerator) Create(dataset *godal.Dataset, oContainer geocube.Consoli
 		options = append(options, "-co", "BIGTIFF=YES")
 	}
 
-	cogDatasetPath := filepath.Join("/vsimem", fmt.Sprintf("cog_without_overviews_%s.tif", recordId))
-	cogDataset, err := dataset.Translate(cogDatasetPath, options)
+	tiffDatasetPath := filepath.Join("/vsimem", fmt.Sprintf("tiff_%s.tif", recordId))
+	tiffDataset, err := dataset.Translate(tiffDatasetPath, options)
 	if err != nil {
-		return "", fmt.Errorf("failed to translate cog: %w", err)
+		return "", fmt.Errorf("Create.Translate: %w", err)
 	}
 	defer func() {
-		cogDataset.Close()
-		godal.VSIUnlink(cogDatasetPath)
+		tiffDataset.Close()
+		godal.VSIUnlink(tiffDatasetPath) // Delete the VSI or traditionnal file
 	}()
 
 	if oContainer.OverviewsMinSize != geocube.NO_OVERVIEW {
 		if oContainer.OverviewsMinSize == geocube.OVERVIEWS_DEFAULT_MIN_SIZE {
 			oContainer.OverviewsMinSize = 256
 		}
-		if err := c.buildOverviews(cogDataset, oContainer.ResamplingAlg, oContainer.OverviewsMinSize); err != nil {
-			return "", fmt.Errorf("failed to build overviews: %w", err)
+		if err := c.buildOverviews(tiffDataset, oContainer.ResamplingAlg, oContainer.OverviewsMinSize); err != nil {
+			return "", fmt.Errorf("Create.%w", err)
 		}
 	}
 
-	for i := 0; i < cogDataset.Structure().NBands; i++ {
-		band := cogDataset.Bands()[i]
+	for i := 0; i < tiffDataset.Structure().NBands; i++ {
+		band := tiffDataset.Bands()[i]
 		err = band.SetNoData(oContainer.DatasetFormat.NoData)
 		if err != nil {
-			return "", fmt.Errorf("failed to set nodata value: %w", err)
+			return "", fmt.Errorf("Create.SetNoData: %w", err)
 		}
 	}
 
-	if err = cogDataset.Close(); err != nil {
-		return "", fmt.Errorf("failed to close tiff file: %w", err)
+	if err = tiffDataset.Close(); err != nil {
+		return "", fmt.Errorf("Create.Close: %w", err)
 	}
 
-	finalCogDatasetPath := filepath.Join(workDir, fmt.Sprintf("cog_%s.tif", recordId))
-	if err = c.rewriteTiff(cogDatasetPath, finalCogDatasetPath); err != nil {
-		return "", fmt.Errorf("failed to rewrite COG file: %w", err)
+	cogDatasetPath := filepath.Join(workDir, fmt.Sprintf("cog_%s.tif", recordId))
+	if err = c.rewriteTiff(tiffDatasetPath, cogDatasetPath); err != nil {
+		return "", fmt.Errorf("Create.%w", err)
 	}
 
-	return finalCogDatasetPath, nil
+	return cogDatasetPath, nil
 }
 
 /*
@@ -222,7 +222,7 @@ func (c *cogGenerator) addCompressionOption(container geocube.ConsolidationConta
 
 func (c *cogGenerator) buildOverviews(d *godal.Dataset, resampling geocube.Resampling, overviewsMinSize int) error {
 	if err := d.BuildOverviews(godal.Resampling(resampling.ToGDAL()), godal.MinSize(overviewsMinSize)); err != nil {
-		return fmt.Errorf("failed to build overviews: %w", err)
+		return fmt.Errorf("buildOverviews: %w", err)
 	}
 
 	return nil
@@ -231,13 +231,13 @@ func (c *cogGenerator) buildOverviews(d *godal.Dataset, resampling geocube.Resam
 func (c *cogGenerator) rewriteTiff(src, dest string) error {
 	file, fdesc, err := c.openDatasetTiffs(src)
 	if err != nil {
-		return fmt.Errorf("failed to open dataset tiffs: %w", err)
+		return fmt.Errorf("rewriteTiff: %w", err)
 	}
 	defer fdesc.Close()
 
 	finalCogFile, err := os.Create(dest)
 	if err != nil {
-		return fmt.Errorf("failed to rewrite cog: %w", err)
+		return fmt.Errorf("rewriteTiff: %w", err)
 	}
 
 	defer finalCogFile.Close()
@@ -248,7 +248,7 @@ func (c *cogGenerator) rewriteTiff(src, dest string) error {
 func (c *cogGenerator) openDatasetTiffs(datasetFileName string) (tiff.ReadAtReadSeeker, io.Closer, error) {
 	fd, err := godal.VSIOpen(datasetFileName)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to open file: %w", err)
+		return nil, nil, fmt.Errorf("failed to open file [%s]: %w", datasetFileName, err)
 	}
 
 	return tiff.NewReadAtReadSeeker(fd), fd, nil

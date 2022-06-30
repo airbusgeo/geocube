@@ -88,9 +88,10 @@ func (h *handlerConsolidation) Consolidate(ctx context.Context, cEvent *geocube.
 					return fmt.Errorf("consolidation event is cancelled")
 				}
 				recordID, recordIdx := record.string, record.int
-				localDatasetsByRecords := datasetsByRecords[recordID]
+				localDatasets := datasetsByRecords[recordID]
 
-				if cogFile, ok := h.isAlreadyUsableCOG(gCtx, localDatasetsByRecords, cEvent.Container, recordID, workDir); ok {
+				if cogFile, ok := h.isAlreadyUsableCOG(gCtx, localDatasets, cEvent.Container, recordID, workDir); ok {
+					log.Logger(gCtx).Sugar().Debugf("skip record (already a cog): %s (%d/%d)", recordID, recordIdx+1, len(cEvent.Records))
 					cogListFile[recordIdx] = cogFile
 					continue
 				}
@@ -104,7 +105,7 @@ func (h *handlerConsolidation) Consolidate(ctx context.Context, cEvent *geocube.
 					cEvent.Container.Transform[5],
 				)
 
-				mergeDataset, err := MergeDatasets(gCtx, localDatasetsByRecords, &GdalDatasetDescriptor{
+				mergeDataset, err := MergeDatasets(gCtx, localDatasets, &GdalDatasetDescriptor{
 					Height:      cEvent.Container.Height,
 					Width:       cEvent.Container.Width,
 					Bands:       cEvent.Container.BandsCount,
@@ -115,13 +116,13 @@ func (h *handlerConsolidation) Consolidate(ctx context.Context, cEvent *geocube.
 					PixToCRS:    pixToCRS,
 				})
 				if err != nil {
-					return fmt.Errorf("failed to merge dataset: %w", err)
+					return fmt.Errorf("Consolidate.%w", err)
 				}
 
 				cogDatasetPath, err := h.cog.Create(mergeDataset, cEvent.Container, recordID, workDir)
 				mergeDataset.Close()
 				if err != nil {
-					return fmt.Errorf("failed to merge source images: %w", err)
+					return fmt.Errorf("Consolidate.%w", err)
 				}
 
 				log.Logger(gCtx).Sugar().Debugf("add cog %s for record: %s (%d/%d)", cogDatasetPath, recordID, recordIdx+1, len(cEvent.Records))
@@ -147,7 +148,7 @@ func (h *handlerConsolidation) Consolidate(ctx context.Context, cEvent *geocube.
 	log.Logger(ctx).Sugar().Infof("%d COGs have been generated", len(cogListFile))
 
 	if len(cogListFile) == 1 {
-		if err := h.uploadFile(ctx, cogListFile[0], cEvent.Container.URI); err != nil {
+		if err := uploadFile(ctx, cogListFile[0], cEvent.Container.URI); err != nil {
 			return fmt.Errorf("failed to upload file on: %s : %w", cEvent.Container.URI, err)
 		}
 
@@ -161,7 +162,7 @@ func (h *handlerConsolidation) Consolidate(ctx context.Context, cEvent *geocube.
 	}
 
 	log.Logger(ctx).Sugar().Debugf("mucog has been generated : %s", mucogFilePath)
-	if err := h.uploadFile(ctx, mucogFilePath, cEvent.Container.URI); err != nil {
+	if err := uploadFile(ctx, mucogFilePath, cEvent.Container.URI); err != nil {
 		return fmt.Errorf("failed to upload file on: %s : %w", cEvent.Container.URI, err)
 	}
 
@@ -222,6 +223,11 @@ func (h *handlerConsolidation) getLocalDatasetsByRecord(ctx context.Context, cEv
 	for i := 0; i < 20; i++ {
 		g.Go(func() error {
 			for file := range files {
+				select {
+				case <-ctx.Done():
+					return nil
+				default:
+				}
 				if err := file.URI.DownloadToFile(gCtx, file.LocalURI); err != nil {
 					return fmt.Errorf("failed to download dataset %s: %w", file.URI.String(), err)
 				}
@@ -238,7 +244,7 @@ func (h *handlerConsolidation) getLocalDatasetsByRecord(ctx context.Context, cEv
 }
 
 // uploadFile upload content from local file to storage file (URI) destination.
-func (h *handlerConsolidation) uploadFile(ctx context.Context, source, destination string) error {
+func uploadFile(ctx context.Context, source, destination string) error {
 	gsURI, err := uri.ParseUri(destination)
 	if err != nil {
 		return fmt.Errorf("failed to parse uri: %w", err)
@@ -246,7 +252,7 @@ func (h *handlerConsolidation) uploadFile(ctx context.Context, source, destinati
 
 	f, err := os.Open(source)
 	if err != nil {
-		return fmt.Errorf("failed to open mucog file: %w", err)
+		return fmt.Errorf("failed to open file: %w", err)
 	}
 
 	defer f.Close()
@@ -268,6 +274,12 @@ func (h *handlerConsolidation) cleanWorkspace(ctx context.Context, workspace str
 }
 
 func (h *handlerConsolidation) isCancelled(ctx context.Context, event *geocube.ConsolidationEvent) bool {
+	select {
+	case <-ctx.Done():
+		return true
+	default:
+	}
+
 	path := utils.URLJoin(h.cancelledJobsStorage, fmt.Sprintf("%s_%s", event.JobID, event.TaskID))
 	cancelledJobsURI, err := uri.ParseUri(path)
 	if err != nil {
@@ -346,7 +358,7 @@ func (h *handlerConsolidation) isAlreadyUsableCOG(ctx context.Context, records [
 	}
 
 	if len(errors) != 0 {
-		log.Logger(ctx).Sugar().Debugf("cog is not reusable in state: " + strings.Join(errors, ", "))
+		log.Logger(ctx).Sugar().Debugf("cog is not reusable as is: " + strings.Join(errors, ", "))
 		return "", false
 	}
 
@@ -357,14 +369,13 @@ func (h *handlerConsolidation) isAlreadyUsableCOG(ctx context.Context, records [
 		}
 
 		return newCogFilePath, true
-
 	}
 
 	return localFilePath, true
 }
 
 /*
-	isSameGeoTransForm compare two geoTransfrom with fix tolerance (10^-8)
+	isSameGeoTransForm compares two geoTransfrom with fix tolerance (10^-8)
 */
 func (h *handlerConsolidation) isSameGeoTransForm(gt1 [6]float64, gt2 [6]float64) bool {
 	if len(gt1) != len(gt2) {
