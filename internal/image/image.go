@@ -135,11 +135,9 @@ func castDataset(ds *godal.Dataset, fromRange geocube.Range, exponent float64, t
 	return outDs, nil
 }
 
-func closeNonNilDatasets(datasets []*godal.Dataset) {
-	for _, ds := range datasets {
-		if ds != nil {
-			ds.Close()
-		}
+func closeDatasets(datasets *[]*godal.Dataset) {
+	for _, ds := range *datasets {
+		ds.Close()
 	}
 }
 
@@ -169,7 +167,7 @@ func MergeDatasets(ctx context.Context, datasets []*Dataset, outDesc *GdalDatase
 
 	var rerr error
 	var mergedDatasets []*godal.Dataset
-	defer closeNonNilDatasets(mergedDatasets)
+	defer closeDatasets(&mergedDatasets)
 
 	for _, groupedDs := range groupedDatasets {
 		// Merge Datasets that share the same DataMapping
@@ -194,7 +192,7 @@ func MergeDatasets(ctx context.Context, datasets []*Dataset, outDesc *GdalDatase
 	var mergedDs *godal.Dataset
 	if len(mergedDatasets) == 1 {
 		mergedDs = mergedDatasets[0]
-		mergedDatasets[0] = nil
+		mergedDatasets = nil // Prevent "defer" for closing mergedDs
 	} else if mergedDs, rerr = mosaicDatasets(mergedDatasets, outDesc.PixToCRS.Rx(), outDesc.PixToCRS.Ry()); rerr != nil {
 		return nil, fmt.Errorf("mergeDatasets.%w", rerr)
 	}
