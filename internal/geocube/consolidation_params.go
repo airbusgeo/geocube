@@ -19,13 +19,11 @@ const (
 // ConsolidationParams defines the parameters for the consolidation
 type ConsolidationParams struct {
 	persistenceState
-	DFormat          DataFormat
-	Exponent         float64
-	Compression      Compression
-	OverviewsMinSize int
-	ResamplingAlg    Resampling
-	BandsInterleave  bool
-	StorageClass     StorageClass
+	DFormat       DataFormat
+	Exponent      float64
+	Compression   Compression
+	ResamplingAlg Resampling
+	StorageClass  StorageClass
 }
 
 // NewConsolidationParamsFromProtobuf creates a consolidation params from protobuf
@@ -42,9 +40,7 @@ func NewConsolidationParamsFromProtobuf(pbp *pb.ConsolidationParams) (*Consolida
 		DFormat:          *dformat,
 		Exponent:         pbp.GetExponent(),
 		Compression:      Compression(pbp.GetCompression()),
-		OverviewsMinSize: int(pbp.GetOverviewsMinSize()),
 		ResamplingAlg:    Resampling(pbp.GetResamplingAlg()),
-		BandsInterleave:  pbp.GetBandsInterleave(),
 		StorageClass:     StorageClass(pbp.GetStorageClass()),
 	}
 
@@ -57,13 +53,11 @@ func NewConsolidationParamsFromProtobuf(pbp *pb.ConsolidationParams) (*Consolida
 // ToProtobuf converts a consolidationParams to protobuf
 func (c *ConsolidationParams) ToProtobuf() *pb.ConsolidationParams {
 	return &pb.ConsolidationParams{
-		Dformat:          c.DFormat.ToProtobuf(),
-		Exponent:         c.Exponent,
-		OverviewsMinSize: int32(c.OverviewsMinSize),
-		ResamplingAlg:    pb.Resampling(c.ResamplingAlg),
-		Compression:      pb.ConsolidationParams_Compression(c.Compression),
-		BandsInterleave:  c.BandsInterleave,
-		StorageClass:     pb.StorageClass(c.StorageClass),
+		Dformat:       c.DFormat.ToProtobuf(),
+		Exponent:      c.Exponent,
+		ResamplingAlg: pb.Resampling(c.ResamplingAlg),
+		Compression:   pb.ConsolidationParams_Compression(c.Compression),
+		StorageClass:  pb.StorageClass(c.StorageClass),
 	}
 }
 

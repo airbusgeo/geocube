@@ -4,10 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	pb "github.com/airbusgeo/geocube/internal/pb"
 	"github.com/airbusgeo/geocube/internal/utils"
 	gridlib "github.com/airbusgeo/geocube/internal/utils/grid"
+	"github.com/airbusgeo/mucog"
 	"github.com/twpayne/go-geom"
 )
 
@@ -22,6 +24,8 @@ type Layout struct {
 	// Internal layout: Cell, tile
 	BlockXSize, BlockYSize int
 	MaxRecords             int
+	OverviewsMinSize       int
+	InterlacingPattern     string
 }
 
 // NewLayoutFromProtobuf creates a layout from protobuf and validates it
@@ -29,12 +33,14 @@ type Layout struct {
 // if ignoreName=True, do not validate Name
 func NewLayoutFromProtobuf(pbl *pb.Layout, ignoreName bool) (*Layout, error) {
 	l := Layout{
-		Name:           pbl.GetName(),
-		GridFlags:      pbl.GetGridFlags(),
-		GridParameters: pbl.GetGridParameters(),
-		BlockXSize:     int(pbl.GetBlockXSize()),
-		BlockYSize:     int(pbl.GetBlockYSize()),
-		MaxRecords:     int(pbl.GetMaxRecords()),
+		Name:               pbl.GetName(),
+		GridFlags:          pbl.GetGridFlags(),
+		GridParameters:     pbl.GetGridParameters(),
+		BlockXSize:         int(pbl.GetBlockXSize()),
+		BlockYSize:         int(pbl.GetBlockYSize()),
+		MaxRecords:         int(pbl.GetMaxRecords()),
+		OverviewsMinSize:   int(pbl.GetOverviewsMinSize()),
+		InterlacingPattern: pbl.GetInterlacingPattern(),
 	}
 
 	if err := l.validate(ignoreName); err != nil {
@@ -47,12 +53,14 @@ func NewLayoutFromProtobuf(pbl *pb.Layout, ignoreName bool) (*Layout, error) {
 // ToProtobuf converts a layout to protobuf
 func (l *Layout) ToProtobuf() *pb.Layout {
 	return &pb.Layout{
-		Name:           l.Name,
-		GridFlags:      l.GridFlags,
-		GridParameters: l.GridParameters,
-		BlockXSize:     int64(l.BlockXSize),
-		BlockYSize:     int64(l.BlockYSize),
-		MaxRecords:     int64(l.MaxRecords),
+		Name:               l.Name,
+		GridFlags:          l.GridFlags,
+		GridParameters:     l.GridParameters,
+		BlockXSize:         int64(l.BlockXSize),
+		BlockYSize:         int64(l.BlockYSize),
+		MaxRecords:         int64(l.MaxRecords),
+		OverviewsMinSize:   int64(l.OverviewsMinSize),
+		InterlacingPattern: l.InterlacingPattern,
 	}
 }
 
@@ -116,6 +124,9 @@ func (l *Layout) validate(ignoreName bool) error {
 	if l.MaxRecords <= 0 {
 		return NewValidationError("maxRecords must be positive")
 	}
+	if _, err := mucog.InitIterators(l.MucogInterlacingPattern(), 0, 0, nil); err != nil {
+		return NewValidationError("InterlacingPattern is incorrect: %v", err.Error())
+	}
 	return nil
 }
 
@@ -134,4 +145,10 @@ func (l *Layout) InitGrid(ctx context.Context, initializer CustomGridInitializer
 		}
 	}
 	return nil
+}
+
+// MucogInterlacingPattern replaces [R]ecord by [I]mage, [B]and by [P]lane and [Z]oom by [L]evel (see github.com/airbusgeo/mucog)
+func (l *Layout) MucogInterlacingPattern() string {
+	return strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(l.InterlacingPattern,
+		"R", "I"), "B", "P"), "Z", "L")
 }

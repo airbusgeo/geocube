@@ -1864,6 +1864,32 @@ Define a layout for consolidation. A layout is composed of an external and an in
 External layout is a grid that is used to cover any area with tiles.
 TODO Internal layout defines the internal structure of a dataset
 
+Interlacing_pattern defines how to interlace the [R]ecords, the [B]ands, the [Z]ooms level/overview and the [T]iles (geotiff blocks).
+The four levels of interlacing must be prioritized in the following way L1&gt;L2&gt;L3&gt;L4 where each L is in [R, B, Z, T]. This order should be understood as:
+for each L1:
+  for each L2:
+    for each L3:
+      for each L4:
+        addBlock(L1, L2, L3, L4)
+In other words, all L4 for a given (L1, L2, L3) will be contiguous in memory.
+For example:
+- To optimize the access to geographical information of all the bands (such as in COG) : R&gt;Z&gt;T&gt;B  =&gt; For a given record, zoom level and block, all the bands will be contiguous.
+- To optimize the access to geographical information of one band at a time : B&gt;R&gt;Z&gt;T =&gt; For a given band, record and zoom, all the blocks will be contiguous.
+- To optimize the access to timeseries of all the bands (such as in MUCOG): Z&gt;T&gt;R&gt;B =&gt; For a given zoom level and block, all the records will be contiguous.
+
+Interlacing pattern can be specialized to only select a list or a range for each level (except Tile level).
+- By values: L=0,2,3 will only select the value 0, 2 and 3 of the level L. For example B=0,2,3 to select the corresponding band level.
+- By range: L=0:3 will only select the values from 0 to 3 (not included) of the level L. For example B=0:3 to select the three firsts bands. 
+First and last values of the range can be omitted to define 0 or last element of the level. e.g B=2: means all the bands from the second.
+Z=0 is the full resolution, Z=1 is the overview with zoom factor 2, Z=2 is the zoom factor 4, and so on.
+
+To chain interlacing patterns, use &#34;;&#34; separator.
+
+For example:
+- MUCOG optimizes access to timeseries for full resolution (Z=0), but geographic for overviews (Z=1:). Z=0&gt;T&gt;R&gt;B;Z=1:&gt;R&gt;T&gt;B
+- Same example, but the bands are separated: B&gt;Z=0&gt;T&gt;R;B&gt;Z=1:&gt;R&gt;T
+- To optimize access to geographic information of the three first bands together, but timeseries of the others: Z&gt;T&gt;R&gt;B=0:3;B=3:&gt;Z&gt;R&gt;T
+
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
@@ -1873,6 +1899,8 @@ TODO Internal layout defines the internal structure of a dataset
 | block_x_size | [int64](#int64) |  | Internal layout: Cell, Tile |
 | block_y_size | [int64](#int64) |  |  |
 | max_records | [int64](#int64) |  |  |
+| overviews_min_size | [int64](#int64) |  | Maximum width or height of the smallest overview level. 0: No overview, -1: default=256. |
+| interlacing_pattern | [string](#string) |  | Define how to interlace the [R]ecords, the [B]ands, the [Z]ooms level/overview and the [T]iles (geotiff blocks). |
 
 
 
@@ -2171,13 +2199,11 @@ Parameters of consolidation that are linked to a variable, to define:
 | ----- | ---- | ----- | ----------- |
 | dformat | [DataFormat](#geocube-DataFormat) |  | dataformat of the data. See exponent for the mapping formula. |
 | exponent | [double](#double) |  | 1: linear scaling (RealMax - RealMin) * pow( (Value - Min) / (Max - Min), Exponent) &#43; RealMin |
-| resampling_alg | [Resampling](#geocube-Resampling) |  | bool create_overviews = 3; // DEPRECATED
-
-Define how to resample the data during the consolidation (if a reprojection is needed or if the overviews are created) |
+| create_overviews | [bool](#bool) |  | **Deprecated.** Use Layout.overviews_min_size instead |
+| resampling_alg | [Resampling](#geocube-Resampling) |  | Define how to resample the data during the consolidation (if a reprojection is needed or if the overviews are created) |
 | compression | [ConsolidationParams.Compression](#geocube-ConsolidationParams-Compression) |  | Define how the data is compressed at block level |
-| bands_interleave | [bool](#bool) |  | If the variable is multibands, define whether the bands are interleaved |
+| bands_interleave | [bool](#bool) |  | **Deprecated.** If the variable is multibands, define whether the bands are interleaved. Use Layout.interlacing_pattern instead |
 | storage_class | [StorageClass](#geocube-StorageClass) |  | Define the storage class of the created file (support only GCS) |
-| overviews_min_size | [int32](#int32) |  | Maximum width or height of the smallest overview level. 0: No overview, -1: default=256. |
 
 
 

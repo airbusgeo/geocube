@@ -57,10 +57,6 @@ func (h *handlerConsolidation) Consolidate(ctx context.Context, cEvent *geocube.
 		return TaskCancelledConsolidationError
 	}
 
-	if !cEvent.Container.InterleaveRecords {
-		return NotImplementedError
-	}
-
 	id := uuid.New()
 	workDir := path.Join(workspace, id.String())
 	if err := os.MkdirAll(workDir, 0777); err != nil {
@@ -178,7 +174,7 @@ func (h *handlerConsolidation) Consolidate(ctx context.Context, cEvent *geocube.
 		return nil
 	}
 
-	mucogFilePath, err := h.mucog.Create(workDir, cogListFile)
+	mucogFilePath, err := h.mucog.Create(workDir, cogListFile, cEvent.Container.InterlacingPattern)
 	if err != nil {
 		return fmt.Errorf("failed to create mucog: %w", err)
 	}

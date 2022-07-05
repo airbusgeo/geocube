@@ -15,6 +15,7 @@ import (
 
 	mocksDB "github.com/airbusgeo/geocube/interface/database/mocks"
 	mocksMessaging "github.com/airbusgeo/geocube/interface/messaging/mocks"
+	"github.com/airbusgeo/mucog"
 
 	"github.com/airbusgeo/geocube/internal/geocube"
 	"github.com/airbusgeo/geocube/internal/log"
@@ -75,15 +76,6 @@ var _ = Describe("Consolidater", func() {
 		Context("one basic dataset", func() {
 			BeforeEach(func() {
 				datasetsToUse = datasetNotConsolidated
-				containerToUse = containerF_3_O
-			})
-			itShouldNeedConsolidation()
-			itShouldNotReturnDatasets()
-		})
-
-		Context("one identical consolidated dataset with no overview", func() {
-			BeforeEach(func() {
-				datasetsToUse = datasetConsolidatedF_123_NO
 				containerToUse = containerF_3_O
 			})
 			itShouldNeedConsolidation()
@@ -226,11 +218,9 @@ var _ = Describe("Consolidater", func() {
 							Max: 255,
 						},
 					},
-					Exponent:         0,
-					Compression:      0,
-					OverviewsMinSize: geocube.NO_OVERVIEW,
-					BandsInterleave:  false,
-					StorageClass:     0,
+					Exponent:     0,
+					Compression:  0,
+					StorageClass: 0,
 				},
 			}
 			variableErrorToReturned = nil
@@ -244,11 +234,9 @@ var _ = Describe("Consolidater", func() {
 						Max: 255,
 					},
 				},
-				Exponent:         0,
-				Compression:      0,
-				OverviewsMinSize: geocube.NO_OVERVIEW,
-				BandsInterleave:  false,
-				StorageClass:     0,
+				Exponent:     0,
+				Compression:  0,
+				StorageClass: 0,
 			}
 			consolidationParamErrorReturned = nil
 
@@ -334,9 +322,11 @@ var _ = Describe("Consolidater", func() {
 						"crs":        "4326",
 						"resolution": "0.0001716613769531200127",
 					},
-					BlockXSize: 256,
-					BlockYSize: 256,
-					MaxRecords: 10,
+					BlockXSize:         256,
+					BlockYSize:         256,
+					MaxRecords:         10,
+					OverviewsMinSize:   geocube.NO_OVERVIEW,
+					InterlacingPattern: mucog.MUCOGPattern,
 				}, nil)
 				geocubeTxBackendReturned.On("FindDatasets", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return([]*geocube.Dataset{}, nil)
 				geocubeTxBackendReturned.On("ReleaseDatasets", ctx, mock.Anything, mock.Anything).Return(nil)

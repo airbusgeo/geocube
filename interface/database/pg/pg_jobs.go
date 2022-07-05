@@ -376,13 +376,13 @@ func (b Backend) ChangeDatasetsStatus(ctx context.Context, lockedByJobID string,
 func (b Backend) CreateConsolidationParams(ctx context.Context, id string, cp geocube.ConsolidationParams) error {
 	_, err := b.pg.ExecContext(ctx,
 		"INSERT INTO geocube.consolidation_params (id, dtype, no_data, min_value, max_value, exponent,"+
-			"compression, overviews_min_size, resampling_alg, bands_interleave, storage_class) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)"+
+			"compression, resampling_alg, storage_class) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)"+
 			" ON CONFLICT (id) DO UPDATE"+
 			" SET dtype=EXCLUDED.dtype, no_data=EXCLUDED.no_data, min_value=EXCLUDED.min_value, max_value=EXCLUDED.max_value, exponent=EXCLUDED.exponent,"+
-			" compression=EXCLUDED.compression, overviews_min_size=EXCLUDED.overviews_min_size, resampling_alg=EXCLUDED.resampling_alg,"+
-			" bands_interleave=EXCLUDED.bands_interleave, storage_class=EXCLUDED.storage_class",
+			" compression=EXCLUDED.compression, resampling_alg=EXCLUDED.resampling_alg,"+
+			" storage_class=EXCLUDED.storage_class",
 		id, cp.DFormat.DType, cp.DFormat.NoData, cp.DFormat.Range.Min, cp.DFormat.Range.Max, cp.Exponent,
-		cp.Compression, cp.OverviewsMinSize, cp.ResamplingAlg, cp.BandsInterleave, cp.StorageClass)
+		cp.Compression, cp.ResamplingAlg, cp.StorageClass)
 
 	switch pqErrorCode(err) {
 	case noError:
@@ -395,10 +395,10 @@ func (b Backend) CreateConsolidationParams(ctx context.Context, id string, cp ge
 // ReadConsolidationParams implements geocubeBackend
 func (b Backend) ReadConsolidationParams(ctx context.Context, id string) (*geocube.ConsolidationParams, error) {
 	var cp geocube.ConsolidationParams
-	err := b.pg.QueryRowContext(ctx, "SELECT dtype, no_data, min_value, max_value, compression, overviews_min_size, resampling_alg, exponent, bands_interleave, storage_class"+
+	err := b.pg.QueryRowContext(ctx, "SELECT dtype, no_data, min_value, max_value, compression, resampling_alg, exponent, storage_class"+
 		" FROM geocube.consolidation_params WHERE id = $1", id).
 		Scan(&cp.DFormat.DType, &cp.DFormat.NoData, &cp.DFormat.Range.Min, &cp.DFormat.Range.Max,
-			&cp.Compression, &cp.OverviewsMinSize, &cp.ResamplingAlg, &cp.Exponent, &cp.BandsInterleave, &cp.StorageClass)
+			&cp.Compression, &cp.ResamplingAlg, &cp.Exponent, &cp.StorageClass)
 	switch {
 	case err == sql.ErrNoRows:
 		return nil, geocube.NewEntityNotFound("ConsolidationParams", "id", id, "")

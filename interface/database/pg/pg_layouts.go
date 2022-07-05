@@ -13,9 +13,9 @@ import (
 // CreateLayout implements GeocubeBackend
 func (b Backend) CreateLayout(ctx context.Context, layout *geocube.Layout) error {
 	_, err := b.pg.ExecContext(ctx,
-		"INSERT INTO geocube.layouts (name, grid_flags, grid_parameters, block_x_size, block_y_size, max_records)"+
-			" VALUES ($1, $2, $3, $4, $5, $6)",
-		layout.Name, pq.Array(layout.GridFlags), layout.GridParameters, layout.BlockXSize, layout.BlockYSize, layout.MaxRecords)
+		"INSERT INTO geocube.layouts (name, grid_flags, grid_parameters, block_x_size, block_y_size, max_records, overviews_min_size, interlacing_pattern)"+
+			" VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
+		layout.Name, pq.Array(layout.GridFlags), layout.GridParameters, layout.BlockXSize, layout.BlockYSize, layout.MaxRecords, layout.OverviewsMinSize, layout.InterlacingPattern)
 
 	switch pqErrorCode(err) {
 	case noError:
@@ -39,9 +39,9 @@ func (b Backend) ReadLayout(ctx context.Context, name string) (*geocube.Layout, 
 
 	// Get Layout
 	err := b.pg.QueryRowContext(ctx,
-		"SELECT grid_flags, grid_parameters, block_x_size, block_y_size, max_records "+
+		"SELECT grid_flags, grid_parameters, block_x_size, block_y_size, max_records, overviews_min_size, interlacing_pattern "+
 			"FROM geocube.layouts WHERE name = $1", name).
-		Scan(pq.Array(l.GridFlags), &l.GridParameters, &l.BlockXSize, &l.BlockYSize, &l.MaxRecords)
+		Scan(pq.Array(l.GridFlags), &l.GridParameters, &l.BlockXSize, &l.BlockYSize, &l.MaxRecords, &l.OverviewsMinSize, &l.InterlacingPattern)
 
 	switch {
 	case err == sql.ErrNoRows:
@@ -63,7 +63,7 @@ func (b Backend) FindLayouts(ctx context.Context, nameLike string) ([]*geocube.L
 		wc.append(" name "+operator+" $%d", nameLike)
 	}
 	rows, err := b.pg.QueryContext(ctx,
-		"SELECT name, grid_flags, grid_parameters, block_x_size, block_y_size, max_records FROM geocube.layouts"+wc.WhereClause(), wc.Parameters...)
+		"SELECT name, grid_flags, grid_parameters, block_x_size, block_y_size, max_records, overviews_min_size, interlacing_pattern FROM geocube.layouts"+wc.WhereClause(), wc.Parameters...)
 
 	if err != nil {
 		return nil, pqErrorFormat("FindLayouts: %w", err)
@@ -73,7 +73,7 @@ func (b Backend) FindLayouts(ctx context.Context, nameLike string) ([]*geocube.L
 	layouts := []*geocube.Layout{}
 	for rows.Next() {
 		var l geocube.Layout
-		if err := rows.Scan(&l.Name, pq.Array(l.GridFlags), &l.GridParameters, &l.BlockXSize, &l.BlockYSize, &l.MaxRecords); err != nil {
+		if err := rows.Scan(&l.Name, pq.Array(l.GridFlags), &l.GridParameters, &l.BlockXSize, &l.BlockYSize, &l.MaxRecords, &l.OverviewsMinSize, &l.InterlacingPattern); err != nil {
 			return nil, fmt.Errorf("FindLayouts: %w", err)
 		}
 		layouts = append(layouts, &l)

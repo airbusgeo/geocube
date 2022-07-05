@@ -13,7 +13,7 @@ import (
 )
 
 type MucogGenerator interface {
-	Create(workDir string, cogListFile []string) (string, error)
+	Create(workDir string, cogListFile []string, interlacingPattern string) (string, error)
 }
 
 func NewMucogGenerator() MucogGenerator {
@@ -27,7 +27,7 @@ type cogFileInfo struct {
 	Content *os.File
 }
 
-func (m *mucogGenerator) Create(workDir string, cogListFile []string) (string, error) {
+func (m *mucogGenerator) Create(workDir string, cogListFile []string, interlacingPattern string) (string, error) {
 	totalSize := int64(0)
 	multicog := mucog.New()
 	for _, cogFilePath := range cogListFile {
@@ -45,7 +45,7 @@ func (m *mucogGenerator) Create(workDir string, cogListFile []string) (string, e
 		}
 	}
 
-	return m.writeMucog(multicog, workDir, totalSize)
+	return m.writeMucog(multicog, workDir, totalSize, interlacingPattern)
 }
 
 func (m *mucogGenerator) addCog(multicog *mucog.MultiCOG, totalSize int64, c cogFileInfo) (int64, error) {
@@ -78,7 +78,7 @@ func (m *mucogGenerator) addCog(multicog *mucog.MultiCOG, totalSize int64, c cog
 	return totalSize, nil
 }
 
-func (m *mucogGenerator) writeMucog(multicog *mucog.MultiCOG, workDir string, totalSize int64) (string, error) {
+func (m *mucogGenerator) writeMucog(multicog *mucog.MultiCOG, workDir string, totalSize int64, interlacingPattern string) (string, error) {
 	bigtiff := totalSize > int64(^uint32(0))
 	mucogFilePath := path.Join(workDir, "mucog.tif")
 	mucogFile, err := os.Create(mucogFilePath)
@@ -86,7 +86,7 @@ func (m *mucogGenerator) writeMucog(multicog *mucog.MultiCOG, workDir string, to
 		return "", fmt.Errorf("create %s: %w", mucogFilePath, err)
 	}
 
-	if err = multicog.Write(mucogFile, bigtiff); err != nil {
+	if err = multicog.Write(mucogFile, bigtiff, interlacingPattern); err != nil {
 		return "", fmt.Errorf("failed to write mucog: %w", err)
 	}
 

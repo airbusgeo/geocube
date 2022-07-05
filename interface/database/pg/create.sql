@@ -118,6 +118,8 @@ CREATE TABLE geocube.layouts (
 	block_x_size INTEGER DEFAULT '256' NOT NULL,
 	block_y_size INTEGER DEFAULT '256' NOT NULL,
 	max_records INTEGER DEFAULT '1024' NOT NULL,
+	overviews_min_size INTEGER NOT NULL,
+	interlacing_pattern TEXT NOT NULL,
 	PRIMARY KEY (name)
 );
 
@@ -155,9 +157,7 @@ CREATE TABLE geocube.consolidation_params (
 	max_value double precision NOT NULL,
 	exponent double precision NOT NULL,
 	compression geocube.compression NOT NULL,
-	overviews_min_size INTEGER NOT NULL,
 	resampling_alg geocube.resampling NOT NULL,
-	bands_interleave BOOLEAN NOT NULL,
 	storage_class geocube.storage_class NOT NULL,
 	PRIMARY KEY (id)
 );

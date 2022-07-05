@@ -22,10 +22,8 @@ The [consolidation parameters](grpc.md#consolidationparams) that describe the da
 
 - Internal `Dataformat` 
 - `Exponent` for the mapping between internal dataformat and `variable.dformat` (see formula below)
-- Creation of `Overviews`
 - `Resampling algorithm` used for reprojection and overviews
 - `Compression` of the data
-- `Bands interleave` if the variable is multi-bands
 
 NB: regarding the [mapping of the dataformat](entities.md#dataformat-and-mapping), for the consolidation process, the MinOut/MaxOut are the Min/Max of the variable.
 
@@ -41,6 +39,8 @@ The [layout](grpc.md#layout) has *external parameters* that define the grid:
 and *internal parameters* that define the internal tiling and the depth of the stacking:
 - `block_shape`
 - `max_records` per file
+- Creation of `Overviews`
+- `interlacing_pattern` that describes how to interlace the Records, the Bands, the Zooms level/overview and the Tiles (geotiff blocks). See [Layout()](grpc.md#geocub#geocube-Layout)
 
 The layout must be carefully defined depending on the performance expected in terms of access.
 The size of the cell of the grid multiplied by the maximum number of the records and the datatype will give the maximum size of the final files.

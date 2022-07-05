@@ -22,3 +22,10 @@ CREATE INDEX idx_containers_id ON geocube.containers (id);
 ALTER TABLE geocube.datasets ADD COLUMN locked_by_job_id UUID;
 CREATE INDEX idx_datasets_locked ON geocube.datasets (locked_by_job_id);
 
+-- add interlacing_pattern and remove band_interleave
+ALTER TABLE geocube.layouts ADD COLUMN interlacing_pattern TEXT NOT NULL DEFAULT 'Z=0>T>R>B;R>Z=1:>T>B';
+ALTER TABLE geocube.consolidation_params DROP COLUMN bands_interleave;
+
+-- consolidation_params.overviews_min_size => layout.overviews_min_size
+ALTER TABLE geocube.layouts ADD COLUMN overviews_min_size INTEGER default -1;
+ALTER TABLE geocube.consolidation_params DROP COLUMN overviews_min_size;
