@@ -383,7 +383,8 @@ func csldPrepareOrdersSortDatasets(ctx context.Context, txn database.GeocubeTxBa
 	fillRecordsTime(recordsTime, rs)
 	// Sort the datasets
 	sort.Slice(datasets, func(i, j int) bool {
-		return recordsTime[datasets[i].RecordID] < recordsTime[datasets[j].RecordID]
+		return recordsTime[datasets[i].RecordID] < recordsTime[datasets[j].RecordID] ||
+			(recordsTime[datasets[i].RecordID] == recordsTime[datasets[j].RecordID] && datasets[i].RecordID < datasets[j].RecordID)
 	})
 	return nil
 }
