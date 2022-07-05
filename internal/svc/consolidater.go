@@ -639,8 +639,10 @@ func (svc *Service) csldDeleteDatasets(ctx context.Context, job *geocube.Job) er
 	}); err != nil {
 		return fmt.Errorf("csldDeleteDatasets.%w", err)
 	}
-	if err := svc.delOnEnterNewState(ctx, deletionJob); err != nil {
-		return fmt.Errorf("csldDeleteDatasets.%w", err)
+	if deletionJob != nil {
+		if err := svc.delOnEnterNewState(ctx, deletionJob); err != nil {
+			return fmt.Errorf("csldDeleteDatasets.%w", err)
+		}
 	}
 	return nil
 }
