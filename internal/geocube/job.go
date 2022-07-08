@@ -155,6 +155,8 @@ type Job struct {
 	LastUpdateTime time.Time
 	Payload        JobPayload
 	Logs           JobLogs
+	LogsCount      int
+	NewLogs        JobLogs // logs that are not yet persisted in bdd
 	ActiveTasks    int
 	FailedTasks    int
 	ExecutionLevel ExecutionLevel
@@ -193,7 +195,7 @@ func NewConsolidationJob(jobName, layout, instanceID string, executionLevel Exec
 			InstanceID: instanceID,
 			ParamsID:   id, // By default ParamsID is JobID
 		},
-		Logs: JobLogs{{
+		NewLogs: JobLogs{{
 			Severity: "INFO",
 			Msg:      "Create Job Consolidation",
 			Status:   JobStateNEW.String(),
@@ -219,7 +221,7 @@ func NewDeletionJob(jobName string, executionLevel ExecutionLevel) *Job {
 		ActiveTasks:      0,
 		FailedTasks:      0,
 		Payload:          JobPayload{},
-		Logs: JobLogs{{
+		NewLogs: JobLogs{{
 			Severity: "INFO",
 			Msg:      "Create Job Deletion",
 			Status:   JobStateNEW.String(),
@@ -242,7 +244,7 @@ func (j *Job) SetParams(params ConsolidationParams) error {
 }
 
 // ToProtobuf converts a job to protobuf
-func (j *Job) ToProtobuf(logPage, logLimit int) (*pb.Job, error) {
+func (j *Job) ToProtobuf(offset int) (*pb.Job, error) {
 	creationTime := timestamppb.New(j.CreationTime)
 	if err := creationTime.CheckValid(); err != nil {
 		return nil, err
@@ -262,7 +264,7 @@ func (j *Job) ToProtobuf(logPage, logLimit int) (*pb.Job, error) {
 		FailedTasks:    int32(j.FailedTasks),
 		ExecutionLevel: pb.ExecutionLevel(j.ExecutionLevel),
 		Waiting:        j.Waiting,
-		Logs:           j.Logs.toSliceString(logPage, logLimit),
+		Logs:           j.Logs.toSliceString(j.LogsCount, offset),
 	}, nil
 }
 
@@ -311,12 +313,15 @@ func (j *Job) OCCTime() time.Time {
 
 // LogMsg updates and append the log status of Job
 func (j *Job) LogMsg(severity LogSeverity, msg string) {
-	j.Logs = append(j.Logs, JobLog{
+	log := JobLog{
 		Severity: severity,
 		Msg:      msg,
 		Status:   j.State.String(),
 		Date:     time.Now(),
-	})
+	}
+	j.NewLogs = append(j.NewLogs, log)
+	j.Logs = append(j.Logs, log)
+	j.LogsCount++
 	j.dirty()
 }
 
@@ -325,18 +330,16 @@ func (j *Job) LogMsgf(severity LogSeverity, msg string, args ...interface{}) {
 	j.LogMsg(severity, fmt.Sprintf(msg, args...))
 }
 
+func (j *Job) ClearPersistedLogs() {
+	j.NewLogs = make([]JobLog, 0)
+}
+
 // LogErr updates and append the error status
 func (j *Job) LogErr(err string) {
 	if err == "" {
 		return
 	}
-	j.Logs = append(j.Logs, JobLog{
-		Severity: ERROR,
-		Msg:      err,
-		Status:   j.State.String(),
-		Date:     time.Now(),
-	})
-	j.dirty()
+	j.LogMsg(ERROR, err)
 }
 
 /***************************************************/
@@ -820,19 +823,24 @@ func (jl JobLogs) Len() int           { return len(jl) }
 func (jl JobLogs) Less(i, j int) bool { return jl[i].Date.Before(jl[j].Date) }
 func (jl JobLogs) Swap(i, j int)      { jl[i], jl[j] = jl[j], jl[i] }
 
-func (jl JobLogs) toSliceString(page, limit int) []string {
+func (jl JobLogs) toSliceString(count, offset int) []string {
 	sort.Sort(jl)
 	var result []string
-	last := utils.MaxI(0, len(jl)-page*limit)
-	first := utils.MaxI(0, len(jl)-(page+1)*limit)
-	if first != 0 {
-		result = append(result, fmt.Sprintf("[... %d more]", first))
+	if count == -1 {
+		result = append(result, "[... may be more]")
+	} else {
+		offset = utils.MinI(offset, count-len(jl))
+		first := utils.MaxI(0, count-len(jl)-offset)
+		if first != 0 {
+			result = append(result, fmt.Sprintf("[... %d more]", first))
+		}
 	}
-	for i := first; i < last; i++ {
+	for i := 0; i < jl.Len(); i++ {
 		result = append(result, fmt.Sprintf("%s - %s | Status: %s - Message: %s", jl[i].Date.Format(time.RFC3339Nano), jl[i].Severity, jl[i].Status, jl[i].Msg))
 	}
-	if last != len(jl) {
-		result = append(result, fmt.Sprintf("[... %d more]", len(jl)-last))
+
+	if offset != 0 {
+		result = append(result, fmt.Sprintf("[... %d more]", offset))
 	}
 	return result
 }

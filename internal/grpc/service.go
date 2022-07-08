@@ -11,6 +11,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/airbusgeo/geocube/interface/database"
+
 	"github.com/airbusgeo/geocube/interface/storage/gcs"
 
 	"github.com/airbusgeo/godal"
@@ -65,7 +67,7 @@ type GeocubeService interface {
 	ConsolidateFromRecords(ctx context.Context, job *geocube.Job, recordsID []string) error
 	ConsolidateFromFilters(ctx context.Context, job *geocube.Job, tags map[string]string, fromTime, toTime time.Time) error
 	ListJobs(ctx context.Context, nameLike string) ([]*geocube.Job, error)
-	GetJob(ctx context.Context, jobID string) (*geocube.Job, error)
+	GetJob(ctx context.Context, jobID string, opts ...database.ReadJobOptions) (*geocube.Job, error)
 	RetryJob(ctx context.Context, jobID string, forceAnyState bool) error
 	CancelJob(ctx context.Context, jobID string, forceAnyState bool) error
 	ContinueJob(ctx context.Context, jobID string) error
@@ -613,7 +615,7 @@ func (svc *Service) ListJobs(ctx context.Context, req *pb.ListJobsRequest) (*pb.
 	// Format response
 	resp := pb.ListJobsResponse{}
 	for _, job := range jobs {
-		pbjob, err := job.ToProtobuf(0, 10)
+		pbjob, err := job.ToProtobuf(0)
 		if err != nil {
 			return nil, formatError("toprotobuf: %w", err)
 		}
@@ -631,13 +633,13 @@ func (svc *Service) GetJob(ctx context.Context, req *pb.GetJobRequest) (*pb.GetJ
 	}
 
 	// Get Job
-	job, err := svc.gsvc.GetJob(ctx, req.GetId())
+	job, err := svc.gsvc.GetJob(ctx, req.GetId(), database.LogLimit(int(req.LogPage), int(req.LogLimit)))
 	if err != nil {
 		return nil, formatError("backend.%w", err)
 	}
 
 	// Format response
-	pbjob, err := job.ToProtobuf(int(req.LogPage), int(req.LogLimit))
+	pbjob, err := job.ToProtobuf(int(req.LogPage * req.LogLimit))
 	if err != nil {
 		return nil, formatError("toprotobuf: %w", err)
 	}

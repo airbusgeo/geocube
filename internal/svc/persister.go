@@ -142,11 +142,28 @@ func (svc *Service) saveJob(ctx context.Context, txn database.GeocubeTxBackend, 
 		}
 	}
 
+	if err := svc.saveJobLogs(ctx, txn, job); err != nil {
+		return err
+	}
+
 	if job.IsToDelete() {
 		job.Deleted()
 	} else {
 		job.Clean(true)
 	}
+	return nil
+}
+
+// saveJobLogs persists the logs of a job in the database
+// saveJobLogs must be done inside a transaction. If txn=nil, saveJobLogs calls itself inside a unitOfWork.
+func (svc *Service) saveJobLogs(ctx context.Context, txn database.GeocubeTxBackend, job *geocube.Job) error {
+	if txn == nil {
+		return svc.unitOfWork(ctx, func(txn database.GeocubeTxBackend) error { return svc.saveJobLogs(ctx, txn, job) })
+	}
+	if err := txn.PersistLogs(ctx, job.ID, job.NewLogs); err != nil {
+		return fmt.Errorf("failed to persist logs in BDD: %w", err)
+	}
+	job.ClearPersistedLogs()
 	return nil
 }
 

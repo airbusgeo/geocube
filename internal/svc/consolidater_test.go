@@ -180,6 +180,7 @@ var _ = Describe("Consolidater", func() {
 			createConsolidationParamErrorReturned error
 			lockDatasetErrorReturned              error
 			publishErrorReturned                  error
+			persistLogsErrorReturned              error
 		)
 
 		BeforeEach(func() {
@@ -255,6 +256,7 @@ var _ = Describe("Consolidater", func() {
 			createConsolidationParamErrorReturned = nil
 			lockDatasetErrorReturned = nil
 			publishErrorReturned = nil
+			persistLogsErrorReturned = nil
 
 		})
 
@@ -269,6 +271,7 @@ var _ = Describe("Consolidater", func() {
 			geocubeTxBackendReturned.On("CreateJob", ctx, jobToUse).Return(createJobErrorReturned)
 			geocubeTxBackendReturned.On("CreateConsolidationParams", ctx, jobToUse.Payload.ParamsID, mock.Anything).Return(createConsolidationParamErrorReturned)
 			geocubeTxBackendReturned.On("LockDatasets", ctx, jobToUse.ID, mock.Anything, mock.Anything).Return(lockDatasetErrorReturned)
+			geocubeTxBackendReturned.On("PersistLogs", ctx, jobToUse.ID, mock.Anything).Return(persistLogsErrorReturned)
 			mockEventPublisher.On("Publish", ctx, mock.Anything).Return(publishErrorReturned)
 
 			returnedError = service.ConsolidateFromRecords(ctx, jobToUse, recordIDS)

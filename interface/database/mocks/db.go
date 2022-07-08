@@ -395,19 +395,19 @@ func (_m *GeocubeBackend) FindJobs(ctx context.Context, nameLike string) ([]*geo
 	panic("implement me")
 }
 
-func (_m *GeocubeBackend) ReadJob(ctx context.Context, jobID string) (*geocube.Job, error) {
-	ret := _m.Called(ctx, jobID)
+func (_m *GeocubeBackend) ReadJob(ctx context.Context, jobID string, opts ...database.ReadJobOptions) (*geocube.Job, error) {
+	ret := _m.Called(ctx, jobID, opts)
 
 	var r0 *geocube.Job
-	if rf, ok := ret.Get(0).(func(context.Context, string) *geocube.Job); ok {
-		r0 = rf(ctx, jobID)
+	if rf, ok := ret.Get(0).(func(context.Context, string, ...database.ReadJobOptions) *geocube.Job); ok {
+		r0 = rf(ctx, jobID, opts...)
 	} else {
 		r0 = ret.Get(0).(*geocube.Job)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, jobID)
+	if rf, ok := ret.Get(1).(func(context.Context, string, ...database.ReadJobOptions) error); ok {
+		r1 = rf(ctx, jobID, opts...)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -421,6 +421,19 @@ func (_m *GeocubeBackend) UpdateJob(ctx context.Context, job *geocube.Job) error
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, *geocube.Job) error); ok {
 		r1 = rf(ctx, job)
+	} else {
+		r1 = ret.Error(0)
+	}
+
+	return r1
+}
+
+func (_m *GeocubeBackend) PersistLogs(ctx context.Context, jobID string, logs geocube.JobLogs) error {
+	ret := _m.Called(ctx, jobID, logs)
+
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, geocube.JobLogs) error); ok {
+		r1 = rf(ctx, jobID, logs)
 	} else {
 		r1 = ret.Error(0)
 	}
@@ -756,6 +769,19 @@ func (_m *GeocubeTxBackend) UpdateJob(ctx context.Context, job *geocube.Job) err
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, *geocube.Job) error); ok {
 		r1 = rf(ctx, job)
+	} else {
+		r1 = ret.Error(0)
+	}
+
+	return r1
+}
+
+func (_m *GeocubeTxBackend) PersistLogs(ctx context.Context, jobID string, logs geocube.JobLogs) error {
+	ret := _m.Called(ctx, jobID, logs)
+
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, geocube.JobLogs) error); ok {
+		r1 = rf(ctx, jobID, logs)
 	} else {
 		r1 = ret.Error(0)
 	}

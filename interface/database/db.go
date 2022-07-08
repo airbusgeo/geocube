@@ -202,10 +202,12 @@ type GeocubeBackend interface {
 	FindJobs(ctx context.Context, nameLike string) ([]*geocube.Job, error)
 	// ReadJob retrieves the job but not its tasks
 	// Raise geocube.EntityNotFound
-	ReadJob(ctx context.Context, jobID string) (*geocube.Job, error)
+	ReadJob(ctx context.Context, jobID string, opts ...ReadJobOptions) (*geocube.Job, error)
 	// UpdateJob updates the job status and updateTime
 	// Raise geocube.EntityNotFound
 	UpdateJob(ctx context.Context, job *geocube.Job) error
+	// PersistLogs insert the job logs
+	PersistLogs(ctx context.Context, jobID string, logs geocube.JobLogs) error
 	// DeleteJob deletes the job from the database and release the datasets
 	// But its Params and all its tasks must have been deleted before
 	DeleteJob(ctx context.Context, jobID string) error
@@ -238,4 +240,32 @@ type GeocubeBackend interface {
 	/******************** Consolidation *************************/
 	// ChangeDatasetsStatus changes the status of all the datasets locked by the job whom status is fromStatus to toStatus
 	ChangeDatasetsStatus(ctx context.Context, lockedByJobID string, fromStatus geocube.DatasetStatus, toStatus geocube.DatasetStatus) error
+}
+
+type ReadJobOptions func(o *readJobOptions)
+
+type readJobOptions struct {
+	Page  int
+	Limit int
+}
+
+func LogLimit(page, limit int) ReadJobOptions {
+	if page < 0 {
+		page = 0
+	}
+	if limit < 0 {
+		limit = 0
+	}
+	return func(o *readJobOptions) {
+		o.Page = page
+		o.Limit = limit
+	}
+}
+
+func Apply(opts ...ReadJobOptions) readJobOptions {
+	opt := readJobOptions{}
+	for _, o := range opts {
+		o(&opt)
+	}
+	return opt
 }

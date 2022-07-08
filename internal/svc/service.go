@@ -504,8 +504,8 @@ func (svc *Service) ListJobs(ctx context.Context, nameLike string) ([]*geocube.J
 
 // GetJob implements GeocubeService
 // GetJob retrieves only the Job but not the tasks
-func (svc *Service) GetJob(ctx context.Context, jobID string) (*geocube.Job, error) {
-	job, err := svc.db.ReadJob(ctx, jobID)
+func (svc *Service) GetJob(ctx context.Context, jobID string, opts ...database.ReadJobOptions) (*geocube.Job, error) {
+	job, err := svc.db.ReadJob(ctx, jobID, opts...)
 	if err != nil {
 		return nil, fmt.Errorf("GetJob.%w", err)
 	}

@@ -14,7 +14,7 @@ CREATE TYPE geocube.color_point AS (
 	value real,
 	rgba bigint
 );
-
+CREATE TYPE geocube.log_level AS ENUM ('INFO', 'DEBUG', 'WARN', 'ERROR');
 
 CREATE TABLE geocube.aoi (
 	id UUID NOT NULL,
@@ -129,9 +129,18 @@ CREATE TABLE geocube.jobs (
 	type TEXT NOT NULL,
 	execution_level INTEGER DEFAULT 0 NOT NULL,
 	waiting BOOLEAN DEFAULT FALSE NOT NULL,
-	logs JSONB default '[]'::JSONB,
 	PRIMARY KEY (id),
 	UNIQUE (name)
+);
+
+CREATE TABLE geocube.job_logs (
+    id SERIAL PRIMARY KEY,
+    job_id UUID NOT NULL,
+    time TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+    status TEXT,
+    message TEXT,
+    severity geocube.log_level NOT NULL,
+    FOREIGN KEY(job_id) REFERENCES geocube.jobs (id) MATCH FULL ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE geocube.consolidation_params (
@@ -198,4 +207,5 @@ CREATE TABLE geocube.container_layouts (
 
 
 -- CREATE ROLE apiserver WITH LOGIN;
+-- GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA geocube TO apiserver;
 -- GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA geocube TO apiserver;

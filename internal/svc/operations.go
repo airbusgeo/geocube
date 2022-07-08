@@ -55,6 +55,7 @@ func (svc *Service) handleJobEvt(ctx context.Context, evt geocube.JobEvent) erro
 		case geocube.JobTypeDELETION:
 			err = svc.delOnEnterNewState(ctx, job)
 		}
+		svc.saveJobLogs(ctx, nil, job)
 	}
 	log.Logger(ctx).Sugar().Debugf("evt %s processed in %v", evt.Status.String(), time.Since(start))
 	return err

@@ -352,6 +352,7 @@ func (svc *Service) csldPrepareOrders(ctx context.Context, job *geocube.Job) err
 				}
 			}
 			job.LogMsgf(geocube.DEBUG, "Prepare %d container(s) with %d record(s) and %d dataset(s) (geographic: %v)", nbOfContainers, len(records), len(datasets), cell.GeographicRing.Coords())
+			svc.saveJobLogs(ctx, nil, job)
 		}
 		if len(job.Tasks) != 0 {
 			job.LogMsgf(geocube.INFO, "%d tasks are created", len(job.Tasks))

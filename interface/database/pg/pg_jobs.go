@@ -5,9 +5,31 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/airbusgeo/geocube/interface/database"
+
 	"github.com/airbusgeo/geocube/internal/geocube"
 	"github.com/lib/pq"
 )
+
+const (
+	logsSubtable = `
+		(SELECT jobs.*, json_agg(json_build_object('time', to_char((time::timestamp), 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"'), 'severity', severity,'status', status, 'message', message)) AS logs
+		FROM geocube.jobs
+		LEFT JOIN LATERAL (
+			SELECT * FROM geocube.job_logs
+			WHERE job_logs.job_id = jobs.id
+			ORDER BY job_logs.time DESC
+			OFFSET %d LIMIT %d
+		) sub ON TRUE
+		GROUP BY jobs.id) jobs
+	`
+)
+
+func reverse(log geocube.JobLogs) {
+	for i, j := 0, len(log)-1; i < j; i, j = i+1, j-1 {
+		log[i], log[j] = log[j], log[i]
+	}
+}
 
 // FindJobs implements GeocubeBackend
 func (b Backend) FindJobs(ctx context.Context, nameLike string) ([]*geocube.Job, error) {
@@ -16,8 +38,11 @@ func (b Backend) FindJobs(ctx context.Context, nameLike string) ([]*geocube.Job,
 		nameLike, operator := parseLike(nameLike)
 		wc.append(" name "+operator+" $%d", nameLike)
 	}
+
 	rows, err := b.pg.QueryContext(ctx,
-		"SELECT id, name, type, creation_ts, last_update_ts, state, active_tasks, failed_tasks, payload, execution_level, waiting, logs FROM geocube.jobs"+wc.WhereClause(), wc.Parameters...)
+		"SELECT id, name, type, creation_ts, last_update_ts, state, active_tasks, failed_tasks, payload, execution_level, waiting, logs"+
+			" FROM "+fmt.Sprintf(logsSubtable, 0, 10)+
+			wc.WhereClause(), wc.Parameters...)
 
 	if err != nil {
 		return nil, pqErrorFormat("FindJobs: %w", err)
@@ -26,21 +51,37 @@ func (b Backend) FindJobs(ctx context.Context, nameLike string) ([]*geocube.Job,
 
 	jobs := []*geocube.Job{}
 	for rows.Next() {
-		var j geocube.Job
+		j := geocube.Job{LogsCount: -1}
 		if err := rows.Scan(&j.ID, &j.Name, &j.Type, &j.CreationTime, &j.LastUpdateTime, &j.State, &j.ActiveTasks, &j.FailedTasks, &j.Payload, &j.ExecutionLevel, &j.Waiting, &j.Logs); err != nil {
 			return nil, fmt.Errorf("FindJobs: %w", err)
 		}
+		reverse(j.Logs)
 		jobs = append(jobs, &j)
 	}
 	return jobs, nil
 }
 
 // ReadJob implements GeocubeBackend
-func (b Backend) ReadJob(ctx context.Context, jobID string) (*geocube.Job, error) {
+func (b Backend) ReadJob(ctx context.Context, jobID string, opts ...database.ReadJobOptions) (*geocube.Job, error) {
+	var err error
+
+	readJobOpts := database.Apply(opts...)
+
 	j := geocube.NewJob(jobID)
-	err := b.pg.QueryRowContext(ctx,
-		"SELECT name, type, creation_ts, last_update_ts, state, active_tasks, failed_tasks, payload, execution_level, waiting, logs FROM geocube.jobs WHERE id = $1", jobID).
-		Scan(&j.Name, &j.Type, &j.CreationTime, &j.LastUpdateTime, &j.State, &j.ActiveTasks, &j.FailedTasks, &j.Payload, &j.ExecutionLevel, &j.Waiting, &j.Logs)
+
+	if readJobOpts.Limit == 0 {
+		err = b.pg.QueryRowContext(ctx,
+			"SELECT name, type, creation_ts, last_update_ts, state, active_tasks, failed_tasks, payload, execution_level, waiting"+
+				" FROM geocube.jobs WHERE id = $1", jobID).
+			Scan(&j.Name, &j.Type, &j.CreationTime, &j.LastUpdateTime, &j.State, &j.ActiveTasks, &j.FailedTasks, &j.Payload, &j.ExecutionLevel, &j.Waiting)
+	} else {
+		err = b.pg.QueryRowContext(ctx,
+			"SELECT name, type, creation_ts, last_update_ts, state, active_tasks, failed_tasks, payload, execution_level, waiting, logs, log_count.*"+
+				" FROM "+fmt.Sprintf(logsSubtable, readJobOpts.Page*readJobOpts.Limit, readJobOpts.Limit)+
+				" LEFT JOIN LATERAL (SELECT count(*) from geocube.job_logs WHERE job_logs.job_id = jobs.id) log_count on true"+
+				" WHERE id = $1", jobID).
+			Scan(&j.Name, &j.Type, &j.CreationTime, &j.LastUpdateTime, &j.State, &j.ActiveTasks, &j.FailedTasks, &j.Payload, &j.ExecutionLevel, &j.Waiting, &j.Logs, &j.LogsCount)
+	}
 
 	switch {
 	case err == sql.ErrNoRows:
@@ -51,6 +92,7 @@ func (b Backend) ReadJob(ctx context.Context, jobID string) (*geocube.Job, error
 		return nil, pqErrorFormat("ReadJob.QueryRowContext: %w", err)
 	}
 
+	reverse(j.Logs)
 	return j, nil
 }
 
@@ -60,9 +102,9 @@ func (b Backend) ReadJobWithTask(ctx context.Context, jobID string, taskID strin
 
 	var t geocube.Task
 	err := b.pg.QueryRowContext(ctx,
-		"SELECT j.name, j.type, j.creation_ts, j.last_update_ts, j.state, j.active_tasks, j.failed_tasks, j.payload, j.execution_level, j.waiting, t.id, t.state, j.logs "+
+		"SELECT j.name, j.type, j.creation_ts, j.last_update_ts, j.state, j.active_tasks, j.failed_tasks, j.payload, j.execution_level, j.waiting, t.id, t.state "+
 			"FROM geocube.jobs j JOIN geocube.tasks t ON j.id = t.job_id WHERE j.id = $1 AND t.id = $2", jobID, taskID).
-		Scan(&j.Name, &j.Type, &j.CreationTime, &j.LastUpdateTime, &j.State, &j.ActiveTasks, &j.FailedTasks, &j.Payload, &j.ExecutionLevel, &j.Waiting, &t.ID, &t.State, &j.Logs)
+		Scan(&j.Name, &j.Type, &j.CreationTime, &j.LastUpdateTime, &j.State, &j.ActiveTasks, &j.FailedTasks, &j.Payload, &j.ExecutionLevel, &j.Waiting, &t.ID, &t.State)
 
 	switch {
 	case err == sql.ErrNoRows:
@@ -80,9 +122,9 @@ func (b Backend) ReadJobWithTask(ctx context.Context, jobID string, taskID strin
 // CreateJob implements GeocubeBackend
 func (b Backend) CreateJob(ctx context.Context, job *geocube.Job) error {
 	_, err := b.pg.ExecContext(ctx,
-		"INSERT INTO geocube.jobs (id, name, type, creation_ts, last_update_ts, state, active_tasks, failed_tasks, payload, execution_level, logs)"+
-			" VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)",
-		job.ID, job.Name, job.Type, job.CreationTime, job.LastUpdateTime, job.State, job.ActiveTasks, job.FailedTasks, job.Payload, job.ExecutionLevel, job.Logs)
+		"INSERT INTO geocube.jobs (id, name, type, creation_ts, last_update_ts, state, active_tasks, failed_tasks, payload, execution_level)"+
+			" VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
+		job.ID, job.Name, job.Type, job.CreationTime, job.LastUpdateTime, job.State, job.ActiveTasks, job.FailedTasks, job.Payload, job.ExecutionLevel)
 
 	switch pqErrorCode(err) {
 	case noError:
@@ -103,9 +145,9 @@ func (b Backend) DeleteJob(ctx context.Context, jobID string) error {
 // UpdateJob implements GeocubeBackend
 func (b Backend) UpdateJob(ctx context.Context, job *geocube.Job) error {
 	res, err := b.pg.ExecContext(ctx,
-		"UPDATE geocube.jobs SET last_update_ts = $1, state = $2, active_tasks = $3, failed_tasks = $4, waiting = $5, logs = $6::jsonb"+
-			" WHERE id = $7 AND last_update_ts = $8",
-		job.LastUpdateTime, job.State, job.ActiveTasks, job.FailedTasks, job.Waiting, job.Logs, job.ID, job.OCCTime())
+		"UPDATE geocube.jobs SET last_update_ts = $1, state = $2, active_tasks = $3, failed_tasks = $4, waiting = $5"+
+			" WHERE id = $6 AND last_update_ts = $7",
+		job.LastUpdateTime, job.State, job.ActiveTasks, job.FailedTasks, job.Waiting, job.ID, job.OCCTime())
 
 	switch pqErrorCode(err) {
 	case noError:
@@ -116,6 +158,37 @@ func (b Backend) UpdateJob(ctx context.Context, job *geocube.Job) error {
 	default:
 		return pqErrorFormat("UpdateJob.exec: %w", err)
 	}
+}
+
+func (b Backend) PersistLogs(ctx context.Context, jobID string, logs geocube.JobLogs) error {
+	if len(logs) == 0 {
+		return nil
+	}
+
+	// Prepare the insert
+	stmt, err := b.pg.PrepareContext(ctx, pq.CopyInSchema("geocube", "job_logs", "job_id", "time", "status", "message", "severity"))
+	if err != nil {
+		return pqErrorFormat("PersistLogs.prepare: %w", err)
+	}
+	defer func() {
+		if e := stmt.Close(); e != nil && err == nil {
+			err = e
+		}
+	}()
+
+	// Append logs
+	for _, log := range logs {
+		if _, err = stmt.ExecContext(ctx, jobID, log.Date, log.Status, log.Msg, log.Severity); err != nil {
+			return pqErrorFormat("PersistLogs.append.exec: %w", err)
+		}
+	}
+
+	// Execute statement
+	if _, err = stmt.ExecContext(ctx); err != nil {
+		return pqErrorFormat("PersistLogs.exec: %w", err)
+	}
+
+	return nil
 }
 
 // ListJobsID implements GeocubeBackend

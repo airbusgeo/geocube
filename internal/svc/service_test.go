@@ -89,7 +89,7 @@ var _ = Describe("csldCancel", func() {
 	})
 
 	JustBeforeEach(func() {
-		mockDatabase.On("ReadJob", ctx, jobIDToUse).Return(readJobReturned, readJobErrorReturned)
+		mockDatabase.On("ReadJob", ctx, jobIDToUse, mock.Anything).Return(readJobReturned, readJobErrorReturned)
 		mockDatabase.On("StartTransaction", ctx).Return(geocubeTxBackendReturned, geocubeTxBackendErrorReturned)
 		mockDatabase.On("ReadTasks", ctx, readJobReturned.ID, mock.Anything).Return(readTasksReturned, readTasksErrorReturned)
 		geocubeTxBackendReturned.On("Rollback").Return(rollbackErrorReturned)
