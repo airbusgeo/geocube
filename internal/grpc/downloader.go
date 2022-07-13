@@ -76,7 +76,7 @@ func (svc *DownloaderService) DownloadCube(req *pb.GetCubeMetadataRequest, strea
 	}
 	sliceMetas := make([]internal.SliceMeta, 0, len(req.GetDatasetsMeta()))
 	for i, metadata := range req.GetDatasetsMeta() {
-		sliceMetas = append(sliceMetas, *internal.NewSlideMetaFromProtobuf(metadata))
+		sliceMetas = append(sliceMetas, *internal.NewSliceMetaFromProtobuf(metadata))
 		for _, element := range sliceMetas[i].Datasets {
 			if len(element.Bands) != len(sliceMetas[0].Datasets[0].Bands) {
 				return newValidationError("Bands number is not constant")
@@ -142,6 +142,9 @@ func (svc *DownloaderService) DownloadCube(req *pb.GetCubeMetadataRequest, strea
 			}
 		}
 	}
+
+	log.Logger(ctx).Sugar().Infof("GetCube: %d images streamed from %d datasets (%v)\n", info.NbImages, info.NbDatasets, time.Since(start))
+
 	defer gcs.GetMetrics(ctx)
 	return ctx.Err()
 }

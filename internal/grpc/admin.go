@@ -67,6 +67,11 @@ func (svc *ServiceAdmin) DeleteDatasets(ctx context.Context, req *pb.DeleteDatas
 	if err != nil {
 		return nil, formatError("backend.%w", err)
 	}
+
+	if c := len(job.Logs); c > 1000 {
+		job.Logs = job.Logs[c-1001 : c-1]
+	}
+
 	jobpb, err := job.ToProtobuf(0)
 	if err != nil {
 		return nil, formatError("backend.%w", err)

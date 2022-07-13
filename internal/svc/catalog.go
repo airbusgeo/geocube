@@ -60,8 +60,8 @@ func (s *SliceMeta) ToProtobuf() *pb.DatasetMeta {
 	return datasetMeta
 }
 
-// NewSlideMetaFromProtobuf creates SliceMeta from protobuf
-func NewSlideMetaFromProtobuf(pbmeta *pb.DatasetMeta) *SliceMeta {
+// NewSliceMetaFromProtobuf creates SliceMeta from protobuf
+func NewSliceMetaFromProtobuf(pbmeta *pb.DatasetMeta) *SliceMeta {
 	s := &SliceMeta{
 		Datasets: make([]*internalImage.Dataset, len(pbmeta.InternalsMeta)),
 	}
