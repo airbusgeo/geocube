@@ -37,6 +37,7 @@ const (
 	JobStateCONSOLIDATIONEFFECTIVE
 	JobStateCONSOLIDATIONFAILED
 	JobStateCONSOLIDATIONRETRYING
+	JobStateCONSOLIDATIONFORCERETRYING
 	JobStateCONSOLIDATIONCANCELLING
 
 	JobStateDELETIONINPROGRESS
@@ -59,25 +60,26 @@ type JobStateInfo struct {
 }
 
 var jobStateInfo = map[JobState]JobStateInfo{
-	JobStateNEW:                     {StepByStepAll, true},
-	JobStateCREATED:                 {StepByStepMajor, true},
-	JobStateCONSOLIDATIONINPROGRESS: {StepByStepCritical, false},
-	JobStateCONSOLIDATIONDONE:       {StepByStepMajor, true},
-	JobStateCONSOLIDATIONINDEXED:    {StepByStepAll, true},
-	JobStateCONSOLIDATIONEFFECTIVE:  {StepByStepCritical, true},
-	JobStateCONSOLIDATIONFAILED:     {StepByStepAll, false},
-	JobStateCONSOLIDATIONRETRYING:   {StepByStepMajor, true},
-	JobStateCONSOLIDATIONCANCELLING: {StepByStepMajor, true},
-	JobStateDELETIONINPROGRESS:      {StepByStepCritical, true},
-	JobStateDELETIONEFFECTIVE:       {StepByStepMajor, true},
-	JobStateDELETIONFAILED:          {StepByStepAll, false},
-	JobStateDONE:                    {StepByStepNever, false},
-	JobStateFAILED:                  {StepByStepNever, false},
-	JobStateINITIALISATIONFAILED:    {StepByStepAll, false},
-	JobStateCANCELLATIONFAILED:      {StepByStepAll, false},
-	JobStateABORTED:                 {StepByStepMajor, true},
-	JobStateROLLBACKFAILED:          {StepByStepAll, false},
-	JobStateDONEBUTUNTIDY:           {StepByStepNever, false},
+	JobStateNEW:                        {StepByStepAll, true},
+	JobStateCREATED:                    {StepByStepMajor, true},
+	JobStateCONSOLIDATIONINPROGRESS:    {StepByStepCritical, false},
+	JobStateCONSOLIDATIONDONE:          {StepByStepMajor, true},
+	JobStateCONSOLIDATIONINDEXED:       {StepByStepAll, true},
+	JobStateCONSOLIDATIONEFFECTIVE:     {StepByStepCritical, true},
+	JobStateCONSOLIDATIONFAILED:        {StepByStepAll, false},
+	JobStateCONSOLIDATIONRETRYING:      {StepByStepMajor, true},
+	JobStateCONSOLIDATIONFORCERETRYING: {StepByStepMajor, true},
+	JobStateCONSOLIDATIONCANCELLING:    {StepByStepMajor, true},
+	JobStateDELETIONINPROGRESS:         {StepByStepCritical, true},
+	JobStateDELETIONEFFECTIVE:          {StepByStepMajor, true},
+	JobStateDELETIONFAILED:             {StepByStepAll, false},
+	JobStateDONE:                       {StepByStepNever, false},
+	JobStateFAILED:                     {StepByStepNever, false},
+	JobStateINITIALISATIONFAILED:       {StepByStepAll, false},
+	JobStateCANCELLATIONFAILED:         {StepByStepAll, false},
+	JobStateABORTED:                    {StepByStepMajor, true},
+	JobStateROLLBACKFAILED:             {StepByStepAll, false},
+	JobStateDONEBUTUNTIDY:              {StepByStepNever, false},
 }
 
 type LogSeverity string
@@ -410,6 +412,8 @@ func (j *Job) triggerConsolidation(evt JobEvent) bool {
 	case JobStateCONSOLIDATIONINPROGRESS:
 		switch evt.Status {
 		case RetryForced:
+			return j.changeState(JobStateCONSOLIDATIONFORCERETRYING)
+		case Retried:
 			return j.changeState(JobStateCONSOLIDATIONRETRYING)
 		case CancelledByUser, CancelledByUserForced:
 			j.LogMsg(INFO, "Cancelled by user")
@@ -459,7 +463,7 @@ func (j *Job) triggerConsolidation(evt JobEvent) bool {
 
 	case JobStateDONEBUTUNTIDY:
 		switch evt.Status {
-		case RetryForced:
+		case RetryForced, Retried:
 			j.LogMsg(INFO, "Retried by user")
 			return j.changeState(JobStateCONSOLIDATIONEFFECTIVE)
 		}
@@ -508,7 +512,7 @@ func (j *Job) triggerConsolidation(evt JobEvent) bool {
 			return j.changeState(JobStateFAILED)
 		}
 
-	case JobStateCONSOLIDATIONRETRYING:
+	case JobStateCONSOLIDATIONRETRYING, JobStateCONSOLIDATIONFORCERETRYING:
 		switch evt.Status {
 		case ConsolidationRetryFailed:
 			return j.changeState(JobStateCONSOLIDATIONFAILED)
@@ -708,10 +712,21 @@ func (j *Job) UpdateTask(evt TaskEvent) error {
 	return nil
 }
 
-// ResetAllTasks sets the pending state to all the tasks and the job status
-func (j *Job) ResetAllTasks() {
+func contains(status TaskState, listStatus []TaskState) bool {
+	for _, s := range listStatus {
+		if status == s {
+			return true
+		}
+	}
+	return false
+}
+
+// ResetTasks sets the pending state to all the tasks and the job status
+func (j *Job) ResetTasks(states []TaskState) {
 	for _, t := range j.Tasks {
-		j.setTaskState(t, TaskStatePENDING)
+		if states == nil || contains(t.State, states) {
+			j.setTaskState(t, TaskStatePENDING)
+		}
 	}
 }
 

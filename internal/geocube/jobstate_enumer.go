@@ -9,11 +9,11 @@ import (
 	"strings"
 )
 
-const _JobStateName = "NEWCREATEDCONSOLIDATIONINPROGRESSCONSOLIDATIONDONECONSOLIDATIONINDEXEDCONSOLIDATIONEFFECTIVECONSOLIDATIONFAILEDCONSOLIDATIONRETRYINGCONSOLIDATIONCANCELLINGDELETIONINPROGRESSDELETIONEFFECTIVEDELETIONFAILEDDONEFAILEDINITIALISATIONFAILEDCANCELLATIONFAILEDABORTEDROLLBACKFAILEDDONEBUTUNTIDY"
+const _JobStateName = "NEWCREATEDCONSOLIDATIONINPROGRESSCONSOLIDATIONDONECONSOLIDATIONINDEXEDCONSOLIDATIONEFFECTIVECONSOLIDATIONFAILEDCONSOLIDATIONRETRYINGCONSOLIDATIONFORCERETRYINGCONSOLIDATIONCANCELLINGDELETIONINPROGRESSDELETIONEFFECTIVEDELETIONFAILEDDONEFAILEDINITIALISATIONFAILEDCANCELLATIONFAILEDABORTEDROLLBACKFAILEDDONEBUTUNTIDY"
 
-var _JobStateIndex = [...]uint16{0, 3, 10, 33, 50, 70, 92, 111, 132, 155, 173, 190, 204, 208, 214, 234, 252, 259, 273, 286}
+var _JobStateIndex = [...]uint16{0, 3, 10, 33, 50, 70, 92, 111, 132, 158, 181, 199, 216, 230, 234, 240, 260, 278, 285, 299, 312}
 
-const _JobStateLowerName = "newcreatedconsolidationinprogressconsolidationdoneconsolidationindexedconsolidationeffectiveconsolidationfailedconsolidationretryingconsolidationcancellingdeletioninprogressdeletioneffectivedeletionfaileddonefailedinitialisationfailedcancellationfailedabortedrollbackfaileddonebutuntidy"
+const _JobStateLowerName = "newcreatedconsolidationinprogressconsolidationdoneconsolidationindexedconsolidationeffectiveconsolidationfailedconsolidationretryingconsolidationforceretryingconsolidationcancellingdeletioninprogressdeletioneffectivedeletionfaileddonefailedinitialisationfailedcancellationfailedabortedrollbackfaileddonebutuntidy"
 
 func (i JobState) String() string {
 	if i < 0 || i >= JobState(len(_JobStateIndex)-1) {
@@ -34,20 +34,21 @@ func _JobStateNoOp() {
 	_ = x[JobStateCONSOLIDATIONEFFECTIVE-(5)]
 	_ = x[JobStateCONSOLIDATIONFAILED-(6)]
 	_ = x[JobStateCONSOLIDATIONRETRYING-(7)]
-	_ = x[JobStateCONSOLIDATIONCANCELLING-(8)]
-	_ = x[JobStateDELETIONINPROGRESS-(9)]
-	_ = x[JobStateDELETIONEFFECTIVE-(10)]
-	_ = x[JobStateDELETIONFAILED-(11)]
-	_ = x[JobStateDONE-(12)]
-	_ = x[JobStateFAILED-(13)]
-	_ = x[JobStateINITIALISATIONFAILED-(14)]
-	_ = x[JobStateCANCELLATIONFAILED-(15)]
-	_ = x[JobStateABORTED-(16)]
-	_ = x[JobStateROLLBACKFAILED-(17)]
-	_ = x[JobStateDONEBUTUNTIDY-(18)]
+	_ = x[JobStateCONSOLIDATIONFORCERETRYING-(8)]
+	_ = x[JobStateCONSOLIDATIONCANCELLING-(9)]
+	_ = x[JobStateDELETIONINPROGRESS-(10)]
+	_ = x[JobStateDELETIONEFFECTIVE-(11)]
+	_ = x[JobStateDELETIONFAILED-(12)]
+	_ = x[JobStateDONE-(13)]
+	_ = x[JobStateFAILED-(14)]
+	_ = x[JobStateINITIALISATIONFAILED-(15)]
+	_ = x[JobStateCANCELLATIONFAILED-(16)]
+	_ = x[JobStateABORTED-(17)]
+	_ = x[JobStateROLLBACKFAILED-(18)]
+	_ = x[JobStateDONEBUTUNTIDY-(19)]
 }
 
-var _JobStateValues = []JobState{JobStateNEW, JobStateCREATED, JobStateCONSOLIDATIONINPROGRESS, JobStateCONSOLIDATIONDONE, JobStateCONSOLIDATIONINDEXED, JobStateCONSOLIDATIONEFFECTIVE, JobStateCONSOLIDATIONFAILED, JobStateCONSOLIDATIONRETRYING, JobStateCONSOLIDATIONCANCELLING, JobStateDELETIONINPROGRESS, JobStateDELETIONEFFECTIVE, JobStateDELETIONFAILED, JobStateDONE, JobStateFAILED, JobStateINITIALISATIONFAILED, JobStateCANCELLATIONFAILED, JobStateABORTED, JobStateROLLBACKFAILED, JobStateDONEBUTUNTIDY}
+var _JobStateValues = []JobState{JobStateNEW, JobStateCREATED, JobStateCONSOLIDATIONINPROGRESS, JobStateCONSOLIDATIONDONE, JobStateCONSOLIDATIONINDEXED, JobStateCONSOLIDATIONEFFECTIVE, JobStateCONSOLIDATIONFAILED, JobStateCONSOLIDATIONRETRYING, JobStateCONSOLIDATIONFORCERETRYING, JobStateCONSOLIDATIONCANCELLING, JobStateDELETIONINPROGRESS, JobStateDELETIONEFFECTIVE, JobStateDELETIONFAILED, JobStateDONE, JobStateFAILED, JobStateINITIALISATIONFAILED, JobStateCANCELLATIONFAILED, JobStateABORTED, JobStateROLLBACKFAILED, JobStateDONEBUTUNTIDY}
 
 var _JobStateNameToValueMap = map[string]JobState{
 	_JobStateName[0:3]:          JobStateNEW,
@@ -66,28 +67,30 @@ var _JobStateNameToValueMap = map[string]JobState{
 	_JobStateLowerName[92:111]:  JobStateCONSOLIDATIONFAILED,
 	_JobStateName[111:132]:      JobStateCONSOLIDATIONRETRYING,
 	_JobStateLowerName[111:132]: JobStateCONSOLIDATIONRETRYING,
-	_JobStateName[132:155]:      JobStateCONSOLIDATIONCANCELLING,
-	_JobStateLowerName[132:155]: JobStateCONSOLIDATIONCANCELLING,
-	_JobStateName[155:173]:      JobStateDELETIONINPROGRESS,
-	_JobStateLowerName[155:173]: JobStateDELETIONINPROGRESS,
-	_JobStateName[173:190]:      JobStateDELETIONEFFECTIVE,
-	_JobStateLowerName[173:190]: JobStateDELETIONEFFECTIVE,
-	_JobStateName[190:204]:      JobStateDELETIONFAILED,
-	_JobStateLowerName[190:204]: JobStateDELETIONFAILED,
-	_JobStateName[204:208]:      JobStateDONE,
-	_JobStateLowerName[204:208]: JobStateDONE,
-	_JobStateName[208:214]:      JobStateFAILED,
-	_JobStateLowerName[208:214]: JobStateFAILED,
-	_JobStateName[214:234]:      JobStateINITIALISATIONFAILED,
-	_JobStateLowerName[214:234]: JobStateINITIALISATIONFAILED,
-	_JobStateName[234:252]:      JobStateCANCELLATIONFAILED,
-	_JobStateLowerName[234:252]: JobStateCANCELLATIONFAILED,
-	_JobStateName[252:259]:      JobStateABORTED,
-	_JobStateLowerName[252:259]: JobStateABORTED,
-	_JobStateName[259:273]:      JobStateROLLBACKFAILED,
-	_JobStateLowerName[259:273]: JobStateROLLBACKFAILED,
-	_JobStateName[273:286]:      JobStateDONEBUTUNTIDY,
-	_JobStateLowerName[273:286]: JobStateDONEBUTUNTIDY,
+	_JobStateName[132:158]:      JobStateCONSOLIDATIONFORCERETRYING,
+	_JobStateLowerName[132:158]: JobStateCONSOLIDATIONFORCERETRYING,
+	_JobStateName[158:181]:      JobStateCONSOLIDATIONCANCELLING,
+	_JobStateLowerName[158:181]: JobStateCONSOLIDATIONCANCELLING,
+	_JobStateName[181:199]:      JobStateDELETIONINPROGRESS,
+	_JobStateLowerName[181:199]: JobStateDELETIONINPROGRESS,
+	_JobStateName[199:216]:      JobStateDELETIONEFFECTIVE,
+	_JobStateLowerName[199:216]: JobStateDELETIONEFFECTIVE,
+	_JobStateName[216:230]:      JobStateDELETIONFAILED,
+	_JobStateLowerName[216:230]: JobStateDELETIONFAILED,
+	_JobStateName[230:234]:      JobStateDONE,
+	_JobStateLowerName[230:234]: JobStateDONE,
+	_JobStateName[234:240]:      JobStateFAILED,
+	_JobStateLowerName[234:240]: JobStateFAILED,
+	_JobStateName[240:260]:      JobStateINITIALISATIONFAILED,
+	_JobStateLowerName[240:260]: JobStateINITIALISATIONFAILED,
+	_JobStateName[260:278]:      JobStateCANCELLATIONFAILED,
+	_JobStateLowerName[260:278]: JobStateCANCELLATIONFAILED,
+	_JobStateName[278:285]:      JobStateABORTED,
+	_JobStateLowerName[278:285]: JobStateABORTED,
+	_JobStateName[285:299]:      JobStateROLLBACKFAILED,
+	_JobStateLowerName[285:299]: JobStateROLLBACKFAILED,
+	_JobStateName[299:312]:      JobStateDONEBUTUNTIDY,
+	_JobStateLowerName[299:312]: JobStateDONEBUTUNTIDY,
 }
 
 var _JobStateNames = []string{
@@ -99,17 +102,18 @@ var _JobStateNames = []string{
 	_JobStateName[70:92],
 	_JobStateName[92:111],
 	_JobStateName[111:132],
-	_JobStateName[132:155],
-	_JobStateName[155:173],
-	_JobStateName[173:190],
-	_JobStateName[190:204],
-	_JobStateName[204:208],
-	_JobStateName[208:214],
-	_JobStateName[214:234],
-	_JobStateName[234:252],
-	_JobStateName[252:259],
-	_JobStateName[259:273],
-	_JobStateName[273:286],
+	_JobStateName[132:158],
+	_JobStateName[158:181],
+	_JobStateName[181:199],
+	_JobStateName[199:216],
+	_JobStateName[216:230],
+	_JobStateName[230:234],
+	_JobStateName[234:240],
+	_JobStateName[240:260],
+	_JobStateName[260:278],
+	_JobStateName[278:285],
+	_JobStateName[285:299],
+	_JobStateName[299:312],
 }
 
 // JobStateString retrieves an enum value from the enum constants string name.

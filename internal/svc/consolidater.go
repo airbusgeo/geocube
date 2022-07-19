@@ -78,6 +78,12 @@ func (svc *Service) csldOnEnterNewState(ctx context.Context, j *geocube.Job) err
 		}
 		return svc.publishEvent(ctx, geocube.OrdersPrepared, j, "")
 
+	case geocube.JobStateCONSOLIDATIONFORCERETRYING:
+		if err := svc.csldConsolidationForceRetry(ctx, j); err != nil {
+			return svc.publishEvent(ctx, geocube.ConsolidationRetryFailed, j, err.Error())
+		}
+		return svc.publishEvent(ctx, geocube.OrdersPrepared, j, "")
+
 	case geocube.JobStateABORTED:
 		if err := svc.csldRollback(ctx, j); err != nil {
 			return svc.publishEvent(ctx, geocube.RollbackFailed, j, err.Error())
@@ -719,16 +725,31 @@ func (svc *Service) csldCancel(ctx context.Context, job *geocube.Job) error {
 	return nil
 }
 
+// csldConsolidationRetry retries failed tasks
 func (svc *Service) csldConsolidationRetry(ctx context.Context, job *geocube.Job) error {
 	job.LogMsg(geocube.INFO, "Retry consolidation...")
 
 	var err error
 	// Load tasks
-	if job.Tasks, err = svc.db.ReadTasks(ctx, job.ID, []geocube.TaskState{geocube.TaskStateFAILED}); err != nil {
+	if job.Tasks, err = svc.db.ReadTasks(ctx, job.ID, nil); err != nil {
 		return err
 	}
 	// Reset and save task status
-	job.ResetAllTasks()
+	job.ResetTasks([]geocube.TaskState{geocube.TaskStateFAILED})
+	return svc.saveJob(ctx, nil, job)
+}
+
+// csldConsolidationForceRetry retries FAILED and PENDING tasks
+func (svc *Service) csldConsolidationForceRetry(ctx context.Context, job *geocube.Job) error {
+	job.LogMsg(geocube.INFO, "Retry consolidation...")
+
+	var err error
+	// Load tasks
+	if job.Tasks, err = svc.db.ReadTasks(ctx, job.ID, nil); err != nil {
+		return err
+	}
+	// Reset and save task status
+	job.ResetTasks([]geocube.TaskState{geocube.TaskStateFAILED, geocube.TaskStatePENDING})
 	return svc.saveJob(ctx, nil, job)
 }
 
