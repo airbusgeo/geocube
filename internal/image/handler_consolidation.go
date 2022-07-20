@@ -7,6 +7,7 @@ import (
 	"os"
 	"path"
 	"strings"
+	"sync"
 
 	"github.com/airbusgeo/geocube/interface/storage"
 
@@ -67,7 +68,8 @@ func (h *handlerConsolidation) Consolidate(ctx context.Context, cEvent *geocube.
 	}
 	defer h.cleanWorkspace(ctx, workDir)
 
-	datasetsByRecords, err := h.getLocalDatasetsByRecord(ctx, cEvent, workDir)
+	var tmpFileMutex sync.Mutex
+	datasetsByRecords, tmpFileCounter, err := h.getLocalDatasetsByRecord(ctx, cEvent, workDir)
 	if err != nil {
 		return fmt.Errorf("failed to get local records datasets: %w", err)
 	}
@@ -79,7 +81,8 @@ func (h *handlerConsolidation) Consolidate(ctx context.Context, cEvent *geocube.
 		string
 		int
 	}, len(cEvent.Records))
-	// Start download workers
+
+	// Start COG workers
 	g, gCtx := errgroup.WithContext(ctx)
 	for w := 0; w < h.workers; w++ {
 		g.Go(func() error {
@@ -125,6 +128,21 @@ func (h *handlerConsolidation) Consolidate(ctx context.Context, cEvent *geocube.
 				if err != nil {
 					return fmt.Errorf("Consolidate.%w", err)
 				}
+
+				// Delete tmpFile if possible to free memory
+				tmpFileMutex.Lock()
+				for _, dataset := range localDatasets {
+					if _, ok := tmpFileCounter[dataset.URI]; ok {
+						tmpFileCounter[dataset.URI]--
+						if tmpFileCounter[dataset.URI] == 0 {
+							uri := dataset.URI
+							go func() {
+								os.Remove(uri)
+							}()
+						}
+					}
+				}
+				tmpFileMutex.Unlock()
 
 				log.Logger(gCtx).Sugar().Debugf("add cog %s for record: %s (%d/%d)", cogDatasetPath, recordID, recordIdx+1, len(cEvent.Records))
 				cogListFile[recordIdx] = cogDatasetPath
@@ -178,25 +196,27 @@ type FileToDownload struct {
 }
 
 // getLocalDatasetsByRecord references all datasets and download them in local filesystem.
-func (h *handlerConsolidation) getLocalDatasetsByRecord(ctx context.Context, cEvent *geocube.ConsolidationEvent, workDir string) (map[string][]*Dataset, error) {
+func (h *handlerConsolidation) getLocalDatasetsByRecord(ctx context.Context, cEvent *geocube.ConsolidationEvent, workDir string) (map[string][]*Dataset, map[string]int, error) {
 	// Prepare local dataset and list files to download
+	var ok bool
 	datasetsByRecord := map[string][]*Dataset{}
 	filesToDownload := map[uri.DefaultUri]string{}
+	tmpFileCounter := map[string]int{}
 	for _, record := range cEvent.Records {
 		var datasets []*Dataset
 		for _, dataset := range record.Datasets {
 			sourceUri, err := uri.ParseUri(dataset.URI)
 			if err != nil {
-				return nil, fmt.Errorf("getLocalDatasetsByRecord: %w", err)
+				return nil, nil, fmt.Errorf("getLocalDatasetsByRecord: %w", err)
 			}
-			localUri, ok := filesToDownload[sourceUri]
-			if !ok {
-				if sourceUri.Protocol() == "" {
-					localUri = dataset.URI
-				} else {
+			localUri := dataset.URI
+			if sourceUri.Protocol() != "" {
+				if localUri, ok = filesToDownload[sourceUri]; !ok {
 					localUri = path.Join(workDir, uuid.New().String())
+					filesToDownload[sourceUri] = localUri
+					tmpFileCounter[localUri] = 0
 				}
-				filesToDownload[sourceUri] = localUri
+				tmpFileCounter[localUri] += 1
 			}
 			gDataset := &Dataset{
 				URI:         localUri,
@@ -210,38 +230,38 @@ func (h *handlerConsolidation) getLocalDatasetsByRecord(ctx context.Context, cEv
 	}
 
 	// Push download jobs
-	log.Logger(ctx).Sugar().Debugf("downloading datasets")
-	files := make(chan FileToDownload, len(filesToDownload))
-	for uri, localUri := range filesToDownload {
-		if uri.String() != localUri {
+	if len(filesToDownload) > 0 {
+		log.Logger(ctx).Sugar().Debugf("downloading %d datasets", len(filesToDownload))
+		files := make(chan FileToDownload, len(filesToDownload))
+		for uri, localUri := range filesToDownload {
 			files <- FileToDownload{URI: uri, LocalURI: localUri}
 		}
-	}
-	close(files)
+		close(files)
 
-	// Start download workers
-	g, gCtx := errgroup.WithContext(ctx)
-	for i := 0; i < 20; i++ {
-		g.Go(func() error {
-			for file := range files {
-				select {
-				case <-ctx.Done():
-					return nil
-				default:
+		// Start download workers
+		g, gCtx := errgroup.WithContext(ctx)
+		for i := 0; i < 20; i++ {
+			g.Go(func() error {
+				for file := range files {
+					select {
+					case <-ctx.Done():
+						return nil
+					default:
+					}
+					if err := file.URI.DownloadToFile(gCtx, file.LocalURI); err != nil {
+						return fmt.Errorf("failed to download dataset %s: %w", file.URI.String(), err)
+					}
 				}
-				if err := file.URI.DownloadToFile(gCtx, file.LocalURI); err != nil {
-					return fmt.Errorf("failed to download dataset %s: %w", file.URI.String(), err)
-				}
-			}
-			return nil
-		})
+				return nil
+			})
+		}
+
+		if err := g.Wait(); err != nil {
+			return nil, nil, fmt.Errorf("failed to download one of the sources: %w", err)
+		}
 	}
 
-	if err := g.Wait(); err != nil {
-		return nil, fmt.Errorf("failed to download one of the sources: %w", err)
-	}
-
-	return datasetsByRecord, nil
+	return datasetsByRecord, tmpFileCounter, nil
 }
 
 // uploadFile upload content from local file to storage file (URI) destination.

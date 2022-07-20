@@ -122,6 +122,7 @@ func run(ctx context.Context) error {
 			if err != nil {
 				return fmt.Errorf("got message id %s in workdir %s : unreadable (%d bytes): %w", msg.ID, consolidaterConfig.WorkDir, len(msg.Data), err)
 			}
+			ctx = log.WithFields(ctx, zap.String("JobID", evt.JobID), zap.String("TaskID", evt.TaskID))
 
 			if msg.TryCount > consolidaterConfig.RetryCount {
 				log.Logger(ctx).Sugar().Errorf("too many tries")
