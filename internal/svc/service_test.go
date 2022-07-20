@@ -63,7 +63,7 @@ var _ = Describe("csldCancel", func() {
 			Tasks: []*geocube.Task{
 				{
 					ID:    "task1",
-					State: geocube.TaskStatePENDING,
+					State: geocube.TaskStateNEW,
 				}, {
 					ID:    "task2",
 					State: geocube.TaskStatePENDING,
@@ -79,7 +79,7 @@ var _ = Describe("csldCancel", func() {
 		updateJobErrorToReturned = nil
 
 		readTasksReturned = []*geocube.Task{
-			{ID: "task1", State: geocube.TaskStatePENDING},
+			{ID: "task1", State: geocube.TaskStateNEW},
 			{ID: "task2", State: geocube.TaskStatePENDING},
 		}
 		readTasksErrorReturned = nil

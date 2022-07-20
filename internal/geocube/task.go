@@ -16,10 +16,12 @@ const (
 	TaskStateFAILED TaskState = iota
 	// TaskStateCANCELLED when the task is cancelled by the server or there is no operation to perform (consolidation task: no container is created)
 	TaskStateCANCELLED
-	// TaskStateDONE when is the task is finished and successful
+	// TaskStateDONE when the task is finished and successful
 	TaskStateDONE
-	// TaskStatePENDING when the task is waiting for a new status
+	// TaskStatePENDING when the task is in progress
 	TaskStatePENDING
+	// TaskStateNEW when the task is created and waiting for being sent
+	TaskStateNEW
 )
 
 type Task struct {
@@ -43,7 +45,7 @@ func newConsolidationTask(evt ConsolidationEvent) (*Task, error) {
 	return &Task{
 		persistenceState: persistenceStateNEW,
 		ID:               evt.TaskID,
-		State:            TaskStatePENDING,
+		State:            TaskStateNEW,
 		Payload:          payload,
 	}, nil
 }
@@ -54,7 +56,7 @@ func newDeletionTask(containerURI string) (*Task, error) {
 	return &Task{
 		persistenceState: persistenceStateNEW,
 		ID:               uuid.New().String(),
-		State:            TaskStatePENDING,
+		State:            TaskStateNEW,
 		Payload:          []byte(containerURI),
 	}, nil
 }

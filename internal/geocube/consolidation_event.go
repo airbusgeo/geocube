@@ -57,6 +57,8 @@ const (
 	TaskIgnored
 	// TaskCancelled if the task has been cancelled externally (nothing has been done)
 	TaskCancelled
+	// TaskSent
+	TaskSent
 )
 
 // TaskEvent is the event sent from the consolidater when a consolidation task is finished

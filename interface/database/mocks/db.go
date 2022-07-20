@@ -763,6 +763,19 @@ func (_m *GeocubeTxBackend) ReleaseDatasets(ctx context.Context, jobID string, f
 	return r0
 }
 
+func (_m *GeocubeTxBackend) UpdateTask(ctx context.Context, task *geocube.Task) error {
+	ret := _m.Called(ctx, task)
+
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *geocube.Task) error); ok {
+		r1 = rf(ctx, task)
+	} else {
+		r1 = ret.Error(0)
+	}
+
+	return r1
+}
+
 func (_m *GeocubeTxBackend) UpdateJob(ctx context.Context, job *geocube.Job) error {
 	ret := _m.Called(ctx, job)
 

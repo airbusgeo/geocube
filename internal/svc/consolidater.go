@@ -486,18 +486,33 @@ func (svc *Service) csldSendOrders(ctx context.Context, job *geocube.Job) error 
 	job.LogMsg(geocube.INFO, "Send consolidation orders...")
 
 	// Retrieves tasks
-	tasks, err := svc.db.ReadTasks(ctx, job.ID, []geocube.TaskState{geocube.TaskStatePENDING})
+	var err error
+	job.Tasks, err = svc.db.ReadTasks(ctx, job.ID, nil)
 	if err != nil {
 		return err
 	}
 
 	var consolidationOrders [][]byte
-	for _, task := range tasks {
-		consolidationOrders = append(consolidationOrders, task.Payload)
+	allTasksDone := true
+	for _, task := range job.Tasks {
+		if task.State == geocube.TaskStateNEW {
+			consolidationOrders = append(consolidationOrders, task.Payload)
+			if err := job.UpdateTask(*geocube.NewTaskEvent(job.ID, task.ID, geocube.TaskSent, nil)); err != nil {
+				return err
+			}
+		}
+		if task.State != geocube.TaskStateDONE {
+			allTasksDone = false
+		}
 	}
 
-	// If there is no consolidation orders to send, consolidation is done
-	if len(consolidationOrders) == 0 {
+	// Save job
+	if err := svc.saveJob(ctx, nil, job); err != nil {
+		return err
+	}
+
+	// If all the tasks are done, consolidation is done
+	if allTasksDone {
 		job.LogMsg(geocube.INFO, "No consolidation orders found !")
 		return svc.publishEvent(ctx, geocube.ConsolidationDone, job, "")
 	}
@@ -740,7 +755,7 @@ func (svc *Service) csldConsolidationRetry(ctx context.Context, job *geocube.Job
 	return svc.saveJob(ctx, nil, job)
 }
 
-// csldConsolidationForceRetry retries FAILED and PENDING tasks
+// csldConsolidationForceRetry retries FAILED, NEW and PENDING tasks
 func (svc *Service) csldConsolidationForceRetry(ctx context.Context, job *geocube.Job) error {
 	job.LogMsg(geocube.INFO, "Retry consolidation...")
 
@@ -750,7 +765,7 @@ func (svc *Service) csldConsolidationForceRetry(ctx context.Context, job *geocub
 		return err
 	}
 	// Reset and save task status
-	job.ResetTasks([]geocube.TaskState{geocube.TaskStateFAILED, geocube.TaskStatePENDING})
+	job.ResetTasks([]geocube.TaskState{geocube.TaskStateNEW, geocube.TaskStateFAILED, geocube.TaskStatePENDING})
 	return svc.saveJob(ctx, nil, job)
 }
 

@@ -343,4 +343,150 @@ var _ = Describe("Consolidater", func() {
 			})
 		})
 	})
+
+	Describe("Retry job", func() {
+
+		var (
+			ctx = context.Background()
+
+			mockDatabase               = new(mocksDB.GeocubeBackend)
+			mockEventPublisher         = new(mocksMessaging.Publisher)
+			mockConsolidationPublisher = new(mocksMessaging.Publisher)
+			service                    *svc.Service
+
+			jobToUse *geocube.Job
+
+			event, retriedEvent, retryingEvent geocube.Event
+
+			tasksReturned []*geocube.Task
+
+			returnedError error
+
+			geocubeTxBackendReturned      = new(mocksDB.GeocubeTxBackend)
+			geocubeTxBackendErrorReturned error
+
+			rollbackErrorReturned error
+			commitErrorReturned   error
+
+			publishErrorReturned     error
+			persistLogsErrorReturned error
+		)
+
+		BeforeEach(func() {
+			var err error
+			service, err = svc.New(ctx, mockDatabase, mockEventPublisher, mockConsolidationPublisher, os.TempDir(), os.TempDir(), 1)
+			if err != nil {
+				panic(err)
+			}
+
+			jobToUse, _ = geocube.NewConsolidationJob("test_consolidation", "layoutID", "instanceID", geocube.ExecutionAsynchronous)
+			/*jobToUse.Tasks = append(jobToUse.Tasks, &geocube.Task{
+				ID:      "task1",
+				State:   geocube.TaskStatePENDING,
+				Payload: nil,
+			}, &geocube.Task{
+				ID:      "task2",
+				State:   geocube.TaskStateFAILED,
+				Payload: nil,
+			})*/
+
+			retriedEvent = *geocube.NewJobEvent(jobToUse.ID, geocube.Retried, "")
+			retryingEvent = *geocube.NewJobEvent(jobToUse.ID, geocube.OrdersPrepared, "")
+
+			geocubeTxBackendErrorReturned = nil
+			rollbackErrorReturned = nil
+			commitErrorReturned = nil
+
+			publishErrorReturned = nil
+			persistLogsErrorReturned = nil
+		})
+
+		JustBeforeEach(func() {
+			ctx := log.WithFields(ctx, zap.String("job", jobToUse.ID))
+			ctxWithName := log.WithFields(ctx, zap.String("job", jobToUse.Name))
+
+			mockDatabase.On("ReadJob", ctx, jobToUse.ID, mock.Anything).Return(jobToUse, nil)
+			mockDatabase.On("ReadTasks", ctxWithName, jobToUse.ID, mock.Anything).Return(tasksReturned, nil)
+			mockDatabase.On("UpdateTask", ctxWithName, mock.Anything).Return(nil)
+
+			mockDatabase.On("StartTransaction", ctxWithName).Return(geocubeTxBackendReturned, geocubeTxBackendErrorReturned)
+			geocubeTxBackendReturned.On("Rollback").Return(rollbackErrorReturned)
+			geocubeTxBackendReturned.On("Commit").Return(commitErrorReturned)
+			geocubeTxBackendReturned.On("PersistLogs", ctxWithName, jobToUse.ID, mock.Anything).Return(persistLogsErrorReturned)
+			geocubeTxBackendReturned.On("UpdateJob", ctxWithName, mock.Anything).Return(nil)
+			geocubeTxBackendReturned.On("UpdateTask", ctxWithName, mock.Anything).Return(nil)
+			mockEventPublisher.On("Publish", ctxWithName, mock.Anything).Return(publishErrorReturned)
+			mockConsolidationPublisher.On("Publish", ctxWithName, mock.Anything).Return(publishErrorReturned)
+
+			returnedError = service.HandleEvent(ctx, event)
+		})
+
+		var (
+			itShouldNotReturnAnError = func() {
+				It("should not return an error", func() {
+					Expect(returnedError).To(BeNil())
+					for _, log := range jobToUse.Logs {
+						Expect(log.Severity).NotTo(Equal("ERROR"))
+					}
+				})
+			}
+
+			itShouldBeJobState = func(status string) {
+				It("should be job state", func() {
+					Expect(jobToUse.State.String()).To(Equal(status))
+				})
+			}
+			itShouldBeTasksState = func(states map[string]geocube.TaskState) {
+				It("should be tasks state", func() {
+					for _, v := range jobToUse.Tasks {
+						Expect(v.State.String()).To(Equal(states[v.ID].String()))
+					}
+				})
+			}
+		)
+
+		Context("default restart Job", func() {
+			BeforeEach(func() {
+				jobToUse.State = geocube.JobStateCONSOLIDATIONINPROGRESS
+				jobToUse.ActiveTasks = 1
+				jobToUse.FailedTasks = 1
+				event = retriedEvent
+				tasksReturned = []*geocube.Task{
+					{
+						ID:      "task1",
+						State:   geocube.TaskStatePENDING,
+						Payload: nil,
+					}, {
+						ID:      "task2",
+						State:   geocube.TaskStateFAILED,
+						Payload: nil,
+					}}
+			})
+			itShouldNotReturnAnError()
+			itShouldBeJobState("CONSOLIDATIONRETRYING")
+			itShouldBeTasksState(map[string]geocube.TaskState{"task1": geocube.TaskStatePENDING, "task2": geocube.TaskStateNEW})
+		})
+
+		Context("default resend tasks", func() {
+			BeforeEach(func() {
+				jobToUse.State = geocube.JobStateCONSOLIDATIONRETRYING
+				jobToUse.ActiveTasks = 2
+				jobToUse.FailedTasks = 0
+				event = retryingEvent
+				tasksReturned = []*geocube.Task{
+					{
+						ID:      "task1",
+						State:   geocube.TaskStatePENDING,
+						Payload: nil,
+					}, {
+						ID:      "task2",
+						State:   geocube.TaskStateNEW,
+						Payload: nil,
+					}}
+			})
+			itShouldNotReturnAnError()
+			itShouldBeJobState("CONSOLIDATIONINPROGRESS")
+			itShouldBeTasksState(map[string]geocube.TaskState{"task1": geocube.TaskStatePENDING, "task2": geocube.TaskStatePENDING})
+		})
+	})
 })

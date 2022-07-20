@@ -9,11 +9,11 @@ import (
 	"strings"
 )
 
-const _TaskStateName = "FAILEDCANCELLEDDONEPENDING"
+const _TaskStateName = "FAILEDCANCELLEDDONEPENDINGNEW"
 
-var _TaskStateIndex = [...]uint8{0, 6, 15, 19, 26}
+var _TaskStateIndex = [...]uint8{0, 6, 15, 19, 26, 29}
 
-const _TaskStateLowerName = "failedcancelleddonepending"
+const _TaskStateLowerName = "failedcancelleddonependingnew"
 
 func (i TaskState) String() string {
 	if i < 0 || i >= TaskState(len(_TaskStateIndex)-1) {
@@ -30,9 +30,10 @@ func _TaskStateNoOp() {
 	_ = x[TaskStateCANCELLED-(1)]
 	_ = x[TaskStateDONE-(2)]
 	_ = x[TaskStatePENDING-(3)]
+	_ = x[TaskStateNEW-(4)]
 }
 
-var _TaskStateValues = []TaskState{TaskStateFAILED, TaskStateCANCELLED, TaskStateDONE, TaskStatePENDING}
+var _TaskStateValues = []TaskState{TaskStateFAILED, TaskStateCANCELLED, TaskStateDONE, TaskStatePENDING, TaskStateNEW}
 
 var _TaskStateNameToValueMap = map[string]TaskState{
 	_TaskStateName[0:6]:        TaskStateFAILED,
@@ -43,6 +44,8 @@ var _TaskStateNameToValueMap = map[string]TaskState{
 	_TaskStateLowerName[15:19]: TaskStateDONE,
 	_TaskStateName[19:26]:      TaskStatePENDING,
 	_TaskStateLowerName[19:26]: TaskStatePENDING,
+	_TaskStateName[26:29]:      TaskStateNEW,
+	_TaskStateLowerName[26:29]: TaskStateNEW,
 }
 
 var _TaskStateNames = []string{
@@ -50,6 +53,7 @@ var _TaskStateNames = []string{
 	_TaskStateName[6:15],
 	_TaskStateName[15:19],
 	_TaskStateName[19:26],
+	_TaskStateName[26:29],
 }
 
 // TaskStateString retrieves an enum value from the enum constants string name.

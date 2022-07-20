@@ -29,3 +29,6 @@ ALTER TABLE geocube.consolidation_params DROP COLUMN bands_interleave;
 -- consolidation_params.overviews_min_size => layout.overviews_min_size
 ALTER TABLE geocube.layouts ADD COLUMN overviews_min_size INTEGER default -1;
 ALTER TABLE geocube.consolidation_params DROP COLUMN overviews_min_size;
+
+-- create "NEW" status for tasks that are not sent yet
+ALTER TYPE geocube.task_state ADD VALUE 'NEW' BEFORE 'PENDING';

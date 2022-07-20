@@ -336,7 +336,7 @@ func (svc *Service) delDeleteContainers(ctx context.Context, job *geocube.Job) e
 	return svc.unitOfWork(ctx, func(txn database.GeocubeTxBackend) error {
 		// Read pending tasks
 		var err error
-		if job.Tasks, err = svc.db.ReadTasks(ctx, job.ID, []geocube.TaskState{geocube.TaskStatePENDING, geocube.TaskStateFAILED}); err != nil {
+		if job.Tasks, err = svc.db.ReadTasks(ctx, job.ID, []geocube.TaskState{geocube.TaskStateNEW, geocube.TaskStatePENDING, geocube.TaskStateFAILED}); err != nil {
 			return err
 		}
 		if len(job.Tasks) == 0 {

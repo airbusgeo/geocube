@@ -664,6 +664,8 @@ func (j *Job) CreateDeletionTask(containerURI string) error {
 
 func taskStateFromStatus(status TaskStatus) TaskState {
 	switch status {
+	case TaskSent:
+		return TaskStatePENDING
 	case TaskFailed:
 		return TaskStateFAILED
 	case TaskIgnored, TaskCancelled:
@@ -703,6 +705,8 @@ func (j *Job) UpdateTask(evt TaskEvent) error {
 			return nil
 		}
 		// The task has already been reported as failed or cancelled, but it's not too late to tag it as successful !
+	case TaskStateNEW:
+		// Task has probably been retried, but pending task finished meanwhile
 	}
 
 	// Change the task state
@@ -728,7 +732,7 @@ func contains(status TaskState, listStatus []TaskState) bool {
 func (j *Job) ResetTasks(states []TaskState) {
 	for _, t := range j.Tasks {
 		if states == nil || contains(t.State, states) {
-			j.setTaskState(t, TaskStatePENDING)
+			j.setTaskState(t, TaskStateNEW)
 		}
 	}
 }
@@ -756,7 +760,7 @@ func (j *Job) DeleteAllTasks() {
 
 func (j *Job) updateTaskCounters(state TaskState, inc int) {
 	switch state {
-	case TaskStatePENDING:
+	case TaskStatePENDING, TaskStateNEW:
 		j.ActiveTasks += inc
 		j.dirty()
 	case TaskStateFAILED:

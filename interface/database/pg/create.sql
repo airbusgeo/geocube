@@ -9,7 +9,7 @@ CREATE TYPE geocube.resampling AS ENUM ('NEAR', 'BILINEAR', 'CUBIC', 'CUBICSPLIN
 CREATE TYPE geocube.dataset_status AS ENUM ('ACTIVE', 'TODELETE', 'INACTIVE');
 CREATE TYPE geocube.data_types AS ENUM ('BOOL', 'UINT8', 'UINT16', 'INT16', 'UINT32', 'INT32', 'FLOAT32', 'FLOAT64', 'COMPLEX64');
 CREATE TYPE geocube.storage_class AS ENUM ('STANDARD', 'INFREQUENT', 'ARCHIVE', 'DEEPARCHIVE');
-CREATE TYPE geocube.task_state AS ENUM ('PENDING', 'DONE', 'FAILED', 'CANCELLED');
+CREATE TYPE geocube.task_state AS ENUM ('NEW', 'PENDING', 'DONE', 'FAILED', 'CANCELLED');
 CREATE TYPE geocube.color_point AS (
 	value real,
 	rgba bigint
