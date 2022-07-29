@@ -387,12 +387,8 @@ func (h *handlerConsolidation) isAlreadyUsableCOG(ctx context.Context, records [
 	}
 
 	if isMucogDataset {
-		newCogFilePath, err := h.cog.Create(ds, container, recordID, workDir)
-		if err != nil {
-			return "", false
-		}
-
-		return newCogFilePath, true
+		// Cannot extract a cog from a mucog (to be fixed)
+		return "", false
 	}
 
 	return localFilePath, true
