@@ -82,6 +82,9 @@ func (h *handlerConsolidation) Consolidate(ctx context.Context, cEvent *geocube.
 		int
 	}, len(cEvent.Records))
 
+	if cEvent.Container.OverviewsMinSize == geocube.OVERVIEWS_DEFAULT_MIN_SIZE {
+		cEvent.Container.OverviewsMinSize = 256
+	}
 	// Start COG workers
 	g, gCtx := errgroup.WithContext(ctx)
 	for w := 0; w < h.workers; w++ {
@@ -420,11 +423,8 @@ func (h *handlerConsolidation) computeNbOverviews(width, height, minSize int) in
 	if minSize == geocube.NO_OVERVIEW {
 		return 0
 	}
-	if minSize == geocube.OVERVIEWS_DEFAULT_MIN_SIZE {
-		minSize = 256
-	}
 	nb := 0
-	for width > minSize && height > minSize {
+	for width > minSize || height > minSize {
 		nb += 1
 		width /= 2
 		height /= 2

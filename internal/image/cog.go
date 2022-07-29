@@ -61,9 +61,6 @@ func (c *cogGenerator) Create(dataset *godal.Dataset, oContainer geocube.Consoli
 	}()
 
 	if oContainer.OverviewsMinSize != geocube.NO_OVERVIEW {
-		if oContainer.OverviewsMinSize == geocube.OVERVIEWS_DEFAULT_MIN_SIZE {
-			oContainer.OverviewsMinSize = 256
-		}
 		if err := c.buildOverviews(tiffDataset, oContainer.ResamplingAlg, oContainer.OverviewsMinSize); err != nil {
 			return "", fmt.Errorf("Create.%w", err)
 		}
