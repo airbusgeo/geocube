@@ -230,14 +230,11 @@ func mosaicDatasets(datasets []*godal.Dataset, rx, ry float64) (*godal.Dataset, 
 // The caller is responsible to close the output dataset
 func warpDatasets(datasets []*Dataset, wktCRS string, transform *affine.Affine, width, height float64, resampling geocube.Resampling, commonDFormat geocube.DataFormat) (*godal.Dataset, error) {
 
-	listFile := make([]string, len(datasets))
 	gdatasets := make([]*godal.Dataset, len(datasets))
 	for i, dataset := range datasets {
 		var err error
 		uri := dataset.GDALURI()
-		listFile[i] = uri
-		gdatasets[i], err = godal.Open(uri, ErrLoger)
-		if err != nil {
+		if gdatasets[i], err = godal.Open(uri, ErrLoger); err != nil {
 			return nil, fmt.Errorf("while opening %s: %w", uri, err)
 		}
 		defer gdatasets[i].Close()
@@ -274,6 +271,37 @@ func warpDatasets(datasets []*Dataset, wktCRS string, transform *affine.Affine, 
 	}
 
 	return outDs, nil
+}
+
+// WarpedExtent calls godal.WarpVRT on datasets, performing a reprojection and returning the extent
+func WarpedExtent(ctx context.Context, datasets []*Dataset, wktCRS string, resx, resy float64) ([4]float64, error) {
+	gdatasets := make([]*godal.Dataset, len(datasets))
+	for i, dataset := range datasets {
+		var err error
+		uri := dataset.GDALURI()
+		if gdatasets[i], err = godal.Open(uri, ErrLoger); err != nil {
+			return [4]float64{}, fmt.Errorf("while opening %s: %w", uri, err)
+		}
+		defer gdatasets[i].Close()
+	}
+
+	options := []string{
+		"-t_srs", wktCRS,
+		"-tr", toS(resx), toS(resy),
+	}
+
+	virtualname := "/vsimem/" + uuid.New().String() + ".vrt"
+	ds, err := godal.Warp(virtualname, gdatasets, options, godal.VRT, ErrLoger)
+	if err != nil {
+		return [4]float64{}, fmt.Errorf("failed to warp dataset: %w", err)
+	}
+
+	defer func() {
+		ds.Close()
+		godal.VSIUnlink(virtualname)
+	}()
+
+	return ds.Bounds()
 }
 
 func countValidPix(band godal.Band) (uint64, error) {

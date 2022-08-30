@@ -57,8 +57,7 @@ func (h *handlerConsolidation) Consolidate(ctx context.Context, cEvent *geocube.
 		return TaskCancelledConsolidationError
 	}
 
-	id := uuid.New()
-	workDir := path.Join(workspace, id.String())
+	workDir := path.Join(workspace, cEvent.TaskID)
 	if err := os.MkdirAll(workDir, 0777); err != nil {
 		return err
 	}
@@ -108,9 +107,15 @@ func (h *handlerConsolidation) Consolidate(ctx context.Context, cEvent *geocube.
 					cEvent.Container.Transform[5],
 				)
 
+				// Get the optimized extent, regarding blocksize using warpVRT
+				pixToCRS, width, height, err := optimizeTransform(gCtx, localDatasets, cEvent.Container.CRS, pixToCRS, cEvent.Container.Width, cEvent.Container.Height, cEvent.Container.BlockXSize, cEvent.Container.BlockYSize)
+				if err != nil {
+					return fmt.Errorf("Consolidate.%w", err)
+				}
+
 				mergeDataset, err := MergeDatasets(gCtx, localDatasets, &GdalDatasetDescriptor{
-					Height:      cEvent.Container.Height,
-					Width:       cEvent.Container.Width,
+					Height:      int(height),
+					Width:       int(width),
 					Bands:       cEvent.Container.BandsCount,
 					DataMapping: cEvent.Container.DatasetFormat,
 					WktCRS:      cEvent.Container.CRS,
@@ -244,7 +249,7 @@ func (h *handlerConsolidation) getLocalDatasetsByRecord(ctx context.Context, cEv
 				for file := range files {
 					select {
 					case <-ctx.Done():
-						return nil
+						return ctx.Err()
 					default:
 					}
 					if err := file.URI.DownloadToFile(gCtx, file.LocalURI); err != nil {
@@ -422,4 +427,30 @@ func (h *handlerConsolidation) computeNbOverviews(width, height, minSize int) in
 		height /= 2
 	}
 	return nb
+}
+
+func optimizeTransform(ctx context.Context, datasets []*Dataset, crs string, pixToCRS *affine.Affine, width, height, blockSizeX, blockSizeY int) (*affine.Affine, int, int, error) {
+	// Get the extent using warpVRT
+	extent, err := WarpedExtent(ctx, datasets, crs, pixToCRS[1], pixToCRS[5])
+	if err != nil {
+		return nil, 0, 0, fmt.Errorf("optimizeTransform: %w", err)
+	}
+	crsToPix := pixToCRS.Inverse()
+	// Get the coordinates of extent in the container
+	x0, y0 := crsToPix.Transform(extent[0], extent[1])
+	x1, y1 := crsToPix.Transform(extent[2], extent[3])
+	if x0 > x1 {
+		x0, x1 = x1, x0
+	}
+	if y0 > y1 {
+		y0, y1 = y1, y0
+	}
+
+	w, h, bsX, bsY := float64(width), float64(height), float64(blockSizeX), float64(blockSizeY)
+	ox := math.Max(bsX*math.Floor(x0/bsX), 0)
+	oy := math.Max(bsY*math.Floor(y0/bsY), 0)
+	w = math.Ceil(math.Min(x1, w) - ox)
+	h = math.Ceil(math.Min(y1, h) - oy)
+
+	return pixToCRS.Multiply(affine.Translation(ox, oy)), int(w), int(h), nil
 }

@@ -39,7 +39,7 @@ github.com/airbusgeo/errs
 # github.com/airbusgeo/godal v0.0.6
 ## explicit
 github.com/airbusgeo/godal
-# github.com/airbusgeo/mucog v0.0.0-20220727133903-292ebd223ae2
+# github.com/airbusgeo/mucog v0.0.0-20220830132435-3f9e26c35c1f
 ## explicit
 github.com/airbusgeo/mucog
 # github.com/airbusgeo/osio v0.1.3

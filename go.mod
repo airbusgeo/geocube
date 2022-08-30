@@ -11,7 +11,7 @@ require (
 	github.com/airbusgeo/cogger v0.0.7
 	github.com/airbusgeo/errs v0.0.3 // indirect
 	github.com/airbusgeo/godal v0.0.6
-	github.com/airbusgeo/mucog v0.0.0-20220727133903-292ebd223ae2
+	github.com/airbusgeo/mucog v0.0.0-20220830132435-3f9e26c35c1f
 	github.com/airbusgeo/osio v0.1.3
 	github.com/aws/aws-sdk-go-v2 v1.16.3
 	github.com/aws/aws-sdk-go-v2/config v1.15.5

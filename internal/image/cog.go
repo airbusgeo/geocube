@@ -160,9 +160,9 @@ func (c *cogGenerator) Open(ctx context.Context, filepath string) (*godal.Datase
 		}
 	}
 
-	if len(dataOffsets) >= 2 && dataOffsets[0] != 0 && dataOffsets[0] < dataOffsets[1] {
+	/*if len(dataOffsets) >= 2 && dataOffsets[0] != 0 && dataOffsets[0] < dataOffsets[1] {
 		err = utils.MergeErrors(true, err, fmt.Errorf("the offset of the first block of the main resolution image should be after the one of the overview of index %d", ovrCount-1))
-	}
+	}*/
 
 	if err != nil {
 		ds.Close()

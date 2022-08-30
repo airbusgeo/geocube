@@ -1,6 +1,9 @@
 package mucog
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+)
 
 type geotransform [6]float64
 
@@ -9,7 +12,21 @@ func (gt geotransform) Origin() (float64, float64) {
 }
 
 func (gt geotransform) Scale() (float64, float64) {
-	return gt[1], -gt[5]
+	return gt[1], gt[5]
+}
+
+func (gt geotransform) Transform(x, y float64) (float64, float64) {
+	return gt[0] + gt[1]*x + gt[2]*y, gt[3] + gt[4]*x + gt[5]*y
+}
+
+func (gt geotransform) Inverse() (geotransform, error) {
+	idet := 1.0 / (gt[1]*gt[5] - gt[2]*gt[4])
+	if idet == 0 {
+		return geotransform{}, fmt.Errorf("non invertible geotransform %v", gt)
+	}
+	res := geotransform{0, gt[5] * idet, -gt[2] * idet, 0, -gt[4] * idet, gt[1] * idet}
+	res[0], res[3] = res.Transform(-gt[0], -gt[3])
+	return res, nil
 }
 
 func (ifd *IFD) geotransform() (geotransform, error) {
@@ -19,9 +36,6 @@ func (ifd *IFD) geotransform() (geotransform, error) {
 		ifd.ModelPixelScaleTag[0] != 0 && ifd.ModelPixelScaleTag[1] != 0 {
 		gt[1] = ifd.ModelPixelScaleTag[0]
 		gt[5] = -ifd.ModelPixelScaleTag[1]
-		if gt[5] > 0 {
-			return gt, errors.New("negativ y-scale not supported")
-		}
 
 		if len(ifd.ModelTiePointTag) >= 6 {
 			gt[0] =
