@@ -107,6 +107,7 @@ CREATE TABLE geocube.datasets (
 );
 CREATE INDEX idx_datasets_geog ON geocube.datasets USING GIST (geog);
 CREATE INDEX idx_datasets_geom ON geocube.datasets USING GIST (geom);
+CREATE INDEX idx_datasets_shape ON geocube.datasets USING GIST (shape);
 CREATE INDEX idx_datasets_container ON geocube.datasets (container_uri);
 CREATE INDEX idx_datasets_record ON geocube.datasets (record_id);
 CREATE INDEX idx_datasets_instance ON geocube.datasets (instance_id);
