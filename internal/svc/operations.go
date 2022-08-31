@@ -11,11 +11,13 @@ import (
 	"github.com/airbusgeo/geocube/internal/geocube"
 	"github.com/airbusgeo/geocube/internal/log"
 	"github.com/airbusgeo/geocube/internal/utils"
+	"go.uber.org/zap"
 )
 
 // HandleEvent handles TaskEvent and JobEvent for a job
 func (svc *Service) HandleEvent(ctx context.Context, evt geocube.Event) error {
 	if taskevt, ok := evt.(geocube.TaskEvent); ok {
+		ctx = log.WithFields(ctx, zap.String("task", taskevt.TaskID), zap.String("jobID", taskevt.JobID))
 		if err := svc.handleTaskEvt(ctx, taskevt); err != nil {
 			if !utils.Temporary(err) {
 				// TODO handle this case : it may result in a storage leak !!!
@@ -29,6 +31,7 @@ func (svc *Service) HandleEvent(ctx context.Context, evt geocube.Event) error {
 }
 
 func (svc *Service) handleJobEvt(ctx context.Context, evt geocube.JobEvent) error {
+	ctx = log.With(ctx, "jobID", evt.JobID)
 	start := time.Now()
 	// Get Job
 	job, err := svc.GetJob(ctx, evt.JobID)
@@ -36,6 +39,7 @@ func (svc *Service) handleJobEvt(ctx context.Context, evt geocube.JobEvent) erro
 		return fmt.Errorf("handleJobEvt.%w", err)
 	}
 	ctx = log.With(ctx, "job", job.Name)
+	log.Logger(ctx).Sugar().Debugf("JobEvt got (id:%s, err:%s)", evt.JobID, evt.Error)
 
 	// Trigger the event
 	if err = job.Trigger(evt); err != nil {

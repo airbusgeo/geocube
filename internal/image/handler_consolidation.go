@@ -235,7 +235,7 @@ func (h *handlerConsolidation) getLocalDatasetsByRecord(ctx context.Context, cEv
 
 	// Push download jobs
 	if len(filesToDownload) > 0 {
-		log.Logger(ctx).Sugar().Debugf("downloading %d datasets", len(filesToDownload))
+		log.Logger(ctx).Sugar().Debugf("downloading %d files", len(filesToDownload))
 		files := make(chan FileToDownload, len(filesToDownload))
 		for uri, localUri := range filesToDownload {
 			files <- FileToDownload{URI: uri, LocalURI: localUri}
@@ -253,7 +253,7 @@ func (h *handlerConsolidation) getLocalDatasetsByRecord(ctx context.Context, cEv
 					default:
 					}
 					if err := file.URI.DownloadToFile(gCtx, file.LocalURI); err != nil {
-						return fmt.Errorf("failed to download dataset %s: %w", file.URI.String(), err)
+						return fmt.Errorf("%s: %w", file.URI.String(), err)
 					}
 				}
 				return nil

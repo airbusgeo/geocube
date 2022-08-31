@@ -765,7 +765,9 @@ func (svc *Service) csldConsolidationForceRetry(ctx context.Context, job *geocub
 		return err
 	}
 	// Reset and save task status
+	active := job.ActiveTasks
 	job.ResetTasks([]geocube.TaskState{geocube.TaskStateNEW, geocube.TaskStateFAILED, geocube.TaskStatePENDING})
+	job.LogMsgf(geocube.DEBUG, "Set %d tasks to retry", job.ActiveTasks-active)
 	return svc.saveJob(ctx, nil, job)
 }
 

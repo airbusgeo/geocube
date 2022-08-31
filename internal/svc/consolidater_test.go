@@ -402,10 +402,10 @@ var _ = Describe("Consolidater", func() {
 		})
 
 		JustBeforeEach(func() {
-			ctx := log.WithFields(ctx, zap.String("job", jobToUse.ID))
-			ctxWithName := log.WithFields(ctx, zap.String("job", jobToUse.Name))
+			ctxWithId := log.WithFields(ctx, zap.String("jobID", jobToUse.ID))
+			ctxWithName := log.WithFields(ctxWithId, zap.String("job", jobToUse.Name))
 
-			mockDatabase.On("ReadJob", ctx, jobToUse.ID, mock.Anything).Return(jobToUse, nil)
+			mockDatabase.On("ReadJob", mock.Anything, jobToUse.ID, mock.Anything).Return(jobToUse, nil)
 			mockDatabase.On("ReadTasks", ctxWithName, jobToUse.ID, mock.Anything).Return(tasksReturned, nil)
 			mockDatabase.On("UpdateTask", ctxWithName, mock.Anything).Return(nil)
 
