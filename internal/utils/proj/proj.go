@@ -388,6 +388,7 @@ func (r Ring) cloneTo4326(crs *godal.SpatialRef, geodetic bool) (*Ring, error) {
 
 // lonLatDistance returns the approximate distances in meter between two lon/lat points
 // TODO use Proj to compute the distance between two lon/lat points ?
+// This is not accurate below one meter
 func lonLatDistance(lon1, lat1, lon2, lat2 float64) float64 {
 	earthRadius := 6371000.
 	lon1, lat1, lon2, lat2 = DegToRad*lon1, DegToRad*lat1, DegToRad*lon2, DegToRad*lat2
@@ -435,6 +436,10 @@ const (
 // densifyEdge returns an array of flat lon/lat points so that the difference between
 // the segment ([x1, y1], [x2, y2]) and the polyline (lon1, lat1], []returnedValue, lon2, lat2]) is lower than accuracy
 func densifyEdge(projToLonLat *projection, geodetic bool, x1, y1, x2, y2, lon1, lat1, lon2, lat2, accuracy float64, recursion int) []float64 {
+	if accuracy < 1 {
+		return []float64{}
+	}
+
 	// Compute middle points
 	xm, ym := (x1+x2)/2, (y1+y2)/2
 	lonm, latm := (*projToLonLat)(xm, ym)
@@ -447,8 +452,9 @@ func densifyEdge(projToLonLat *projection, geodetic bool, x1, y1, x2, y2, lon1, 
 	}
 
 	if recursion == 0 {
-		fmt.Printf("Max number of recursions reached : [%f, %f, %f, %f]->[%f, %f]~[%f, %f, %f, %f]->[%f, %f] %f>%f\n",
-			x1, y1, x2, y2, lonm, latm, lon1, lat1, lon2, lat2, lonm2, latm2, distance, accuracy)
+		fmt.Printf("Max number of recursions reached : [%s, %s, %s, %s]->[%s, %s]~[%s, %s, %s, %s]->[%s, %s] %f>%f\n",
+			utils.F64ToS(x1), utils.F64ToS(y1), utils.F64ToS(x2), utils.F64ToS(y2), utils.F64ToS(lonm), utils.F64ToS(latm),
+			utils.F64ToS(lon1), utils.F64ToS(lat1), utils.F64ToS(lon2), utils.F64ToS(lat2), utils.F64ToS(lonm2), utils.F64ToS(latm2), distance, accuracy)
 		return []float64{lonm, latm}
 	}
 
