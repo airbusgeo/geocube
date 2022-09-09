@@ -144,6 +144,7 @@ type ConsolidationContainer struct {
 	InterlacingPattern string       // L=0>T>I>P;I>L=1:>T>P (see github.com/airbusgeo/mucog)
 	OverviewsMinSize   int          // Maximum width or height of the smallest overview level. 0=NO_OVERVIEW, -1=OVERVIEWS_DEFAULT_MIN_SIZE (=256)
 	ResamplingAlg      Resampling   // "bilinear"
+	OvrResamplingAlg   Resampling   // "regular"
 	Compression        Compression  // "NO", "LOSSLESS", "LOSSY"
 	StorageClass       StorageClass // "COLDLINE"
 }
@@ -153,6 +154,12 @@ func NewConsolidationContainer(URI string, variable *Variable, params *Consolida
 	crs, err := cell.CRS.WKT()
 	if err != nil {
 		return nil, fmt.Errorf("NewConsolidationContainer: %w", err)
+	}
+	// TODO: defined by user
+	ovrResamplingAlg := params.ResamplingAlg
+	switch params.ResamplingAlg {
+	case ResamplingBILINEAR, ResamplingCUBIC, ResamplingCUBICSPLINE, ResamplingLANCZOS:
+		ovrResamplingAlg = ResamplingAVERAGE
 	}
 
 	return &ConsolidationContainer{
@@ -173,6 +180,7 @@ func NewConsolidationContainer(URI string, variable *Variable, params *Consolida
 		InterlacingPattern: layout.MucogInterlacingPattern(),
 		OverviewsMinSize:   layout.OverviewsMinSize,
 		ResamplingAlg:      params.ResamplingAlg,
+		OvrResamplingAlg:   ovrResamplingAlg,
 		Compression:        params.Compression,
 		StorageClass:       params.StorageClass,
 	}, nil

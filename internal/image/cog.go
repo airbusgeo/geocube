@@ -56,17 +56,17 @@ func (c *cogGenerator) Create(dataset *godal.Dataset, oContainer geocube.Consoli
 		godal.VSIUnlink(tiffDatasetPath) // Delete the VSI or traditionnal file
 	}()
 
-	if oContainer.OverviewsMinSize != geocube.NO_OVERVIEW {
-		if err := c.buildOverviews(tiffDataset, oContainer.ResamplingAlg, oContainer.OverviewsMinSize); err != nil {
-			return "", fmt.Errorf("Create.%w", err)
-		}
-	}
-
 	for i := 0; i < tiffDataset.Structure().NBands; i++ {
 		band := tiffDataset.Bands()[i]
 		err = band.SetNoData(oContainer.DatasetFormat.NoData)
 		if err != nil {
 			return "", fmt.Errorf("Create.SetNoData: %w", err)
+		}
+	}
+
+	if oContainer.OverviewsMinSize != geocube.NO_OVERVIEW {
+		if err := c.buildOverviews(tiffDataset, oContainer.OvrResamplingAlg, oContainer.OverviewsMinSize); err != nil {
+			return "", fmt.Errorf("Create.%w", err)
 		}
 	}
 
