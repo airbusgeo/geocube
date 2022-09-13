@@ -31,16 +31,6 @@ const (
 	ResamplingQ3
 )
 
-// CanInterpolate returns true if the resampling may interpolate values
-func (r Resampling) CanInterpolate() bool {
-	switch r {
-	case ResamplingBILINEAR, ResamplingCUBIC, ResamplingCUBICSPLINE, ResamplingLANCZOS, ResamplingAVERAGE:
-		return true
-	default:
-		return false
-	}
-}
-
 func (r Resampling) ToGDAL() godal.ResamplingAlg {
 	switch r {
 	default:

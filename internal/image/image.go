@@ -342,13 +342,13 @@ func colorTableFromPalette(palette *geocube.Palette) (*godal.ColorTable, error) 
 }
 
 // DatasetToPngAsBytes translates the dataset to a png and returns the byte representation
-// canInterpolateColor is true if dataset pixel value can be interpolated
-func DatasetToPngAsBytes(ctx context.Context, ds *godal.Dataset, fromDFormat geocube.DataMapping, palette *geocube.Palette, canInterpolateColor bool) ([]byte, error) {
+// interpolateColor is true if dataset pixel value can be interpolated
+func DatasetToPngAsBytes(ctx context.Context, ds *godal.Dataset, fromDFormat geocube.DataMapping, palette *geocube.Palette, interpolateColor bool) ([]byte, error) {
 	var palette256 color.Palette
 	var virtualname string
 	toDformat := fromDFormat
 
-	if !canInterpolateColor {
+	if !interpolateColor {
 		if fromDFormat.Range.Min < 0 || fromDFormat.Range.Max > 255 || fromDFormat.NoData < 0 || fromDFormat.NoData > 255 {
 			return nil, fmt.Errorf("cannot create a png, because the color interpolation is forbidden")
 		}

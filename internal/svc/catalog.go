@@ -389,7 +389,6 @@ func (svc *Service) GetXYZTile(ctx context.Context, recordsID []string, instance
 
 	// Get Palette
 	var palette *geocube.Palette
-	var canInterpolateColors bool
 	{
 		variable, err := svc.db.ReadVariableFromInstanceID(ctx, instanceID)
 		if err != nil {
@@ -400,11 +399,10 @@ func (svc *Service) GetXYZTile(ctx context.Context, recordsID []string, instance
 				return nil, fmt.Errorf("GetXYZTile.%w", err)
 			}
 		}
-		canInterpolateColors = variable.Resampling.CanInterpolate()
 	}
 
 	// Translate to PNG
-	bytes, err := internalImage.DatasetToPngAsBytes(ctx, ds, outDesc.DataMapping, palette, canInterpolateColors)
+	bytes, err := internalImage.DatasetToPngAsBytes(ctx, ds, outDesc.DataMapping, palette, true)
 	if err != nil {
 		return nil, fmt.Errorf("GetMosaic.%w", err)
 	}
