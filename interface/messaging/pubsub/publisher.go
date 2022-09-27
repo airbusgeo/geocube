@@ -50,22 +50,27 @@ func (p *Publisher) Publish(ctx context.Context, data ...[]byte) error {
 
 // Publish implements messaging.Publisher
 func (p *Publisher) publish(ctx context.Context, retry int, data ...[]byte) error {
-	var results []*pubsub.PublishResult
-	for _, d := range data {
-		result := p.topic.Publish(ctx, &pubsub.Message{
-			Data: d,
-		})
-		results = append(results, result)
-	}
-
 	retryIds := []int{}
-	for i, r := range results {
-		// Block until the result is returned and a server-generated ID is returned for the published message.
-		if _, err := r.Get(ctx); err != nil {
-			if utils.Temporary(err) && retry < p.maxRetries {
-				retryIds = append(retryIds, i)
-			} else {
-				return fmt.Errorf("Publish: %w", err)
+
+	for i := 0; i < len(data); {
+		var results []*pubsub.PublishResult
+		for limit := pubsub.DefaultPublishSettings.BufferedByteLimit / 2; i < len(data) && limit > 0; i++ {
+			// len(data[i]) is assumed to be smaller than half the BufferedByteLimit.
+			// It's dirty, but it's a way to control the size of the buffered messages without knowing their exact size ((which is bigger than len(data[i]))
+			limit -= len(data[i])
+			results = append(results, p.topic.Publish(ctx, &pubsub.Message{
+				Data: data[i],
+			}))
+		}
+
+		for i, r := range results {
+			// Block until the result is returned and a server-generated ID is returned for the published message.
+			if _, err := r.Get(ctx); err != nil {
+				if utils.Temporary(err) && retry < p.maxRetries {
+					retryIds = append(retryIds, i)
+				} else {
+					return fmt.Errorf("Publish: %w", err)
+				}
 			}
 		}
 	}
