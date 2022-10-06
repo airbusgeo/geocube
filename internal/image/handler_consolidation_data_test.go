@@ -15,7 +15,7 @@ var (
 				DateTime: "2020-11-02 09:44:00",
 				Datasets: []geocube.ConsolidationDataset{
 					{
-						URI:       "file://test_data/image_20180812.tif",
+						URI:       "test_data/image_20180812.tif",
 						Subdir:    "",
 						Bands:     []int64{1},
 						Overviews: false,
@@ -68,7 +68,7 @@ var (
 				DateTime: "2020-11-02 09:44:00",
 				Datasets: []geocube.ConsolidationDataset{
 					{
-						URI:       "file://test_data/image_20180812_1.tif",
+						URI:       "test_data/image_20180812_1.tif",
 						Subdir:    "",
 						Bands:     []int64{1},
 						Overviews: false,
@@ -82,7 +82,7 @@ var (
 							Exponent: 1,
 						},
 					}, {
-						URI:       "file://test_data/image_20180812_2.tif",
+						URI:       "test_data/image_20180812_2.tif",
 						Subdir:    "",
 						Bands:     []int64{1},
 						Overviews: false,
@@ -135,7 +135,7 @@ var (
 				DateTime: "2020-11-02 09:44:00",
 				Datasets: []geocube.ConsolidationDataset{
 					{
-						URI:       "file://test_data/image_20180812.tif",
+						URI:       "test_data/image_20180812.tif",
 						Subdir:    "",
 						Bands:     []int64{1},
 						Overviews: false,
@@ -155,7 +155,7 @@ var (
 				DateTime: "2020-11-02 09:44:00",
 				Datasets: []geocube.ConsolidationDataset{
 					{
-						URI:       "file://test_data/image_20180824.tif",
+						URI:       "test_data/image_20180824.tif",
 						Subdir:    "",
 						Bands:     []int64{1},
 						Overviews: false,
@@ -208,7 +208,7 @@ var (
 				DateTime: "2020-11-02 09:44:00",
 				Datasets: []geocube.ConsolidationDataset{
 					{
-						URI:       "file://test_data/image_20180812.tif",
+						URI:       "test_data/image_20180812.tif",
 						Subdir:    "",
 						Bands:     []int64{1},
 						Overviews: false,
@@ -261,7 +261,7 @@ var (
 				DateTime: "2020-11-02 09:44:00",
 				Datasets: []geocube.ConsolidationDataset{
 					{
-						URI:       "file://test_data/image_20180812.tif",
+						URI:       "test_data/image_20180812.tif",
 						Subdir:    "",
 						Bands:     []int64{1},
 						Overviews: false,

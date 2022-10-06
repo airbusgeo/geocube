@@ -108,7 +108,7 @@ func run(ctx context.Context) error {
 		return fmt.Errorf("missing configuration for eventPublisher")
 	}
 
-	handlerConsolidation := image.NewHandleConsolidation(image.NewCogGenerator(), image.NewMucogGenerator(), consolidaterConfig.CancelledJobsStorage, consolidaterConfig.Workers)
+	handlerConsolidation := image.NewHandleConsolidation(image.NewCogGenerator(), image.NewMucogGenerator(), consolidaterConfig.CancelledJobsStorage, consolidaterConfig.Workers, consolidaterConfig.LocalDownload)
 	log.Logger(ctx).Sugar().Debugf("consolidater starts "+logMessaging+" with %d worker(s)", consolidaterConfig.Workers)
 	for {
 		err := taskConsumer.Pull(ctx, func(ctx context.Context, msg *messaging.Message) error {
@@ -174,6 +174,7 @@ func newConsolidationAppConfig() (*consolidaterConfig, error) {
 	flag.StringVar(&consolidaterConfig.CancelledJobsStorage, "cancelledJobs", "", "storage where cancelled jobs are referenced")
 	flag.IntVar(&consolidaterConfig.RetryCount, "retryCount", 1, "number of retries when consolidation job failed with a temporary error")
 	flag.IntVar(&consolidaterConfig.Workers, "workers", 1, "number of workers for parallel tasks")
+	flag.BoolVar(&consolidaterConfig.LocalDownload, "local-download", true, "locally download the datasets before starting the consolidation (generally faster than letting GDAL to download them tile by tile)")
 
 	// Messaging
 	flag.StringVar(&consolidaterConfig.PgqDbConnection, "pgqConnection", "", "url of the postgres database to enable pgqueue messaging system (pgqueue only)")
@@ -205,6 +206,7 @@ type consolidaterConfig struct {
 	CancelledJobsStorage string
 	RetryCount           int
 	Workers              int
+	LocalDownload        bool
 	GDALConfig           *cmd.GDALConfig
 }
 

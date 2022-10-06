@@ -125,6 +125,8 @@ Usage of ./consolidater:
     	gdal blockcache value (default 500) (default 500)
   -gdalStorageDebug
     	enable storage debug to use custom gdal storage strategy
+  -local-download
+    	locally download the datasets before starting the consolidation (generally faster than letting GDAL to download them tile by tile) (default true)
   -pgqConnection string
     	url of the postgres database to enable pgqueue messaging system (pgqueue only)
   -psProject string

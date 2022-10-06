@@ -10,13 +10,13 @@ import (
 	"sync"
 
 	"github.com/airbusgeo/geocube/interface/storage"
+	"github.com/google/uuid"
 
 	"github.com/airbusgeo/geocube/interface/storage/uri"
 	"github.com/airbusgeo/geocube/internal/geocube"
 	"github.com/airbusgeo/geocube/internal/log"
 	"github.com/airbusgeo/geocube/internal/utils"
 	"github.com/airbusgeo/geocube/internal/utils/affine"
-	"github.com/google/uuid"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -40,14 +40,16 @@ type handlerConsolidation struct {
 	mucog                MucogGenerator
 	cancelledJobsStorage string
 	workers              int
+	localDownload        bool // Locally download the datasets before starting the consolidation (generally faster than letting GDAL to download them tile by tile)
 }
 
-func NewHandleConsolidation(c CogGenerator, m MucogGenerator, cancelledJobsStorage string, workers int) Handler {
+func NewHandleConsolidation(c CogGenerator, m MucogGenerator, cancelledJobsStorage string, workers int, localDownload bool) Handler {
 	return &handlerConsolidation{
 		cog:                  c,
 		mucog:                m,
 		cancelledJobsStorage: cancelledJobsStorage,
 		workers:              workers,
+		localDownload:        localDownload,
 	}
 }
 
@@ -202,25 +204,27 @@ type FileToDownload struct {
 // getLocalDatasetsByRecord references all datasets and download them in local filesystem.
 func (h *handlerConsolidation) getLocalDatasetsByRecord(ctx context.Context, cEvent *geocube.ConsolidationEvent, workDir string) (map[string][]*Dataset, map[string]int, error) {
 	// Prepare local dataset and list files to download
-	var ok bool
 	datasetsByRecord := map[string][]*Dataset{}
 	filesToDownload := map[uri.DefaultUri]string{}
 	tmpFileCounter := map[string]int{}
 	for _, record := range cEvent.Records {
 		var datasets []*Dataset
 		for _, dataset := range record.Datasets {
-			sourceUri, err := uri.ParseUri(dataset.URI)
-			if err != nil {
-				return nil, nil, fmt.Errorf("getLocalDatasetsByRecord: %w", err)
-			}
 			localUri := dataset.URI
-			if sourceUri.Protocol() != "" {
-				if localUri, ok = filesToDownload[sourceUri]; !ok {
-					localUri = path.Join(workDir, uuid.New().String())
-					filesToDownload[sourceUri] = localUri
-					tmpFileCounter[localUri] = 0
+			if h.localDownload {
+				sourceUri, err := uri.ParseUri(dataset.URI)
+				if err != nil {
+					return nil, nil, fmt.Errorf("getLocalDatasetsByRecord: %w", err)
 				}
-				tmpFileCounter[localUri] += 1
+				if sourceUri.Protocol() != "" {
+					var ok bool
+					if localUri, ok = filesToDownload[sourceUri]; !ok {
+						localUri = path.Join(workDir, uuid.New().String())
+						filesToDownload[sourceUri] = localUri
+						tmpFileCounter[localUri] = 0
+					}
+					tmpFileCounter[localUri] += 1
+				}
 			}
 			gDataset := &Dataset{
 				URI:         localUri,
