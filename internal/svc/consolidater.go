@@ -732,11 +732,10 @@ func (svc *Service) csldCancel(ctx context.Context, job *geocube.Job) error {
 		if err := cancelledJobsURI.Upload(ctx, nil); err != nil {
 			return err
 		}
-
-		job.LogMsg(geocube.INFO, "Job and associated tasks are cancelled")
-		if err = svc.saveJob(ctx, nil, job); err != nil {
-			return err
-		}
+	}
+	job.LogMsg(geocube.INFO, "Job and associated tasks are cancelled")
+	if err = svc.saveJob(ctx, nil, job); err != nil {
+		return err
 	}
 	return nil
 }
