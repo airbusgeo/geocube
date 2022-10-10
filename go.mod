@@ -8,7 +8,7 @@ require (
 	cloud.google.com/go/pubsub v1.21.1
 	cloud.google.com/go/secretmanager v1.4.0
 	cloud.google.com/go/storage v1.22.0
-	github.com/airbusgeo/cogger v0.0.7
+	github.com/airbusgeo/cogger v0.0.8-0.20221010142029-a1b17e500a6e
 	github.com/airbusgeo/errs v0.0.3 // indirect
 	github.com/airbusgeo/godal v0.0.6
 	github.com/airbusgeo/mucog v0.0.0-20220830132435-3f9e26c35c1f

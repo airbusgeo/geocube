@@ -30,7 +30,7 @@ cloud.google.com/go/secretmanager/internal
 cloud.google.com/go/storage
 cloud.google.com/go/storage/internal
 cloud.google.com/go/storage/internal/apiv2
-# github.com/airbusgeo/cogger v0.0.7
+# github.com/airbusgeo/cogger v0.0.8-0.20221010142029-a1b17e500a6e
 ## explicit
 github.com/airbusgeo/cogger
 # github.com/airbusgeo/errs v0.0.3
