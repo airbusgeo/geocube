@@ -39,6 +39,8 @@ Consolidation is the process (called `job`) consisting in translating, warping, 
 
 It's a long process (from a couple of minutes to an hour) that requires a rigorous management of the life-cycle of the files. It can fail, be restarted or cancelled. The consolidation steps are handled by a state machine and as far as possible, the states can be retried, cancelled or revert.
 
+More information on how to consolidate [here](../user-guide/consolidation.md).
+
 ![Consolidation state machine](../images/GeocubeConsolidationStateMachine.png)
 
 The `API Server` handles the life-cycle of the `job` but the creation of the MuCOGs is done by the `Consolidation workers` in parallel, autoscaled by the `Autoscaler`.
@@ -47,9 +49,11 @@ The `API Server` handles the life-cycle of the `job` but the creation of the MuC
   <img src="../../images/GeocubeConsolidationService.png" alt="Consolidation service" width="300px"/>
 </p>
 
-The consolidation worker first creates a COG for each record from the images linked to this record, then it creates a MuCOG, merging the COGs together in a unique file.
+The consolidation worker first creates a COG for each record from the images linked to the record being processed, then it creates a MuCOG, merging the COGs together in a unique file.
 
 At the end of the consolidation, original files are removed from the index and deleted by another state machine:  
 <p align="center">
   <img src="../../images/GeocubeDeletionStateMachine.png" alt="Deletion state machine" width="500px"/>
 </p>
+
+More information on deletion [here](../user-guide/deletion.md).

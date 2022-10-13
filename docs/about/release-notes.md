@@ -9,3 +9,4 @@ consume a lot of local storage)
 ### Bug fixes
 - Cancel consolidation tasks took to much time (due to job being saved at every task)
 - Update mod airbusgeo/cogger to fix a crash with overviews
+- If a deletion task failed, the job must be in "DONEBUTUNTIDY" state

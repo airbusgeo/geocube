@@ -337,59 +337,63 @@ func (svc *Service) opSubFncRemoveDatasets(ctx context.Context, txn database.Geo
 func (svc *Service) delDeleteContainers(ctx context.Context, job *geocube.Job) error {
 	job.LogMsg(geocube.INFO, "Delete containers...")
 
-	return svc.unitOfWork(ctx, func(txn database.GeocubeTxBackend) error {
-		// Read pending tasks
-		var err error
-		if job.Tasks, err = svc.db.ReadTasks(ctx, job.ID, []geocube.TaskState{geocube.TaskStateNEW, geocube.TaskStatePENDING, geocube.TaskStateFAILED}); err != nil {
-			return err
-		}
-		if len(job.Tasks) == 0 {
-			job.LogMsg(geocube.DEBUG, "Nothing to delete")
-			return nil
-		}
+	// Read pending tasks
+	var err error
+	if job.Tasks, err = svc.db.ReadTasks(ctx, job.ID, []geocube.TaskState{geocube.TaskStateNEW, geocube.TaskStatePENDING, geocube.TaskStateFAILED}); err != nil {
+		return err
+	}
+	if len(job.Tasks) == 0 {
+		job.LogMsg(geocube.DEBUG, "Nothing to delete")
+		return nil
+	}
 
-		// Delete containers
-		workers := utils.MinI(20, len(job.Tasks))
-		tasks := make(chan *geocube.Task)
-		wg := sync.WaitGroup{}
-		mutex := sync.Mutex{}
+	// Delete containers
+	workers := utils.MinI(20, len(job.Tasks))
+	tasks := make(chan *geocube.Task)
+	wg := sync.WaitGroup{}
+	mutex := sync.Mutex{}
+	var errs error
 
-		wg.Add(workers)
-		for w := 0; w < workers; w++ {
-			go func() error {
-				defer wg.Done()
-				for task := range tasks {
-					containerURI, err := task.DeletionPayload()
-					if err != nil {
-						return err
-					}
-					status := geocube.TaskSuccessful
-					if err = svc.opSubFncDeleteContainer(ctx, containerURI); err != nil {
-						status = geocube.TaskFailed
-					}
-					mutex.Lock()
-					job.UpdateTask(*geocube.NewTaskEvent(job.ID, task.ID, status, err))
-					mutex.Unlock()
+	wg.Add(workers)
+	for w := 0; w < workers; w++ {
+		go func() error {
+			defer wg.Done()
+			for task := range tasks {
+				containerURI, err := task.DeletionPayload()
+				if err != nil {
+					return err
 				}
-				return nil
-			}()
-		}
-		for _, task := range job.Tasks {
-			tasks <- task
-		}
-		close(tasks)
-		wg.Wait()
-
-		// Delete done tasks
-		for i := range job.Tasks {
-			if job.Tasks[i].State == geocube.TaskStateDONE {
-				job.DeleteTask(i)
+				status := geocube.TaskSuccessful
+				if err = svc.opSubFncDeleteContainer(ctx, containerURI); err != nil {
+					status = geocube.TaskFailed
+				}
+				mutex.Lock()
+				job.UpdateTask(*geocube.NewTaskEvent(job.ID, task.ID, status, err))
+				errs = utils.MergeErrors(true, errs, err)
+				mutex.Unlock()
 			}
-		}
+			return nil
+		}()
+	}
+	for _, task := range job.Tasks {
+		tasks <- task
+	}
+	close(tasks)
+	wg.Wait()
 
-		// Persist job
-		return svc.saveJob(ctx, txn, job)
-	})
+	// Delete done tasks
+	for i := range job.Tasks {
+		if job.Tasks[i].State == geocube.TaskStateDONE {
+			job.DeleteTask(i)
+		}
+	}
+
+	if errs != nil {
+		log.Logger(ctx).Sugar().Debugf("Some deletion failed: %v", errs)
+	}
+
+	// Persist job
+	return utils.MergeErrors(true, errs, svc.saveJob(ctx, nil, job))
 }
 
 func (svc *Service) delRollback(ctx context.Context, job *geocube.Job) error {

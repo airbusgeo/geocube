@@ -22,6 +22,7 @@ nav:
         - 'Indexation': user-guide/indexation.md
         - 'Access': user-guide/access.md
         - 'Consolidation': user-guide/consolidation.md
+        - 'Deletion': user-guide/deletion.md
         - 'Scaling-up': user-guide/scaleup.md
     - 'About':
       - 'Getting help': about/help.md
