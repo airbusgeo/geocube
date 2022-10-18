@@ -20,6 +20,8 @@ import "pb/operations.proto";
 service Geocube {
     // Create one or a list of records
     rpc CreateRecords(CreateRecordsRequest) returns (CreateRecordsResponse) {}
+    // Get records from their ID
+    rpc GetRecords(GetRecordsRequest)       returns (stream GetRecordsResponseItem)    {}
     // List records given criterias
     rpc ListRecords(ListRecordsRequest)     returns (stream ListRecordsResponseItem) {}
     // Update records, adding or updating tags

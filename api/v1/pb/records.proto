@@ -99,6 +99,20 @@ message CreateRecordsResponse {
 }
 
 /**
+  * Get record from its id
+  */
+  message GetRecordsRequest {
+    repeated string ids =1;
+}
+
+/**
+  * Return a record
+  */
+message GetRecordsResponseItem {
+    Record record = 1;
+}
+
+/**
   * Delete records by ID
   */
 message DeleteRecordsRequest {

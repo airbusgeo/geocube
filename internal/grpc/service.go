@@ -42,6 +42,7 @@ type GeocubeService interface {
 	CreateAOI(ctx context.Context, aoi *geocube.AOI) error
 	GetAOI(ctx context.Context, aoiID string) (*geocube.AOI, error)
 	CreateRecords(ctx context.Context, records []*geocube.Record) error
+	GetRecords(ctx context.Context, ids []string) ([]*geocube.Record, error)
 	DeleteRecords(ctx context.Context, ids []string) (int64, error)
 	ListRecords(ctx context.Context, namelike string, tags geocube.Metadata, fromTime, toTime time.Time, aoi *geocube.AOI, page, limit int, withAOI bool) ([]*geocube.Record, error)
 	AddRecordsTags(ctx context.Context, ids []string, tags geocube.Metadata) (int64, error)
@@ -211,6 +212,30 @@ func (svc *Service) CreateRecords(ctx context.Context, req *pb.CreateRecordsRequ
 
 	// Format response
 	return &pb.CreateRecordsResponse{Ids: sids}, nil
+}
+
+// GetRecords retrieves a ilist of records from their ids
+func (svc *Service) GetRecords(req *pb.GetRecordsRequest, stream pb.Geocube_GetRecordsServer) error {
+	// Check that pb.ids are uuid
+	for _, id := range req.Ids {
+		if _, err := uuid.Parse(id); err != nil {
+			return newValidationError("Invalid uuid: " + err.Error())
+		}
+	}
+
+	// Get records
+	records, err := svc.gsvc.GetRecords(stream.Context(), req.Ids)
+	if err != nil {
+		return formatError("backend.%w", err)
+	}
+
+	// Format response
+	for _, record := range records {
+		if err := stream.Send(&pb.GetRecordsResponseItem{Record: record.ToProtobuf(false)}); err != nil {
+			return formatError("backend.ListRecords.send: %w", err)
+		}
+	}
+	return nil
 }
 
 // DeleteRecords deletes a batch of records iif no dataset has a reference on

@@ -34,6 +34,8 @@
     - [DeleteRecordsResponse](#geocube-DeleteRecordsResponse)
     - [GetAOIRequest](#geocube-GetAOIRequest)
     - [GetAOIResponse](#geocube-GetAOIResponse)
+    - [GetRecordsRequest](#geocube-GetRecordsRequest)
+    - [GetRecordsResponseItem](#geocube-GetRecordsResponseItem)
     - [GroupedRecordIds](#geocube-GroupedRecordIds)
     - [GroupedRecordIdsList](#geocube-GroupedRecordIdsList)
     - [GroupedRecords](#geocube-GroupedRecords)
@@ -192,6 +194,7 @@ Documentation may be detailed in Request/Response sections.
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
 | CreateRecords | [CreateRecordsRequest](#geocube-CreateRecordsRequest) | [CreateRecordsResponse](#geocube-CreateRecordsResponse) | Create one or a list of records |
+| GetRecords | [GetRecordsRequest](#geocube-GetRecordsRequest) | [GetRecordsResponseItem](#geocube-GetRecordsResponseItem) stream | Get records from their ID |
 | ListRecords | [ListRecordsRequest](#geocube-ListRecordsRequest) | [ListRecordsResponseItem](#geocube-ListRecordsResponseItem) stream | List records given criterias |
 | AddRecordsTags | [AddRecordsTagsRequest](#geocube-AddRecordsTagsRequest) | [AddRecordsTagsResponse](#geocube-AddRecordsTagsResponse) | Update records, adding or updating tags |
 | RemoveRecordsTags | [RemoveRecordsTagsRequest](#geocube-RemoveRecordsTagsRequest) | [RemoveRecordsTagsResponse](#geocube-RemoveRecordsTagsResponse) | Update records, removing tags |
@@ -618,6 +621,36 @@ Returns a geometric AOI
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | aoi | [AOI](#geocube-AOI) |  |  |
+
+
+
+
+
+
+<a name="geocube-GetRecordsRequest"></a>
+
+### GetRecordsRequest
+Get record from its id
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| ids | [string](#string) | repeated |  |
+
+
+
+
+
+
+<a name="geocube-GetRecordsResponseItem"></a>
+
+### GetRecordsResponseItem
+Return a record
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| record | [Record](#geocube-Record) |  |  |
 
 
 

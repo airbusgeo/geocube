@@ -70,6 +70,11 @@ func (svc *Service) CreateRecords(ctx context.Context, records []*geocube.Record
 	})
 }
 
+// GetRecords implements GeocubeService
+func (svc *Service) GetRecords(ctx context.Context, ids []string) ([]*geocube.Record, error) {
+	return svc.db.ReadRecords(ctx, ids)
+}
+
 // DeleteRecords implements GeocubeService
 func (svc *Service) DeleteRecords(ctx context.Context, ids []string) (int64, error) {
 	var nb int64

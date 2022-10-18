@@ -5,6 +5,7 @@
 ### Functionalities
 - Consolidater: add option `--local-download` (default=`true`) to download datasets locally before starting the consolidation. Usually, it's faster to download first, but in some case, it's not (or
 consume a lot of local storage)
+- API: add GetRecords(List IDs)
 
 ### Bug fixes
 - Cancel consolidation tasks took to much time (due to job being saved at every task)
