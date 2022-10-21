@@ -872,12 +872,7 @@ func (svc *Service) GetCube(req *pb.GetCubeRequest, stream pb.Geocube_GetCubeSer
 	}}}); err != nil {
 		return formatError("backend.GetCube.%w", err)
 	}
-
-	if req.GetHeadersOnly() {
-		log.Logger(ctx).Sugar().Infof("GetCubeHeader : %d images from %d datasets (%v)\n", info.NbImages, info.NbDatasets, time.Since(start))
-	} else {
-		log.Logger(ctx).Sugar().Infof("GetCube (%d, %d): %d images from %d datasets (%v)\n", cubeInfo.width, cubeInfo.height, info.NbImages, info.NbDatasets, time.Since(start))
-	}
+	metadataPreparationTime := time.Since(start)
 
 	// Start the compression routine
 	var compressed bytes.Buffer
@@ -904,8 +899,10 @@ func (svc *Service) GetCube(req *pb.GetCubeRequest, stream pb.Geocube_GetCubeSer
 			}
 		}
 	}
-	if !req.GetHeadersOnly() {
-		log.Logger(ctx).Sugar().Infof("GetCube: %d images streamed from %d datasets (%v)\n", info.NbImages, info.NbDatasets, time.Since(start))
+	if req.GetHeadersOnly() {
+		log.Logger(ctx).Sugar().Infof("GetCubeHeader : %d images from %d datasets (%v)\n", info.NbImages, info.NbDatasets, time.Since(start))
+	} else {
+		log.Logger(ctx).Sugar().Infof("GetCube (%d, %d): %d images from %d datasets in %v (preparation: %v)\n", cubeInfo.width, cubeInfo.height, info.NbImages, info.NbDatasets, time.Since(start), metadataPreparationTime)
 	}
 	defer gcs.GetMetrics(ctx)
 	return ctx.Err()

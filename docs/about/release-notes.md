@@ -9,6 +9,7 @@
 
 ### Bug fixes
 - CleanJobs: remove DONEBUTUNTIDY
+- Remove redondant logs
 
 
 ### Others
