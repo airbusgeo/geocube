@@ -17,6 +17,13 @@ import (
 	"github.com/airbusgeo/godal"
 )
 
+// GetCubeOptions defines user-options for a GetCube
+type GetCubeOptions struct {
+	Format      string
+	HeadersOnly bool
+	Resampling  geocube.Resampling
+}
+
 // CubeSlice is a slice of a cube, an image corresponding to a group of record
 type CubeSlice struct {
 	Image        *geocube.Bitmap
@@ -84,7 +91,7 @@ func NewSliceMetaFromProtobuf(pbmeta *pb.DatasetMeta) *SliceMeta {
 // GetCubeFromDatasets implements GeocubeDownloaderService
 // panics if instancesID is empty
 func (svc *Service) GetCubeFromMetadatas(ctx context.Context, metadatas []SliceMeta, grecords [][]*geocube.Record,
-	respl geocube.Resampling, refDf geocube.DataFormat, crs *godal.SpatialRef, pixToCRS *affine.Affine, width, height int, format string) (CubeInfo, <-chan CubeSlice, error) {
+	refDf geocube.DataFormat, crs *godal.SpatialRef, pixToCRS *affine.Affine, width, height int, options GetCubeOptions) (CubeInfo, <-chan CubeSlice, error) {
 	var err error
 	var nbDs int
 	dsByRecord := make([][]*internalImage.Dataset, len(metadatas))
@@ -97,14 +104,14 @@ func (svc *Service) GetCubeFromMetadatas(ctx context.Context, metadatas []SliceM
 		Width:      width,
 		Height:     height,
 		Bands:      len(metadatas[0].Datasets[0].Bands),
-		Resampling: respl,
+		Resampling: options.Resampling,
 		DataMapping: geocube.DataMapping{
 			DataFormat: refDf,
 			RangeExt:   refDf.Range,
 			Exponent:   1,
 		},
 		ValidPixPc: 0, // Only exclude empty image
-		Format:     format,
+		Format:     options.Format,
 	}
 	outDesc.WktCRS, err = crs.WKT()
 	if err != nil {
@@ -120,9 +127,9 @@ func (svc *Service) GetCubeFromMetadatas(ctx context.Context, metadatas []SliceM
 // GetCubeFromRecords implements GeocubeService
 // panics if instancesID is empty
 func (svc *Service) GetCubeFromRecords(ctx context.Context, grecordsID [][]string, instancesID []string, crs *godal.SpatialRef, pixToCRS *affine.Affine,
-	width, height int, format string, headersOnly bool) (CubeInfo, <-chan CubeSlice, error) {
+	width, height int, options GetCubeOptions) (CubeInfo, <-chan CubeSlice, error) {
 	// Prepare the request
-	outDesc, geogExtent, err := svc.getCubePrepare(ctx, instancesID, crs, pixToCRS, width, height, format)
+	outDesc, geogExtent, err := svc.getCubePrepare(ctx, instancesID, crs, pixToCRS, width, height, options)
 	if err != nil {
 		return CubeInfo{}, nil, err
 	}
@@ -154,7 +161,7 @@ func (svc *Service) GetCubeFromRecords(ctx context.Context, grecordsID [][]strin
 	datasetsByRecord, grecords = getCubeGroupByRecordsGroup(datasetsByRecord, records, recordIdx, grecordsID)
 
 	// GetCube
-	stream, err := svc.getCubeStream(ctx, datasetsByRecord, grecords, outDesc, headersOnly)
+	stream, err := svc.getCubeStream(ctx, datasetsByRecord, grecords, outDesc, options.HeadersOnly)
 	return CubeInfo{NbImages: len(datasetsByRecord),
 		NbDatasets:    len(datasets),
 		Resampling:    outDesc.Resampling,
@@ -165,9 +172,9 @@ func (svc *Service) GetCubeFromRecords(ctx context.Context, grecordsID [][]strin
 // GetCubeFromFilters implements GeocubeService
 // panics if instancesID is empty
 func (svc *Service) GetCubeFromFilters(ctx context.Context, recordTags geocube.Metadata, fromTime, toTime time.Time, instancesID []string, crs *godal.SpatialRef, pixToCRS *affine.Affine,
-	width, height int, format string, headersOnly bool) (CubeInfo, <-chan CubeSlice, error) {
+	width, height int, options GetCubeOptions) (CubeInfo, <-chan CubeSlice, error) {
 	// Prepare the request
-	outDesc, geogExtent, err := svc.getCubePrepare(ctx, instancesID, crs, pixToCRS, width, height, format)
+	outDesc, geogExtent, err := svc.getCubePrepare(ctx, instancesID, crs, pixToCRS, width, height, options)
 	if err != nil {
 		return CubeInfo{}, nil, err
 	}
@@ -191,7 +198,7 @@ func (svc *Service) GetCubeFromFilters(ctx context.Context, recordTags geocube.M
 	}
 
 	// GetCube
-	stream, err := svc.getCubeStream(ctx, datasetsByRecord, grecords, outDesc, headersOnly)
+	stream, err := svc.getCubeStream(ctx, datasetsByRecord, grecords, outDesc, options.HeadersOnly)
 	return CubeInfo{NbImages: len(datasetsByRecord),
 		NbDatasets:    len(datasets),
 		Resampling:    outDesc.Resampling,
@@ -199,7 +206,7 @@ func (svc *Service) GetCubeFromFilters(ctx context.Context, recordTags geocube.M
 	}, stream, err
 }
 
-func (svc *Service) getCubePrepare(ctx context.Context, instancesID []string, crs *godal.SpatialRef, pixToCRS *affine.Affine, width, height int, format string) (internalImage.GdalDatasetDescriptor, *proj.GeographicRing, error) {
+func (svc *Service) getCubePrepare(ctx context.Context, instancesID []string, crs *godal.SpatialRef, pixToCRS *affine.Affine, width, height int, options GetCubeOptions) (internalImage.GdalDatasetDescriptor, *proj.GeographicRing, error) {
 	// Validate the input
 	variable, err := svc.db.ReadVariableFromInstanceID(ctx, instancesID[0])
 	if err != nil {
@@ -210,6 +217,9 @@ func (svc *Service) getCubePrepare(ctx context.Context, instancesID []string, cr
 			return internalImage.GdalDatasetDescriptor{}, nil, fmt.Errorf("getCubePrepare.%w", err)
 		}
 	}
+	if options.Resampling == geocube.Resampling(pb.Resampling_UNDEFINED) {
+		options.Resampling = variable.Resampling
+	}
 
 	// Describe the output
 	outDesc := internalImage.GdalDatasetDescriptor{
@@ -217,14 +227,14 @@ func (svc *Service) getCubePrepare(ctx context.Context, instancesID []string, cr
 		Width:      width,
 		Height:     height,
 		Bands:      len(variable.Bands),
-		Resampling: variable.Resampling,
+		Resampling: options.Resampling,
 		DataMapping: geocube.DataMapping{
 			DataFormat: variable.DFormat,
 			RangeExt:   variable.DFormat.Range,
 			Exponent:   1,
 		},
 		ValidPixPc: 0, // Only exclude empty image
-		Format:     format,
+		Format:     options.Format,
 	}
 	outDesc.WktCRS, err = crs.WKT()
 	if err != nil {

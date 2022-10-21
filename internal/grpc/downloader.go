@@ -19,7 +19,7 @@ import (
 type GeocubeDownloaderService interface {
 	// GetCubeFromMetadatas requests a cube of data from metadatas generated with a previous call to GetCube()
 	GetCubeFromMetadatas(ctx context.Context, metadatas []internal.SliceMeta, grecords [][]*geocube.Record,
-		respl geocube.Resampling, refDf geocube.DataFormat, crs *godal.SpatialRef, pixToCRS *affine.Affine, width, height int, format string) (internal.CubeInfo, <-chan internal.CubeSlice, error)
+		refDf geocube.DataFormat, crs *godal.SpatialRef, pixToCRS *affine.Affine, width, height int, options internal.GetCubeOptions) (internal.CubeInfo, <-chan internal.CubeSlice, error)
 }
 
 // DownloaderService is the GRPC service
@@ -95,22 +95,22 @@ func (svc *DownloaderService) DownloadCube(req *pb.GetCubeMetadataRequest, strea
 		}
 		grecords = append(grecords, records)
 	}
-	rspl := geocube.Resampling(req.GetResamplingAlg())
-	refDf := geocube.DataFormat{DType: geocube.DType(req.GetRefDformat().Dtype),
-		NoData: req.GetRefDformat().NoData,
-		Range: geocube.Range{Min: req.GetRefDformat().GetMinValue(),
-			Max: req.GetRefDformat().GetMaxValue()},
-	}
 	info, slicesQueue, err := svc.gdsvc.GetCubeFromMetadatas(ctx,
 		sliceMetas,
 		grecords,
-		rspl,
-		refDf,
+		geocube.DataFormat{DType: geocube.DType(req.GetRefDformat().Dtype),
+			NoData: req.GetRefDformat().NoData,
+			Range: geocube.Range{Min: req.GetRefDformat().GetMinValue(),
+				Max: req.GetRefDformat().GetMaxValue()},
+		},
 		crs,
 		pixToCRS,
 		width,
 		height,
-		req.Format.String())
+		internal.GetCubeOptions{
+			Format:     req.Format.String(),
+			Resampling: geocube.Resampling(req.GetResamplingAlg()),
+		})
 	if err != nil {
 		return formatError("GetCube.%w", err)
 	}

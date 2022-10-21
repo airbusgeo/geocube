@@ -85,8 +85,8 @@ type GeocubeService interface {
 	TileAOI(ctx context.Context, aoi *geocube.AOI, layoutName string, layout *geocube.Layout) (<-chan geocube.StreamedCell, error)
 
 	GetXYZTile(ctx context.Context, recordsID []string, instanceID string, a, b, z int) ([]byte, error)
-	GetCubeFromRecords(ctx context.Context, recordsID [][]string, instancesID []string, crs *godal.SpatialRef, pixToCRS *affine.Affine, width, height int, format string, headersOnly bool) (internal.CubeInfo, <-chan internal.CubeSlice, error)
-	GetCubeFromFilters(ctx context.Context, recordTags geocube.Metadata, fromTime, toTime time.Time, instancesID []string, crs *godal.SpatialRef, pixToCRS *affine.Affine, width, height int, format string, headersOnly bool) (internal.CubeInfo, <-chan internal.CubeSlice, error)
+	GetCubeFromRecords(ctx context.Context, recordsID [][]string, instancesID []string, crs *godal.SpatialRef, pixToCRS *affine.Affine, width, height int, options internal.GetCubeOptions) (internal.CubeInfo, <-chan internal.CubeSlice, error)
+	GetCubeFromFilters(ctx context.Context, recordTags geocube.Metadata, fromTime, toTime time.Time, instancesID []string, crs *godal.SpatialRef, pixToCRS *affine.Affine, width, height int, options internal.GetCubeOptions) (internal.CubeInfo, <-chan internal.CubeSlice, error)
 }
 
 // Service is the GRPC service
@@ -810,6 +810,12 @@ func (svc *Service) GetCube(req *pb.GetCubeRequest, stream pb.Geocube_GetCubeSer
 	// Get the cube
 	var slicesQueue <-chan internal.CubeSlice
 	var info internal.CubeInfo
+	options := internal.GetCubeOptions{
+		Format:      req.Format.String(),
+		HeadersOnly: req.HeadersOnly,
+		Resampling:  geocube.Resampling(req.ResamplingAlg),
+	}
+
 	if req.GetRecords() == nil && req.GetGroupedRecords() == nil {
 		filters := req.GetFilters()
 		// Convert times
@@ -824,11 +830,7 @@ func (svc *Service) GetCube(req *pb.GetCubeRequest, stream pb.Geocube_GetCubeSer
 			cubeInfo.pixToCRS,
 			cubeInfo.width,
 			cubeInfo.height,
-			req.Format.String(),
-			req.HeadersOnly)
-		if err != nil {
-			return formatError("backend.%w", err)
-		}
+			options)
 	} else {
 		if len(cubeInfo.groupedRecordsID) == 0 || len(cubeInfo.groupedRecordsID[0]) == 0 {
 			return newValidationError("At least one record must be provided")
@@ -840,11 +842,10 @@ func (svc *Service) GetCube(req *pb.GetCubeRequest, stream pb.Geocube_GetCubeSer
 			cubeInfo.pixToCRS,
 			cubeInfo.width,
 			cubeInfo.height,
-			req.Format.String(),
-			req.HeadersOnly)
-		if err != nil {
-			return formatError("backend.%w", err)
-		}
+			options)
+	}
+	if err != nil {
+		return formatError("backend.%w", err)
 	}
 	// Return global header
 	if err := stream.Send(&pb.GetCubeResponse{Response: &pb.GetCubeResponse_GlobalHeader{GlobalHeader: &pb.GetCubeResponseHeader{

@@ -60,7 +60,7 @@ var (
 		}},
 	}
 
-	datasetConsolidatedF_123_NO = []*svc.CsldDataset{
+	/*datasetConsolidatedF_123_NO = []*svc.CsldDataset{
 		{Event: geocube.ConsolidationDataset{
 			URI:           consolidatedBaseName + "1.tiff",
 			Subdir:        "GTIFF_DIR:1",
@@ -68,7 +68,7 @@ var (
 			Overviews:     false,
 			DatasetFormat: dataMappingF,
 		}},
-	}
+	}*/
 
 	datasetConsolidatedI_123_O = []*svc.CsldDataset{
 		{Event: geocube.ConsolidationDataset{

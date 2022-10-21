@@ -86,6 +86,7 @@ message GetCubeRequest {
     int32           compression_level = 7; // Define a level of compression to speed up the transfer, values: -2 to 9 (-2: Huffman only, -1:default, 0: no compression, 1->9: level of compression from the fastest to the best compression). The data is compressed by the server and decompressed by the Client. Use -2 or 0 if the bandwidth is not limited.
     bool            headers_only      = 8; // Only returns headers (including all metadatas on datasets)
     FileFormat      format            = 9; // Format of the output images
+    Resampling      resampling_alg    = 10; // Resampling algorithm used for reprojecion. If undefined, the default resampling algorithm associated to the variable is used.
 }
 
 /**

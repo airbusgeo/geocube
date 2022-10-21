@@ -1507,6 +1507,7 @@ Request a cube of data
 | compression_level | [int32](#int32) |  | Define a level of compression to speed up the transfer, values: -2 to 9 (-2: Huffman only, -1:default, 0: no compression, 1-&gt;9: level of compression from the fastest to the best compression). The data is compressed by the server and decompressed by the Client. Use -2 or 0 if the bandwidth is not limited. |
 | headers_only | [bool](#bool) |  | Only returns headers (including all metadatas on datasets) |
 | format | [FileFormat](#geocube-FileFormat) |  | Format of the output images |
+| resampling_alg | [Resampling](#geocube-Resampling) |  | Resampling algorithm used for reprojecion. If undefined, the default resampling algorithm associated to the variable is used. |
 
 
 
