@@ -106,7 +106,18 @@ func newValidationError(desc string) error {
 	return formatError("", geocube.NewValidationError(desc))
 }
 
+func _limit_size(s string, size_limit int) string {
+	if len(s) > size_limit {
+		return s[:size_limit] + "[...]"
+	}
+	return s
+}
+
 func formatError(format string, err error) error {
+	// Error is limited to 8Kb, but we take a margin
+	msg_size_limit := 3000
+	detail_size_limit := 1000
+
 	var gcerr geocube.GeocubeError
 	if errors.As(err, &gcerr) {
 		var st *status.Status
@@ -114,32 +125,33 @@ func formatError(format string, err error) error {
 		if utils.Temporary(err) {
 			message += " (this error may be temporary)"
 		}
+		message = _limit_size(message, msg_size_limit)
 		switch gcerr.Code() {
 		case geocube.EntityValidationError:
-			st = status.New(codes.InvalidArgument, gcerr.Desc())
+			st = status.New(codes.InvalidArgument, _limit_size(gcerr.Desc(), msg_size_limit))
 
 		case geocube.EntityNotFound:
 			st = status.New(codes.NotFound, message)
 			if tmp, err := st.WithDetails(&errdetails.ResourceInfo{
-				ResourceType: gcerr.Detail(geocube.DetailNotFoundEntity),
-				ResourceName: gcerr.Detail(geocube.DetailNotFoundID)}); err == nil {
+				ResourceType: _limit_size(gcerr.Detail(geocube.DetailNotFoundEntity), detail_size_limit),
+				ResourceName: _limit_size(gcerr.Detail(geocube.DetailNotFoundID), detail_size_limit)}); err == nil {
 				st = tmp
 			}
 
 		case geocube.EntityAlreadyExists:
 			st = status.New(codes.AlreadyExists, message)
 			if tmp, err := st.WithDetails(&errdetails.ResourceInfo{
-				ResourceType: gcerr.Detail(geocube.DetailAlreadyExistsEntity),
-				ResourceName: gcerr.Detail(geocube.DetailAlreadyExistsID)}); err == nil {
+				ResourceType: _limit_size(gcerr.Detail(geocube.DetailAlreadyExistsEntity), detail_size_limit),
+				ResourceName: _limit_size(gcerr.Detail(geocube.DetailAlreadyExistsID), detail_size_limit)}); err == nil {
 				st = tmp
 			}
 
 		case geocube.DependencyStillExists:
 			st = status.New(codes.FailedPrecondition, message)
 			if tmp, err := st.WithDetails(&errdetails.ResourceInfo{
-				Owner:        gcerr.Detail(geocube.DetailDependencyStillExistsEntity1),
-				ResourceType: gcerr.Detail(geocube.DetailDependencyStillExistsEntity2),
-				ResourceName: gcerr.Detail(geocube.DetailDependencyStillExistsID)}); err == nil {
+				Owner:        _limit_size(gcerr.Detail(geocube.DetailDependencyStillExistsEntity1), detail_size_limit),
+				ResourceType: _limit_size(gcerr.Detail(geocube.DetailDependencyStillExistsEntity2), detail_size_limit),
+				ResourceName: _limit_size(gcerr.Detail(geocube.DetailDependencyStillExistsID), detail_size_limit)}); err == nil {
 				st = tmp
 			}
 
@@ -152,9 +164,9 @@ func formatError(format string, err error) error {
 		return st.Err()
 	}
 	if utils.Temporary(err) {
-		return status.New(codes.Unavailable, err.Error()).Err()
+		return status.Error(codes.Unavailable, _limit_size(err.Error(), msg_size_limit))
 	}
-	return fmt.Errorf(format, err)
+	return fmt.Errorf(_limit_size(fmt.Sprintf(format, err), msg_size_limit))
 }
 
 // CreateAOI creates an aoi

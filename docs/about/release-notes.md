@@ -13,3 +13,4 @@ consume a lot of local storage)
 - Update mod airbusgeo/cogger to fix a crash with overviews
 - If a deletion task failed, the job must be in "DONEBUTUNTIDY" state
 - Dockerfile uses alpine3.16, same version as golane:alpine
+- GRPC message errors are limited to 3Kb
