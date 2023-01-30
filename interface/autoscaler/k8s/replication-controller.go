@@ -315,7 +315,7 @@ type podsOfNode struct {
 	candidates []podCost
 }
 
-//return needed pods in best order of candidacy for deletion
+// return needed pods in best order of candidacy for deletion
 func (d *ReplicationController) orderedPodsCandidateForDeletion(ctx context.Context, pods []apiv1.Pod, needed int) ([]apiv1.Pod, error) {
 	type PodLog struct {
 		Pod  string

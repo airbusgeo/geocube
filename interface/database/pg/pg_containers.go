@@ -15,7 +15,7 @@ import (
 	"github.com/twpayne/go-geom/encoding/wkb"
 )
 
-//ReadContainers implements GeocubeBackend
+// ReadContainers implements GeocubeBackend
 func (b Backend) ReadContainers(ctx context.Context, containersURI []string) (containers []*geocube.Container, err error) {
 	if len(containersURI) == 0 {
 		return nil, nil
@@ -65,7 +65,7 @@ func (b Backend) ReadContainers(ctx context.Context, containersURI []string) (co
 	return containers, nil
 }
 
-//CreateContainer implements GeocubeBackend
+// CreateContainer implements GeocubeBackend
 func (b Backend) CreateContainer(ctx context.Context, container *geocube.Container) error {
 	_, err := b.pg.ExecContext(ctx,
 		"INSERT INTO geocube.containers (uri, managed, storage_class)"+
@@ -105,7 +105,7 @@ func (b Backend) DeletePendingContainers(ctx context.Context) (int64, error) {
 	return res.RowsAffected()
 }
 
-//CreateDatasets implements GeocubeBackend
+// CreateDatasets implements GeocubeBackend
 func (b Backend) CreateDatasets(ctx context.Context, datasets []*geocube.Dataset) error {
 	if len(datasets) == 0 {
 		return nil

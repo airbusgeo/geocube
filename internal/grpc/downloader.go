@@ -24,6 +24,7 @@ type GeocubeDownloaderService interface {
 
 // DownloaderService is the GRPC service
 type DownloaderService struct {
+	pb.UnimplementedGeocubeDownloaderServer
 	gdsvc            GeocubeDownloaderService
 	maxConnectionAge time.Duration
 }

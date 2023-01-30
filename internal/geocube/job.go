@@ -14,8 +14,8 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-//go:generate enumer -json -sql -type JobType -trimprefix JobType
-//go:generate enumer -json -sql -type JobState -trimprefix JobState
+//go:generate go run github.com/dmarkham/enumer -json -sql -type JobType -trimprefix JobType
+//go:generate go run github.com/dmarkham/enumer -json -sql -type JobState -trimprefix JobState
 
 type JobType int32
 

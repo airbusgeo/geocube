@@ -7,7 +7,7 @@ import (
 	"github.com/google/uuid"
 )
 
-//go:generate enumer -json -sql -type TaskState -trimprefix TaskState
+//go:generate go run github.com/dmarkham/enumer -json -sql -type TaskState -trimprefix TaskState
 
 type TaskState int32
 

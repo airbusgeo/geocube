@@ -118,23 +118,23 @@ func OnErrorRetryDelay(t time.Duration) ProcessOption {
 	}
 }
 
-//ReturnImmediately will return nil immediately if there are no messages to process. If
-//not set, Process will block until a message becomes available
+// ReturnImmediately will return nil immediately if there are no messages to process. If
+// not set, Process will block until a message becomes available
 func ReturnImmediately() ProcessOption {
 	return func(o *processOptions) {
 		o.ReturnImmediately = true
 	}
 }
 
-//ExitOnExtensionError will make Process return an error immediately if the pubsub extension/
-//acknowledgement process failed, without waiting for the callback to return its success/failure
-//(i.e. the callback is still runnning in a goroutine until it checks that it's context has been
-//cancelled.
-//This option can/should be used when Process() will be calling long-running cgo calls where we cannot
-//ensure that context cancellation can be checked or acted upon (it is not possible to interrupt a cgo call).
-//When using this option, and to avoid ressource leaks, it is highly recommended that
-//the caller of Process() ensures that the whole program exits as soon as possible after it receives a non nil error
-//return value.
+// ExitOnExtensionError will make Process return an error immediately if the pubsub extension/
+// acknowledgement process failed, without waiting for the callback to return its success/failure
+// (i.e. the callback is still runnning in a goroutine until it checks that it's context has been
+// cancelled.
+// This option can/should be used when Process() will be calling long-running cgo calls where we cannot
+// ensure that context cancellation can be checked or acted upon (it is not possible to interrupt a cgo call).
+// When using this option, and to avoid ressource leaks, it is highly recommended that
+// the caller of Process() ensures that the whole program exits as soon as possible after it receives a non nil error
+// return value.
 func ExitOnExtensionError() ProcessOption {
 	return func(o *processOptions) {
 		o.ExitOnExtensionError = true

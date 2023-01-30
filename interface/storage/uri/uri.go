@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	BadUriErr = fmt.Errorf("badly formatted storage uri")
+	ErrBadUri = fmt.Errorf("badly formatted storage uri")
 	uriRegex  = regexp.MustCompile("^(?P<Protocol>.+)://(?P<BucketName>.+?)(/(?P<Path>(?:.*/)*(?P<FileName>.*)))?$")
 )
 
@@ -52,24 +52,24 @@ func ParseUri(rawURI string) (DefaultUri, error) {
 	}
 	matches, err := utils.FindRegexGroups(uriRegex, rawURI)
 	if err != nil {
-		return DefaultUri{}, BadUriErr
+		return DefaultUri{}, ErrBadUri
 	}
 
 	protocol, ok := matches["Protocol"]
 	if !ok {
-		return DefaultUri{}, fmt.Errorf("invalid protocol: %w", BadUriErr)
+		return DefaultUri{}, fmt.Errorf("invalid protocol: %w", ErrBadUri)
 	}
 	bucket, ok := matches["BucketName"]
 	if !ok {
-		return DefaultUri{}, fmt.Errorf("invalid bucket name: %w", BadUriErr)
+		return DefaultUri{}, fmt.Errorf("invalid bucket name: %w", ErrBadUri)
 	}
 	path, ok := matches["Path"]
 	if !ok {
-		return DefaultUri{}, fmt.Errorf("invalid path: %w", BadUriErr)
+		return DefaultUri{}, fmt.Errorf("invalid path: %w", ErrBadUri)
 	}
 	fileName, ok := matches["FileName"]
 	if !ok {
-		return DefaultUri{}, fmt.Errorf("invalid filename: %w", BadUriErr)
+		return DefaultUri{}, fmt.Errorf("invalid filename: %w", ErrBadUri)
 	}
 
 	if protocol == "file" {
@@ -119,7 +119,7 @@ func (u DefaultUri) FileName() string {
 
 func (u DefaultUri) String() string {
 	if u.protocol == "" && u.bucket == "" {
-		return fmt.Sprintf("%s", u.path)
+		return u.path
 	}
 	return fmt.Sprintf("%s://%s/%s", u.protocol, u.bucket, u.path)
 }

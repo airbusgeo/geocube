@@ -329,7 +329,7 @@ func (h *handlerConsolidation) isCancelled(ctx context.Context, event *geocube.C
 }
 
 /*
-	isAlreadyUsableCOG return if file is already a Cloud Optimized Geotiff and internal structure is similar that container, otherwise false, and the path of the file.
+isAlreadyUsableCOG return if file is already a Cloud Optimized Geotiff and internal structure is similar that container, otherwise false, and the path of the file.
 */
 func (h *handlerConsolidation) isAlreadyUsableCOG(ctx context.Context, records []*Dataset, container geocube.ConsolidationContainer, recordID, workDir string) (string, bool) {
 	if len(records) > 1 {
@@ -400,7 +400,7 @@ func (h *handlerConsolidation) isAlreadyUsableCOG(ctx context.Context, records [
 }
 
 /*
-	isSameGeoTransForm compares two geoTransfrom with fix tolerance (10^-8)
+isSameGeoTransForm compares two geoTransfrom with fix tolerance (10^-8)
 */
 func (h *handlerConsolidation) isSameGeoTransForm(gt1 [6]float64, gt2 [6]float64) bool {
 	if len(gt1) != len(gt2) {

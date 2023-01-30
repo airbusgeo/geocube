@@ -19,6 +19,7 @@ type GeocubeServiceAdmin interface {
 
 // ServiceAdmin is the GRPC service
 type ServiceAdmin struct {
+	pb.UnimplementedAdminServer
 	gsvca GeocubeServiceAdmin
 }
 

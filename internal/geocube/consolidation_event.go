@@ -243,7 +243,7 @@ func (d *ConsolidationDataset) NeedsReconsolidation(c *ConsolidationContainer) b
 /**                         JOB EVENTS                              */
 /********************************************************************/
 
-//go:generate enumer -json -sql -type JobStatus
+//go:generate go run github.com/dmarkham/enumer -json -sql -type JobStatus
 
 // JobStatus defines an event emitted when a step of a job is finished
 type JobStatus int32

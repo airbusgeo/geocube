@@ -4,7 +4,7 @@ import (
 	pb "github.com/airbusgeo/geocube/internal/pb"
 )
 
-//go:generate enumer -json -sql -type Compression -trimprefix Compression
+//go:generate go run github.com/dmarkham/enumer -json -sql -type Compression -trimprefix Compression
 
 // Compression defines how the data is compressed in the file
 type Compression int32

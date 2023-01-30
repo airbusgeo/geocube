@@ -1,6 +1,6 @@
 package geocube
 
-//go:generate enumer -json -sql -type DType -trimprefix DType
+//go:generate go run github.com/dmarkham/enumer -json -sql -type DType -trimprefix DType
 
 import (
 	"math"
@@ -119,7 +119,7 @@ func DTypeFromGDal(dtype godal.DataType) DType {
 	// TODO Handle GDalType: CFloat64
 }
 
-//DTypeFromString convert string dtype to DType
+// DTypeFromString convert string dtype to DType
 func DTypeFromString(dtype string) DType {
 	switch strings.ToLower(dtype) {
 	case "byte", "uint8":

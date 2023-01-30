@@ -21,7 +21,7 @@ func MakeTemporary(err error) error {
 	return errTmp{err}
 }
 
-//Temporary inspects the error trace and returns whether the error is transient
+// Temporary inspects the error trace and returns whether the error is transient
 func Temporary(err error) bool {
 	var uerr *neturl.Error
 	if errors.As(err, &uerr) {

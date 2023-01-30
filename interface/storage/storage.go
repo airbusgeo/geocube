@@ -31,56 +31,56 @@ type Client struct {
 }
 
 /*
-	Download enables to download file content in slice of byte.
+Download enables to download file content in slice of byte.
 */
 func (c *Client) Download(ctx context.Context, uri string, options ...Option) ([]byte, error) {
 	return c.StorageStrategy.Download(ctx, uri, options...)
 }
 
 /*
-	DownloadTo enables to download file content in local file.
+DownloadTo enables to download file content in local file.
 */
 func (c *Client) DownloadTo(ctx context.Context, source string, destination string, options ...Option) error {
 	return c.StorageStrategy.DownloadToFile(ctx, source, destination, options...)
 }
 
 /*
-	Upload enables to upload file content in to remote file.
+Upload enables to upload file content in to remote file.
 */
 func (c *Client) Upload(ctx context.Context, uri string, data []byte, options ...Option) error {
 	return c.StorageStrategy.Upload(ctx, uri, data, options...)
 }
 
 /*
-	UploadFile enables to upload file in to remote file.
+UploadFile enables to upload file in to remote file.
 */
 func (c *Client) UploadFile(ctx context.Context, uri string, data io.ReadCloser, options ...Option) error {
 	return c.StorageStrategy.UploadFile(ctx, uri, data, options...)
 }
 
 /*
-	Delete enables to delete file.
+Delete enables to delete file.
 */
 func (c *Client) Delete(ctx context.Context, uri string, options ...Option) error {
 	return c.StorageStrategy.Delete(ctx, uri, options...)
 }
 
 /*
-	Exist checks if file exist.
+Exist checks if file exist.
 */
 func (c *Client) Exist(ctx context.Context, uri string) (bool, error) {
 	return c.StorageStrategy.Exist(ctx, uri)
 }
 
 /*
-	GetAttrs returns file attributes.
+GetAttrs returns file attributes.
 */
 func (c *Client) GetAttrs(ctx context.Context, uri string) (Attrs, error) {
 	return c.StorageStrategy.GetAttrs(ctx, uri)
 }
 
 /*
-	StreamAt streams storage files
+StreamAt streams storage files
 */
 func (c *Client) StreamAt(key string, off int64, n int64) (io.ReadCloser, int64, error) {
 	return c.StorageStrategy.StreamAt(key, off, n)

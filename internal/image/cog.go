@@ -83,8 +83,8 @@ func (c *cogGenerator) Create(dataset *godal.Dataset, oContainer geocube.Consoli
 }
 
 /*
-	Open a cog or return an error if file is not a valid COG (see: https://github.com/rouault/cog_validator/blob/master/validate_cloud_optimized_geotiff.py)
-	The caller is responsible for closing the dataset
+Open a cog or return an error if file is not a valid COG (see: https://github.com/rouault/cog_validator/blob/master/validate_cloud_optimized_geotiff.py)
+The caller is responsible for closing the dataset
 */
 func (c *cogGenerator) Open(ctx context.Context, filepath string) (*godal.Dataset, error) {
 	ds, err := godal.Open(filepath, godal.Drivers("GTiff"))

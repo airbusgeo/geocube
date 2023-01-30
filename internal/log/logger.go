@@ -35,7 +35,7 @@ func resetLogger() {
 	defaultlogger = _logger
 }
 
-//Structured sets output to be JSON encoded
+// Structured sets output to be JSON encoded
 func Structured() {
 	// a root logger
 	cfg := zap.NewProductionConfig()
@@ -73,7 +73,7 @@ func timeEncoder(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
 	enc.AppendString(t.Format("2006-01-02T15:04:05.000"))
 }
 
-//Console sets output to be human-readable
+// Console sets output to be human-readable
 func Console() {
 	// a root logger
 	cfg := zap.NewDevelopmentConfig()
@@ -103,7 +103,7 @@ func Console() {
 	defaultlogger = _logger
 }
 
-//Logger returns a logger that will print fields previously added to the context
+// Logger returns a logger that will print fields previously added to the context
 func Logger(ctx context.Context) *zap.Logger {
 	flds := ctx.Value(contextKeyFields)
 	if flds != nil {
@@ -113,14 +113,14 @@ func Logger(ctx context.Context) *zap.Logger {
 	return defaultlogger
 }
 
-//With adds a key=value field to the returned context
+// With adds a key=value field to the returned context
 func With(ctx context.Context, key string, value interface{}) context.Context {
 	fld := zap.Any(key, value)
 	return WithFields(ctx, fld)
 }
 
-//CopyContext returns a context derived from dst that contains the eventual logging
-//keys that are contained in ctx
+// CopyContext returns a context derived from dst that contains the eventual logging
+// keys that are contained in ctx
 func CopyContext(ctx context.Context, dst context.Context) context.Context {
 	if cflds := ctx.Value(contextKeyFields); cflds != nil {
 		flds := cflds.([]zapcore.Field)
@@ -133,7 +133,7 @@ func CopyContext(ctx context.Context, dst context.Context) context.Context {
 	}
 }
 
-//WithFields adds fields to the returned context
+// WithFields adds fields to the returned context
 func WithFields(ctx context.Context, fields ...zapcore.Field) context.Context {
 	flds := ctx.Value(contextKeyFields)
 	var fflds []zap.Field
@@ -144,12 +144,12 @@ func WithFields(ctx context.Context, fields ...zapcore.Field) context.Context {
 	return context.WithValue(ctx, contextKeyFields, fflds)
 }
 
-//Print logs at Info level
+// Print logs at Info level
 func Print(v ...interface{}) {
 	defaultlogger.Info(fmt.Sprint(v...))
 }
 
-//Printf logs at Info level
+// Printf logs at Info level
 func Printf(format string, v ...interface{}) {
 	defaultlogger.Sugar().Infof(format, v...)
 }

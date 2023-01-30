@@ -1,6 +1,6 @@
 package geocube
 
-//go:generate enumer -json -sql -type Resampling -trimprefix Resampling
+//go:generate go run github.com/dmarkham/enumer -json -sql -type Resampling -trimprefix Resampling
 
 import (
 	"fmt"

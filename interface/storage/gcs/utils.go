@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-//Parse takes in a string in the form gs://bucket/path/to/object or
+// Parse takes in a string in the form gs://bucket/path/to/object or
 // bucket/path/to/object or /bucket/path/to/object and returns the
 // bucket and object strings as usable by the cloud.google.com/storage
 // Client

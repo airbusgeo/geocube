@@ -91,6 +91,7 @@ type GeocubeService interface {
 
 // Service is the GRPC service
 type Service struct {
+	pb.UnimplementedGeocubeServer
 	gsvc             GeocubeService
 	maxConnectionAge time.Duration
 }

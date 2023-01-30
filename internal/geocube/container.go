@@ -1,6 +1,6 @@
 package geocube
 
-//go:generate enumer -json -sql -type StorageClass -trimprefix StorageClass
+//go:generate go run github.com/dmarkham/enumer -json -sql -type StorageClass -trimprefix StorageClass
 
 import (
 	"strings"

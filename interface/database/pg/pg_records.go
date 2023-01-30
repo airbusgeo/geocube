@@ -15,7 +15,7 @@ import (
 	"github.com/twpayne/go-geom/encoding/wkb"
 )
 
-//CreateRecords implements GeocubeBackend
+// CreateRecords implements GeocubeBackend
 func (b Backend) CreateRecords(ctx context.Context, records []*geocube.Record) (err error) {
 	// Prepare the insert
 	stmt, err := b.pg.PrepareContext(ctx, pq.CopyInSchema("geocube", "records", "id", "name", "tags", "datetime", "aoi_id"))
