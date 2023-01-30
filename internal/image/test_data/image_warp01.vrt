@@ -1,0 +1,26 @@
+<VRTDataset rasterXSize="505" rasterYSize="201">
+  <SRS dataAxisToSRSAxisMapping="1,2">PROJCS["WGS 84 / UTM zone 32N",GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]],PROJECTION["Transverse_Mercator"],PARAMETER["latitude_of_origin",0],PARAMETER["central_meridian",9],PARAMETER["scale_factor",0.9996],PARAMETER["false_easting",500000],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["Easting",EAST],AXIS["Northing",NORTH],AUTHORITY["EPSG","32632"]]</SRS>
+  <GeoTransform>  4.6094398660000000e+05,  2.0019801980198008e+02,  0.0000000000000000e+00,  6.2551182874999996e+06,  0.0000000000000000e+00, -2.0019900497512438e+02</GeoTransform>
+  <VRTRasterBand dataType="Float32" band="1">
+    <NoDataValue>0</NoDataValue>
+    <ComplexSource>
+      <SourceFilename relativeToVRT="1">image_warp0.tif</SourceFilename>
+      <SourceBand>1</SourceBand>
+      <SourceProperties RasterXSize="256" RasterYSize="201" DataType="Float32" BlockXSize="256" BlockYSize="8" />
+      <SrcRect xOff="0" yOff="0" xSize="256" ySize="201" />
+      <DstRect xOff="0" yOff="0" xSize="256" ySize="201" />
+      <NODATA>0</NODATA>
+    </ComplexSource>
+  </VRTRasterBand>
+  <VRTRasterBand dataType="Float32" band="2">
+    <NoDataValue>0</NoDataValue>
+    <ComplexSource>
+      <SourceFilename relativeToVRT="1">image_warp1.tif</SourceFilename>
+      <SourceBand>1</SourceBand>
+      <SourceProperties RasterXSize="249" RasterYSize="201" DataType="Float32" BlockXSize="249" BlockYSize="8" />
+      <SrcRect xOff="0" yOff="0" xSize="249" ySize="201" />
+      <DstRect xOff="256" yOff="0" xSize="249" ySize="201" />
+      <NODATA>0</NODATA>
+    </ComplexSource>
+  </VRTRasterBand>
+</VRTDataset>

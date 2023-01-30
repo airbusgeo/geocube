@@ -15,7 +15,7 @@ var (
 				DateTime: "2020-11-02 09:44:00",
 				Datasets: []geocube.ConsolidationDataset{
 					{
-						URI:       "test_data/image_20180812.tif",
+						URI:       "test_data/image_warp3.tif",
 						Subdir:    "",
 						Bands:     []int64{1},
 						Overviews: false,
@@ -68,7 +68,7 @@ var (
 				DateTime: "2020-11-02 09:44:00",
 				Datasets: []geocube.ConsolidationDataset{
 					{
-						URI:       "test_data/image_20180812_1.tif",
+						URI:       "test_data/image_warp1.tif",
 						Subdir:    "",
 						Bands:     []int64{1},
 						Overviews: false,
@@ -82,7 +82,7 @@ var (
 							Exponent: 1,
 						},
 					}, {
-						URI:       "test_data/image_20180812_2.tif",
+						URI:       "test_data/image_warp2.tif",
 						Subdir:    "",
 						Bands:     []int64{1},
 						Overviews: false,
@@ -90,7 +90,7 @@ var (
 							DataFormat: geocube.DataFormat{
 								DType:  geocube.DTypeFLOAT32,
 								Range:  geocube.Range{Min: 0, Max: 1},
-								NoData: 0,
+								NoData: -1,
 							},
 							RangeExt: geocube.Range{Min: 0, Max: 1},
 							Exponent: 1,
@@ -135,7 +135,7 @@ var (
 				DateTime: "2020-11-02 09:44:00",
 				Datasets: []geocube.ConsolidationDataset{
 					{
-						URI:       "test_data/image_20180812.tif",
+						URI:       "test_data/image_warp3.tif",
 						Subdir:    "",
 						Bands:     []int64{1},
 						Overviews: false,
@@ -155,7 +155,7 @@ var (
 				DateTime: "2020-11-02 09:44:00",
 				Datasets: []geocube.ConsolidationDataset{
 					{
-						URI:       "test_data/image_20180824.tif",
+						URI:       "test_data/image_warp4.tif",
 						Subdir:    "",
 						Bands:     []int64{1},
 						Overviews: false,
@@ -208,7 +208,7 @@ var (
 				DateTime: "2020-11-02 09:44:00",
 				Datasets: []geocube.ConsolidationDataset{
 					{
-						URI:       "test_data/image_20180812.tif",
+						URI:       "test_data/image_warp3.tif",
 						Subdir:    "",
 						Bands:     []int64{1},
 						Overviews: false,
@@ -261,7 +261,7 @@ var (
 				DateTime: "2020-11-02 09:44:00",
 				Datasets: []geocube.ConsolidationDataset{
 					{
-						URI:       "test_data/image_20180812.tif",
+						URI:       "test_data/image_warp3.tif",
 						Subdir:    "",
 						Bands:     []int64{1},
 						Overviews: false,

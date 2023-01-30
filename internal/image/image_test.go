@@ -179,6 +179,7 @@ var _ = Describe("MergeDataset", func() {
 		ctx           = context.Background()
 		fromPaths     []string
 		fromDFormats  []geocube.DataMapping
+		fromBands     [][]int64
 		outDesc       image.GdalDatasetDescriptor
 		returnedDs    *godal.Dataset
 		returnedError error
@@ -195,6 +196,7 @@ var _ = Describe("MergeDataset", func() {
 			datasets = append(datasets, &image.Dataset{
 				URI:         path.Join(pwd, fromPath),
 				DataMapping: fromDFormats[i],
+				Bands:       fromBands[i],
 			})
 		}
 		returnedDs, returnedError = image.MergeDatasets(ctx, datasets, &outDesc)
@@ -226,6 +228,7 @@ var _ = Describe("MergeDataset", func() {
 		BeforeEach(func() {
 			fromPaths = []string{images[i]}
 			fromDFormats = []geocube.DataMapping{imagesDFormat[i]}
+			fromBands = [][]int64{{1}}
 			outDesc = image.GdalDatasetDescriptor{
 				WktCRS: "epsg:32632",
 				PixToCRS: affine.Translation(460943.9866000000038184, 6255118.2874999996274710).
@@ -242,11 +245,35 @@ var _ = Describe("MergeDataset", func() {
 		itShouldNotReturnAnError()
 		itShouldMergeDatasets(images[i])
 	})
+
+	Context("one dataset with a subset of bands", func() {
+		i1, i2 := 13, 8
+		BeforeEach(func() {
+			fromPaths = []string{images[i1]}
+			fromDFormats = []geocube.DataMapping{imagesDFormat[i1]}
+			fromBands = [][]int64{{1}}
+			outDesc = image.GdalDatasetDescriptor{
+				WktCRS: "epsg:32632",
+				PixToCRS: affine.Translation(460943.9866000000038184, 6255118.2874999996274710).
+					Multiply(affine.Scale(200.198019801980081, -200.1990049751243816)),
+				Width:  256,
+				Height: 201,
+				Bands:  1,
+
+				Resampling:  geocube.ResamplingNEAR,
+				DataMapping: imagesDFormat[i1],
+				ValidPixPc:  0,
+			}
+		})
+		itShouldNotReturnAnError()
+		itShouldMergeDatasets(images[i2])
+	})
 	Context("two datasets with the same dataformat", func() {
 		i1, i2, i3 := 8, 9, 11
 		BeforeEach(func() {
 			fromPaths = []string{images[i1], images[i2]}
 			fromDFormats = []geocube.DataMapping{imagesDFormat[i1], imagesDFormat[i2]}
+			fromBands = [][]int64{{1}, {1}}
 			outDesc = image.GdalDatasetDescriptor{
 				WktCRS: "epsg:32632",
 				PixToCRS: affine.Translation(460943.9866000000038184, 6255118.2874999996274710).
@@ -267,6 +294,7 @@ var _ = Describe("MergeDataset", func() {
 		BeforeEach(func() {
 			fromPaths = []string{images[i1], images[i2]}
 			fromDFormats = []geocube.DataMapping{imagesDFormat[i1], imagesDFormat[i2]}
+			fromBands = [][]int64{{1}, {1}}
 			outDesc = image.GdalDatasetDescriptor{
 				WktCRS: "epsg:32632",
 				PixToCRS: affine.Translation(460943.9866000000038184, 6255118.2874999996274710).
@@ -274,6 +302,27 @@ var _ = Describe("MergeDataset", func() {
 				Width:       505,
 				Height:      201,
 				Bands:       1,
+				Resampling:  geocube.ResamplingNEAR,
+				DataMapping: imagesDFormat[i3],
+				ValidPixPc:  0,
+			}
+		})
+		itShouldNotReturnAnError()
+		itShouldMergeDatasets(images[i3])
+	})
+	Context("two datasets with different bands", func() {
+		i1, i2, i3 := 8, 13, 11
+		BeforeEach(func() {
+			fromPaths = []string{images[i1], images[i2]}
+			fromDFormats = []geocube.DataMapping{imagesDFormat[i1], imagesDFormat[i2]}
+			fromBands = [][]int64{{1}, {2}}
+			outDesc = image.GdalDatasetDescriptor{
+				WktCRS: "epsg:32632",
+				PixToCRS: affine.Translation(460943.9866000000038184, 6255118.2874999996274710).
+					Multiply(affine.Scale(200.198019801980081, -200.1990049751243816)),
+				Width:       505,
+				Height:      201,
+				Bands:       2,
 				Resampling:  geocube.ResamplingNEAR,
 				DataMapping: imagesDFormat[i3],
 				ValidPixPc:  0,

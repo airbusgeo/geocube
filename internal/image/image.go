@@ -10,6 +10,7 @@ import (
 	"image/png"
 	"io/ioutil"
 	"math"
+	"strconv"
 
 	"github.com/airbusgeo/geocube/internal/geocube"
 	"github.com/airbusgeo/geocube/internal/utils"
@@ -153,8 +154,8 @@ func MergeDatasets(ctx context.Context, datasets []*Dataset, outDesc *GdalDatase
 	groupedDatasets := [][]*Dataset{}
 	for _, dataset := range datasets {
 		found := false
-		for i, groupeDs := range groupedDatasets {
-			if dataset.DataMapping.Equals(groupeDs[0].DataMapping) {
+		for i, groupedDs := range groupedDatasets {
+			if dataset.DataMapping.Equals(groupedDs[0].DataMapping) {
 				groupedDatasets[i] = append(groupedDatasets[i], dataset)
 				found = true
 				break
@@ -223,7 +224,16 @@ func mosaicDatasets(datasets []*godal.Dataset, rx, ry float64) (*godal.Dataset, 
 	}
 
 	return outDs, nil
+}
 
+// isASuite return true if s = [1, 2, 3, ..., N]
+func isASuite(s []int64) bool {
+	for i, si := range s {
+		if int64(i)+1 != si {
+			return false
+		}
+	}
+	return true
 }
 
 // warpDatasets calls godal.Warp on datasets, performing a reprojection
@@ -238,6 +248,21 @@ func warpDatasets(datasets []*Dataset, wktCRS string, transform *affine.Affine, 
 			return nil, fmt.Errorf("while opening %s: %w", uri, err)
 		}
 		defer gdatasets[i].Close()
+		// Need to extract bands using a vrt
+		if !isASuite(dataset.Bands) || len(gdatasets[i].Bands()) > len(dataset.Bands) {
+			options := []string{}
+			for _, b := range dataset.Bands {
+				options = append(options, "-b", strconv.Itoa(int(b)))
+			}
+			virtualname := "/vsimem/" + uuid.New().String() + ".vrt"
+			if gdatasets[i], err = gdatasets[i].Translate(virtualname, options); err != nil {
+				return nil, fmt.Errorf("while extracting bands of %s: %w", uri, err)
+			}
+			defer func(ds *godal.Dataset) {
+				ds.Close()
+				godal.VSIUnlink(virtualname)
+			}(gdatasets[i])
+		}
 	}
 
 	options := []string{
