@@ -25,11 +25,18 @@ func WithMaxRetries(maxRetries int) PublisherOption {
 	}
 }
 
+func WithJobRetryWaits(waits []time.Duration) PublisherOption {
+	return func(p *Publisher) {
+		p.jobRetryWaits = waits
+	}
+}
+
 // Publisher implements messaging.Publisher
 type Publisher struct {
-	worker     *pgq.Worker
-	queueName  string
-	maxRetries int
+	worker        *pgq.Worker
+	queueName     string
+	maxRetries    int
+	jobRetryWaits []time.Duration
 }
 
 // Consumer implements messaging.Consumer and interface.autoscaler.qbas.Queue
@@ -65,9 +72,10 @@ func SqlConnect(ctx context.Context, dbConnection string) (*sql.DB, *pgq.Worker,
 // A publisher can share its worker with another instance
 func NewPublisher(w *pgq.Worker, queueName string, opts ...PublisherOption) *Publisher {
 	p := &Publisher{
-		queueName:  queueName,
-		worker:     w,
-		maxRetries: 0,
+		queueName:     queueName,
+		worker:        w,
+		maxRetries:    0,
+		jobRetryWaits: nil,
 	}
 	for _, opt := range opts {
 		opt(p)
@@ -82,9 +90,13 @@ func (p *Publisher) Publish(ctx context.Context, data ...[]byte) error {
 
 // publish with retry
 func (p *Publisher) publish(ctx context.Context, retry int, data ...[]byte) error {
+	var opts []pgq.JobOption
+	if len(p.jobRetryWaits) > 0 {
+		opts = append(opts, pgq.RetryWaits(p.jobRetryWaits))
+	}
 	retryIds := []int{}
 	for _, d := range data {
-		jobID, err := p.worker.EnqueueJob(p.queueName, d)
+		jobID, err := p.worker.EnqueueJob(p.queueName, d, opts...)
 		if utils.Temporary(err) && retry < p.maxRetries {
 			retryIds = append(retryIds, jobID)
 		} else if err != nil {
