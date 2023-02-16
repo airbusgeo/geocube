@@ -36,10 +36,6 @@ type RegularGrid struct {
 	memoryLimit          int
 }
 
-func invalidError(desc string, args ...interface{}) error {
-	return fmt.Errorf("Invalid RegularGrid:"+desc, args...)
-}
-
 func (rg *RegularGrid) initLonLatToCRS() error {
 	return initProjection(&rg.lonLatToCRS, rg.crs, false)
 }
@@ -58,6 +54,10 @@ func initProjection(p **godal.Transform, crs *godal.SpatialRef, inverse bool) er
 	return nil
 }
 
+func invalidRegularGridError(desc string, args ...interface{}) error {
+	return fmt.Errorf("invalid RegularGrid:"+desc, args...)
+}
+
 func newRegularGrid(flags []string, parameters map[string]string) (Grid, error) {
 	grid := RegularGrid{memoryLimit: 9223372036854775807}
 
@@ -65,10 +65,10 @@ func newRegularGrid(flags []string, parameters map[string]string) (Grid, error) 
 	var err error
 	grid.crs, grid.srid, err = proj.CRSFromUserInput(parameters["crs"])
 	if err != nil {
-		return nil, invalidError("CRS parameters [\"crs\"=%v]: %w", parameters["crs"], err)
+		return nil, invalidRegularGridError("CRS parameters [\"crs\"=%v]: %w", parameters["crs"], err)
 	}
 	if grid.srid == 0 {
-		return nil, invalidError("CRS parameters: unable to retrieve SRID from input")
+		return nil, invalidRegularGridError("CRS parameters: unable to retrieve SRID from input")
 	}
 
 	runtime.SetFinalizer(grid.crs, func(crs *godal.SpatialRef) { crs.Close() })
@@ -88,7 +88,7 @@ func newRegularGrid(flags []string, parameters map[string]string) (Grid, error) 
 			}
 		}
 		if grid.cellSizeX < minCellSize || grid.cellSizeX > maxCellSize || grid.cellSizeY < minCellSize || grid.cellSizeY > maxCellSize {
-			return nil, invalidError("CellSize parameters: must contain a valid 'cell_size', 'cell_x_size' or 'cell_y_size' in [%d, %d]", minCellSize, maxCellSize)
+			return nil, invalidRegularGridError("CellSize parameters: must contain a valid 'cell_size', 'cell_x_size' or 'cell_y_size' in [%d, %d]", minCellSize, maxCellSize)
 		}
 	}
 
@@ -98,7 +98,7 @@ func newRegularGrid(flags []string, parameters map[string]string) (Grid, error) 
 		resolutions := parameters["resolution"]
 		resolution, _ := strconv.ParseFloat(resolutions, 64)
 		if resolution <= 0 {
-			return nil, invalidError("Resolution parameters: must contain a valid 'resolution'")
+			return nil, invalidRegularGridError("Resolution parameters: must contain a valid 'resolution'")
 		}
 
 		//OriginX & OriginY
@@ -107,13 +107,13 @@ func newRegularGrid(flags []string, parameters map[string]string) (Grid, error) 
 		if ox, ok := parameters["ox"]; ok {
 			originX, err = strconv.ParseFloat(ox, 64)
 			if err != nil {
-				return nil, invalidError("Ox invalid parameter: " + ox)
+				return nil, invalidRegularGridError("Ox invalid parameter: " + ox)
 			}
 		}
 		if oy, ok := parameters["oy"]; ok {
 			originY, err = strconv.ParseFloat(oy, 64)
 			if err != nil {
-				return nil, invalidError("Oy invalid parameter: " + oy)
+				return nil, invalidRegularGridError("Oy invalid parameter: " + oy)
 			}
 		}
 
@@ -124,7 +124,7 @@ func newRegularGrid(flags []string, parameters map[string]string) (Grid, error) 
 	// Memory limit
 	if mem, ok := parameters["memory_limit"]; ok {
 		if grid.memoryLimit, err = strconv.Atoi(mem); err != nil {
-			return nil, invalidError("Memory limit[%s]: %w", mem, err)
+			return nil, invalidRegularGridError("Memory limit[%s]: %w", mem, err)
 		}
 	}
 
@@ -135,13 +135,13 @@ func newRegularGrid(flags []string, parameters map[string]string) (Grid, error) 
 func (rg *RegularGrid) Cell(uri string) (*Cell, error) {
 	var i, j int
 	if n, err := fmt.Sscanf(uri, "%d/%d", &i, &j); err != nil || n != 2 {
-		return nil, invalidError("Cell format must be 'i/j' as integers")
+		return nil, invalidRegularGridError("Cell format must be 'i/j' as integers")
 	}
 
 	cellToCRS := rg.pixToCRS.Multiply(affine.Translation(float64(i*rg.cellSizeX), float64(j*rg.cellSizeY)))
 
 	if err := rg.initCRSToLonLat(); err != nil {
-		return nil, fmt.Errorf("unable to initialize projection: %w", err)
+		return nil, invalidRegularGridError("unable to initialize projection: %w", err)
 	}
 	return newCell(uri, rg.crs, rg.srid, cellToCRS, rg.cellSizeX, rg.cellSizeY, rg.crsToLonLat), nil
 }

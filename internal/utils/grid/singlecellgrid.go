@@ -13,25 +13,29 @@ import (
 	"github.com/twpayne/go-geom"
 )
 
+func invaliSingleCellGridError(desc string, args ...interface{}) error {
+	return fmt.Errorf("invalid SingleCellGrid:"+desc, args...)
+}
+
 func newSingleCellGrid(flags []string, parameters map[string]string) (Grid, error) {
 	grid := &SingleCellGrid{}
 
 	var err error
 	grid.crs, grid.srid, err = proj.CRSFromUserInput(parameters["crs"])
 	if err != nil {
-		return nil, invalidError("CRS parameters [%v]: %w", parameters["crs"], err)
+		return nil, invaliSingleCellGridError("CRS parameters [%v]: %w", parameters["crs"], err)
 	}
 	if grid.srid == 0 {
-		return nil, invalidError("CRS parameters: unable to retrieve SRID from input")
+		return nil, invaliSingleCellGridError("CRS parameters: unable to retrieve SRID from input")
 	}
 
 	resolutions, ok := parameters["resolution"]
 	if !ok {
-		return nil, fmt.Errorf("SingleCellGrid.newSingleCellGrid failed to found resolution")
+		return nil, invaliSingleCellGridError("fail to found resolution")
 	}
 	resolution, err := strconv.ParseFloat(resolutions, 64)
 	if err != nil {
-		return nil, err
+		return nil, invaliSingleCellGridError("fail to parse resolution '%s'", resolutions)
 	}
 
 	grid.resolution = resolution

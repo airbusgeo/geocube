@@ -423,7 +423,7 @@ func (svc *Service) opSubFncDeleteContainer(ctx context.Context, containerURI st
 		return fmt.Errorf("opSubFncDeleteContainer.%w", err)
 	}
 	if err := URI.Delete(ctx); err != nil {
-		return fmt.Errorf("opSubFncDeleteContainer.%w", err)
+		return fmt.Errorf("opSubFncDeleteContainer[%s].%w", containerURI, err)
 	}
 	return nil
 }

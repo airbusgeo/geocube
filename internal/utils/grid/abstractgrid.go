@@ -49,6 +49,7 @@ type Grid interface {
 }
 
 // NewGrid creates a new grid from flag and parameters (proj4 format)
+// May return validation errors
 func NewGrid(flags []string, parameters map[string]string) (Grid, error) {
 	grid, ok := parameters["grid"]
 	if !ok {

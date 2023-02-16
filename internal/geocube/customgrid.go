@@ -83,7 +83,7 @@ func (cg *CustomGrid) Covers(ctx context.Context, geomAOI *geom.MultiPolygon) (<
 		cg.Parameters["crs"] = cell.CRS
 
 		if cg.activeSubGrids[cell.ID], err = gridlib.NewGrid(cg.Flags, cg.Parameters); err != nil {
-			return nil, fmt.Errorf("CustomGrid.Covers.%w", err)
+			return nil, NewValidationError("CustomGrid.Covers.%v", err)
 		}
 	}
 

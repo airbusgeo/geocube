@@ -305,7 +305,7 @@ func (s gsStrategy) downloadObjectTo(ctx context.Context, bucket, path string, w
 			if utils.Temporary(err) {
 				continue
 			} else {
-				return fmt.Errorf("newreader: %w", err)
+				return fmt.Errorf("gs.download.newreader: %w", err)
 			}
 		}
 
@@ -317,7 +317,7 @@ func (s gsStrategy) downloadObjectTo(ctx context.Context, bucket, path string, w
 		}
 		err = gsError(err)
 		if !utils.Temporary(err) {
-			return fmt.Errorf("copy: %w", err)
+			return fmt.Errorf("gs.download.copy: %w", err)
 		}
 
 		curOffset += n
@@ -349,7 +349,7 @@ func (s gsStrategy) uploadObjectFrom(ctx context.Context, bucket, object string,
 				if utils.Temporary(err) {
 					continue
 				} else {
-					return fmt.Errorf("r.reset: %w", err)
+					return fmt.Errorf("gs.upload.reset: %w", err)
 				}
 			}
 		}
@@ -364,7 +364,7 @@ func (s gsStrategy) uploadObjectFrom(ctx context.Context, bucket, object string,
 			if utils.Temporary(err) {
 				continue
 			} else {
-				return fmt.Errorf("copy: %w", err)
+				return fmt.Errorf("gs.upload.copy: %w", err)
 			}
 		}
 		err = gsError(w.Close())
@@ -372,7 +372,7 @@ func (s gsStrategy) uploadObjectFrom(ctx context.Context, bucket, object string,
 			return nil
 		}
 		if !utils.Temporary(err) {
-			return fmt.Errorf("w.close: %w", err)
+			return fmt.Errorf("gs.upload.close: %w", err)
 		}
 	}
 	return fmt.Errorf("failed after %d retries: %w", op.MaxTries, err)
@@ -392,7 +392,7 @@ func (s gsStrategy) deleteObject(ctx context.Context, bucket, object string, opt
 			return nil
 		}
 		if !utils.Temporary(err) {
-			return fmt.Errorf("w.close: %w", err)
+			return fmt.Errorf("gs.deleteObject[%s/%s]: %w", bucket, object, err)
 		}
 	}
 	return fmt.Errorf("failed after %d retries: %w", op.MaxTries, err)
