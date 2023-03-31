@@ -13,7 +13,7 @@ RUN cd downloader && go build -ldflags="-s -w" .
 
 #---------------------------------------------------------------------------------------------------------------
 
-FROM alpine:3.16
+FROM alpine:3.17
 ENTRYPOINT ["/downloader"]
 COPY --from=builder /usr/local/lib /usr/local/lib
 COPY --from=builder /usr/local/share /usr/local/share
