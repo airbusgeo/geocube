@@ -167,6 +167,7 @@ func formatError(format string, err error) error {
 	if utils.Temporary(err) {
 		return status.Error(codes.Unavailable, _limit_size(err.Error(), msg_size_limit))
 	}
+	format = strings.ReplaceAll(format, "%w", "%v")
 	return fmt.Errorf(_limit_size(fmt.Sprintf(format, err), msg_size_limit))
 }
 
