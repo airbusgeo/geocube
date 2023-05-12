@@ -6,6 +6,8 @@
 
 ### Bug fixes
 - countValidPix with gdal >= 3.6.0
+- Deprecated api cloud.google.com/go/secretmanager/apiv1beta1 => cloud.google.com/go/secretmanager/apiv1
+
 
 ## 1.0.1
 

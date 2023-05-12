@@ -20,8 +20,6 @@
 // Stores sensitive data such as API keys, passwords, and certificates.
 // Provides convenience while improving security.
 //
-//   NOTE: This package is in beta. It is not stable, and may be subject to changes.
-//
 // Example usage
 //
 // To get started with this package, create a client.
@@ -49,7 +47,7 @@
 //
 //  req := &secretmanagerpb.ListSecretsRequest{
 //  	// TODO: Fill request struct fields.
-//  	// See https://pkg.go.dev/google.golang.org/genproto/googleapis/cloud/secretmanager/v1beta1#ListSecretsRequest.
+//  	// See https://pkg.go.dev/google.golang.org/genproto/googleapis/cloud/secretmanager/v1#ListSecretsRequest.
 //  }
 //  it := c.ListSecrets(ctx, req)
 //  for {
@@ -74,7 +72,7 @@
 //
 // For information about setting deadlines, reusing contexts, and more
 // please visit https://pkg.go.dev/cloud.google.com/go.
-package secretmanager // import "cloud.google.com/go/secretmanager/apiv1beta1"
+package secretmanager // import "cloud.google.com/go/secretmanager/apiv1"
 
 import (
 	"context"

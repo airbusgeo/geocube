@@ -28,7 +28,7 @@ import (
 	"google.golang.org/api/option"
 	"google.golang.org/api/option/internaloption"
 	gtransport "google.golang.org/api/transport/grpc"
-	secretmanagerpb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1beta1"
+	secretmanagerpb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1"
 	iampb "google.golang.org/genproto/googleapis/iam/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -83,11 +83,11 @@ func defaultCallOptions() *CallOptions {
 			gax.WithRetry(func() gax.Retryer {
 				return gax.OnCodes([]codes.Code{
 					codes.Unavailable,
-					codes.Unknown,
+					codes.ResourceExhausted,
 				}, gax.Backoff{
-					Initial:    1000 * time.Millisecond,
+					Initial:    2000 * time.Millisecond,
 					Max:        60000 * time.Millisecond,
-					Multiplier: 1.30,
+					Multiplier: 2.00,
 				})
 			}),
 		},
@@ -202,16 +202,16 @@ func (c *Client) ListSecretVersions(ctx context.Context, req *secretmanagerpb.Li
 
 // GetSecretVersion gets metadata for a SecretVersion.
 //
-// projects/*/secrets/*/versions/latest is an alias to the latest
-// SecretVersion.
+// projects/*/secrets/*/versions/latest is an alias to the most recently
+// created SecretVersion.
 func (c *Client) GetSecretVersion(ctx context.Context, req *secretmanagerpb.GetSecretVersionRequest, opts ...gax.CallOption) (*secretmanagerpb.SecretVersion, error) {
 	return c.internalClient.GetSecretVersion(ctx, req, opts...)
 }
 
 // AccessSecretVersion accesses a SecretVersion. This call returns the secret data.
 //
-// projects/*/secrets/*/versions/latest is an alias to the latest
-// SecretVersion.
+// projects/*/secrets/*/versions/latest is an alias to the most recently
+// created SecretVersion.
 func (c *Client) AccessSecretVersion(ctx context.Context, req *secretmanagerpb.AccessSecretVersionRequest, opts ...gax.CallOption) (*secretmanagerpb.AccessSecretVersionResponse, error) {
 	return c.internalClient.AccessSecretVersion(ctx, req, opts...)
 }

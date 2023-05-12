@@ -2,8 +2,8 @@
   "schema": "1.0",
   "comment": "This file maps proto services/RPCs to the corresponding library clients/methods.",
   "language": "go",
-  "protoPackage": "google.cloud.secrets.v1beta1",
-  "libraryPackage": "cloud.google.com/go/secretmanager/apiv1beta1",
+  "protoPackage": "google.cloud.secretmanager.v1",
+  "libraryPackage": "cloud.google.com/go/secretmanager/apiv1",
   "services": {
     "SecretManagerService": {
       "clients": {

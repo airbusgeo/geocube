@@ -25,7 +25,7 @@ cloud.google.com/go/pubsub/internal/distribution
 cloud.google.com/go/pubsub/internal/scheduler
 # cloud.google.com/go/secretmanager v1.4.0
 ## explicit; go 1.16
-cloud.google.com/go/secretmanager/apiv1beta1
+cloud.google.com/go/secretmanager/apiv1
 cloud.google.com/go/secretmanager/internal
 # cloud.google.com/go/storage v1.22.0
 ## explicit; go 1.15
@@ -515,7 +515,7 @@ google.golang.org/genproto/googleapis/api/httpbody
 google.golang.org/genproto/googleapis/api/label
 google.golang.org/genproto/googleapis/api/metric
 google.golang.org/genproto/googleapis/api/monitoredres
-google.golang.org/genproto/googleapis/cloud/secretmanager/v1beta1
+google.golang.org/genproto/googleapis/cloud/secretmanager/v1
 google.golang.org/genproto/googleapis/iam/v1
 google.golang.org/genproto/googleapis/monitoring/v3
 google.golang.org/genproto/googleapis/pubsub/v1

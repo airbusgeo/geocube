@@ -3,10 +3,11 @@ package secrets
 import (
 	"context"
 	"fmt"
+
 	"google.golang.org/api/option"
 
-	vkit "cloud.google.com/go/secretmanager/apiv1beta1"
-	pb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1beta1"
+	vkit "cloud.google.com/go/secretmanager/apiv1"
+	pb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1"
 )
 
 type Client struct {
