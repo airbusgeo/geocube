@@ -39,8 +39,6 @@ const (
 	// ScopeCloudPlatform grants permissions to view and manage your data
 	// across Google Cloud Platform services.
 	ScopeCloudPlatform = "https://www.googleapis.com/auth/cloud-platform"
-
-	maxAckDeadline = 10 * time.Minute
 )
 
 // Client is a Google Pub/Sub client scoped to a single project.
@@ -128,7 +126,7 @@ func NewClientWithConfig(ctx context.Context, projectID string, config *ClientCo
 	if addr := os.Getenv("PUBSUB_EMULATOR_HOST"); addr != "" {
 		conn, err := grpc.Dial(addr, grpc.WithInsecure())
 		if err != nil {
-			return nil, fmt.Errorf("grpc.Dial: %v", err)
+			return nil, fmt.Errorf("grpc.Dial: %w", err)
 		}
 		o = []option.ClientOption{option.WithGRPCConn(conn)}
 		o = append(o, option.WithTelemetryDisabled())
@@ -148,11 +146,11 @@ func NewClientWithConfig(ctx context.Context, projectID string, config *ClientCo
 	o = append(o, opts...)
 	pubc, err := vkit.NewPublisherClient(ctx, o...)
 	if err != nil {
-		return nil, fmt.Errorf("pubsub(publisher): %v", err)
+		return nil, fmt.Errorf("pubsub(publisher): %w", err)
 	}
 	subc, err := vkit.NewSubscriberClient(ctx, o...)
 	if err != nil {
-		return nil, fmt.Errorf("pubsub(subscriber): %v", err)
+		return nil, fmt.Errorf("pubsub(subscriber): %w", err)
 	}
 	if config != nil {
 		pubc.CallOptions = mergePublisherCallOptions(pubc.CallOptions, config.PublisherCallOptions)
@@ -175,7 +173,7 @@ func (c *Client) Close() error {
 	pubErr := c.pubc.Close()
 	subErr := c.subc.Close()
 	if pubErr != nil {
-		return fmt.Errorf("pubsub publisher closing error: %v", pubErr)
+		return fmt.Errorf("pubsub publisher closing error: %w", pubErr)
 	}
 	if subErr != nil {
 		// Suppress client connection closing errors. This will only happen
@@ -185,7 +183,7 @@ func (c *Client) Close() error {
 		if strings.Contains(subErr.Error(), "the client connection is closing") {
 			return nil
 		}
-		return fmt.Errorf("pubsub subscriber closing error: %v", subErr)
+		return fmt.Errorf("pubsub subscriber closing error: %w", subErr)
 	}
 	return nil
 }

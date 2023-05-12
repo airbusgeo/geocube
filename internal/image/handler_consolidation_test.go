@@ -64,6 +64,7 @@ var _ = Describe("HandleConsolidation", func() {
 						SizeY:      consolidationEventToUse.Container.Height,
 						BlockSizeX: consolidationEventToUse.Container.BlockXSize,
 						BlockSizeY: consolidationEventToUse.Container.BlockYSize,
+						Scale:      1,
 						DataType:   consolidationEventToUse.Container.DatasetFormat.DType.ToGDAL(),
 					},
 					NBands: consolidationEventToUse.Container.BandsCount,

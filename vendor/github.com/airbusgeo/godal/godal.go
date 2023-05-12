@@ -31,6 +31,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 	"unsafe"
 )
 
@@ -103,7 +104,7 @@ func (dtype DataType) Size() int {
 	}
 }
 
-//ColorInterp is a band's color interpretation
+// ColorInterp is a band's color interpretation
 type ColorInterp int
 
 const (
@@ -163,18 +164,21 @@ func (band Band) handle() C.GDALRasterBandH {
 // Structure returns the dataset's Structure
 func (band Band) Structure() BandStructure {
 	var sx, sy, bsx, bsy, dtype C.int
-	C.godalBandStructure(band.handle(), &sx, &sy, &bsx, &bsy, &dtype)
+	var scale, offset C.double
+	C.godalBandStructure(band.handle(), &sx, &sy, &bsx, &bsy, &scale, &offset, &dtype)
 	return BandStructure{
 		SizeX:      int(sx),
 		SizeY:      int(sy),
 		BlockSizeX: int(bsx),
 		BlockSizeY: int(bsy),
+		Scale:      float64(scale),
+		Offset:     float64(offset),
 		DataType:   DataType(int(dtype)),
 	}
 }
 
-//NoData returns the band's nodata value. if ok is false, the band does not
-//have a nodata value set
+// NoData returns the band's nodata value. if ok is false, the band does not
+// have a nodata value set
 func (band Band) NoData() (nodata float64, ok bool) {
 	cok := C.int(0)
 	cn := C.GDALGetRasterNoDataValue(band.handle(), &cok)
@@ -184,7 +188,7 @@ func (band Band) NoData() (nodata float64, ok bool) {
 	return 0, false
 }
 
-//SetNoData sets the band's nodata value
+// SetNoData sets the band's nodata value
 func (band Band) SetNoData(nd float64, opts ...SetNoDataOption) error {
 	sndo := &setNodataOpts{}
 	for _, opt := range opts {
@@ -206,6 +210,22 @@ func (band Band) ClearNoData(opts ...SetNoDataOption) error {
 	return cgc.close()
 }
 
+//SetScaleOffset sets the band's scale and offset
+func (band Band) SetScaleOffset(scale, offset float64, opts ...SetScaleOffsetOption) error {
+	setterOpts := &setScaleOffsetOpts{}
+	for _, opt := range opts {
+		opt.setSetScaleOffsetOpt(setterOpts)
+	}
+	cgc := createCGOContext(nil, setterOpts.errorHandler)
+	C.godalSetRasterScaleOffset(cgc.cPointer(), band.handle(), C.double(scale), C.double(offset))
+	return cgc.close()
+}
+
+// ClearScaleOffset clears the band's scale and offset
+func (band Band) ClearScaleOffset(opts ...SetScaleOffsetOption) error {
+	return band.SetScaleOffset(1.0, 0.0, opts...)
+}
+
 // ColorInterp returns the band's color interpretation (defaults to Gray)
 func (band Band) ColorInterp() ColorInterp {
 	colorInterp := C.GDALGetRasterColorInterpretation(band.handle())
@@ -224,24 +244,24 @@ func (band Band) SetColorInterp(colorInterp ColorInterp, opts ...SetColorInterpO
 	return cgc.close()
 }
 
-//MaskFlags returns the mask flags associated with this band.
+// MaskFlags returns the mask flags associated with this band.
 //
-//See https://gdal.org/development/rfc/rfc15_nodatabitmask.html for how this flag
-//should be interpreted
+// See https://gdal.org/development/rfc/rfc15_nodatabitmask.html for how this flag
+// should be interpreted
 func (band Band) MaskFlags() int {
 	return int(C.GDALGetMaskFlags(band.handle()))
 }
 
-//MaskBand returns the mask (nodata) band for this band. May be generated from nodata values.
+// MaskBand returns the mask (nodata) band for this band. May be generated from nodata values.
 func (band Band) MaskBand() Band {
 	hndl := C.GDALGetMaskBand(band.handle())
 	return Band{majorObject{C.GDALMajorObjectH(hndl)}}
 }
 
-//CreateMask creates a mask (nodata) band for this band.
+// CreateMask creates a mask (nodata) band for this band.
 //
-//Any handle returned by a previous call to MaskBand() should not be used after a call to CreateMask
-//See https://gdal.org/development/rfc/rfc15_nodatabitmask.html for how flag should be used
+// Any handle returned by a previous call to MaskBand() should not be used after a call to CreateMask
+// See https://gdal.org/development/rfc/rfc15_nodatabitmask.html for how flag should be used
 func (band Band) CreateMask(flags int, opts ...BandCreateMaskOption) (Band, error) {
 	gopts := bandCreateMaskOpts{}
 	for _, opt := range opts {
@@ -255,7 +275,7 @@ func (band Band) CreateMask(flags int, opts ...BandCreateMaskOption) (Band, erro
 	return Band{majorObject{C.GDALMajorObjectH(hndl)}}, nil
 }
 
-//Fill sets the whole band uniformely to (real,imag)
+// Fill sets the whole band uniformely to (real,imag)
 func (band Band) Fill(real, imag float64, opts ...FillBandOption) error {
 	fo := &fillBandOpts{}
 	for _, o := range opts {
@@ -345,7 +365,7 @@ func (band Band) Polygonize(dstLayer Layer, opts ...PolygonizeOption) error {
 	return cgc.close()
 }
 
-//FillNoData wraps GDALFillNodata()
+// FillNoData wraps GDALFillNodata()
 func (band Band) FillNoData(opts ...FillNoDataOption) error {
 	popt := fillnodataOpts{
 		maxDistance: 100,
@@ -389,7 +409,7 @@ func (band Band) SieveFilter(sizeThreshold int, opts ...SieveFilterOption) error
 	return cgc.close()
 }
 
-//Overviews returns all overviews of band
+// Overviews returns all overviews of band
 func (band Band) Overviews() []Band {
 	cbands := C.godalBandOverviews(band.handle())
 	if cbands == nil {
@@ -409,7 +429,7 @@ func (band Band) Overviews() []Band {
 	}
 }
 
-//Histogram returns or computes the bands histogram
+// Histogram returns or computes the bands histogram
 func (band Band) Histogram(opts ...HistogramOption) (Histogram, error) {
 	hopt := histogramOpts{}
 	for _, o := range opts {
@@ -437,11 +457,11 @@ func (band Band) Histogram(opts ...HistogramOption) (Histogram, error) {
 	return h, nil
 }
 
-//GetStatistics returns if present and flag as true.
+// GetStatistics returns if present and flag as true.
 //
-//Only cached statistics are returned and no new statistics are computed.
-//Return false and no error if no statistics are availables.
-//Available options are:
+// Only cached statistics are returned and no new statistics are computed.
+// Return false and no error if no statistics are availables.
+// Available options are:
 // - Aproximate() to allow the satistics to be computed on overviews or a subset of all tiles.
 // - ErrLogger
 func (band Band) GetStatistics(opts ...StatisticsOption) (Statistics, bool, error) {
@@ -470,10 +490,10 @@ func (band Band) GetStatistics(opts ...StatisticsOption) (Statistics, bool, erro
 	return s, true, nil
 }
 
-//ComputeStatistics returns from exact computation or approximation.
+// ComputeStatistics returns from exact computation or approximation.
 //
-//Band full scan might be necessary.
-//Available options are:
+// Band full scan might be necessary.
+// Available options are:
 // - Aproximate() to allow the satistics to be computed on overviews or a subset of all tiles.
 // - ErrLogger
 func (band Band) ComputeStatistics(opts ...StatisticsOption) (Statistics, error) {
@@ -499,10 +519,11 @@ func (band Band) ComputeStatistics(opts ...StatisticsOption) (Statistics, error)
 	return s, nil
 }
 
-//SetStatistics set statistics (Min, Max, Mean & STD).
+// SetStatistics set statistics (Min, Max, Mean & STD).
 //
-//Available options are:
-//  -ErrLogger
+// Available options are:
+//
+//	-ErrLogger
 func (band Band) SetStatistics(min, max, mean, std float64, opts ...SetStatisticsOption) error {
 	stso := setStatisticsOpt{}
 	for _, opt := range opts {
@@ -523,6 +544,14 @@ func cIntArray(in []int) *C.int {
 		ret[i] = C.int(in[i])
 	}
 	return (*C.int)(unsafe.Pointer(&ret[0]))
+}
+
+func cLongArray(in []int64) *C.longlong {
+	ret := make([]C.longlong, len(in))
+	for i := range in {
+		ret[i] = C.longlong(in[i])
+	}
+	return (*C.longlong)(unsafe.Pointer(&ret[0]))
 }
 
 func cDoubleArray(in []float64) *C.double {
@@ -583,7 +612,43 @@ func cStringArrayToSlice(in **C.char) []string {
 	}
 }
 
-//PaletteInterp defines the color interpretation of a ColorTable
+func cIntArrayToSlice(in *C.int, length C.int) []int64 {
+	if in == nil {
+		return nil
+	}
+	cSlice := (*[1 << 28]C.int)(unsafe.Pointer(in))[:length:length]
+	slice := make([]int64, length)
+	for i, cval := range cSlice {
+		slice[i] = int64(cval)
+	}
+	return slice
+}
+
+func cLongArrayToSlice(in *C.longlong, length C.int) []int64 {
+	if in == nil {
+		return nil
+	}
+	cSlice := (*[1 << 28]C.longlong)(unsafe.Pointer(in))[:length:length]
+	slice := make([]int64, length)
+	for i, cval := range cSlice {
+		slice[i] = int64(cval)
+	}
+	return slice
+}
+
+func cDoubleArrayToSlice(in *C.double, length C.int) []float64 {
+	if in == nil {
+		return nil
+	}
+	cSlice := (*[1 << 28]C.double)(unsafe.Pointer(in))[:length:length]
+	slice := make([]float64, length)
+	for i, cval := range cSlice {
+		slice[i] = float64(cval)
+	}
+	return slice
+}
+
+// PaletteInterp defines the color interpretation of a ColorTable
 type PaletteInterp C.GDALPaletteInterp
 
 const (
@@ -597,7 +662,7 @@ const (
 	HLSPalette PaletteInterp = C.GPI_HLS
 )
 
-//ColorTable is a color table associated with a Band
+// ColorTable is a color table associated with a Band
 type ColorTable struct {
 	PaletteInterp PaletteInterp
 	Entries       [][4]int16
@@ -626,8 +691,8 @@ func ctEntriesFromCshorts(arr *C.short, nEntries int) [][4]int16 {
 	return ret
 }
 
-//ColorTable returns the bands color table. The returned ColorTable will have
-//a 0-length Entries if the band has no color table assigned
+// ColorTable returns the bands color table. The returned ColorTable will have
+// a 0-length Entries if the band has no color table assigned
 func (band Band) ColorTable() ColorTable {
 	var interp C.GDALPaletteInterp
 	var nEntries C.int
@@ -679,7 +744,8 @@ func (ds *Dataset) Bands() []Band {
 }
 
 // Bounds returns the dataset's bounding box in the order
-//  [MinX, MinY, MaxX, MaxY]
+//
+//	[MinX, MinY, MaxX, MaxY]
 func (ds *Dataset) Bounds(opts ...BoundsOption) ([4]float64, error) {
 
 	bo := boundsOpts{}
@@ -713,10 +779,10 @@ func (ds *Dataset) Bounds(opts ...BoundsOption) ([4]float64, error) {
 	return ret, nil
 }
 
-//CreateMaskBand creates a mask (nodata) band shared for all bands of this dataset.
+// CreateMaskBand creates a mask (nodata) band shared for all bands of this dataset.
 //
-//Any handle returned by a previous call to Band.MaskBand() should not be used after a call to CreateMaskBand
-//See https://gdal.org/development/rfc/rfc15_nodatabitmask.html for how flag should be used
+// Any handle returned by a previous call to Band.MaskBand() should not be used after a call to CreateMaskBand
+// See https://gdal.org/development/rfc/rfc15_nodatabitmask.html for how flag should be used
 func (ds *Dataset) CreateMaskBand(flags int, opts ...DatasetCreateMaskOption) (Band, error) {
 	gopts := dsCreateMaskOpts{}
 	for _, opt := range opts {
@@ -728,6 +794,11 @@ func (ds *Dataset) CreateMaskBand(flags int, opts ...DatasetCreateMaskOption) (B
 		return Band{}, err
 	}
 	return Band{majorObject{C.GDALMajorObjectH(hndl)}}, nil
+}
+
+// Driver returns dataset driver.
+func (ds *Dataset) Driver() Driver {
+	return Driver{majorObject{C.GDALMajorObjectH(C.GDALGetDatasetDriver(ds.handle()))}}
 }
 
 // Projection returns the WKT projection of the dataset. May be empty.
@@ -809,7 +880,7 @@ func (ds *Dataset) SetGeoTransform(transform [6]float64, opts ...SetGeoTransform
 	return cgc.close()
 }
 
-//SetNoData sets the band's nodata value
+// SetNoData sets the band's nodata value
 func (ds *Dataset) SetNoData(nd float64, opts ...SetNoDataOption) error {
 	sndo := &setNodataOpts{}
 	for _, opt := range opts {
@@ -820,19 +891,33 @@ func (ds *Dataset) SetNoData(nd float64, opts ...SetNoDataOption) error {
 	return cgc.close()
 }
 
+//SetScale sets the band's scale and offset
+func (ds *Dataset) SetScaleOffset(scale, offset float64, opts ...SetScaleOffsetOption) error {
+	setterOpts := &setScaleOffsetOpts{}
+	for _, opt := range opts {
+		opt.setSetScaleOffsetOpt(setterOpts)
+	}
+	cgc := createCGOContext(nil, setterOpts.errorHandler)
+	C.godalSetDatasetScaleOffset(cgc.cPointer(), ds.handle(), C.double(scale), C.double(offset))
+	return cgc.close()
+}
+
 // Translate runs the library version of gdal_translate.
 // See the gdal_translate doc page to determine the valid flags/opts that can be set in switches.
 //
 // Example switches :
-//  []string{
-//    "-a_nodata", 0,
-//    "-a_srs", "epsg:4326"}
+//
+//	[]string{
+//	  "-a_nodata", 0,
+//	  "-a_srs", "epsg:4326"}
 //
 // Creation options and driver may be set either in the switches slice with
-//  switches:=[]string{"-co","TILED=YES","-of","GTiff"}
-// or through Options with
-//  ds.Translate(dst, switches, CreationOption("TILED=YES","BLOCKXSIZE=256"), GTiff)
 //
+//	switches:=[]string{"-co","TILED=YES","-of","GTiff"}
+//
+// or through Options with
+//
+//	ds.Translate(dst, switches, CreationOption("TILED=YES","BLOCKXSIZE=256"), GTiff)
 func (ds *Dataset) Translate(dstDS string, switches []string, opts ...DatasetTranslateOption) (*Dataset, error) {
 	gopts := dsTranslateOpts{}
 	for _, opt := range opts {
@@ -865,15 +950,18 @@ func (ds *Dataset) Translate(dstDS string, switches []string, opts ...DatasetTra
 // See the gdalwarp doc page to determine the valid flags/opts that can be set in switches.
 //
 // Example switches :
-//  []string{
-//	  "-t_srs","epsg:3857",
-//    "-dstalpha"}
+//
+//	 []string{
+//		  "-t_srs","epsg:3857",
+//	   "-dstalpha"}
 //
 // Creation options and driver may be set either in the switches slice with
-//  switches:=[]string{"-co","TILED=YES","-of","GTiff"}
-// or through Options with
-//  ds.Warp(dst, switches, CreationOption("TILED=YES","BLOCKXSIZE=256"), GTiff)
 //
+//	switches:=[]string{"-co","TILED=YES","-of","GTiff"}
+//
+// or through Options with
+//
+//	ds.Warp(dst, switches, CreationOption("TILED=YES","BLOCKXSIZE=256"), GTiff)
 func (ds *Dataset) Warp(dstDS string, switches []string, opts ...DatasetWarpOption) (*Dataset, error) {
 	return Warp(dstDS, []*Dataset{ds}, switches, opts...)
 }
@@ -882,14 +970,18 @@ func (ds *Dataset) Warp(dstDS string, switches []string, opts ...DatasetWarpOpti
 // See the gdalwarp doc page to determine the valid flags/opts that can be set in switches.
 //
 // Example switches :
-//  []string{
-//	  "-t_srs","epsg:3857",
-//    "-dstalpha"}
+//
+//	 []string{
+//		  "-t_srs","epsg:3857",
+//	   "-dstalpha"}
 //
 // Creation options and driver may be set either in the switches slice with
-//  switches:=[]string{"-co","TILED=YES","-of","GTiff"}
+//
+//	switches:=[]string{"-co","TILED=YES","-of","GTiff"}
+//
 // or through Options with
-//  ds.Warp(dst, switches, CreationOption("TILED=YES","BLOCKXSIZE=256"), GTiff)
+//
+//	ds.Warp(dst, switches, CreationOption("TILED=YES","BLOCKXSIZE=256"), GTiff)
 func Warp(dstDS string, sourceDS []*Dataset, switches []string, opts ...DatasetWarpOption) (*Dataset, error) {
 	gopts := dsWarpOpts{}
 	for _, opt := range opts {
@@ -930,9 +1022,10 @@ func Warp(dstDS string, sourceDS []*Dataset, switches []string, opts ...DatasetW
 // See the gdalwarp doc page to determine the valid flags/opts that can be set in switches.
 //
 // Example switches :
-//  []string{
-//	  "-t_srs","epsg:3857",
-//    "-dstalpha"}
+//
+//	 []string{
+//		  "-t_srs","epsg:3857",
+//	   "-dstalpha"}
 func (ds *Dataset) WarpInto(sourceDS []*Dataset, switches []string, opts ...DatasetWarpIntoOption) error {
 	gopts := dsWarpIntoOpts{}
 	for _, opt := range opts {
@@ -1032,11 +1125,12 @@ func (ds *Dataset) ClearOverviews(opts ...ClearOverviewsOption) error {
 	return cgc.close()
 }
 
-//ClearStatistics delete dataset statisitics
+// ClearStatistics delete dataset statisitics
 //
-//Since GDAL 3.2
-//Available options are:
-//  -ErrLogger
+// Since GDAL 3.2
+// Available options are:
+//
+//	-ErrLogger
 func (ds *Dataset) ClearStatistics(opts ...ClearStatisticsOption) error {
 	cls := &clearStatisticsOpt{}
 	for _, o := range opts {
@@ -1050,13 +1144,16 @@ func (ds *Dataset) ClearStatistics(opts ...ClearStatisticsOption) error {
 // Structure returns the dataset's Structure
 func (ds *Dataset) Structure() DatasetStructure {
 	var sx, sy, bsx, bsy, bandCount, dtype C.int
-	C.godalDatasetStructure(ds.handle(), &sx, &sy, &bsx, &bsy, &bandCount, &dtype)
+	var scale, offset C.double
+	C.godalDatasetStructure(ds.handle(), &sx, &sy, &bsx, &bsy, &scale, &offset, &bandCount, &dtype)
 	return DatasetStructure{
 		BandStructure: BandStructure{
 			SizeX:      int(sx),
 			SizeY:      int(sy),
 			BlockSizeX: int(bsx),
 			BlockSizeY: int(bsy),
+			Scale:      float64(scale),
+			Offset:     float64(offset),
 			DataType:   DataType(int(dtype)),
 		},
 		NBands: int(bandCount),
@@ -1149,9 +1246,9 @@ func (ds *Dataset) IO(rw IOOperation, srcX, srcY int, buffer interface{}, bufWid
 // drivers.
 //
 // Alternatively, you may also register a select number of drivers by calling one or more of
-//  - godal.RegisterInternal() // MEM, VRT, GTiff and GeoJSON
-//  - godal.RegisterRaster(godal.GTiff,godal.VRT)
-//  - godal.RegisterVector(godal.Shapefile)
+//   - godal.RegisterInternal() // MEM, VRT, GTiff and GeoJSON
+//   - godal.RegisterRaster(godal.GTiff,godal.VRT)
+//   - godal.RegisterVector(godal.Shapefile)
 func RegisterAll() {
 	C.GDALAllRegister()
 }
@@ -1264,6 +1361,16 @@ func (drv Driver) handle() C.GDALDriverH {
 	return C.GDALDriverH(drv.majorObject.cHandle)
 }
 
+// LongName returns the driver long name.
+func (drv Driver) LongName() string {
+	return C.GoString(C.GDALGetDriverLongName(drv.handle()))
+}
+
+// ShortName returns the driver short name.
+func (drv Driver) ShortName() string {
+	return C.GoString(C.GDALGetDriverShortName(drv.handle()))
+}
+
 // VectorDriver returns a Driver by name. It returns false if the named driver does
 // not exist
 func VectorDriver(name DriverName) (Driver, bool) {
@@ -1369,21 +1476,21 @@ type majorObject struct {
 	cHandle C.GDALMajorObjectH
 }
 
-//Dataset is a wrapper around a GDALDatasetH
+// Dataset is a wrapper around a GDALDatasetH
 type Dataset struct {
 	majorObject
 }
 
-//handle returns a pointer to the underlying GDALDatasetH
+// handle returns a pointer to the underlying GDALDatasetH
 func (ds *Dataset) handle() C.GDALDatasetH {
 	return C.GDALDatasetH(ds.majorObject.cHandle)
 }
 
-//Open calls GDALOpenEx() with the provided options. It returns nil and an error
-//in case there was an error opening the provided dataset name.
+// Open calls GDALOpenEx() with the provided options. It returns nil and an error
+// in case there was an error opening the provided dataset name.
 //
-//name may be a filename or any supported string supported by gdal (e.g. a /vsixxx path,
-//the xml string representing a vrt dataset, etc...)
+// name may be a filename or any supported string supported by gdal (e.g. a /vsixxx path,
+// the xml string representing a vrt dataset, etc...)
 func Open(name string, options ...OpenOption) (*Dataset, error) {
 	oopts := openOpts{
 		flags:        C.GDAL_OF_READONLY | C.GDAL_OF_VERBOSE_ERROR,
@@ -1412,7 +1519,7 @@ func Open(name string, options ...OpenOption) (*Dataset, error) {
 	return &Dataset{majorObject{C.GDALMajorObjectH(retds)}}, nil
 }
 
-//Close releases the dataset
+// Close releases the dataset
 func (ds *Dataset) Close(opts ...CloseOption) error {
 	co := &closeOpts{}
 	for _, o := range opts {
@@ -1427,25 +1534,25 @@ func (ds *Dataset) Close(opts ...CloseOption) error {
 	return cgc.close()
 }
 
-//LibVersion is the GDAL lib versioning scheme
+// LibVersion is the GDAL lib versioning scheme
 type LibVersion int
 
-//Major returns the GDAL major version (e.g. "3" in 3.2.1)
+// Major returns the GDAL major version (e.g. "3" in 3.2.1)
 func (lv LibVersion) Major() int {
 	return int(lv) / 1000000
 }
 
-//Minor return the GDAL minor version (e.g. "2" in 3.2.1)
+// Minor return the GDAL minor version (e.g. "2" in 3.2.1)
 func (lv LibVersion) Minor() int {
 	return (int(lv) - lv.Major()*1000000) / 10000
 }
 
-//Revision returns the GDAL revision number (e.g. "1" in 3.2.1)
+// Revision returns the GDAL revision number (e.g. "1" in 3.2.1)
 func (lv LibVersion) Revision() int {
 	return (int(lv) - lv.Major()*1000000 - lv.Minor()*10000) / 100
 }
 
-//AssertMinVersion will panic if the runtime version is not at least major.minor.revision
+// AssertMinVersion will panic if the runtime version is not at least major.minor.revision
 func AssertMinVersion(major, minor, revision int) {
 	runtimeVersion := Version()
 	if runtimeVersion.Major() < major ||
@@ -1505,7 +1612,7 @@ const (
 	IOWrite = C.GF_Write
 )
 
-//ResamplingAlg is a resampling method
+// ResamplingAlg is a resampling method
 type ResamplingAlg int
 
 const (
@@ -1628,8 +1735,8 @@ func bufferType(buffer interface{}) DataType {
 	}
 }
 
-//cBuffer returns the type of an individual element, and a pointer to the
-//underlying memory array
+// cBuffer returns the type of an individual element, and a pointer to the
+// underlying memory array
 func cBuffer(buffer interface{}, minsize int) unsafe.Pointer {
 	sizecheck := func(size int) {
 		if size < minsize {
@@ -1739,9 +1846,29 @@ func (mo majorObject) MetadataDomains() []string {
 	return cStringArrayToSlice(strs)
 }
 
+// Description returns the description/name
+func (mo majorObject) Description() string {
+	desc := C.GDALGetDescription(mo.cHandle)
+	return C.GoString(desc)
+}
+
+// SetDescription sets the description
+func (mo majorObject) SetDescription(description string, opts ...SetDescriptionOption) error {
+	scio := &setDescriptionOpts{}
+	for _, opt := range opts {
+		opt.setDescriptionOpt(scio)
+	}
+
+	cgc := createCGOContext(nil, scio.errorHandler)
+	cname := unsafe.Pointer(C.CString(description))
+	defer C.free(cname)
+	C.godalSetDescription(cgc.cPointer(), mo.cHandle, (*C.char)(cname))
+	return cgc.close()
+}
+
 type openUpdateOpt struct{}
 
-//Update is an OpenOption that instructs gdal to open the dataset for writing/updating
+// Update is an OpenOption that instructs gdal to open the dataset for writing/updating
 func Update() interface {
 	OpenOption
 } {
@@ -1756,7 +1883,7 @@ func (openUpdateOpt) setOpenOpt(oo *openOpts) {
 
 type openSharedOpt struct{}
 
-//Shared opens the dataset with OF_OPEN_SHARED
+// Shared opens the dataset with OF_OPEN_SHARED
 func Shared() interface {
 	OpenOption
 } {
@@ -1769,7 +1896,7 @@ func (openSharedOpt) setOpenOpt(oo *openOpts) {
 
 type vectorOnlyOpt struct{}
 
-//VectorOnly limits drivers to vector ones (incompatible with RasterOnly() )
+// VectorOnly limits drivers to vector ones (incompatible with RasterOnly() )
 func VectorOnly() interface {
 	OpenOption
 } {
@@ -1781,7 +1908,7 @@ func (vectorOnlyOpt) setOpenOpt(oo *openOpts) {
 
 type rasterOnlyOpt struct{}
 
-//RasterOnly limits drivers to vector ones (incompatible with VectorOnly() )
+// RasterOnly limits drivers to vector ones (incompatible with VectorOnly() )
 func RasterOnly() interface {
 	OpenOption
 } {
@@ -1791,13 +1918,13 @@ func (rasterOnlyOpt) setOpenOpt(oo *openOpts) {
 	oo.flags |= C.GDAL_OF_RASTER
 }
 
-//SpatialRef is a wrapper around OGRSpatialReferenceH
+// SpatialRef is a wrapper around OGRSpatialReferenceH
 type SpatialRef struct {
 	handle  C.OGRSpatialReferenceH
 	isOwned bool
 }
 
-//WKT returns spatialrefernece as WKT
+// WKT returns spatialrefernece as WKT
 func (sr *SpatialRef) WKT(opts ...WKTExportOption) (string, error) {
 	wo := &srWKTOpts{}
 	for _, o := range opts {
@@ -1813,7 +1940,7 @@ func (sr *SpatialRef) WKT(opts ...WKTExportOption) (string, error) {
 	return wkt, nil
 }
 
-//Close releases memory
+// Close releases memory
 func (sr *SpatialRef) Close() {
 	if sr.handle == nil {
 		return
@@ -1825,6 +1952,24 @@ func (sr *SpatialRef) Close() {
 	}
 	C.OSRRelease(sr.handle)
 	sr.handle = nil
+}
+
+// NewSpatialRef creates a SpatialRef from any "user" projection string, e.g.
+// "epsg:4326", "+proj=lonlat", wkt, wkt2 or projjson (as supported by
+// gdal's OSRCreateFromUserInput
+func NewSpatialRef(userInput string, opts ...CreateSpatialRefOption) (*SpatialRef, error) {
+	cso := &createSpatialRefOpts{}
+	for _, o := range opts {
+		o.setCreateSpatialRefOpt(cso)
+	}
+	cstr := C.CString(userInput)
+	defer C.free(unsafe.Pointer(cstr))
+	cgc := createCGOContext(nil, cso.errorHandler)
+	hndl := C.godalCreateUserSpatialRef(cgc.cPointer(), (*C.char)(unsafe.Pointer(cstr)))
+	if err := cgc.close(); err != nil {
+		return nil, err
+	}
+	return &SpatialRef{handle: hndl, isOwned: true}, nil
 }
 
 // NewSpatialRefFromWKT creates a SpatialRef from an opengis WKT description
@@ -1964,9 +2109,21 @@ func (trn *Transform) TransformEx(x []float64, y []float64, z []float64, success
 	return nil
 }
 
+// EPSGTreatsAsLatLong returns TRUE if EPSG feels the SpatialRef should be treated as having lat/long coordinate ordering.
+func (sr *SpatialRef) EPSGTreatsAsLatLong() bool {
+	ret := C.OSREPSGTreatsAsLatLong(sr.handle)
+	return ret != 0
+}
+
 // Geographic returns wether the SpatialRef is geographic
 func (sr *SpatialRef) Geographic() bool {
 	ret := C.OSRIsGeographic(sr.handle)
+	return ret != 0
+}
+
+// Projected returns wether the SpatialRef is projected
+func (sr *SpatialRef) Projected() bool {
+	ret := C.OSRIsProjected(sr.handle)
 	return ret != 0
 }
 
@@ -1988,6 +2145,17 @@ func (sr *SpatialRef) SemiMinor() (float64, error) {
 		return float64(sm), fmt.Errorf("ogr error %d", err)
 	}
 	return float64(sm), nil
+}
+
+// AttrValue Fetch indicated attribute of named node from within the WKT tree.
+func (sr *SpatialRef) AttrValue(name string, child int) (string, bool) {
+	cstr := C.CString(name)
+	defer C.free(unsafe.Pointer(cstr))
+	cret := C.OSRGetAttrValue(sr.handle, cstr, C.int(child))
+	if cret != nil {
+		return C.GoString(cret), true
+	}
+	return "", false
 }
 
 // AuthorityName is used to query an AUTHORITY[] node from within the WKT tree, and fetch the authority name value.
@@ -2034,6 +2202,17 @@ func (sr *SpatialRef) AutoIdentifyEPSG() error {
 	return nil
 }
 
+// Validate SRS tokens.
+func (sr *SpatialRef) Validate(opts ...SpatialRefValidateOption) error {
+	vo := spatialRefValidateOpts{}
+	for _, opt := range opts {
+		opt.setSpatialRefValidateOpt(&vo)
+	}
+	cgc := createCGOContext(nil, vo.errorHandler)
+	C.godalValidateSpatialRef(cgc.cPointer(), sr.handle)
+	return cgc.close()
+}
+
 // Rasterize wraps GDALRasterize()
 func (ds *Dataset) Rasterize(dstDS string, switches []string, opts ...RasterizeOption) (*Dataset, error) {
 	gopts := rasterizeOpts{}
@@ -2056,22 +2235,40 @@ func (ds *Dataset) Rasterize(dstDS string, switches []string, opts ...RasterizeO
 	defer C.free(cname)
 
 	cgc := createCGOContext(gopts.config, gopts.errorHandler)
-	hndl := C.godalRasterize(cgc.cPointer(), (*C.char)(cname), ds.handle(), cswitches.cPointer())
+	hndl := C.godalRasterize(cgc.cPointer(), (*C.char)(cname), nil, ds.handle(), cswitches.cPointer())
 	if err := cgc.close(); err != nil {
 		return nil, err
 	}
 	return &Dataset{majorObject{C.GDALMajorObjectH(hndl)}}, nil
 }
 
+// RasterizeInto wraps GDALRasterize() and rasterizes the provided vectorDataset into the ds Dataset
+func (ds *Dataset) RasterizeInto(vectorDS *Dataset, switches []string, opts ...RasterizeIntoOption) error {
+	gopts := rasterizeIntoOpts{}
+	for _, opt := range opts {
+		opt.setRasterizeIntoOpt(&gopts)
+	}
+	cswitches := sliceToCStringArray(switches)
+	defer cswitches.free()
+
+	cgc := createCGOContext(gopts.config, gopts.errorHandler)
+	C.godalRasterize(cgc.cPointer(), nil, ds.handle(), vectorDS.handle(), cswitches.cPointer())
+	if err := cgc.close(); err != nil {
+		return err
+	}
+	return nil
+}
+
 // RasterizeGeometry "burns" the provided geometry onto ds.
 // By default, the "0" value is burned into all of ds's bands. This behavior can be modified
 // with the following options:
-//  - Bands(bnd ...int) the list of bands to affect
-//  - Values(val ...float64) the pixel value to burn. There must be either 1 or len(bands) values
-// provided
-//  - AllTouched() pixels touched by lines or polygons will be updated, not just those on the line
-// render path, or whose center point is within the polygon.
+//   - Bands(bnd ...int) the list of bands to affect
+//   - Values(val ...float64) the pixel value to burn. There must be either 1 or len(bands) values
 //
+// provided
+//   - AllTouched() pixels touched by lines or polygons will be updated, not just those on the line
+//
+// render path, or whose center point is within the polygon.
 func (ds *Dataset) RasterizeGeometry(g *Geometry, opts ...RasterizeGeometryOption) error {
 	opt := rasterizeGeometryOpts{}
 	for _, o := range opts {
@@ -2108,27 +2305,43 @@ func (ds *Dataset) RasterizeGeometry(g *Geometry, opts ...RasterizeGeometryOptio
 type GeometryType uint32
 
 const (
-	//GTUnknown is a GeomtryType
+	//GTUnknown is a GeometryType
 	GTUnknown = GeometryType(C.wkbUnknown)
-	//GTPoint is a GeomtryType
+	//GTPoint is a GeometryType
 	GTPoint = GeometryType(C.wkbPoint)
-	//GTLineString is a GeomtryType
+	//GTPoint25D is a GeometryType
+	GTPoint25D = GeometryType(C.wkbPoint25D)
+	//GTLinearRing is a GeometryType
+	GTLinearRing = GeometryType(C.wkbLinearRing)
+	//GTLineString is a GeometryType
 	GTLineString = GeometryType(C.wkbLineString)
-	//GTPolygon is a GeomtryType
+	//GTLineString25D is a GeometryType
+	GTLineString25D = GeometryType(C.wkbLineString25D)
+	//GTPolygon is a GeometryType
 	GTPolygon = GeometryType(C.wkbPolygon)
-	//GTMultiPoint is a GeomtryType
+	//GTPolygon25D is a GeometryType
+	GTPolygon25D = GeometryType(C.wkbPolygon25D)
+	//GTMultiPoint is a GeometryType
 	GTMultiPoint = GeometryType(C.wkbMultiPoint)
-	//GTMultiLineString is a GeomtryType
+	//GTMultiPoint25D is a GeometryType
+	GTMultiPoint25D = GeometryType(C.wkbMultiPoint25D)
+	//GTMultiLineString is a GeometryType
 	GTMultiLineString = GeometryType(C.wkbMultiLineString)
-	//GTMultiPolygon is a GeomtryType
+	//GTMultiLineString25D is a GeometryType
+	GTMultiLineString25D = GeometryType(C.wkbMultiLineString25D)
+	//GTMultiPolygon is a GeometryType
 	GTMultiPolygon = GeometryType(C.wkbMultiPolygon)
-	//GTGeometryCollection is a GeomtryType
+	//GTMultiPolygon25D is a GeometryType
+	GTMultiPolygon25D = GeometryType(C.wkbMultiPolygon25D)
+	//GTGeometryCollection is a GeometryType
 	GTGeometryCollection = GeometryType(C.wkbGeometryCollection)
-	//GTNone is a GeomtryType
+	//GTGeometryCollection25D is a GeometryType
+	GTGeometryCollection25D = GeometryType(C.wkbGeometryCollection25D)
+	//GTNone is a GeometryType
 	GTNone = GeometryType(C.wkbNone)
 )
 
-//FieldType is a vector field (attribute/column) type
+// FieldType is a vector field (attribute/column) type
 type FieldType C.OGRFieldType
 
 const (
@@ -2156,15 +2369,17 @@ const (
 	FTDateTime = FieldType(C.OFTDateTime)
 	//FTInt64List is a List of 64bit integers.
 	FTInt64List = FieldType(C.OFTInteger64List)
+	//FTUnknown allow to handle deprecated types like WideString or WideStringList
+	FTUnknown = FieldType(C.OFTMaxType + 1)
 )
 
-//FieldDefinition defines a single attribute
+// FieldDefinition defines a single attribute
 type FieldDefinition struct {
 	name  string
 	ftype FieldType
 }
 
-//NewFieldDefinition creates a FieldDefinition
+// NewFieldDefinition creates a FieldDefinition
 func NewFieldDefinition(name string, fdtype FieldType) *FieldDefinition {
 	return &FieldDefinition{
 		name:  name,
@@ -2187,15 +2402,19 @@ func (fd *FieldDefinition) createHandle() C.OGRFieldDefnH {
 // See the ogr2ogr doc page to determine the valid flags/opts that can be set in switches.
 //
 // Example switches :
-//  []string{
-//    "-f", "GeoJSON",
-//	  "-t_srs","epsg:3857",
-//    "-dstalpha"}
+//
+//	 []string{
+//	   "-f", "GeoJSON",
+//		  "-t_srs","epsg:3857",
+//	   "-dstalpha"}
 //
 // Creation options and Driver may be set either in the switches slice with
-//  switches:=[]string{"-dsco","TILED=YES", "-f","GeoJSON"}
+//
+//	switches:=[]string{"-dsco","TILED=YES", "-f","GeoJSON"}
+//
 // or through Options with
-//  ds.VectorTranslate(dst, switches, CreationOption("TILED=YES","BLOCKXSIZE=256"), GeoJSON)
+//
+//	ds.VectorTranslate(dst, switches, CreationOption("TILED=YES","BLOCKXSIZE=256"), GeoJSON)
 func (ds *Dataset) VectorTranslate(dstDS string, switches []string, opts ...DatasetVectorTranslateOption) (*Dataset, error) {
 	gopts := dsVectorTranslateOpts{}
 	for _, opt := range opts {
@@ -2232,6 +2451,46 @@ type Layer struct {
 // handle returns a pointer to the underlying GDALRasterBandH
 func (layer Layer) handle() C.OGRLayerH {
 	return C.OGRLayerH(layer.majorObject.cHandle)
+}
+
+// Name returns the layer name
+func (layer Layer) Name() string {
+	return C.GoString(C.OGR_L_GetName(layer.handle()))
+}
+
+// Type returns the layer geometry type.
+func (layer Layer) Type() GeometryType {
+	return GeometryType(C.OGR_L_GetGeomType(layer.handle()))
+}
+
+// Bounds returns the layer's envelope in the order minx,miny,maxx,maxy
+func (layer Layer) Bounds(opts ...BoundsOption) ([4]float64, error) {
+	bo := boundsOpts{}
+	for _, o := range opts {
+		o.setBoundsOpt(&bo)
+	}
+	var env C.OGREnvelope
+	cgc := createCGOContext(nil, bo.errorHandler)
+	C.godalLayerGetExtent(cgc.cPointer(), layer.handle(), &env)
+	if err := cgc.close(); err != nil {
+		return [4]float64{}, err
+	}
+	bnds := [4]float64{
+		float64(env.MinX),
+		float64(env.MinY),
+		float64(env.MaxX),
+		float64(env.MaxY),
+	}
+	if bo.sr == nil {
+		return bnds, nil
+	}
+	sr := layer.SpatialRef()
+	defer sr.Close()
+	bnds, err := reprojectBounds(bnds, sr, bo.sr)
+	if err != nil {
+		return [4]float64{}, err
+	}
+	return bnds, nil
 }
 
 // FeatureCount returns the number of features in the layer
@@ -2281,7 +2540,31 @@ type Geometry struct {
 	handle  C.OGRGeometryH
 }
 
-//Simplify simplifies the geometry with the given tolerance
+// Area computes the area for geometries of type LinearRing, Polygon or MultiPolygon (returns zero for other types).
+// The area is in square units of the spatial reference system in use.
+func (g *Geometry) Area() float64 {
+	return float64(C.OGR_G_Area(g.handle))
+}
+
+// Name fetch WKT name for geometry type.
+func (g *Geometry) Name() string {
+	return C.GoString(C.OGR_G_GetGeometryName(g.handle))
+}
+
+// GeometryCount fetch the number of elements in a geometry or number of geometries in container.
+// Only geometries of type Polygon, MultiPoint, MultiLineString, MultiPolygon or GeometryCollection may return a valid value.
+// Other geometry types will silently return 0.
+// For a polygon, the returned number is the number of rings (exterior ring + interior rings).
+func (g *Geometry) GeometryCount() int {
+	return int(C.OGR_G_GetGeometryCount(g.handle))
+}
+
+// Type fetch geometry type.
+func (g *Geometry) Type() GeometryType {
+	return GeometryType(C.OGR_G_GetGeometryType(g.handle))
+}
+
+// Simplify simplifies the geometry with the given tolerance
 func (g *Geometry) Simplify(tolerance float64, opts ...SimplifyOption) (*Geometry, error) {
 	so := &simplifyOpts{}
 	for _, o := range opts {
@@ -2298,7 +2581,7 @@ func (g *Geometry) Simplify(tolerance float64, opts ...SimplifyOption) (*Geometr
 	}, nil
 }
 
-//Buffer buffers the geometry
+// Buffer buffers the geometry
 func (g *Geometry) Buffer(distance float64, segments int, opts ...BufferOption) (*Geometry, error) {
 	bo := &bufferOpts{}
 	for _, o := range opts {
@@ -2311,6 +2594,73 @@ func (g *Geometry) Buffer(distance float64, segments int, opts ...BufferOption) 
 	}
 	return &Geometry{
 		isOwned: true,
+		handle:  hndl,
+	}, nil
+}
+
+// Difference generates a new geometry which is the region of this geometry with the region of the other geometry removed.
+func (g *Geometry) Difference(other *Geometry, opts ...DifferenceOption) (*Geometry, error) {
+	// If other geometry is nil, GDAL crashes
+	if other == nil || other.handle == nil {
+		return nil, errors.New("other geometry is empty")
+	}
+	do := &differenceOpts{}
+	for _, o := range opts {
+		o.setDifferenceOpt(do)
+	}
+	cgc := createCGOContext(nil, do.errorHandler)
+	hndl := C.godal_OGR_G_Difference(cgc.cPointer(), g.handle, other.handle)
+	if err := cgc.close(); err != nil {
+		return nil, err
+	}
+	return &Geometry{
+		isOwned: true,
+		handle:  hndl,
+	}, nil
+}
+
+// AddGeometry add a geometry to a geometry container.
+func (g *Geometry) AddGeometry(subGeom *Geometry, opts ...AddGeometryOption) error {
+	ago := &addGeometryOpts{}
+	for _, o := range opts {
+		o.setAddGeometryOpt(ago)
+	}
+	cgc := createCGOContext(nil, ago.errorHandler)
+	C.godal_OGR_G_AddGeometry(cgc.cPointer(), g.handle, subGeom.handle)
+	return cgc.close()
+}
+
+// ForceToMultiPolygon convert to multipolygon.
+func (g *Geometry) ForceToMultiPolygon() *Geometry {
+	hndl := C.OGR_G_ForceToMultiPolygon(g.handle)
+	return &Geometry{
+		isOwned: true,
+		handle:  hndl,
+	}
+}
+
+// ForceToPolygon convert to polygon.
+func (g *Geometry) ForceToPolygon() *Geometry {
+	hndl := C.OGR_G_ForceToPolygon(g.handle)
+	return &Geometry{
+		isOwned: true,
+		handle:  hndl,
+	}
+}
+
+// SubGeometry Fetch geometry from a geometry container.
+func (g *Geometry) SubGeometry(subGeomIndex int, opts ...SubGeometryOption) (*Geometry, error) {
+	so := &subGeometryOpts{}
+	for _, o := range opts {
+		o.setSubGeometryOpt(so)
+	}
+	cgc := createCGOContext(nil, so.errorHandler)
+	hndl := C.godal_OGR_G_GetGeometryRef(cgc.cPointer(), g.handle, C.int(subGeomIndex))
+	if err := cgc.close(); err != nil {
+		return nil, err
+	}
+	return &Geometry{
+		isOwned: false,
 		handle:  hndl,
 	}, nil
 }
@@ -2331,13 +2681,67 @@ func (g *Geometry) Intersects(other *Geometry, opts ...IntersectsOption) (bool, 
 	return ret != 0, nil
 }
 
-//Empty retruens wether the underlying geometry is empty
-func (g *Geometry) Empty() bool {
-	e := C.OGR_G_IsEmpty(g.handle)
-	return e != 0
+// Intersection generates a new geometry which is the region of intersection of the two geometries operated on.
+func (g *Geometry) Intersection(other *Geometry, opts ...IntersectionOption) (*Geometry, error) {
+	// If other geometry is nil, GDAL crashes
+	if other == nil || other.handle == nil {
+		return nil, errors.New("other geometry is empty")
+	}
+	io := &intersectionOpts{}
+	for _, o := range opts {
+		o.setIntersectionOpt(io)
+	}
+	cgc := createCGOContext(nil, io.errorHandler)
+	hndl := C.godal_OGR_G_Intersection(cgc.cPointer(), g.handle, other.handle)
+	if err := cgc.close(); err != nil {
+		return nil, err
+	}
+	return &Geometry{
+		isOwned: true,
+		handle:  hndl,
+	}, nil
 }
 
-//Bounds returns the geometry's envelope in the order minx,miny,maxx,maxy
+// Union generates a new geometry which is the region of union of the two geometries operated on.
+func (g *Geometry) Union(other *Geometry, opts ...UnionOption) (*Geometry, error) {
+	// If other geometry is nil, GDAL crashes
+	if other == nil || other.handle == nil {
+		return nil, errors.New("other geometry is empty")
+	}
+	uo := &unionOpts{}
+	for _, o := range opts {
+		o.setUnionOpt(uo)
+	}
+	cgc := createCGOContext(nil, uo.errorHandler)
+	hndl := C.godal_OGR_G_Union(cgc.cPointer(), g.handle, other.handle)
+	if err := cgc.close(); err != nil {
+		return nil, err
+	}
+	return &Geometry{
+		isOwned: true,
+		handle:  hndl,
+	}, nil
+}
+
+// Contains tests if this geometry contains the other geometry.
+func (g *Geometry) Contains(other *Geometry) bool {
+	ret := C.OGR_G_Contains(g.handle, other.handle)
+	return ret != 0
+}
+
+// Empty returns true if the geometry is empty
+func (g *Geometry) Empty() bool {
+	ret := C.OGR_G_IsEmpty(g.handle)
+	return ret != 0
+}
+
+// Valid returns true is the geometry is valid
+func (g *Geometry) Valid() bool {
+	ret := C.OGR_G_IsValid(g.handle)
+	return ret != 0
+}
+
+// Bounds returns the geometry's envelope in the order minx,miny,maxx,maxy
 func (g *Geometry) Bounds(opts ...BoundsOption) ([4]float64, error) {
 	bo := boundsOpts{}
 	for _, o := range opts {
@@ -2375,12 +2779,12 @@ func (g *Geometry) Close() {
 	g.handle = nil
 }
 
-//Feature is a Layer feature
+// Feature is a Layer feature
 type Feature struct {
 	handle C.OGRFeatureH
 }
 
-//Geometry returns a handle to the feature's geometry
+// Geometry returns a handle to the feature's geometry
 func (f *Feature) Geometry() *Geometry {
 	hndl := C.OGR_F_GetGeometryRef(f.handle)
 	return &Geometry{
@@ -2389,7 +2793,7 @@ func (f *Feature) Geometry() *Geometry {
 	}
 }
 
-//SetGeometry overwrites the feature's geometry
+// SetGeometry overwrites the feature's geometry
 func (f *Feature) SetGeometry(geom *Geometry, opts ...SetGeometryOption) error {
 	sgo := &setGeometryOpts{}
 	for _, o := range opts {
@@ -2400,65 +2804,234 @@ func (f *Feature) SetGeometry(geom *Geometry, opts ...SetGeometryOption) error {
 	return cgc.close()
 }
 
-//Field is a Feature attribute
-type Field struct {
-	ftype    FieldType
-	intVal   int64
-	floatVal float64
-	strVal   string
-	//byteVal  []byte
+// SetGeometryColumnName set the name of feature first geometry field.
+func (f *Feature) SetGeometryColumnName(name string) {
+	cname := C.CString(name)
+	defer C.free(unsafe.Pointer(cname))
+	gfdef := C.OGR_F_GetGeomFieldDefnRef(f.handle, C.int(0))
+	if gfdef != nil {
+		C.OGR_GFld_SetName(gfdef, (*C.char)(unsafe.Pointer(cname)))
+	}
 }
 
-//Type returns the field's native type
+// SetFID set feature identifier
+func (f *Feature) SetFID(fid int64) {
+	// OGR error returned is always none, so we don't handle it
+	C.OGR_F_SetFID(f.handle, C.GIntBig(fid))
+}
+
+// SetFieldValue set feature's field value
+func (f *Feature) SetFieldValue(field Field, value interface{}, opts ...SetFieldValueOption) error {
+	sfvo := &setFieldValueOpts{}
+	for _, o := range opts {
+		o.setSetFieldValueOpt(sfvo)
+	}
+	cgc := createCGOContext(nil, sfvo.errorHandler)
+
+	switch field.ftype {
+	case FTInt:
+		intValue, ok := value.(int)
+		if !ok {
+			return errors.New("value for this field must be of type 'int'")
+		}
+		C.godalFeatureSetFieldInteger(cgc.cPointer(), f.handle, C.int(field.index), C.int(intValue))
+	case FTInt64:
+		int64Value, ok := value.(int64)
+		if !ok {
+			return errors.New("value for this field must be of type 'int64'")
+		}
+		C.godalFeatureSetFieldInteger64(cgc.cPointer(), f.handle, C.int(field.index), C.longlong(int64Value))
+	case FTReal:
+		floatValue, ok := value.(float64)
+		if !ok {
+			return errors.New("value for this field must be of type 'float64'")
+		}
+		C.godalFeatureSetFieldDouble(cgc.cPointer(), f.handle, C.int(field.index), C.double(floatValue))
+	case FTString:
+		stringValue, ok := value.(string)
+		if !ok {
+			return errors.New("value for this field must be of type 'string'")
+		}
+		cval := C.CString(stringValue)
+		defer C.free(unsafe.Pointer(cval))
+		C.godalFeatureSetFieldString(cgc.cPointer(), f.handle, C.int(field.index), cval)
+	case FTDate, FTTime, FTDateTime:
+		timeValue, ok := value.(time.Time)
+		if !ok {
+			return errors.New("value for this field must be of type 'time.Time'")
+		}
+		timeZone := 0 // 0=unknown, 1=localtime, 100=GMT, 101=GMT+15minute, 99=GMT-15minute...
+		if timeValue.Location() == time.Local {
+			timeZone = 1
+		} else {
+			_, offset := timeValue.Zone()
+			timeZone = offset/60/15 + 100
+		}
+		C.godalFeatureSetFieldDateTime(
+			cgc.cPointer(),
+			f.handle,
+			C.int(field.index),
+			C.int(timeValue.Year()),
+			C.int(timeValue.Month()),
+			C.int(timeValue.Day()),
+			C.int(timeValue.Hour()),
+			C.int(timeValue.Minute()),
+			C.int(timeValue.Second()),
+			C.int(timeZone),
+		)
+	case FTIntList:
+		intListValue, ok := value.([]int)
+		if !ok {
+			return errors.New("value for this field must be of type '[]int'")
+		}
+		C.godalFeatureSetFieldIntegerList(cgc.cPointer(), f.handle, C.int(field.index), C.int(len(intListValue)), cIntArray(intListValue))
+	case FTInt64List:
+		int64ListValue, ok := value.([]int64)
+		if !ok {
+			return errors.New("value for this field must be of type '[]int64'")
+		}
+		C.godalFeatureSetFieldInteger64List(cgc.cPointer(), f.handle, C.int(field.index), C.int(len(int64ListValue)), cLongArray(int64ListValue))
+	case FTRealList:
+		float64ListValue, ok := value.([]float64)
+		if !ok {
+			return errors.New("value for this field must be of type '[]float64'")
+		}
+		C.godalFeatureSetFieldDoubleList(cgc.cPointer(), f.handle, C.int(field.index), C.int(len(float64ListValue)), cDoubleArray(float64ListValue))
+	case FTStringList:
+		stringListValue, ok := value.([]string)
+		if !ok {
+			return errors.New("value for this field must be of type '[]float64'")
+		}
+		cArray := sliceToCStringArray(stringListValue)
+		C.godalFeatureSetFieldStringList(cgc.cPointer(), f.handle, C.int(field.index), cArray.cPointer())
+		cArray.free()
+	case FTBinary:
+		bytesValue, ok := value.([]byte)
+		if !ok {
+			return errors.New("value for this field must be of type '[]byte'")
+		}
+		C.godalFeatureSetFieldBinary(cgc.cPointer(), f.handle, C.int(field.index), C.int(len(bytesValue)), unsafe.Pointer(&bytesValue[0]))
+	default:
+		cgc.close() //avoid resource leak
+		return errors.New("setting value is not implemented for this type of field")
+	}
+
+	return cgc.close()
+}
+
+// Field is a Feature attribute
+type Field struct {
+	index int
+	isSet bool
+	ftype FieldType
+	val   interface{}
+}
+
+// IsSet returns if the field has ever been assigned a value or not.
+func (fld Field) IsSet() bool {
+	return fld.isSet
+}
+
+// Type returns the field's native type
 func (fld Field) Type() FieldType {
 	return fld.ftype
 }
 
-//Int returns the Field as an integer
+// Int returns the Field as an integer
 func (fld Field) Int() int64 {
 	switch fld.ftype {
 	case FTInt, FTInt64:
-		return fld.intVal
+		return fld.val.(int64)
 	case FTReal:
-		return int64(fld.floatVal)
+		return int64(fld.val.(float64))
 	case FTString:
-		ii, _ := strconv.Atoi(fld.strVal)
+		ii, _ := strconv.Atoi(fld.val.(string))
 		return int64(ii)
 	default:
 		return 0
 	}
 }
 
-//Float returns the field as a float64
+// Float returns the field as a float64
 func (fld Field) Float() float64 {
 	switch fld.ftype {
 	case FTInt, FTInt64:
-		return float64(fld.intVal)
+		return float64(fld.val.(int64))
 	case FTReal:
-		return fld.floatVal
+		return fld.val.(float64)
 	case FTString:
-		ii, _ := strconv.ParseFloat(fld.strVal, 64)
+		ii, _ := strconv.ParseFloat(fld.val.(string), 64)
 		return ii
 	default:
 		return 0
 	}
 }
 
-//String returns the field as a string
+// String returns the field as a string
 func (fld Field) String() string {
 	switch fld.ftype {
 	case FTInt, FTInt64:
-		return fmt.Sprintf("%d", fld.intVal)
+		return fmt.Sprintf("%d", fld.val.(int64))
 	case FTReal:
-		return fmt.Sprintf("%f", fld.floatVal)
+		return fmt.Sprintf("%f", fld.val.(float64))
 	case FTString:
-		return fld.strVal
+		return fld.val.(string)
 	default:
 		return ""
 	}
 }
 
-//Fields returns all the Feature's fields
+// Bytes returns the field as a byte slice
+func (fld Field) Bytes() []byte {
+	switch fld.ftype {
+	case FTBinary:
+		return fld.val.([]byte)
+	default:
+		return nil
+	}
+}
+
+// DateTime returns the field as a date time
+func (fld Field) DateTime() *time.Time {
+	switch fld.ftype {
+	case FTDate, FTTime, FTDateTime:
+		return fld.val.(*time.Time)
+	default:
+		return nil
+	}
+}
+
+// IntList returns the field as a list of integer
+func (fld Field) IntList() []int64 {
+	switch fld.ftype {
+	case FTIntList, FTInt64List:
+		return fld.val.([]int64)
+	default:
+		return nil
+	}
+}
+
+// FloatList returns the field as a list of float64
+func (fld Field) FloatList() []float64 {
+	switch fld.ftype {
+	case FTRealList:
+		return fld.val.([]float64)
+	default:
+		return nil
+	}
+}
+
+// StringList returns the field as a list of string
+func (fld Field) StringList() []string {
+	switch fld.ftype {
+	case FTStringList:
+		return fld.val.([]string)
+	default:
+		return nil
+	}
+}
+
+// Fields returns all the Feature's fields
 func (f *Feature) Fields() map[string]Field {
 	fcount := C.OGR_F_GetFieldCount(f.handle)
 	if fcount == 0 {
@@ -2469,52 +3042,101 @@ func (f *Feature) Fields() map[string]Field {
 		fdefn := C.OGR_F_GetFieldDefnRef(f.handle, fid)
 		fname := C.GoString(C.OGR_Fld_GetNameRef(fdefn))
 		ftype := C.OGR_Fld_GetType(fdefn)
-		fld := Field{}
+		fld := Field{
+			index: int(fid),
+			isSet: C.OGR_F_IsFieldSet(f.handle, fid) != 0,
+		}
 		switch ftype {
 		case C.OFTInteger:
 			fld.ftype = FTInt
-			fld.intVal = int64(C.OGR_F_GetFieldAsInteger64(f.handle, fid))
+			fld.val = int64(C.OGR_F_GetFieldAsInteger64(f.handle, fid))
 		case C.OFTInteger64:
 			fld.ftype = FTInt64
-			fld.intVal = int64(C.OGR_F_GetFieldAsInteger64(f.handle, fid))
+			fld.val = int64(C.OGR_F_GetFieldAsInteger64(f.handle, fid))
 		case C.OFTReal:
 			fld.ftype = FTReal
-			fld.floatVal = float64(C.OGR_F_GetFieldAsDouble(f.handle, fid))
+			fld.val = float64(C.OGR_F_GetFieldAsDouble(f.handle, fid))
 		case C.OFTString:
 			fld.ftype = FTString
-			fld.strVal = C.GoString(C.OGR_F_GetFieldAsString(f.handle, fid))
-			/*
-				case C.OFTBinary:
-					fallthrough
-					//fld.ftype = FTBinary
-					//var ll C.int
-					//cdata := C.OGR_F_GetFieldAsBinary(f.handle, fid, &ll)
-					//fld.byteVal = C.GoBytes(unsafe.Pointer(cdata), ll)
-				case C.OFTDate:
-					fallthrough
-				case C.OFTTime:
-					fallthrough
-				case C.OFTDateTime:
-					fallthrough
-				case C.OFTInteger64List:
-					fallthrough
-				case C.OFTIntegerList:
-					fallthrough
-				case C.OFTStringList:
-					fallthrough
-				case C.OFTRealList:
-					fallthrough
-			*/
+			fld.val = C.GoString(C.OGR_F_GetFieldAsString(f.handle, fid))
+		case C.OFTDate:
+			fld.ftype = FTDate
+			fld.val = f.getFieldAsDateTime(fid)
+		case C.OFTTime:
+			fld.ftype = FTTime
+			fld.val = f.getFieldAsDateTime(fid)
+		case C.OFTDateTime:
+			fld.ftype = FTDateTime
+			fld.val = f.getFieldAsDateTime(fid)
+		case C.OFTIntegerList:
+			fld.ftype = FTIntList
+			var length C.int
+			cArray := C.OGR_F_GetFieldAsIntegerList(f.handle, fid, &length)
+			fld.val = cIntArrayToSlice(cArray, length)
+		case C.OFTInteger64List:
+			fld.ftype = FTInt64List
+			var length C.int
+			cArray := C.OGR_F_GetFieldAsInteger64List(f.handle, fid, &length)
+			fld.val = cLongArrayToSlice(cArray, length)
+		case C.OFTRealList:
+			fld.ftype = FTRealList
+			var length C.int
+			cArray := C.OGR_F_GetFieldAsDoubleList(f.handle, fid, &length)
+			fld.val = cDoubleArrayToSlice(cArray, length)
+		case C.OFTStringList:
+			fld.ftype = FTStringList
+			cArray := C.OGR_F_GetFieldAsStringList(f.handle, fid)
+			fld.val = cStringArrayToSlice(cArray)
+		case C.OFTBinary:
+			fld.ftype = FTBinary
+			var length C.int
+			cArray := C.OGR_F_GetFieldAsBinary(f.handle, fid, &length)
+			var slice []byte
+			if cArray != nil {
+				slice = C.GoBytes(unsafe.Pointer(cArray), length)
+			}
+			fld.val = slice
 		default:
-			//TODO
-			continue
+			// Only deprecated field types like FTWideString & WideStringList should be handled by default case
+			fld.ftype = FTUnknown
 		}
 		retm[fname] = fld
 	}
 	return retm
 }
 
-//Close releases resources associated to a feature
+// Fetch field as date and time
+func (f *Feature) getFieldAsDateTime(index C.int) *time.Time {
+	var year, month, day, hour, minute, second, tzFlag int
+	ret := C.OGR_F_GetFieldAsDateTime(
+		f.handle,
+		index,
+		(*C.int)(unsafe.Pointer(&year)),
+		(*C.int)(unsafe.Pointer(&month)),
+		(*C.int)(unsafe.Pointer(&day)),
+		(*C.int)(unsafe.Pointer(&hour)),
+		(*C.int)(unsafe.Pointer(&minute)),
+		(*C.int)(unsafe.Pointer(&second)),
+		(*C.int)(unsafe.Pointer(&tzFlag)),
+	)
+	if ret != 0 {
+		var location *time.Location
+		// 0=unknown, 1=localtime, 100=GMT, 101=GMT+15minute, 99=GMT-15minute...
+		switch tzFlag {
+		case 0:
+			location = &time.Location{}
+		case 1:
+			location = time.Local
+		default:
+			location = time.FixedZone(fmt.Sprintf("zone_%d", tzFlag), (tzFlag-100)*15*60)
+		}
+		t := time.Date(year, time.Month(month), day, hour, minute, second, 0, location)
+		return &t
+	}
+	return nil
+}
+
+// Close releases resources associated to a feature
 func (f *Feature) Close() {
 	if f.handle == nil {
 		return
@@ -2538,7 +3160,21 @@ func (layer Layer) NextFeature() *Feature {
 	return &Feature{hndl}
 }
 
-// NewFeature creates a feature on Layer
+// CreateFeature creates a feature on Layer
+func (layer Layer) CreateFeature(feat *Feature, opts ...CreateFeatureOption) error {
+	cfo := createFeatureOpts{}
+	for _, opt := range opts {
+		opt.setCreateFeatureOpt(&cfo)
+	}
+	cgc := createCGOContext(nil, cfo.errorHandler)
+	C.godalLayerCreateFeature(cgc.cPointer(), layer.handle(), feat.handle)
+	if err := cgc.close(); err != nil {
+		return err
+	}
+	return nil
+}
+
+// NewFeature creates a feature on Layer from a geometry
 func (layer Layer) NewFeature(geom *Geometry, opts ...NewFeatureOption) (*Feature, error) {
 	nfo := newFeatureOpts{}
 	for _, opt := range opts {
@@ -2581,7 +3217,7 @@ func (layer Layer) DeleteFeature(feat *Feature, opts ...DeleteFeatureOption) err
 // CreateLayer creates a new vector layer
 //
 // Available CreateLayerOptions are
-//  - FieldDefinition (may be used multiple times) to add attribute fields to the layer
+//   - FieldDefinition (may be used multiple times) to add attribute fields to the layer
 func (ds *Dataset) CreateLayer(name string, sr *SpatialRef, gtype GeometryType, opts ...CreateLayerOption) (Layer, error) {
 	co := createLayerOpts{}
 	for _, opt := range opts {
@@ -2607,6 +3243,33 @@ func (ds *Dataset) CreateLayer(name string, sr *SpatialRef, gtype GeometryType, 
 		}
 	}
 	return Layer{majorObject{C.GDALMajorObjectH(hndl)}}, nil
+}
+
+// CopyLayer Duplicate an existing layer.
+func (ds *Dataset) CopyLayer(source Layer, name string, opts ...CopyLayerOption) (Layer, error) {
+	co := copyLayerOpts{}
+	for _, opt := range opts {
+		opt.setCopyLayerOpt(&co)
+	}
+	cname := C.CString(name)
+	defer C.free(unsafe.Pointer(cname))
+	cgc := createCGOContext(nil, co.errorHandler)
+	hndl := C.godalCopyLayer(cgc.cPointer(), ds.handle(), source.handle(), (*C.char)(unsafe.Pointer(cname)))
+	if err := cgc.close(); err != nil {
+		return Layer{}, err
+	}
+	return Layer{majorObject{C.GDALMajorObjectH(hndl)}}, nil
+}
+
+// LayerByName fetch a layer by name. Returns nil if not found.
+func (ds *Dataset) LayerByName(name string) *Layer {
+	cname := C.CString(name)
+	defer C.free(unsafe.Pointer(cname))
+	hndl := C.GDALDatasetGetLayerByName(ds.handle(), (*C.char)(unsafe.Pointer(cname)))
+	if hndl == nil {
+		return nil
+	}
+	return &Layer{majorObject{C.GDALMajorObjectH(hndl)}}
 }
 
 // NewGeometryFromGeoJSON creates a new Geometry from its GeoJSON representation
@@ -2664,7 +3327,7 @@ func NewGeometryFromWKB(wkb []byte, sr *SpatialRef, opts ...NewGeometryOption) (
 	return &Geometry{isOwned: true, handle: hndl}, nil
 }
 
-//WKT returns the Geomtry's WKT representation
+// WKT returns the Geomtry's WKT representation
 func (g *Geometry) WKT(opts ...GeometryWKTOption) (string, error) {
 	wo := &geometryWKTOpts{}
 	for _, o := range opts {
@@ -2680,7 +3343,7 @@ func (g *Geometry) WKT(opts ...GeometryWKTOption) (string, error) {
 	return wkt, nil
 }
 
-//WKB returns the Geomtry's WKB representation
+// WKB returns the Geomtry's WKB representation
 func (g *Geometry) WKB(opts ...GeometryWKBOption) ([]byte, error) {
 	wo := &geometryWKBOpts{}
 	for _, o := range opts {
@@ -2740,7 +3403,7 @@ func (g *Geometry) Transform(trn *Transform, opts ...GeometryTransformOption) er
 // projection per RFCxxx
 //
 // Available GeoJSONOptions are
-//  - SignificantDigits(n int) to keep n significant digits after the decimal separator (default: 8)
+//   - SignificantDigits(n int) to keep n significant digits after the decimal separator (default: 8)
 func (g *Geometry) GeoJSON(opts ...GeoJSONOption) (string, error) {
 	gjo := geojsonOpts{
 		precision: 7,
@@ -2756,15 +3419,41 @@ func (g *Geometry) GeoJSON(opts ...GeoJSONOption) (string, error) {
 	wkt := C.GoString(gjdata)
 	C.CPLFree(unsafe.Pointer(gjdata))
 	return wkt, nil
-
 }
 
-//VSIFile is a handler around gdal's vsi handlers
+// GML returns the geometry in GML format.
+// See the GDAL exportToGML doc page to determine the GML conversion options that can be set through CreationOption.
+//
+// Example of conversion options :
+//
+//	g.GML(CreationOption("FORMAT=GML3","GML3_LONGSRS=YES"))
+func (g *Geometry) GML(opts ...GMLExportOption) (string, error) {
+	gmlo := &gmlExportOpts{}
+	for _, o := range opts {
+		o.setGMLExportOpt(gmlo)
+	}
+	switches := make([]string, len(gmlo.creation))
+	for i, copt := range gmlo.creation {
+		switches[i] = copt
+	}
+	cswitches := sliceToCStringArray(switches)
+	defer cswitches.free()
+	cgc := createCGOContext(nil, gmlo.errorHandler)
+	cgml := C.godalExportGeometryGML(cgc.cPointer(), g.handle, cswitches.cPointer())
+	if err := cgc.close(); err != nil {
+		return "", err
+	}
+	gml := C.GoString(cgml)
+	C.CPLFree(unsafe.Pointer(cgml))
+	return gml, nil
+}
+
+// VSIFile is a handler around gdal's vsi handlers
 type VSIFile struct {
 	handle *C.VSILFILE
 }
 
-//VSIOpen opens path. path can be virtual, eg beginning with /vsimem/
+// VSIOpen opens path. path can be virtual, eg beginning with /vsimem/
 func VSIOpen(path string, opts ...VSIOpenOption) (*VSIFile, error) {
 	vo := &vsiOpenOpts{}
 	for _, o := range opts {
@@ -2780,7 +3469,7 @@ func VSIOpen(path string, opts ...VSIOpenOption) (*VSIFile, error) {
 	return &VSIFile{hndl}, nil
 }
 
-//Close closes the VSIFile. Must be called exactly once.
+// Close closes the VSIFile. Must be called exactly once.
 func (vf *VSIFile) Close() error {
 	if vf.handle == nil {
 		return fmt.Errorf("already closed")
@@ -2794,7 +3483,7 @@ func (vf *VSIFile) Close() error {
 	return nil
 }
 
-//VSIUnlink deletes path
+// VSIUnlink deletes path
 func VSIUnlink(path string, opts ...VSIUnlinkOption) error {
 	vo := &vsiUnlinkOpts{}
 	for _, o := range opts {
@@ -2852,7 +3541,12 @@ type KeyMultiReader interface {
 //export _gogdalSizeCallback
 func _gogdalSizeCallback(ckey *C.char, errorString **C.char) C.longlong {
 	key := C.GoString(ckey)
-	cbd := getGoGDALReader(key)
+	cbd, err := getGoGDALReader(key)
+	if err != nil {
+		*errorString = C.CString(err.Error())
+		return -1
+	}
+
 	if cbd.prefix > 0 {
 		key = key[cbd.prefix:]
 	}
@@ -2866,7 +3560,11 @@ func _gogdalSizeCallback(ckey *C.char, errorString **C.char) C.longlong {
 //export _gogdalMultiReadCallback
 func _gogdalMultiReadCallback(ckey *C.char, nRanges C.int, pocbuffers unsafe.Pointer, coffsets unsafe.Pointer, clengths unsafe.Pointer, errorString **C.char) C.int {
 	key := C.GoString(ckey)
-	cbd := getGoGDALReader(key)
+	cbd, err := getGoGDALReader(key)
+	if err != nil {
+		*errorString = C.CString(err.Error())
+		return -1
+	}
 	/* cbd == nil would be a bug elsewhere */
 	if cbd.prefix > 0 {
 		key = key[cbd.prefix:]
@@ -2884,7 +3582,6 @@ func _gogdalMultiReadCallback(ckey *C.char, nRanges C.int, pocbuffers unsafe.Poi
 		buffers[b] = (*[1 << 28]byte)(unsafe.Pointer(cbuffers[b]))[:l:l]
 		goffsets[b] = int64(offsets[b])
 	}
-	var err error
 	_, err = cbd.ReadAtMulti(key, buffers, goffsets)
 	if err != nil && err != io.EOF {
 		*errorString = C.CString(err.Error())
@@ -2897,7 +3594,11 @@ func _gogdalMultiReadCallback(ckey *C.char, nRanges C.int, pocbuffers unsafe.Poi
 func _gogdalReadCallback(ckey *C.char, buffer unsafe.Pointer, off C.size_t, clen C.size_t, errorString **C.char) C.size_t {
 	l := int(clen)
 	key := C.GoString(ckey)
-	cbd := getGoGDALReader(key)
+	cbd, err := getGoGDALReader(key)
+	if err != nil {
+		*errorString = C.CString(err.Error())
+		return 0
+	}
 	if cbd.prefix > 0 {
 		key = key[cbd.prefix:]
 	}
@@ -2911,13 +3612,13 @@ func _gogdalReadCallback(ckey *C.char, buffer unsafe.Pointer, off C.size_t, clen
 
 var handlers map[string]vsiHandler
 
-func getGoGDALReader(key string) vsiHandler {
+func getGoGDALReader(key string) (vsiHandler, error) {
 	for prefix, handler := range handlers {
 		if strings.HasPrefix(key, prefix) {
-			return handler
+			return handler, nil
 		}
 	}
-	return vsiHandler{}
+	return vsiHandler{}, fmt.Errorf("no handler registered")
 }
 
 type vsiHandler struct {
@@ -2965,9 +3666,12 @@ func (sp vsiHandler) ReadAtMulti(key string, bufs [][]byte, offs []int64) ([]int
 
 // RegisterVSIHandler registers an osio.Adapter on the given prefix.
 // When registering an adapter with
-//  RegisterVSIHandler("scheme://",handler)
+//
+//	RegisterVSIHandler("scheme://",handler)
+//
 // calling Open("scheme://myfile.txt") will result in godal making calls to
-//  adapter.Reader("myfile.txt").ReadAt(buf,offset)
+//
+//	adapter.Reader("myfile.txt").ReadAt(buf,offset)
 func RegisterVSIHandler(prefix string, handler KeySizerReaderAt, opts ...VSIHandlerOption) error {
 	opt := vsiHandlerOpts{
 		bufferSize:  64 * 1024,
@@ -2996,7 +3700,7 @@ func RegisterVSIHandler(prefix string, handler KeySizerReaderAt, opts ...VSIHand
 	return nil
 }
 
-//BuildVRT runs the GDALBuildVRT function and creates a VRT dataset from a list of datasets
+// BuildVRT runs the GDALBuildVRT function and creates a VRT dataset from a list of datasets
 func BuildVRT(dstVRTName string, sourceDatasets []string, switches []string, opts ...BuildVRTOption) (*Dataset, error) {
 	bvo := buildVRTOpts{}
 	for _, o := range opts {
@@ -3054,9 +3758,10 @@ func (cgc cgoContext) cPointer() *C.cctx {
 	return cgc.cctx
 }
 
-//frees the context and returns any error it may contain
+// frees the context and returns any error it may contain
 func (cgc cgoContext) close() error {
 	cgc.opts.free()
+	defer C.free(unsafe.Pointer(cgc.cctx))
 	if cgc.cctx.errMessage != nil {
 		/* debug code
 		if cgc.cctx.handlerIdx != 0 {

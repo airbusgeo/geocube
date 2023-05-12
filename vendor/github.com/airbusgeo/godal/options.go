@@ -16,10 +16,10 @@ package godal
 
 import "sort"
 
-//GetGeoTransformOption is an option that can be passed to Dataset.GeoTransform()
+// GetGeoTransformOption is an option that can be passed to Dataset.GeoTransform()
 //
 // Available GetGeoTransformOptions are:
-//  - ErrLogger
+//   - ErrLogger
 type GetGeoTransformOption interface {
 	setGetGeoTransformOpt(ndo *getGeoTransformOpts)
 }
@@ -27,10 +27,10 @@ type getGeoTransformOpts struct {
 	errorHandler ErrorHandler
 }
 
-//SetGeoTransformOption is an option that can be passed to Dataset.SetGeoTransform()
+// SetGeoTransformOption is an option that can be passed to Dataset.SetGeoTransform()
 //
 // Available SetGeoTransformOptions are:
-//  - ErrLogger
+//   - ErrLogger
 type SetGeoTransformOption interface {
 	setSetGeoTransformOpt(ndo *setGeoTransformOpts)
 }
@@ -38,10 +38,10 @@ type setGeoTransformOpts struct {
 	errorHandler ErrorHandler
 }
 
-//SetProjectionOption is an option that can be passed to Dataset.SetProjection
+// SetProjectionOption is an option that can be passed to Dataset.SetProjection
 //
 // Available SetProjection are:
-//  - ErrLogger
+//   - ErrLogger
 type SetProjectionOption interface {
 	setSetProjectionOpt(ndo *setProjectionOpts)
 }
@@ -49,10 +49,10 @@ type setProjectionOpts struct {
 	errorHandler ErrorHandler
 }
 
-//SetSpatialRefOption is an option that can be passed to Dataset.SetSpatialRef
+// SetSpatialRefOption is an option that can be passed to Dataset.SetSpatialRef
 //
 // Available SetProjection are:
-//  - ErrLogger
+//   - ErrLogger
 type SetSpatialRefOption interface {
 	setSetSpatialRefOpt(ndo *setSpatialRefOpts)
 }
@@ -60,11 +60,11 @@ type setSpatialRefOpts struct {
 	errorHandler ErrorHandler
 }
 
-//SetNoDataOption is an option that can be passed to Band.SetNodata(),
-//Band.ClearNodata(), Dataset.SetNodata()
+// SetNoDataOption is an option that can be passed to Band.SetNodata(),
+// Band.ClearNodata(), Dataset.SetNodata()
 //
 // Available SetNoDataOptions are:
-//  - ErrLogger
+//   - ErrLogger
 type SetNoDataOption interface {
 	setSetNoDataOpt(ndo *setNodataOpts)
 }
@@ -72,10 +72,22 @@ type setNodataOpts struct {
 	errorHandler ErrorHandler
 }
 
-//SetColorInterpOption is an option that can be passed to Band.SetColorInterpretation()
+// SetScaleOffsetOption is an option that can be passed to Band.SetScaleOffset(),
+// Band.ClearScaleOffset(), Dataset.SetScaleOffset()
+//
+// Available SetScaleOffsetOptions are:
+//   - ErrLogger
+type SetScaleOffsetOption interface {
+	setSetScaleOffsetOpt(so *setScaleOffsetOpts)
+}
+type setScaleOffsetOpts struct {
+	errorHandler ErrorHandler
+}
+
+// SetColorInterpOption is an option that can be passed to Band.SetColorInterpretation()
 //
 // Available SetColorInterpOption are:
-//  - ErrLogger
+//   - ErrLogger
 type SetColorInterpOption interface {
 	setSetColorInterpOpt(ndo *setColorInterpOpts)
 }
@@ -83,10 +95,10 @@ type setColorInterpOpts struct {
 	errorHandler ErrorHandler
 }
 
-//SetColorTableOption is an option that can be passed to Band.SetColorTable()
+// SetColorTableOption is an option that can be passed to Band.SetColorTable()
 //
 // Available SetColorTableOption are:
-//  - ErrLogger
+//   - ErrLogger
 type SetColorTableOption interface {
 	setSetColorTableOpt(ndo *setColorTableOpts)
 }
@@ -101,7 +113,7 @@ type fillBandOpts struct {
 // FillBandOption is an option that can be passed to Band.Fill()
 //
 // Available FillBandOptions are:
-//  - ErrLogger
+//   - ErrLogger
 type FillBandOption interface {
 	setFillBandOpt(o *fillBandOpts)
 }
@@ -114,8 +126,8 @@ type bandCreateMaskOpts struct {
 // BandCreateMaskOption is an option that can be passed to Band.CreateMask()
 //
 // Available BandCreateMaskOptions are:
-//  - ConfigOption
-//  - ErrLogger
+//   - ConfigOption
+//   - ErrLogger
 type BandCreateMaskOption interface {
 	setBandCreateMaskOpt(dcm *bandCreateMaskOpts)
 }
@@ -132,13 +144,13 @@ type bandIOOpts struct {
 // BandIOOption is an option to modify the default behavior of band.IO
 //
 // Available BandIOOptions are:
-//  - PixelStride
-//  - LineStride
-//  - Window
-//  - Resampling
-//  - ConfigOption
-//  - PixelSpacing
-//  - LineSpacing
+//   - PixelStride
+//   - LineStride
+//   - Window
+//   - Resampling
+//   - ConfigOption
+//   - PixelSpacing
+//   - LineSpacing
 type BandIOOption interface {
 	setBandIOOpt(ro *bandIOOpts)
 }
@@ -154,11 +166,11 @@ type fillnodataOpts struct {
 // FillNoDataOption is an option that can be passed to band.FillNoData
 //
 // Available FillNoDataOptions are:
-//  - MaxDistance(int): The maximum distance (in pixels) that the algorithm will
-//    search out for values to interpolate. The default is 100 pixels.
-//  - SmoothIterations(int): The number of 3x3 average filter smoothing iterations
-//    to run after the interpolation to dampen artifacts. The default is zero smoothing iterations.
-//  - Mask(band) to use given band as nodata mask. The default uses the internal nodata mask
+//   - MaxDistance(int): The maximum distance (in pixels) that the algorithm will
+//     search out for values to interpolate. The default is 100 pixels.
+//   - SmoothIterations(int): The number of 3x3 average filter smoothing iterations
+//     to run after the interpolation to dampen artifacts. The default is zero smoothing iterations.
+//   - Mask(band) to use given band as nodata mask. The default uses the internal nodata mask
 type FillNoDataOption interface {
 	setFillnodataOpt(ro *fillnodataOpts)
 }
@@ -173,10 +185,10 @@ type sieveFilterOpts struct {
 // SieveFilterOption is an option to modify the behavior of Band.SieveFilter
 //
 // Available SieveFilterOptions are:
-//  - EightConnected() to enable 8-connectivity. Leave out completely for 4-connectivity (default)
-//  - Mask(band) to use given band as nodata mask instead of the internal nodata mask
-//  - NoMask() to ignore the the source band's nodata value or mask band
-//  - Destination(band) where to output the sieved band, instead of updating in-place
+//   - EightConnected() to enable 8-connectivity. Leave out completely for 4-connectivity (default)
+//   - Mask(band) to use given band as nodata mask instead of the internal nodata mask
+//   - NoMask() to ignore the the source band's nodata value or mask band
+//   - Destination(band) where to output the sieved band, instead of updating in-place
 type SieveFilterOption interface {
 	setSieveFilterOpt(sfo *sieveFilterOpts)
 }
@@ -191,10 +203,10 @@ type polygonizeOpts struct {
 // PolygonizeOption is an option to modify the default behavior of band.Polygonize
 //
 // Available PolygonizeOptions are:
-//  - EightConnected() to enable 8-connectivity. Leave out completely for 4-connectivity (default)
-//  - PixelValueFieldIndex(fieldidx) to populate the fieldidx'th field of the output
-//    dataset with the polygon's pixel value
-//  - Mask(band) to use given band as nodata mask instead of the internal nodata mask
+//   - EightConnected() to enable 8-connectivity. Leave out completely for 4-connectivity (default)
+//   - PixelValueFieldIndex(fieldidx) to populate the fieldidx'th field of the output
+//     dataset with the polygon's pixel value
+//   - Mask(band) to use given band as nodata mask instead of the internal nodata mask
 type PolygonizeOption interface {
 	setPolygonizeOpt(ro *polygonizeOpts)
 }
@@ -207,7 +219,7 @@ type dsCreateMaskOpts struct {
 // DatasetCreateMaskOption is an option that can be passed to Dataset.CreateMaskBand()
 //
 // Available DatasetCreateMaskOptions are:
-//  - ConfigOption
+//   - ConfigOption
 type DatasetCreateMaskOption interface {
 	setDatasetCreateMaskOpt(dcm *dsCreateMaskOpts)
 }
@@ -222,9 +234,9 @@ type dsTranslateOpts struct {
 // DatasetTranslateOption is an option that can be passed to Dataset.Translate()
 //
 // Available DatasetTranslateOptions are:
-//  - ConfigOption
-//  - CreationOption
-//  - DriverName
+//   - ConfigOption
+//   - CreationOption
+//   - DriverName
 type DatasetTranslateOption interface {
 	setDatasetTranslateOpt(dto *dsTranslateOpts)
 }
@@ -239,9 +251,9 @@ type dsWarpOpts struct {
 // DatasetWarpOption is an option that can be passed to Dataset.Warp()
 //
 // Available DatasetWarpOptions are:
-//  - ConfigOption
-//  - CreationOption
-//  - DriverName
+//   - ConfigOption
+//   - CreationOption
+//   - DriverName
 type DatasetWarpOption interface {
 	setDatasetWarpOpt(dwo *dsWarpOpts)
 }
@@ -249,7 +261,7 @@ type DatasetWarpOption interface {
 // DatasetWarpIntoOption is an option that can be passed to Dataset.WarpInto()
 //
 // Available DatasetWarpIntoOption is:
-//  - ConfigOption
+//   - ConfigOption
 type DatasetWarpIntoOption interface {
 	setDatasetWarpIntoOpt(dwo *dsWarpIntoOpts)
 }
@@ -271,11 +283,11 @@ type buildOvrOpts struct {
 // BuildOverviewsOption is an option to specify how overview building should behave.
 //
 // Available BuildOverviewsOptions are:
-//  - ConfigOption
-//  - Resampling
-//  - Levels
-//  - MinSize
-//  - Bands
+//   - ConfigOption
+//   - Resampling
+//   - Levels
+//   - MinSize
+//   - Bands
 type BuildOverviewsOption interface {
 	setBuildOverviewsOpt(bo *buildOvrOpts)
 }
@@ -286,7 +298,7 @@ type clearOvrOpts struct {
 // ClearOverviewsOption is an option passed to Dataset.ClearOverviews
 //
 // Available options are:
-//  - ErrLogger
+//   - ErrLogger
 type ClearOverviewsOption interface {
 	setClearOverviewsOpt(bo *clearOvrOpts)
 }
@@ -305,17 +317,17 @@ type datasetIOOpts struct {
 // DatasetIOOption is an option to modify the default behavior of dataset.IO
 //
 // Available DatasetIOOptions are:
-//  - PixelStride
-//  - LineStride
-//  - BandStride
-//  - Window
-//  - Resampling
-//  - ConfigOption
-//  - Bands
-//  - BandInterleaved
-//  - PixelSpacing
-//  - LineSpacing
-//  - BandSpacing
+//   - PixelStride
+//   - LineStride
+//   - BandStride
+//   - Window
+//   - Resampling
+//   - ConfigOption
+//   - Bands
+//   - BandInterleaved
+//   - PixelSpacing
+//   - LineSpacing
+//   - BandSpacing
 type DatasetIOOption interface {
 	setDatasetIOOpt(ro *datasetIOOpts)
 }
@@ -329,9 +341,9 @@ type dsCreateOpts struct {
 // DatasetCreateOption is an option that can be passed to Create()
 //
 // Available DatasetCreateOptions are:
-//  - CreationOption
-//  - ConfigOption
-//  - ErrLogger
+//   - CreationOption
+//   - ConfigOption
+//   - ErrLogger
 type DatasetCreateOption interface {
 	setDatasetCreateOpt(dc *dsCreateOpts)
 }
@@ -345,17 +357,17 @@ type openOpts struct {
 	errorHandler ErrorHandler
 }
 
-//OpenOption is an option passed to Open()
+// OpenOption is an option passed to Open()
 //
 // Available OpenOptions are:
-//  - Drivers
-//  - SiblingFiles
-//  - Shared
-//  - ConfigOption
-//  - Update
-//  - DriverOpenOption
-//  - RasterOnly
-//  - VectorOnly
+//   - Drivers
+//   - SiblingFiles
+//   - Shared
+//   - ConfigOption
+//   - Update
+//   - DriverOpenOption
+//   - RasterOnly
+//   - VectorOnly
 type OpenOption interface {
 	setOpenOpt(oo *openOpts)
 }
@@ -367,7 +379,7 @@ type closeOpts struct {
 // CloseOption is an option passed to Dataset.Close()
 //
 // Available options are:
-//  - ErrLogger
+//   - ErrLogger
 type CloseOption interface {
 	setCloseOpt(o *closeOpts)
 }
@@ -378,48 +390,99 @@ type featureCountOpts struct {
 
 // FeatureCountOption is an option passed to Layer.FeatureCount()
 //
-//
 // Available options are:
-//  - ErrLogger
+//   - ErrLogger
 type FeatureCountOption interface {
 	setFeatureCountOpt(fo *featureCountOpts)
 }
 
+type addGeometryOpts struct {
+	errorHandler ErrorHandler
+}
 type simplifyOpts struct {
 	errorHandler ErrorHandler
 }
 type bufferOpts struct {
 	errorHandler ErrorHandler
 }
+type differenceOpts struct {
+	errorHandler ErrorHandler
+}
 type intersectsOpts struct {
 	errorHandler ErrorHandler
+}
+type subGeometryOpts struct {
+	errorHandler ErrorHandler
+}
+type intersectionOpts struct {
+	errorHandler ErrorHandler
+}
+type unionOpts struct {
+	errorHandler ErrorHandler
+}
+
+// AddGeometryOption is an option passed to Geometry.AddGeometry()
+//
+// Available options are:
+//   - ErrLogger
+type AddGeometryOption interface {
+	setAddGeometryOpt(ao *addGeometryOpts)
 }
 
 // SimplifyOption is an option passed to Geometry.Simplify()
 //
-//
 // Available options are:
-//  - ErrLogger
+//   - ErrLogger
 type SimplifyOption interface {
 	setSimplifyOpt(so *simplifyOpts)
 }
 
 // BufferOption is an option passed to Geometry.Buffer()
 //
-//
 // Available options are:
-//  - ErrLogger
+//   - ErrLogger
 type BufferOption interface {
 	setBufferOpt(bo *bufferOpts)
 }
 
-// IntersectsOption is an option passed to Geometry.Intersects()
-//
+// DifferenceOption is an option passed to Geometry.Difference()
 //
 // Available options are:
-//  - ErrLogger
+//   - ErrLogger
+type DifferenceOption interface {
+	setDifferenceOpt(do *differenceOpts)
+}
+
+// IntersectsOption is an option passed to Geometry.Intersects()
+//
+// Available options are:
+//   - ErrLogger
 type IntersectsOption interface {
 	setIntersectsOpt(bo *intersectsOpts)
+}
+
+// SubGeometryOption is an option passed to Geometry.SubGeometry()
+//
+// Available options are:
+//   - ErrLogger
+type SubGeometryOption interface {
+	setSubGeometryOpt(so *subGeometryOpts)
+}
+
+// IntersectionOption is an option passed to Geometry.Intersection()
+//
+// Available options are:
+//   - ErrLogger
+type IntersectionOption interface {
+	setIntersectionOpt(io *intersectionOpts)
+}
+
+// UnionOption is an option passed to Geometry.Union()
+//
+// Available options are:
+//   - ErrLogger
+type UnionOption interface {
+	setUnionOpt(uo *unionOpts)
 }
 
 type setGeometryOpts struct {
@@ -428,11 +491,22 @@ type setGeometryOpts struct {
 
 // SetGeometryOption is an option passed to Feature.SetGeometry()
 //
-//
 // Available options are:
-//  - ErrLogger
+//   - ErrLogger
 type SetGeometryOption interface {
 	setSetGeometryOpt(so *setGeometryOpts)
+}
+
+type setFieldValueOpts struct {
+	errorHandler ErrorHandler
+}
+
+// SetFieldValueOption is an option passed to Feature.SetFieldValue()
+//
+// Available options are:
+//   - ErrLogger
+type SetFieldValueOption interface {
+	setSetFieldValueOpt(so *setFieldValueOpts)
 }
 
 type vsiOpenOpts struct {
@@ -441,9 +515,8 @@ type vsiOpenOpts struct {
 
 // VSIOpenOption is an option passed to VSIOpen()
 //
-//
 // Available options are:
-//  - ErrLogger
+//   - ErrLogger
 type VSIOpenOption interface {
 	setVSIOpenOpt(vo *vsiOpenOpts)
 }
@@ -453,9 +526,8 @@ type vsiUnlinkOpts struct {
 
 // VSIUnlinkOption is an option passed to VSIUnlink()
 //
-//
 // Available options are:
-//  - ErrLogger
+//   - ErrLogger
 type VSIUnlinkOption interface {
 	setVSIUnlinkOpt(vo *vsiUnlinkOpts)
 }
@@ -466,9 +538,8 @@ type geometryWKTOpts struct {
 
 // GeometryWKTOption is an option passed to Geometry.WKT()
 //
-//
 // Available options are:
-//  - ErrLogger
+//   - ErrLogger
 type GeometryWKTOption interface {
 	setGeometryWKTOpt(o *geometryWKTOpts)
 }
@@ -478,9 +549,8 @@ type geometryWKBOpts struct {
 
 // GeometryWKBOption is an option passed to Geometry.WKB()
 //
-//
 // Available options are:
-//  - ErrLogger
+//   - ErrLogger
 type GeometryWKBOption interface {
 	setGeometryWKBOpt(o *geometryWKBOpts)
 }
@@ -492,7 +562,7 @@ type newGeometryOpts struct {
 // NewGeometryOption is an option passed when creating a geometry
 //
 // Available options are:
-//  - ErrLogger
+//   - ErrLogger
 type NewGeometryOption interface {
 	setNewGeometryOpt(o *newGeometryOpts)
 }
@@ -504,7 +574,7 @@ type updateFeatureOpts struct {
 // UpdateFeatureOption is an option passed to Layer.UpdateFeature()
 //
 // Available options are:
-//  - ErrLogger
+//   - ErrLogger
 type UpdateFeatureOption interface {
 	setUpdateFeatureOpt(o *updateFeatureOpts)
 }
@@ -515,7 +585,7 @@ type deleteFeatureOpts struct {
 // DeleteFeatureOption is an option passed to Layer.DeleteFeature()
 //
 // Available options are:
-//  - ErrLogger
+//   - ErrLogger
 type DeleteFeatureOption interface {
 	setDeleteFeatureOpt(o *deleteFeatureOpts)
 }
@@ -527,7 +597,7 @@ type geometryTransformOpts struct {
 // GeometryTransformOption is an option passed to Geometry.Transform()
 //
 // Available options are:
-//  - ErrLogger
+//   - ErrLogger
 type GeometryTransformOption interface {
 	setGeometryTransformOpt(o *geometryTransformOpts)
 }
@@ -538,7 +608,7 @@ type geometryReprojectOpts struct {
 // GeometryReprojectOption is an option passed to Geometry.Reproject()
 //
 // Available options are:
-//  - ErrLogger
+//   - ErrLogger
 type GeometryReprojectOption interface {
 	setGeometryReprojectOpt(o *geometryReprojectOpts)
 }
@@ -546,17 +616,18 @@ type siblingFilesOpt struct {
 	files []string
 }
 
-//SiblingFiles specifies the list of files that may be opened alongside the prinicpal dataset name.
+// SiblingFiles specifies the list of files that may be opened alongside the prinicpal dataset name.
 //
-//files must not contain a directory component (i.e. are expected to be in the same directory as
-//the main dataset)
+// files must not contain a directory component (i.e. are expected to be in the same directory as
+// the main dataset)
 //
 // SiblingFiles may be used in 3 different manners:
-//  - By default, i.e. by not using the option, godal will consider that there are no sibling files
-//    at all and will prevent any scanning or probing of specific sibling files by passing a list of
-//    sibling files to gdal containing only the main file
-//  - By passing a list of files, only those files will be probed
-//  - By passing SiblingFiles() (i.e. with an empty list of files), the default gdal behavior of
+//   - By default, i.e. by not using the option, godal will consider that there are no sibling files
+//     at all and will prevent any scanning or probing of specific sibling files by passing a list of
+//     sibling files to gdal containing only the main file
+//   - By passing a list of files, only those files will be probed
+//   - By passing SiblingFiles() (i.e. with an empty list of files), the default gdal behavior of
+//
 // reading the directory content and/or probing for well-known sidecar filenames will be used.
 func SiblingFiles(files ...string) interface {
 	OpenOption
@@ -571,6 +642,17 @@ func (sf siblingFilesOpt) setOpenOpt(oo *openOpts) {
 	}
 }
 
+type setDescriptionOpts struct {
+	errorHandler ErrorHandler
+}
+
+// SetDescriptionOption is an option that can be passed to SetDescription
+// Available SetDescriptionOptions are:
+//   - ErrLogger
+type SetDescriptionOption interface {
+	setDescriptionOpt(mo *setDescriptionOpts)
+}
+
 type metadataOpts struct {
 	domain       string
 	errorHandler ErrorHandler
@@ -581,7 +663,7 @@ type domainOpt struct {
 
 // MetadataOption is an option that can be passed to metadata related calls
 // Available MetadataOptions are:
-//  - Domain
+//   - Domain
 type MetadataOption interface {
 	setMetadataOpt(mo *metadataOpts)
 }
@@ -797,6 +879,7 @@ func CreationOption(opts ...string) interface {
 	DatasetWarpOption
 	DatasetTranslateOption
 	DatasetVectorTranslateOption
+	GMLExportOption
 	RasterizeOption
 } {
 	return creationOpt{opts}
@@ -813,6 +896,9 @@ func (co creationOpt) setDatasetTranslateOpt(dc *dsTranslateOpts) {
 }
 func (co creationOpt) setDatasetVectorTranslateOpt(dc *dsVectorTranslateOpts) {
 	dc.creation = append(dc.creation, co.creation...)
+}
+func (co creationOpt) setGMLExportOpt(gmlo *gmlExportOpts) {
+	gmlo.creation = append(gmlo.creation, co.creation...)
 }
 func (co creationOpt) setRasterizeOpt(o *rasterizeOpts) {
 	o.create = append(o.create, co.creation...)
@@ -837,6 +923,7 @@ func ConfigOption(cfgs ...string) interface {
 	BandCreateMaskOption
 	OpenOption
 	RasterizeOption
+	RasterizeIntoOption
 	DatasetIOOption
 	BandIOOption
 	BuildVRTOption
@@ -875,6 +962,9 @@ func (co configOpt) setOpenOpt(oo *openOpts) {
 func (co configOpt) setRasterizeOpt(oo *rasterizeOpts) {
 	oo.config = append(oo.config, co.config...)
 }
+func (co configOpt) setRasterizeIntoOpt(oo *rasterizeIntoOpts) {
+	oo.config = append(oo.config, co.config...)
+}
 func (co configOpt) setDatasetIOOpt(oo *datasetIOOpts) {
 	oo.config = append(oo.config, co.config...)
 }
@@ -910,9 +1000,9 @@ type resamplingOpt struct {
 	m ResamplingAlg
 }
 
-//Resampling defines the resampling algorithm to use.
-//If unset will usually default to NEAREST. See gdal docs for which algorithms are
-//available.
+// Resampling defines the resampling algorithm to use.
+// If unset will usually default to NEAREST. See gdal docs for which algorithms are
+// available.
 func Resampling(alg ResamplingAlg) interface {
 	BuildOverviewsOption
 	DatasetIOOption
@@ -939,7 +1029,8 @@ type levelsOpt struct {
 }
 
 // Levels set the overview levels to be computed. This is usually:
-//  Levels(2,4,8,16,32)
+//
+//	Levels(2,4,8,16,32)
 func Levels(levels ...int) interface {
 	BuildOverviewsOption
 } {
@@ -1058,7 +1149,7 @@ func (ec eightConnected) setSieveFilterOpt(sfo *sieveFilterOpts) {
 	sfo.connectedness = 8
 }
 
-//EightConnected is an option that switches pixel connectivity from 4 to 8
+// EightConnected is an option that switches pixel connectivity from 4 to 8
 func EightConnected() interface {
 	PolygonizeOption
 	SieveFilterOption
@@ -1083,6 +1174,18 @@ func Values(vals ...float64) interface {
 	return floatValues{vals}
 }
 
+type spatialRefValidateOpts struct {
+	errorHandler ErrorHandler
+}
+
+// SpatialRefValidateOption is an option that can be passed to SpatialRef.Validate()
+//
+// Available SpatialRefValidateOptions are:
+//   - ErrLogger
+type SpatialRefValidateOption interface {
+	setSpatialRefValidateOpt(o *spatialRefValidateOpts)
+}
+
 type rasterizeOpts struct {
 	create       []string
 	config       []string
@@ -1093,11 +1196,26 @@ type rasterizeOpts struct {
 // RasterizeOption is an option that can be passed to Rasterize()
 //
 // Available RasterizeOptions are:
-//  - CreationOption
-//  - ConfigOption
-//  - DriverName
+//   - CreationOption
+//   - ConfigOption
+//   - DriverName
+//   - ErrLogger
 type RasterizeOption interface {
 	setRasterizeOpt(ro *rasterizeOpts)
+}
+
+type rasterizeIntoOpts struct {
+	config       []string
+	errorHandler ErrorHandler
+}
+
+// RasterizeIntoOption is an option that can be passed to DatasetRasterizeInto()
+//
+// Available RasterizeOptions are:
+//   - ConfigOption
+//   - ErrLogger
+type RasterizeIntoOption interface {
+	setRasterizeIntoOpt(ro *rasterizeIntoOpts)
 }
 
 type rasterizeGeometryOpts struct {
@@ -1137,21 +1255,33 @@ type dsVectorTranslateOpts struct {
 // DatasetVectorTranslateOption is an option that can be passed to Dataset.Warp()
 //
 // Available Options are:
-//  - CreationOption
-//  - ConfigOption
-//  - DriverName
+//   - CreationOption
+//   - ConfigOption
+//   - DriverName
 type DatasetVectorTranslateOption interface {
 	setDatasetVectorTranslateOpt(dwo *dsVectorTranslateOpts)
+}
+
+type createFeatureOpts struct {
+	errorHandler ErrorHandler
+}
+
+// CreateFeatureOption is an option that can be passed to Layer.CreateFeature
+//
+// Available options are:
+//   - none yet
+type CreateFeatureOption interface {
+	setCreateFeatureOpt(cfo *createFeatureOpts)
 }
 
 type newFeatureOpts struct {
 	errorHandler ErrorHandler
 }
 
-//NewFeatureOption is an option that can be passed to Layer.NewFeature
+// NewFeatureOption is an option that can be passed to Layer.NewFeature
 //
 // Available options are:
-//  - none yet
+//   - none yet
 type NewFeatureOption interface {
 	setNewFeatureOpt(nfo *newFeatureOpts)
 }
@@ -1166,14 +1296,37 @@ type CreateLayerOption interface {
 	setCreateLayerOpt(clo *createLayerOpts)
 }
 
+type copyLayerOpts struct {
+	errorHandler ErrorHandler
+}
+
+// CopyLayerOption is an option that can be passed to Dataset.CreateLayer()
+type CopyLayerOption interface {
+	setCopyLayerOpt(clo *copyLayerOpts)
+}
+
 type geojsonOpts struct {
 	precision    int
 	errorHandler ErrorHandler
 }
 
-//GeoJSONOption is an option that can be passed to Geometry.GeoJSON
+// GeoJSONOption is an option that can be passed to Geometry.GeoJSON
 type GeoJSONOption interface {
 	setGeojsonOpt(gjo *geojsonOpts)
+}
+
+type gmlExportOpts struct {
+	creation     []string
+	errorHandler ErrorHandler
+}
+
+// GMLExportOption is an option passed to Geometry.GML()
+//
+// Available options are:
+//   - CreationOption
+//   - ErrLogger
+type GMLExportOption interface {
+	setGMLExportOpt(o *gmlExportOpts)
 }
 
 type significantDigits int
@@ -1201,10 +1354,10 @@ type buildVRTOpts struct {
 // BuildVRTOption is an option that can be passed to BuildVRT
 //
 // Available BuildVRTOptions are:
-//  - ConfigOption
-//  - DriverOpenOption
-//  - Bands
-//  - Resampling
+//   - ConfigOption
+//   - DriverOpenOption
+//   - Bands
+//   - Resampling
 type BuildVRTOption interface {
 	setBuildVRTOpt(bvo *buildVRTOpts)
 }

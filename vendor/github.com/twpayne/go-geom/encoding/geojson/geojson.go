@@ -57,7 +57,7 @@ type Feature struct {
 
 type geojsonFeature struct {
 	Type       string                 `json:"type"`
-	ID         string                 `json:"id,omitempty"`
+	ID         any                    `json:"id,omitempty"`
 	BBox       []float64              `json:"bbox,omitempty"`
 	Geometry   *Geometry              `json:"geometry"`
 	Properties map[string]interface{} `json:"properties"`
@@ -262,6 +262,7 @@ func (c *nestedFloat64WithMaxDecimalDigits) marshalJSON(
 		}
 		buf = append(buf, ']')
 	case reflect.Float64:
+		//nolint:forcetypeassert
 		buf = strconv.AppendFloat(buf, val.Interface().(float64), 'f', c.maxDecimalDigits, 64)
 		if c.maxDecimalDigits > 0 {
 			buf = bytes.TrimRight(bytes.TrimRight(buf, "0"), ".")
@@ -496,10 +497,14 @@ func Unmarshal(data []byte, g *geom.T) error {
 		*g = nil
 		return nil
 	}
+	// FIXME The following lint error is suppressed, but there is probably a genuine error here
+	//
+	//nolint:staticcheck
 	gg := &Geometry{}
 	if err := json.Unmarshal(data, gg); err != nil {
 		return err
 	}
+	//nolint:staticcheck
 	if gg == nil {
 		*g = nil
 		return nil
@@ -554,13 +559,21 @@ func (f *Feature) MarshalJSON() ([]byte, error) {
 		}
 	}
 
-	return json.Marshal(&geojsonFeature{
+	gf := geojsonFeature{
 		ID:         f.ID,
 		Type:       "Feature",
 		BBox:       bounds,
 		Geometry:   geometry,
 		Properties: f.Properties,
-	})
+	}
+
+	// Empty ID should be nil. Not a nil interface{} value.
+	if f.ID == "" {
+		var temp any
+		gf.ID = temp
+	}
+
+	return json.Marshal(&gf)
 }
 
 // UnmarshalJSON implements json.Unmarshaler.UnmarshalJSON.
@@ -572,7 +585,22 @@ func (f *Feature) UnmarshalJSON(data []byte) error {
 	if gf.Type != "Feature" {
 		return ErrUnsupportedType(gf.Type)
 	}
-	f.ID = gf.ID
+
+	if gf.ID != nil {
+		switch v := gf.ID.(type) {
+		case string:
+			f.ID = v
+		case float64:
+			f.ID = strconv.FormatFloat(v, 'f', -1, 64)
+		case json.Number:
+			f.ID = v.String()
+		default:
+			return &json.InvalidUnmarshalError{
+				Type: reflect.TypeOf(gf.ID),
+			}
+		}
+	}
+
 	var err error
 	if gf.BBox != nil {
 		f.BBox, err = decodeBBox(gf.BBox)

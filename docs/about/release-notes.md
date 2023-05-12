@@ -1,5 +1,16 @@
 # Release notes
 
+## 1.0.3beta
+
+### Functionalities
+
+### Bug fixes
+
+
+### Others
+- Update golang-mod
+
+
 ## 1.0.2
 
 ### Functionalities

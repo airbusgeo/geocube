@@ -28,12 +28,12 @@ import (
 	"cloud.google.com/go/internal/optional"
 	ipubsub "cloud.google.com/go/internal/pubsub"
 	vkit "cloud.google.com/go/pubsub/apiv1"
+	pb "cloud.google.com/go/pubsub/apiv1/pubsubpb"
 	"cloud.google.com/go/pubsub/internal/scheduler"
 	gax "github.com/googleapis/gax-go/v2"
 	"go.opencensus.io/stats"
 	"go.opencensus.io/tag"
 	"google.golang.org/api/support/bundler"
-	pb "google.golang.org/genproto/googleapis/pubsub/v1"
 	fmpb "google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -50,6 +50,13 @@ const (
 	// MaxPublishRequestBytes is the maximum size of a single publish request
 	// in bytes, as defined by the PubSub service.
 	MaxPublishRequestBytes = 1e7
+)
+
+const (
+	// TODO: math.MaxInt was added in Go 1.17. We should use that once 1.17
+	// becomes the minimum supported version of Go.
+	intSize = 32 << (^uint(0) >> 63)
+	maxInt  = 1<<(intSize-1) - 1
 )
 
 // ErrOversizedMessage indicates that a message's size exceeds MaxPublishRequestBytes.
@@ -211,8 +218,7 @@ type TopicConfig struct {
 	// "projects/P/locations/L/keyRings/R/cryptoKeys/K".
 	KMSKeyName string
 
-	// Schema defines the schema settings upon topic creation. This cannot
-	// be modified after a topic has been created.
+	// Schema defines the schema settings upon topic creation.
 	SchemaSettings *SchemaSettings
 
 	// RetentionDuration configures the minimum duration to retain a message
@@ -285,6 +291,11 @@ type TopicConfigToUpdate struct {
 	// If set to a negative value, this clears RetentionDuration from the topic.
 	// If nil, the retention duration remains unchanged.
 	RetentionDuration optional.Duration
+
+	// Schema defines the schema settings upon topic creation.
+	//
+	// Use the zero value &SchemaSettings{} to remove the schema from the topic.
+	SchemaSettings *SchemaSettings
 }
 
 func protoToTopicConfig(pbt *pb.Topic) TopicConfig {
@@ -396,6 +407,30 @@ func (t *Topic) updateRequest(cfg TopicConfigToUpdate) *pb.UpdateTopicRequest {
 		}
 		paths = append(paths, "message_retention_duration")
 	}
+	if cfg.SchemaSettings != nil {
+		pt.SchemaSettings = schemaSettingsToProto(cfg.SchemaSettings)
+		clearSchema := true
+		if pt.SchemaSettings.Schema != "" {
+			paths = append(paths, "schema_settings.schema")
+			clearSchema = false
+		}
+		if pt.SchemaSettings.Encoding != pb.Encoding_ENCODING_UNSPECIFIED {
+			paths = append(paths, "schema_settings.encoding")
+			clearSchema = false
+		}
+		if pt.SchemaSettings.FirstRevisionId != "" {
+			paths = append(paths, "schema_settings.first_revision_id")
+			clearSchema = false
+		}
+		if pt.SchemaSettings.LastRevisionId != "" {
+			paths = append(paths, "schema_settings.last_revision_id")
+			clearSchema = false
+		}
+		// Clear the schema if none of it's value changes.
+		if clearSchema {
+			paths = append(paths, "schema_settings")
+		}
+	}
 	return &pb.UpdateTopicRequest{
 		Topic:      pt,
 		UpdateMask: &fmpb.FieldMask{Paths: paths},
@@ -505,11 +540,12 @@ var errTopicStopped = errors.New("pubsub: Stop has been called for this topic")
 // A PublishResult holds the result from a call to Publish.
 //
 // Call Get to obtain the result of the Publish call. Example:
-//   // Get blocks until Publish completes or ctx is done.
-//   id, err := r.Get(ctx)
-//   if err != nil {
-//       // TODO: Handle error.
-//   }
+//
+//	// Get blocks until Publish completes or ctx is done.
+//	id, err := r.Get(ctx)
+//	if err != nil {
+//	    // TODO: Handle error.
+//	}
 type PublishResult = ipubsub.PublishResult
 
 // Publish publishes msg to the topic asynchronously. Messages are batched and
@@ -522,6 +558,11 @@ type PublishResult = ipubsub.PublishResult
 // need to be stopped by calling t.Stop(). Once stopped, future calls to Publish
 // will immediately return a PublishResult with an error.
 func (t *Topic) Publish(ctx context.Context, msg *Message) *PublishResult {
+	ctx, err := tag.New(ctx, tag.Insert(keyStatus, "OK"), tag.Upsert(keyTopic, t.name))
+	if err != nil {
+		log.Printf("pubsub: cannot create context with tag in Publish: %v", err)
+	}
+
 	r := ipubsub.NewPublishResult()
 	if !t.EnableMessageOrdering && msg.OrderingKey != "" {
 		ipubsub.SetPublishResult(r, "", errors.New("Topic.EnableMessageOrdering=false, but an OrderingKey was set in Message. Please remove the OrderingKey or turn on Topic.EnableMessageOrdering"))
@@ -550,7 +591,7 @@ func (t *Topic) Publish(ctx context.Context, msg *Message) *PublishResult {
 		ipubsub.SetPublishResult(r, "", err)
 		return r
 	}
-	err := t.scheduler.Add(msg.OrderingKey, &bundledMessage{msg, r, msgSize}, msgSize)
+	err = t.scheduler.Add(msg.OrderingKey, &bundledMessage{msg, r, msgSize}, msgSize)
 	if err != nil {
 		t.scheduler.Pause(msg.OrderingKey)
 		ipubsub.SetPublishResult(r, "", err)
@@ -632,14 +673,18 @@ func (t *Topic) initBundler() {
 	if t.PublishSettings.FlowControlSettings.MaxOutstandingBytes > 0 {
 		b := t.PublishSettings.FlowControlSettings.MaxOutstandingBytes
 		fcs.MaxOutstandingBytes = b
-		// If MaxOutstandingBytes is set, override BufferedByteLimit.
-		t.PublishSettings.BufferedByteLimit = b
+
+		// If MaxOutstandingBytes is set, disable BufferedByteLimit by setting it to maxint.
+		// This is because there's no way to set "unlimited" for BufferedByteLimit,
+		// and simply setting it to MaxOutstandingBytes occasionally leads to issues where
+		// BufferedByteLimit is reached even though there are resources available.
+		t.PublishSettings.BufferedByteLimit = maxInt
 	}
 	if t.PublishSettings.FlowControlSettings.MaxOutstandingMessages > 0 {
 		fcs.MaxOutstandingMessages = t.PublishSettings.FlowControlSettings.MaxOutstandingMessages
 	}
 
-	t.flowController = newFlowController(fcs)
+	t.flowController = newTopicFlowController(fcs)
 
 	bufferedByteLimit := DefaultPublishSettings.BufferedByteLimit
 	if t.PublishSettings.BufferedByteLimit > 0 {
