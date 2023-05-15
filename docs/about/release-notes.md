@@ -1,5 +1,12 @@
 # Release notes
 
+## 1.0.2
+
+### Functionalities
+
+### Bug fixes
+- countValidPix with gdal >= 3.6.0
+
 ## 1.0.1
 
 ### Functionalities

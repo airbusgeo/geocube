@@ -33,7 +33,7 @@ import (
 )
 
 const (
-	GeocubeServerVersion = "1.0.1"
+	GeocubeServerVersion = "1.0.2"
 	StreamTilesBatchSize = 1000
 )
 
