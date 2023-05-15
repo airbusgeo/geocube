@@ -166,7 +166,7 @@ func MergeDatasets(ctx context.Context, datasets []*Dataset, outDesc *GdalDatase
 		}
 	}
 
-	var rerr error
+	var err error
 	var mergedDatasets []*godal.Dataset
 	defer closeDatasets(&mergedDatasets)
 
@@ -174,7 +174,7 @@ func MergeDatasets(ctx context.Context, datasets []*Dataset, outDesc *GdalDatase
 		// Merge Datasets that share the same DataMapping
 		commonDMapping := groupedDs[0].DataMapping
 		mergedDs, err := warpDatasets(groupedDs, outDesc.WktCRS, outDesc.PixToCRS, float64(outDesc.Width), float64(outDesc.Height), outDesc.Resampling, commonDMapping.DataFormat)
-		if rerr = err; rerr != nil {
+		if err != nil {
 			return nil, fmt.Errorf("mergeDatasets: %w", err)
 		}
 
@@ -182,7 +182,7 @@ func MergeDatasets(ctx context.Context, datasets []*Dataset, outDesc *GdalDatase
 		if !commonDMapping.Equals(outDesc.DataMapping) {
 			tmpDS := mergedDs
 			defer tmpDS.Close()
-			if mergedDs, rerr = CastDataset(ctx, tmpDS, commonDMapping, outDesc.DataMapping, ""); rerr != nil {
+			if mergedDs, err = CastDataset(ctx, tmpDS, commonDMapping, outDesc.DataMapping, ""); err != nil {
 				return nil, fmt.Errorf("mergeDatasets: %w", err)
 			}
 		}
@@ -194,16 +194,16 @@ func MergeDatasets(ctx context.Context, datasets []*Dataset, outDesc *GdalDatase
 	if len(mergedDatasets) == 1 {
 		mergedDs = mergedDatasets[0]
 		mergedDatasets = nil // Prevent "defer" for closing mergedDs
-	} else if mergedDs, rerr = mosaicDatasets(mergedDatasets, outDesc.PixToCRS.Rx(), outDesc.PixToCRS.Ry()); rerr != nil {
-		return nil, fmt.Errorf("mergeDatasets.%w", rerr)
+	} else if mergedDs, err = mosaicDatasets(mergedDatasets, outDesc.PixToCRS.Rx(), outDesc.PixToCRS.Ry()); err != nil {
+		return nil, fmt.Errorf("mergeDatasets.%w", err)
 	}
 
 	// Test whether image has enough valid pixels
 	if outDesc.ValidPixPc >= 0 {
 		if nb, err := countValidPix(mergedDs.Bands()[0]); err != nil || int(100*nb) <= outDesc.Width*outDesc.Height*outDesc.ValidPixPc {
 			mergedDs.Close()
-			if rerr = err; rerr != nil {
-				return nil, fmt.Errorf("countValidPix: %w", rerr)
+			if err != nil {
+				return nil, fmt.Errorf("mergeDatasets.%w", err)
 			}
 			return nil, geocube.NewEntityNotFound("", "", "", "Not enough valid pixels (skipped)")
 		}
@@ -331,7 +331,7 @@ func WarpedExtent(ctx context.Context, datasets []*Dataset, wktCRS string, resx,
 
 func countValidPix(band godal.Band) (uint64, error) {
 	// Histogram does not count nodata
-	histogram, err := band.Histogram(godal.Intervals(1, 0, 0), godal.IncludeOutOfRange(), godal.Approximate())
+	histogram, err := band.Histogram(godal.Intervals(1, 0, 1), godal.IncludeOutOfRange(), godal.Approximate())
 	if err != nil {
 		return 0, fmt.Errorf("countValidPix: %w", err)
 	}
