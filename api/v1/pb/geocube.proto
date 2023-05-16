@@ -83,7 +83,7 @@ service Geocube {
     // Get a XYZTile (can be used with a TileServer, provided a GRPCGateway is up)
     rpc GetXYZTile(GetTileRequest)            returns (GetTileResponse){
         option (google.api.http) = {
-            get: "/v1/catalog/mosaic/{instance_id}/{x}/{y}/{z}/png" //?records.ids=XXXXX&records.ids=YYYYYY...
+            get: "/v1/catalog/mosaic/{instance_id}/{x}/{y}/{z}/png" //?records.ids=XXXXX&records.ids=YYYYYY... &min=vmin&max=vmax
             response_body: "image.data"
         };
     }

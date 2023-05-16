@@ -1563,6 +1563,8 @@ Request a web-mercator tile, given a variable and a group of records
 | x | [int32](#int32) |  |  |
 | y | [int32](#int32) |  |  |
 | z | [int32](#int32) |  |  |
+| min | [float](#float) |  |  |
+| max | [float](#float) |  |  |
 | records | [GroupedRecordIds](#geocube-GroupedRecordIds) |  | Group of record ids. At least one. All the datasets of the group of records will be merged together using the latest first. |
 
 

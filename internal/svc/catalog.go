@@ -357,7 +357,7 @@ func (svc *Service) getCubeStream(ctx context.Context, datasetsByRecord [][]*int
 }
 
 // GetXYZTile implements GeocubeService
-func (svc *Service) GetXYZTile(ctx context.Context, recordsID []string, instanceID string, a, b, z int) ([]byte, error) {
+func (svc *Service) GetXYZTile(ctx context.Context, recordsID []string, instanceID string, a, b, z int, min, max float64) ([]byte, error) {
 
 	outDesc := internalImage.GdalDatasetDescriptor{Width: 256, Height: 256}
 
@@ -409,6 +409,11 @@ func (svc *Service) GetXYZTile(ctx context.Context, recordsID []string, instance
 				return nil, fmt.Errorf("GetXYZTile.%w", err)
 			}
 		}
+	}
+
+	// Set Min/Max
+	if min < max {
+		outDesc.DataMapping.Range = geocube.Range{Min: min, Max: max}
 	}
 
 	// Translate to PNG

@@ -84,7 +84,7 @@ type GeocubeService interface {
 	FindContainerLayouts(ctx context.Context, instanceId string, aoi *geocube.AOI, recordIds []string, tags map[string]string, fromTime, toTime time.Time) ([]string, [][]string, error)
 	TileAOI(ctx context.Context, aoi *geocube.AOI, layoutName string, layout *geocube.Layout) (<-chan geocube.StreamedCell, error)
 
-	GetXYZTile(ctx context.Context, recordsID []string, instanceID string, a, b, z int) ([]byte, error)
+	GetXYZTile(ctx context.Context, recordsID []string, instanceID string, a, b, z int, min, max float64) ([]byte, error)
 	GetCubeFromRecords(ctx context.Context, recordsID [][]string, instancesID []string, crs *godal.SpatialRef, pixToCRS *affine.Affine, width, height int, options internal.GetCubeOptions) (internal.CubeInfo, <-chan internal.CubeSlice, error)
 	GetCubeFromFilters(ctx context.Context, recordTags geocube.Metadata, fromTime, toTime time.Time, instancesID []string, crs *godal.SpatialRef, pixToCRS *affine.Affine, width, height int, options internal.GetCubeOptions) (internal.CubeInfo, <-chan internal.CubeSlice, error)
 }
@@ -1031,7 +1031,7 @@ func (svc *Service) GetXYZTile(ctx context.Context, req *pb.GetTileRequest) (*pb
 		}
 
 		// Get Tile
-		if image, err = svc.gsvc.GetXYZTile(ctx, records.GetIds(), req.GetInstanceId(), int(req.GetX()), int(req.GetY()), int(req.GetZ())); err != nil {
+		if image, err = svc.gsvc.GetXYZTile(ctx, records.GetIds(), req.GetInstanceId(), int(req.GetX()), int(req.GetY()), int(req.GetZ()), float64(req.Min), float64(req.Max)); err != nil {
 			return nil, formatError("backend.%w", err)
 		}
 	} else {

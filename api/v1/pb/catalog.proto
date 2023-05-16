@@ -145,6 +145,8 @@ message GetTileRequest {
     int32  x           = 2;
     int32  y           = 3;
     int32  z           = 4;
+    float  min         = 8;
+    float  max         = 9;
 
     oneof records_lister{
         GroupedRecordIds records = 6; // Group of record ids. At least one. All the datasets of the group of records will be merged together using the latest first.
