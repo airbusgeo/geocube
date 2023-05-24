@@ -7,7 +7,7 @@ import (
 	"google.golang.org/api/option"
 
 	vkit "cloud.google.com/go/secretmanager/apiv1"
-	pb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1"
+	pb "cloud.google.com/go/secretmanager/apiv1/secretmanagerpb"
 )
 
 type Client struct {

@@ -7,15 +7,15 @@ import (
 	"time"
 
 	monitoring "cloud.google.com/go/monitoring/apiv3/v2"
+	"cloud.google.com/go/monitoring/apiv3/v2/monitoringpb"
 	gcppubsub "cloud.google.com/go/pubsub/apiv1"
+	"cloud.google.com/go/pubsub/apiv1/pubsubpb"
 	"github.com/airbusgeo/geocube/interface/messaging"
 	"github.com/airbusgeo/geocube/internal/log"
 	"github.com/airbusgeo/geocube/internal/utils"
 	"go.uber.org/zap"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
-	monitoringpb "google.golang.org/genproto/googleapis/monitoring/v3"
-	pubsubpb "google.golang.org/genproto/googleapis/pubsub/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
