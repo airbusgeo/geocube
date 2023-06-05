@@ -7,6 +7,7 @@
 - gdalwarp use wm=500 instead of 2047
 
 ### Bug fixes
+- CleanJobs: remove DONEBUTUNTIDY
 
 
 ### Others

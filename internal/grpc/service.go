@@ -630,8 +630,8 @@ func (svc *Service) CleanJobs(ctx context.Context, req *pb.CleanJobsRequest) (*p
 		if err != nil {
 			return nil, newValidationError("Invalid state: " + err.Error())
 		}
-		if state != geocube.JobStateDONE && state != geocube.JobStateFAILED {
-			return nil, newValidationError("Invalid state: must be one of " + strings.Join([]string{geocube.JobStateDONE.String(), geocube.JobStateFAILED.String()}, ", "))
+		if state != geocube.JobStateDONE && state != geocube.JobStateFAILED && state != geocube.JobStateDONEBUTUNTIDY {
+			return nil, newValidationError("Invalid state: must be one of " + strings.Join([]string{geocube.JobStateDONE.String(), geocube.JobStateFAILED.String(), geocube.JobStateDONEBUTUNTIDY.String()}, ", "))
 		}
 		jobState = &state
 	}
