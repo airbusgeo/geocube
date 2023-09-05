@@ -3,6 +3,7 @@
 ## 1.0.3beta
 
 ### Functionalities
+- gdalwarp use wm=500 instead of 2047
 
 ### Bug fixes
 

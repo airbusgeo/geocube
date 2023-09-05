@@ -270,7 +270,7 @@ func warpDatasets(datasets []*Dataset, wktCRS string, transform *affine.Affine, 
 		"-ts", toS(width), toS(height),
 		"-ovr", "AUTO", //TODO user-defined ?
 		"-wo", "INIT_DEST=" + toS(commonDFormat.NoData),
-		"-wm", "2047",
+		"-wm", "500",
 		"-ot", commonDFormat.DType.ToGDAL().String(),
 		"-r", resampling.String(),
 		"-srcnodata", toS(commonDFormat.NoData),
