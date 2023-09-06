@@ -173,7 +173,7 @@ func newConsolidationAppConfig() (*consolidaterConfig, error) {
 	flag.StringVar(&consolidaterConfig.WorkDir, "workdir", "", "scratch work directory")
 	flag.StringVar(&consolidaterConfig.CancelledJobsStorage, "cancelledJobs", "", "storage where cancelled jobs are referenced")
 	flag.IntVar(&consolidaterConfig.RetryCount, "retryCount", 1, "number of retries when consolidation job failed with a temporary error")
-	flag.IntVar(&consolidaterConfig.Workers, "workers", 1, "number of workers for parallel tasks")
+	flag.IntVar(&consolidaterConfig.Workers, "workers", 1, "number of workers to parallelize the processing of the slices of a cube (see also GdalMultithreading)")
 	flag.BoolVar(&consolidaterConfig.LocalDownload, "local-download", true, "locally download the datasets before starting the consolidation (generally faster than letting GDAL to download them tile by tile)")
 
 	// Messaging

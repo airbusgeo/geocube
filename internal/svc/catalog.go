@@ -342,7 +342,7 @@ func (svc *Service) getCubeStream(ctx context.Context, datasetsByRecord [][]*int
 	// Start workers
 	{
 		jobChan := make(chan mergeDatasetJob, len(jobs))
-		nbWorkers := utils.MinI(len(jobs), utils.MinI(svc.catalogWorkers, getNumberOfWorkers(outDesc.Height*outDesc.Width*outDesc.DataMapping.DType.Size()*10)))
+		nbWorkers := utils.MinI(len(jobs), utils.MinI(svc.cubeWorkers, getNumberOfWorkers(outDesc.Height*outDesc.Width*outDesc.DataMapping.DType.Size()*10)))
 		for i := 0; i < nbWorkers; i++ {
 			go svc.mergeDatasetsWorker(ctx, jobChan, unorderedSlices)
 		}

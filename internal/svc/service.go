@@ -26,7 +26,7 @@ type Service struct {
 	db                         database.GeocubeDBBackend
 	eventPublisher             messaging.Publisher
 	consolidationPublisher     messaging.Publisher
-	catalogWorkers             int
+	cubeWorkers                int
 	ingestionStoragePath       string
 	cancelledConsolidationPath string
 }
@@ -37,7 +37,7 @@ type Service struct {
 // consolidationPublisher : message publisher to handle the consolidation tasks. The messages will be pulled by Consolidation workers (see consolidater).
 // ingestionStoragePath : location to store images created by the Geocube (consolidation or ingestion). Must be reachable by the Geocube with read/write/delete permissions.
 // cancelledConsolidationPath : location to store temporary files to inform Consolidation Workers that a job is cancelled. Must be reachable by the Geocube with write permission and by the Consolidation Workers with read permission.
-func New(ctx context.Context, db database.GeocubeDBBackend, eventPublisher messaging.Publisher, consolidationPublisher messaging.Publisher, ingestionStoragePath, cancelledConsolidationPath string, catalogWorkers int) (*Service, error) {
+func New(ctx context.Context, db database.GeocubeDBBackend, eventPublisher messaging.Publisher, consolidationPublisher messaging.Publisher, ingestionStoragePath, cancelledConsolidationPath string, cubeWorkers int) (*Service, error) {
 	// Check parameters
 	if (ingestionStoragePath == "") != (consolidationPublisher == nil) {
 		return nil, fmt.Errorf("invalid arguments: to define the service to be able to handle consolidation, ingestionStoragePath and consolidationPublisher must be defined")
@@ -45,10 +45,10 @@ func New(ctx context.Context, db database.GeocubeDBBackend, eventPublisher messa
 
 	ramSize = int(C.sysconf(C._SC_PHYS_PAGES) * C.sysconf(C._SC_PAGE_SIZE))
 
-	if catalogWorkers <= 0 {
-		catalogWorkers = 1
+	if cubeWorkers <= 0 {
+		cubeWorkers = 1
 	}
-	return &Service{db: db, eventPublisher: eventPublisher, consolidationPublisher: consolidationPublisher, catalogWorkers: catalogWorkers, ingestionStoragePath: ingestionStoragePath, cancelledConsolidationPath: cancelledConsolidationPath}, nil
+	return &Service{db: db, eventPublisher: eventPublisher, consolidationPublisher: consolidationPublisher, cubeWorkers: cubeWorkers, ingestionStoragePath: ingestionStoragePath, cancelledConsolidationPath: cancelledConsolidationPath}, nil
 }
 
 // CreateAOI implements GeocubeService

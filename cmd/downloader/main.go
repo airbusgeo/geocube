@@ -60,7 +60,7 @@ func run(ctx context.Context) error {
 	}
 
 	// Create Geocube Service
-	svc, err := svc.New(ctx, nil, nil, nil, "", "", downloaderConfig.CatalogWorkers)
+	svc, err := svc.New(ctx, nil, nil, nil, "", "", downloaderConfig.CubeWorkers)
 	if err != nil {
 		return fmt.Errorf("svc.new: %w", err)
 	}
@@ -120,7 +120,7 @@ func newDownloaderAppConfig() (*serverConfig, error) {
 	flag.BoolVar(&serverConfig.TLS, "tls", false, "enable TLS protocol")
 	flag.StringVar(&serverConfig.AppPort, "port", "8080", "geocube downloader port to use")
 	flag.IntVar(&serverConfig.MaxConnectionAge, "maxConnectionAge", 0, "grpc max age connection")
-	flag.IntVar(&serverConfig.CatalogWorkers, "workers", 1, "number of parallel workers per catalog request")
+	flag.IntVar(&serverConfig.CubeWorkers, "workers", 1, "number of workers to parallelize the processing of the slices of a cube (see also GdalMultithreading)")
 	serverConfig.GDALConfig = cmd.GDALConfigFlags()
 
 	flag.Parse()
@@ -136,6 +136,6 @@ type serverConfig struct {
 	TLS              bool
 	AppPort          string
 	MaxConnectionAge int
-	CatalogWorkers   int
+	CubeWorkers      int
 	GDALConfig       *cmd.GDALConfig
 }

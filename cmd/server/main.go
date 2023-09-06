@@ -153,7 +153,7 @@ func run(ctx context.Context) error {
 	}
 
 	// Create Geocube Service
-	svc, err := svc.New(ctx, db, eventPublisher, consolidationPublisher, serverConfig.IngestionStorage, serverConfig.CancelledConsolidationStorage, serverConfig.CatalogWorkers)
+	svc, err := svc.New(ctx, db, eventPublisher, consolidationPublisher, serverConfig.IngestionStorage, serverConfig.CancelledConsolidationStorage, serverConfig.CubeWorkers)
 	if err != nil {
 		return fmt.Errorf("svc.new: %w", err)
 	}
@@ -312,7 +312,7 @@ func newServerAppConfig() (*serverConfig, error) {
 	flag.StringVar(&serverConfig.AppPort, "port", "8080", "geocube port to use")
 	flag.BoolVar(&serverConfig.TLS, "tls", false, "enable TLS protocol (certificate and key must be /tls/tls.crt and /tls/tls.key)")
 	flag.IntVar(&serverConfig.MaxConnectionAge, "maxConnectionAge", 0, "grpc max age connection")
-	flag.IntVar(&serverConfig.CatalogWorkers, "workers", 1, "number of parallel workers per catalog request")
+	flag.IntVar(&serverConfig.CubeWorkers, "workers", 1, "number of workers to parallelize the processing of the slices of a cube (see also GdalMultithreading)")
 	flag.StringVar(&serverConfig.CancelledConsolidationStorage, "cancelledJobs", "", "storage where cancelled jobs are referenced. Must be reachable by the Consolidation Workers and the Geocube with read/write permissions")
 	flag.StringVar(&serverConfig.IngestionStorage, "ingestionStorage", "", "path to the storage where ingested and consolidated datasets will be stored. Must be reachable with read/write/delete permissions. (local/gs)")
 
@@ -369,7 +369,7 @@ type serverConfig struct {
 	BearerAuthSecretName          string
 	IngestionStorage              string
 	CancelledConsolidationStorage string
-	CatalogWorkers                int
+	CubeWorkers                   int
 	GDALConfig                    *cmd.GDALConfig
 }
 
