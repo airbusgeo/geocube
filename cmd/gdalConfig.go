@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/airbusgeo/geocube/interface/storage/gcs"
+	"github.com/airbusgeo/geocube/internal/image"
 	"github.com/airbusgeo/godal"
 	"github.com/airbusgeo/osio"
 
@@ -21,6 +22,7 @@ import (
 type GDALConfig struct {
 	BlockSize       string
 	NumCachedBlocks int
+	NumThreads      int
 	StorageDebug    bool
 	WithGCS         bool
 	WithS3          bool
@@ -45,6 +47,7 @@ func GDALConfigFlags() *GDALConfig {
 	gdalConfig := GDALConfig{}
 	flag.StringVar(&gdalConfig.BlockSize, "gdalBlockSize", "1Mb", "gdal blocksize value (default 1Mb)")
 	flag.IntVar(&gdalConfig.NumCachedBlocks, "gdalNumCachedBlocks", 500, "gdal blockcache value (default 500)")
+	flag.IntVar(&gdalConfig.NumThreads, "gdalNumThreads", 1, "number of threads for gdal warp (-wo NUM_THREADS=) (-1 means ALL_CPUS)")
 	flag.BoolVar(&gdalConfig.WithGCS, "with-gcs", false, "configure GDAL to use gcs storage (may need authentication)")
 	flag.BoolVar(&gdalConfig.WithS3, "with-s3", false, "configure GDAL to use s3 storage (may need authentication)")
 	flag.StringVar(&gdalConfig.AwsRegion, "aws-region", "", "define aws_region for GDAL to use s3 storage (--with-s3)")
@@ -134,6 +137,7 @@ func InitGDAL(ctx context.Context, gdalConfig *GDALConfig) error {
 		}*/
 		// Else no debug > Nothing to do
 	}
+	image.GdalNumThreads = gdalConfig.NumThreads
 
 	return nil
 }

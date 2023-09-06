@@ -3,6 +3,7 @@
 ## 1.0.3beta
 
 ### Functionalities
+- apiserver/downloader: add --gdalNumThreads to change the -wo options of gdal.warp. 1 by default, -1 means ALL_CPUS. gdalNumThreads+workers should be lower than the number of CPUS.
 - gdalwarp use wm=500 instead of 2047
 
 ### Bug fixes

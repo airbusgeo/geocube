@@ -19,6 +19,8 @@ import (
 	"github.com/google/uuid"
 )
 
+var GdalNumThreads int
+
 type Dataset struct {
 	URI         string
 	SubDir      string
@@ -275,6 +277,13 @@ func warpDatasets(datasets []*Dataset, wktCRS string, transform *affine.Affine, 
 		"-r", resampling.String(),
 		"-srcnodata", toS(commonDFormat.NoData),
 		"-nomd",
+		"-multi",
+	}
+
+	if GdalNumThreads > 1 {
+		options = append(options, "-wo", "NUM_THREADS=", strconv.Itoa(GdalNumThreads))
+	} else if GdalNumThreads == -1 {
+		options = append(options, "-wo", "NUM_THREADS=ALL_CPUS")
 	}
 
 	if commonDFormat.NoDataDefined() {
