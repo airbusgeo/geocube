@@ -65,7 +65,7 @@ func run(ctx context.Context) error {
 		return fmt.Errorf("svc.new: %w", err)
 	}
 
-	grpcServer := newGrpcServer(svc, downloaderConfig.MaxConnectionAge)
+	grpcServer := newGrpcServer(svc, downloaderConfig.MaxConnectionAge, downloaderConfig.ChunkSizeByte)
 
 	log.Logger(ctx).Info("Geocube v" + geogrpc.GeocubeServerVersion)
 
@@ -103,14 +103,14 @@ func getMaxConnectionAge(maxConnectionAge int) int {
 	return maxConnectionAge
 }
 
-func newGrpcServer(svc geogrpc.GeocubeDownloaderService, maxConnectionAgeValue int) *grpc.Server {
+func newGrpcServer(svc geogrpc.GeocubeDownloaderService, maxConnectionAgeValue int, chunkSizeBytes int) *grpc.Server {
 	opts := []grpc.ServerOption{
 		grpc.KeepaliveParams(keepalive.ServerParameters{
 			MaxConnectionAge:      time.Duration(getMaxConnectionAge(maxConnectionAgeValue)) * time.Second,
 			MaxConnectionAgeGrace: time.Minute})}
 
 	grpcServer := grpc.NewServer(opts...)
-	pb.RegisterGeocubeDownloaderServer(grpcServer, geogrpc.NewDownloader(svc, getMaxConnectionAge(maxConnectionAgeValue)))
+	pb.RegisterGeocubeDownloaderServer(grpcServer, geogrpc.NewDownloader(svc, getMaxConnectionAge(maxConnectionAgeValue), chunkSizeBytes))
 	return grpcServer
 }
 
@@ -121,6 +121,7 @@ func newDownloaderAppConfig() (*serverConfig, error) {
 	flag.StringVar(&serverConfig.AppPort, "port", "8080", "geocube downloader port to use")
 	flag.IntVar(&serverConfig.MaxConnectionAge, "maxConnectionAge", 0, "grpc max age connection")
 	flag.IntVar(&serverConfig.CubeWorkers, "workers", 1, "number of workers to parallelize the processing of the slices of a cube (see also GdalMultithreading)")
+	flag.IntVar(&serverConfig.ChunkSizeByte, "chunk-size", 1024*1024, "chunk size for grpc streaming of images in bytes. If an image is bigger than chunk_size_bytes, it is divided into chunks and streamed. Grpc recommends a chunk_size of 64kbytes, but in localhost, performances are better with a bigger chunk_size, such as 1Mbytes. By default, chunk_size is limited by Grpc to 4Mbytes.")
 	serverConfig.GDALConfig = cmd.GDALConfigFlags()
 
 	flag.Parse()
@@ -137,5 +138,6 @@ type serverConfig struct {
 	AppPort          string
 	MaxConnectionAge int
 	CubeWorkers      int
+	ChunkSizeByte    int
 	GDALConfig       *cmd.GDALConfig
 }

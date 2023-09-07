@@ -29,7 +29,7 @@ enum ByteOrder{
   * Header of an image (slice of the cube)
   * It describes the image, the underlying datasets and the way to recreate it from the array of byte :
   * 1. Append ImageHeader.data and ImageChunk.data from part=0 to part=nb_parts-1
-  * 2. If compression=True, decompresss the array of bytes using deflate
+  * 2. If compression=True, decompress the array of bytes using deflate
   * 3. Cast the result to the dtype using byteOrder
   * 4. Reshape the result
   */
@@ -83,7 +83,7 @@ message GetCubeRequest {
     string          crs               = 4; // Coordinates Reference System of the output images (images will be reprojected on the fly if necessary)
     GeoTransform    pix_to_crs        = 5; // GeoTransform of the requested cube (images will be rescaled on the fly if necessary)
     Size            size              = 6; // Shape of the output images
-    int32           compression_level = 7; // Define a level of compression to speed up the transfer, values: -2 to 9 (-2: Huffman only, -1:default, 0: no compression, 1->9: level of compression from the fastest to the best compression). The data is compressed by the server and decompressed by the Client. Use -2 or 0 if the bandwidth is not limited.
+    int32           compression_level = 7; // Define a level of compression to speed up the transfer, values: -3 to 9 (-2: Huffman only, -1:default, 0->9: level of compression from the fastest to the best compression, -3: disable the compression). The data is compressed by the server and decompressed by the Client. Use -3 or -2 if the bandwidth is not limited. 0 is level 0 of DEFLATE (thus, it must be decompressed by DEFLATE even though the data is not compressed). If the client can support -3, 0 is useless.
     bool            headers_only      = 8; // Only returns headers (including all metadatas on datasets)
     FileFormat      format            = 9; // Format of the output images
     Resampling      resampling_alg    = 10; // Resampling algorithm used for reprojecion. If undefined, the default resampling algorithm associated to the variable is used.

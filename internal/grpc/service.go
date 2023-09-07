@@ -815,10 +815,12 @@ func (svc *Service) GetCube(req *pb.GetCubeRequest, stream pb.Geocube_GetCubeSer
 	}
 	defer cubeInfo.crs.Close()
 
-	// Get the level of compression
-	deflater, err := flate.NewWriter(nil, int(req.GetCompressionLevel()))
-	if err != nil {
-		return newValidationError(err.Error())
+	// Configure the compression
+	var deflater *flate.Writer
+	if req.CompressionLevel != -3 {
+		if deflater, err = flate.NewWriter(nil, int(req.CompressionLevel)); err != nil {
+			return newValidationError(err.Error())
+		}
 	}
 
 	// Get the cube
@@ -875,14 +877,13 @@ func (svc *Service) GetCube(req *pb.GetCubeRequest, stream pb.Geocube_GetCubeSer
 	metadataPreparationTime := time.Since(start)
 
 	// Start the compression routine
-	var compressed bytes.Buffer
 	compressedSlicesQueue := make(chan internal.CubeSlice)
-	go compressSlicesQueue(slicesQueue, compressedSlicesQueue, deflater, compressed)
+	go compressSlicesQueue(slicesQueue, compressedSlicesQueue, deflater)
 
 	// If context close, compressedSlicesQueue is automatically closed
 	n := 1
 	for slice := range compressedSlicesQueue {
-		header, chunks := getCubeCreateResponses(&slice, true)
+		header, chunks := getCubeCreateResponses(&slice, 64*1024, req.CompressionLevel != -3)
 
 		getCubeLog(ctx, slice, header, req.GetHeadersOnly(), n)
 		n++
@@ -922,24 +923,23 @@ func getCubeLog(ctx context.Context, slice internal.CubeSlice, header *pb.ImageH
 	}
 }
 
-func compressSlicesQueue(sliceQueue <-chan internal.CubeSlice, compressedSliceQueue chan<- internal.CubeSlice, deflater *flate.Writer, compressed bytes.Buffer) {
+func compressSlicesQueue(sliceQueue <-chan internal.CubeSlice, compressedSliceQueue chan<- internal.CubeSlice, deflater *flate.Writer) {
 	defer func() {
 		close(compressedSliceQueue)
 	}()
 	for res := range sliceQueue {
 		// Get image
-		if res.Image != nil && res.Image.Bytes != nil {
+		if deflater != nil && res.Image != nil && res.Image.Bytes != nil {
 			start := time.Now()
 			// Compress image
-			compressed.Reset()
+			var compressed bytes.Buffer
 			deflater.Reset(&compressed)
 			if _, err := deflater.Write(res.Image.Bytes); err != nil {
 				res.Err = err
 			} else if err := deflater.Close(); err != nil {
 				res.Err = err
 			} else {
-				res.Image.Bytes = make([]byte, compressed.Len())
-				copy(res.Image.Bytes, compressed.Bytes())
+				res.Image.Bytes = compressed.Bytes()
 			}
 			res.Metadata["Compression"] = fmt.Sprintf("%v", time.Since(start))
 		}
@@ -947,9 +947,9 @@ func compressSlicesQueue(sliceQueue <-chan internal.CubeSlice, compressedSliceQu
 	}
 }
 
-func getCubeCreateResponses(slice *internal.CubeSlice, compression bool) (*pb.ImageHeader, []*pb.ImageChunk) {
-	chunkSize := 64 * 1024 // 1Mo/4Mo maximum
-
+// getCubeCreateResponses
+// chunkSize in bytes, 4Mo maximum by default
+func getCubeCreateResponses(slice *internal.CubeSlice, chunkSize int, compression bool) (*pb.ImageHeader, []*pb.ImageChunk) {
 	// Create the header
 	header := &pb.ImageHeader{
 		GroupedRecords: &pb.GroupedRecords{Records: make([]*pb.Record, len(slice.Records))},

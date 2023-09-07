@@ -4,6 +4,8 @@
 
 ### Functionalities
 - apiserver/downloader: add --gdalNumThreads to change the -wo options of gdal.warp. 1 by default, -1 means ALL_CPUS. gdalNumThreads+workers should be lower than the number of CPUS.
+- downloader: add --chunkSize (1Mbytes by default)
+- apiServer.GetCube: add CompressionLevel=-3 to disable the compression
 - gdalwarp use wm=500 instead of 2047
 - Min/Max to GetXYZTile to scale tile values between min and max.
 

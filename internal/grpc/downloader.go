@@ -27,13 +27,14 @@ type DownloaderService struct {
 	pb.UnimplementedGeocubeDownloaderServer
 	gdsvc            GeocubeDownloaderService
 	maxConnectionAge time.Duration
+	chunkSizeBytes   int
 }
 
 var _ pb.GeocubeDownloaderServer = &DownloaderService{}
 
 // NewDownloader returns a new GRPC DownloaderService connected to an DownloaderService
-func NewDownloader(gdsvc GeocubeDownloaderService, maxConnectionAgeSec int) *DownloaderService {
-	return &DownloaderService{gdsvc: gdsvc, maxConnectionAge: time.Duration(maxConnectionAgeSec)}
+func NewDownloader(gdsvc GeocubeDownloaderService, maxConnectionAgeSec int, chunkSizeBytes int) *DownloaderService {
+	return &DownloaderService{gdsvc: gdsvc, maxConnectionAge: time.Duration(maxConnectionAgeSec), chunkSizeBytes: chunkSizeBytes}
 }
 
 // Version returns version of the geocube
@@ -126,7 +127,7 @@ func (svc *DownloaderService) DownloadCube(req *pb.GetCubeMetadataRequest, strea
 
 	n := 1
 	for slice := range slicesQueue {
-		header, chunks := getCubeCreateResponses(&slice, false)
+		header, chunks := getCubeCreateResponses(&slice, svc.chunkSizeBytes, false)
 
 		getCubeLog(ctx, slice, header, false, n)
 		n++

@@ -1504,7 +1504,7 @@ Request a cube of data
 | crs | [string](#string) |  | Coordinates Reference System of the output images (images will be reprojected on the fly if necessary) |
 | pix_to_crs | [GeoTransform](#geocube-GeoTransform) |  | GeoTransform of the requested cube (images will be rescaled on the fly if necessary) |
 | size | [Size](#geocube-Size) |  | Shape of the output images |
-| compression_level | [int32](#int32) |  | Define a level of compression to speed up the transfer, values: -2 to 9 (-2: Huffman only, -1:default, 0: no compression, 1-&gt;9: level of compression from the fastest to the best compression). The data is compressed by the server and decompressed by the Client. Use -2 or 0 if the bandwidth is not limited. |
+| compression_level | [int32](#int32) |  | Define a level of compression to speed up the transfer, values: -3 to 9 (-2: Huffman only, -1:default, 0-&gt;9: level of compression from the fastest to the best compression, -3: disable the compression). The data is compressed by the server and decompressed by the Client. Use -3 or -2 if the bandwidth is not limited. 0 is level 0 of DEFLATE (thus, it must be decompressed by DEFLATE even though the data is not compressed). If the client can support -3, 0 is useless. |
 | headers_only | [bool](#bool) |  | Only returns headers (including all metadatas on datasets) |
 | format | [FileFormat](#geocube-FileFormat) |  | Format of the output images |
 | resampling_alg | [Resampling](#geocube-Resampling) |  | Resampling algorithm used for reprojecion. If undefined, the default resampling algorithm associated to the variable is used. |
@@ -1624,7 +1624,7 @@ ByteArray of a PNG image 256x256pixels
 Header of an image (slice of the cube)
 It describes the image, the underlying datasets and the way to recreate it from the array of byte :
 1. Append ImageHeader.data and ImageChunk.data from part=0 to part=nb_parts-1
-2. If compression=True, decompresss the array of bytes using deflate
+2. If compression=True, decompress the array of bytes using deflate
 3. Cast the result to the dtype using byteOrder
 4. Reshape the result
 
