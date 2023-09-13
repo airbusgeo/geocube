@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -123,7 +122,7 @@ func ConnStringFromCertFiles(dbName, dbUser, dbHost, certFile, keyFile, caCertFi
 }
 
 func ConnStringFromCredentials(dbName, dbUser, dbHost string, creds Credentials) (string, error) {
-	tempDir, err := ioutil.TempDir("/tmp", "")
+	tempDir, err := os.MkdirTemp("/tmp", "")
 	if err != nil {
 		return "", fmt.Errorf("tempdir: %w", err)
 	}

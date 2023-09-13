@@ -8,7 +8,7 @@ import (
 	"image"
 	"image/color"
 	"image/png"
-	"io/ioutil"
+	"io"
 	"math"
 	"strconv"
 
@@ -439,7 +439,7 @@ func DatasetToPngAsBytes(ctx context.Context, ds *godal.Dataset, fromDFormat geo
 	}
 	defer vsiFile.Close()
 
-	return ioutil.ReadAll(vsiFile)
+	return io.ReadAll(vsiFile)
 }
 
 // DatasetToTiffAsBytes translates the dataset to a tiff and returns the byte representation
@@ -479,5 +479,5 @@ func DatasetToTiffAsBytes(ds *godal.Dataset, fromDFormat geocube.DataMapping, ta
 		return nil, fmt.Errorf("datasetToTiff.%w", err)
 	}
 	defer vsiFile.Close()
-	return ioutil.ReadAll(vsiFile)
+	return io.ReadAll(vsiFile)
 }

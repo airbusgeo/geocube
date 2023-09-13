@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -38,7 +37,7 @@ func (s fileSystemStrategy) Download(ctx context.Context, uri string, options ..
 	}
 
 	defer f.Close()
-	return ioutil.ReadAll(f)
+	return io.ReadAll(f)
 }
 
 func (s fileSystemStrategy) DownloadToFile(ctx context.Context, source, destination string, options ...geocubeStorage.Option) error {
@@ -164,5 +163,5 @@ func (s fileSystemStrategy) StreamAt(key string, off int64, n int64) (io.ReadClo
 	}
 	defer f.Close()
 
-	return ioutil.NopCloser(f), 0, nil
+	return io.NopCloser(f), 0, nil
 }
