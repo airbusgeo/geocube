@@ -94,9 +94,7 @@ func (svc *Service) GetCubeFromMetadatas(ctx context.Context, metadatas []SliceM
 	refDf geocube.DataFormat, crs *godal.SpatialRef, pixToCRS *affine.Affine, width, height int, options GetCubeOptions) (CubeInfo, <-chan CubeSlice, error) {
 	var err error
 	var nbDs int
-	dsByRecord := make([][]*internalImage.Dataset, len(metadatas))
-	for i, element := range metadatas {
-		dsByRecord[i] = element.Datasets
+	for _, element := range metadatas {
 		nbDs += len(element.Datasets)
 	}
 	outDesc := internalImage.GdalDatasetDescriptor{
@@ -117,11 +115,11 @@ func (svc *Service) GetCubeFromMetadatas(ctx context.Context, metadatas []SliceM
 	if err != nil {
 		return CubeInfo{}, nil, fmt.Errorf("getCubeFromMetadatas.ToWKT: %w", err)
 	}
-	stream, err := svc.getCubeStream(ctx, dsByRecord, grecords, outDesc, false)
+	stream, err := svc.getCubeStream(ctx, metadatas, grecords, outDesc, false)
 	if err != nil {
 		return CubeInfo{}, nil, err
 	}
-	return CubeInfo{NbImages: len(dsByRecord), NbDatasets: nbDs}, stream, nil
+	return CubeInfo{NbImages: len(metadatas), NbDatasets: nbDs}, stream, nil
 }
 
 // GetCubeFromRecords implements GeocubeService
@@ -147,7 +145,7 @@ func (svc *Service) GetCubeFromRecords(ctx context.Context, grecordsID [][]strin
 	}
 
 	// Group datasets by record
-	datasetsByRecord, records, err := svc.getCubeGroupByRecord(ctx, datasets)
+	datasetsByRecord, records, err := svc.groupDatasetsByRecord(ctx, datasets)
 	if err != nil {
 		return CubeInfo{}, nil, fmt.Errorf("GetCubeFromRecords.%w", err)
 	}
@@ -158,7 +156,7 @@ func (svc *Service) GetCubeFromRecords(ctx context.Context, grecordsID [][]strin
 		recordIdx[record.ID] = i
 	}
 	var grecords [][]*geocube.Record
-	datasetsByRecord, grecords = getCubeGroupByRecordsGroup(datasetsByRecord, records, recordIdx, grecordsID)
+	datasetsByRecord, grecords = groupDatasetsByRecordsGroup(datasetsByRecord, records, recordIdx, grecordsID)
 
 	// GetCube
 	stream, err := svc.getCubeStream(ctx, datasetsByRecord, grecords, outDesc, options.HeadersOnly)
@@ -186,7 +184,7 @@ func (svc *Service) GetCubeFromFilters(ctx context.Context, recordTags geocube.M
 	}
 
 	// Group datasets by record
-	datasetsByRecord, records, err := svc.getCubeGroupByRecord(ctx, datasets)
+	datasetsByRecord, records, err := svc.groupDatasetsByRecord(ctx, datasets)
 	if err != nil {
 		return CubeInfo{}, nil, fmt.Errorf("GetCubeFromFilters.%w", err)
 	}
@@ -257,15 +255,15 @@ func (svc *Service) getCubePrepare(ctx context.Context, instancesID []string, cr
 }
 
 // getCubeGroupByRecordsGroup groups datasets and records according to the original recordGroups
-func getCubeGroupByRecordsGroup(datasetsByRecord [][]*internalImage.Dataset, records []*geocube.Record, recordIdx map[string]int, recordGroups [][]string) ([][]*internalImage.Dataset, [][]*geocube.Record) {
+func groupDatasetsByRecordsGroup(datasetsByRecord []SliceMeta, records []*geocube.Record, recordIdx map[string]int, recordGroups [][]string) ([]SliceMeta, [][]*geocube.Record) {
 	grecords := make([][]*geocube.Record, len(recordGroups))
-	newDatasetsByRecord := make([][]*internalImage.Dataset, len(recordGroups))
+	newDatasetsByRecord := make([]SliceMeta, len(recordGroups))
 	i := 0
 	for _, grecord := range recordGroups {
 		for _, recordID := range grecord {
 			if idx, ok := recordIdx[recordID]; ok {
 				grecords[i] = append(grecords[i], records[idx])
-				newDatasetsByRecord[i] = append(newDatasetsByRecord[i], datasetsByRecord[idx]...)
+				newDatasetsByRecord[i].Datasets = append(newDatasetsByRecord[i].Datasets, datasetsByRecord[idx].Datasets...)
 			}
 		}
 		if len(grecords[i]) > 0 {
@@ -276,16 +274,16 @@ func getCubeGroupByRecordsGroup(datasetsByRecord [][]*internalImage.Dataset, rec
 }
 
 // getCubeGroupByRecords groups datasets by record.ID
-func (svc *Service) getCubeGroupByRecord(ctx context.Context, datasets []*geocube.Dataset) ([][]*internalImage.Dataset, []*geocube.Record, error) {
+func (svc *Service) groupDatasetsByRecord(ctx context.Context, datasets []*geocube.Dataset) ([]SliceMeta, []*geocube.Record, error) {
 	// Group datasets by records
 	var recordsID []string
-	var datasetsByRecord [][]*internalImage.Dataset
+	var datasetsByRecord []SliceMeta
 	for i := 0; i < len(datasets); {
 		// Get the range of datasets with same RecordID
-		var ds []*internalImage.Dataset
+		var ds SliceMeta
 		recordID := datasets[i].RecordID
 		for ; i < len(datasets) && datasets[i].RecordID == recordID; i++ {
-			ds = append(ds, &internalImage.Dataset{
+			ds.Datasets = append(ds.Datasets, &internalImage.Dataset{
 				URI:         datasets[i].ContainerURI,
 				SubDir:      datasets[i].ContainerSubDir,
 				Bands:       datasets[i].Bands,
@@ -305,18 +303,17 @@ func getNumberOfWorkers(memoryUsageBytes int) int {
 	return utils.MinI(10, utils.MaxI(1, ramSize/memoryUsageBytes))
 }
 
-func (svc *Service) getCubeStream(ctx context.Context, datasetsByRecord [][]*internalImage.Dataset, grecords [][]*geocube.Record, outDesc internalImage.GdalDatasetDescriptor, headersOnly bool) (<-chan CubeSlice, error) {
+func (svc *Service) getCubeStream(ctx context.Context, datasetsByRecord []SliceMeta, grecords [][]*geocube.Record, outDesc internalImage.GdalDatasetDescriptor, headersOnly bool) (<-chan CubeSlice, error) {
 	if headersOnly {
 		// Push the headers into a channel
 		headersOut := make(chan CubeSlice, len(grecords))
 		for i, records := range grecords {
 			headersOut <- CubeSlice{
-				Image:    geocube.NewBitmapHeader(image.Rect(0, 0, outDesc.Width, outDesc.Height), outDesc.DataMapping.DType, outDesc.Bands),
-				Err:      nil,
-				Records:  records,
-				Metadata: map[string]string{},
-				DatasetsMeta: SliceMeta{
-					Datasets: datasetsByRecord[i]}}
+				Image:        geocube.NewBitmapHeader(image.Rect(0, 0, outDesc.Width, outDesc.Height), outDesc.DataMapping.DType, outDesc.Bands),
+				Err:          nil,
+				Records:      records,
+				Metadata:     map[string]string{},
+				DatasetsMeta: datasetsByRecord[i]}
 		}
 		close(headersOut)
 
@@ -328,7 +325,7 @@ func (svc *Service) getCubeStream(ctx context.Context, datasetsByRecord [][]*int
 	var unorderedSlices []chan CubeSlice
 	for i, datasets := range datasetsByRecord {
 		jobs = append(jobs, mergeDatasetJob{ID: len(jobs),
-			Datasets: datasets, Records: grecords[i],
+			Slice: datasets, Records: grecords[i],
 			OutDesc: &outDesc})
 		unorderedSlices = append(unorderedSlices, make(chan CubeSlice /** set ", 1" to release the worker as soon as it finishes */))
 	}
@@ -472,10 +469,10 @@ func orderResults(ctx context.Context, unordered []chan CubeSlice, ordered chan<
 }
 
 type mergeDatasetJob struct {
-	ID       int
-	Datasets []*internalImage.Dataset
-	Records  []*geocube.Record
-	OutDesc  *internalImage.GdalDatasetDescriptor
+	ID      int
+	Slice   SliceMeta
+	Records []*geocube.Record
+	OutDesc *internalImage.GdalDatasetDescriptor
 }
 
 func mergeTags(records []*geocube.Record) map[string]string {
@@ -512,7 +509,7 @@ func (svc *Service) mergeDatasetsWorker(ctx context.Context, jobs <-chan mergeDa
 		// Run mergeDatasets
 		start := time.Now()
 		var bitmap *geocube.Bitmap
-		ds, err := internalImage.MergeDatasets(ctx, job.Datasets, job.OutDesc)
+		ds, err := internalImage.MergeDatasets(ctx, job.Slice.Datasets, job.OutDesc)
 		if err == nil {
 			// Convert to image
 			switch job.OutDesc.Format {
@@ -526,20 +523,18 @@ func (svc *Service) mergeDatasetsWorker(ctx context.Context, jobs <-chan mergeDa
 			ds.Close()
 		}
 
-		metadata := map[string]string{fmt.Sprintf("Merge %d", len(job.Datasets)): fmt.Sprintf("%v", time.Since(start))}
+		metadata := map[string]string{fmt.Sprintf("Merge %d", len(job.Slice.Datasets)): fmt.Sprintf("%v", time.Since(start))}
 
 		// Send bitmap
 		select {
 		case <-ctx.Done():
 			return
 		case slicesOut[job.ID] <- CubeSlice{
-			Image:    bitmap,
-			Err:      err,
-			Records:  job.Records,
-			Metadata: metadata,
-			DatasetsMeta: SliceMeta{
-				Datasets: job.Datasets,
-			}}:
+			Image:        bitmap,
+			Err:          err,
+			Records:      job.Records,
+			Metadata:     metadata,
+			DatasetsMeta: job.Slice}:
 		}
 	}
 }
