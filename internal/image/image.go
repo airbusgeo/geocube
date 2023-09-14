@@ -183,8 +183,9 @@ func MergeDatasets(ctx context.Context, datasets []*Dataset, outDesc *GdalDatase
 		// Convert dataset to outDesc.DataFormat
 		if !commonDMapping.Equals(outDesc.DataMapping) {
 			tmpDS := mergedDs
-			defer tmpDS.Close()
-			if mergedDs, err = CastDataset(ctx, tmpDS, commonDMapping, outDesc.DataMapping, ""); err != nil {
+			mergedDs, err = CastDataset(ctx, tmpDS, commonDMapping, outDesc.DataMapping, "")
+			tmpDS.Close()
+			if err != nil {
 				return nil, fmt.Errorf("mergeDatasets: %w", err)
 			}
 		}

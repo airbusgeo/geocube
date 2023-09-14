@@ -143,6 +143,7 @@ func (svc *DownloaderService) DownloadCube(req *pb.GetCubeMetadataRequest, strea
 				return formatError("GetCube.Send: %w", err)
 			}
 		}
+		slice.Image = nil
 	}
 
 	log.Logger(ctx).Sugar().Infof("GetCube: %d images streamed from %d datasets (%v)\n", info.NbImages, info.NbDatasets, time.Since(start))
