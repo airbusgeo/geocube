@@ -252,31 +252,24 @@ func run(ctx context.Context) error {
 	return srv.Shutdown(sctx)
 }
 
-func getMaxConnectionAge(maxConnectionAge int) int {
-	if maxConnectionAge < 60 {
-		maxConnectionAge = 15 * 60
-	}
-	return maxConnectionAge
-}
-
 func newGrpcServer(svc geogrpc.GeocubeService, asvc geogrpc.GeocubeServiceAdmin, maxConnectionAgeValue int) *grpc.Server {
 
 	opts := []grpc.ServerOption{
 		grpc.KeepaliveParams(keepalive.ServerParameters{
-			MaxConnectionAge:      time.Duration(getMaxConnectionAge(maxConnectionAgeValue)) * time.Second,
+			MaxConnectionAge:      time.Duration(maxConnectionAgeValue) * time.Second,
 			MaxConnectionAgeGrace: time.Minute}),
 		grpc.UnaryInterceptor(authUnaryInterceptor),
 		grpc.StreamInterceptor(authStreamInterceptor)}
 
 	grpcServer := grpc.NewServer(opts...)
-	pb.RegisterGeocubeServer(grpcServer, geogrpc.New(svc, getMaxConnectionAge(maxConnectionAgeValue)))
+	pb.RegisterGeocubeServer(grpcServer, geogrpc.New(svc, maxConnectionAgeValue))
 	pb.RegisterAdminServer(grpcServer, geogrpc.NewAdmin(asvc))
 	return grpcServer
 }
 
 func newGatewayHandler(ctx context.Context, svc geogrpc.GeocubeService, maxConnectionAgeValue int) *runtime.ServeMux {
 	gwmux := runtime.NewServeMux(runtime.WithMarshalerOption("image/png", pngMarshaler{}))
-	pb.RegisterGeocubeHandlerServer(ctx, gwmux, geogrpc.New(svc, getMaxConnectionAge(maxConnectionAgeValue)))
+	pb.RegisterGeocubeHandlerServer(ctx, gwmux, geogrpc.New(svc, maxConnectionAgeValue))
 	return gwmux
 }
 
@@ -311,7 +304,7 @@ func newServerAppConfig() (*serverConfig, error) {
 	// Configuration
 	flag.StringVar(&serverConfig.AppPort, "port", "8080", "geocube port to use")
 	flag.BoolVar(&serverConfig.TLS, "tls", false, "enable TLS protocol (certificate and key must be /tls/tls.crt and /tls/tls.key)")
-	flag.IntVar(&serverConfig.MaxConnectionAge, "maxConnectionAge", 0, "grpc max age connection")
+	flag.IntVar(&serverConfig.MaxConnectionAge, "maxConnectionAge", 15*60, "grpc max age connection")
 	flag.IntVar(&serverConfig.CubeWorkers, "workers", 1, "number of workers to parallelize the processing of the slices of a cube (see also GdalMultithreading)")
 	flag.StringVar(&serverConfig.CancelledConsolidationStorage, "cancelledJobs", "", "storage where cancelled jobs are referenced. Must be reachable by the Consolidation Workers and the Geocube with read/write permissions")
 	flag.StringVar(&serverConfig.IngestionStorage, "ingestionStorage", "", "path to the storage where ingested and consolidated datasets will be stored. Must be reachable with read/write/delete permissions. (local/gs)")

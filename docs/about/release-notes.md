@@ -12,6 +12,7 @@
 ### Bug fixes
 - CleanJobs: remove DONEBUTUNTIDY
 - Remove redondant logs
+- maxConnectionAge: default = 15min
 
 
 ### Others
