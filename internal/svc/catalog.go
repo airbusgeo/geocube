@@ -505,10 +505,8 @@ func mergeTags(records []*geocube.Record) map[string]string {
 func (svc *Service) mergeDatasetsWorker(ctx context.Context, jobs <-chan mergeDatasetJob, slicesOut []chan CubeSlice) {
 	for job := range jobs {
 		// In case of early cancellation
-		select {
-		case <-ctx.Done():
+		if utils.IsCancelled(ctx) {
 			return
-		default:
 		}
 
 		// Run mergeDatasets

@@ -251,10 +251,8 @@ func (h *handlerConsolidation) getLocalDatasetsByRecord(ctx context.Context, cEv
 		for i := 0; i < 20; i++ {
 			g.Go(func() error {
 				for file := range files {
-					select {
-					case <-ctx.Done():
+					if utils.IsCancelled(ctx) {
 						return ctx.Err()
-					default:
 					}
 					if err := file.URI.DownloadToFile(gCtx, file.LocalURI); err != nil {
 						return fmt.Errorf("%s: %w", file.URI.String(), err)
@@ -303,10 +301,8 @@ func (h *handlerConsolidation) cleanWorkspace(ctx context.Context, workspace str
 }
 
 func (h *handlerConsolidation) isCancelled(ctx context.Context, event *geocube.ConsolidationEvent) bool {
-	select {
-	case <-ctx.Done():
+	if utils.IsCancelled(ctx) {
 		return true
-	default:
 	}
 
 	path := utils.URLJoin(h.cancelledJobsStorage, fmt.Sprintf("%s_%s", event.JobID, event.TaskID))

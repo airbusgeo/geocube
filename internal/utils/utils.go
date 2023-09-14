@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"context"
 	"fmt"
 	"path"
 	"regexp"
@@ -84,4 +85,13 @@ func FindRegexGroups(reg *regexp.Regexp, v string) (map[string]string, error) {
 
 func URLJoin(url string, elems ...string) string {
 	return fmt.Sprintf("%s/%s", strings.TrimRight(url, "/"), path.Join(elems...))
+}
+
+func IsCancelled(ctx context.Context) bool {
+	select {
+	case <-ctx.Done():
+		return true
+	default:
+		return false
+	}
 }
