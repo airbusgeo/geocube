@@ -302,7 +302,7 @@ func (s gsStrategy) downloadObjectTo(ctx context.Context, bucket, path string, w
 		r, err = bckt.Object(path).NewRangeReader(ctx, curOffset, bytesRemaining)
 		if err != nil {
 			err = gsError(err)
-			if utils.Temporary(err) {
+			if utils.Retriable(err) {
 				continue
 			} else {
 				return fmt.Errorf("gs.download.newreader: %w", err)
@@ -316,7 +316,7 @@ func (s gsStrategy) downloadObjectTo(ctx context.Context, bucket, path string, w
 			return nil
 		}
 		err = gsError(err)
-		if !utils.Temporary(err) {
+		if !utils.Retriable(err) {
 			return fmt.Errorf("gs.download.copy: %w", err)
 		}
 
@@ -346,7 +346,7 @@ func (s gsStrategy) uploadObjectFrom(ctx context.Context, bucket, object string,
 			_, err = r.Seek(off, io.SeekStart)
 			if err != nil {
 				err = gsError(err)
-				if utils.Temporary(err) {
+				if utils.Retriable(err) {
 					continue
 				} else {
 					return fmt.Errorf("gs.upload.reset: %w", err)
@@ -361,7 +361,7 @@ func (s gsStrategy) uploadObjectFrom(ctx context.Context, bucket, object string,
 		if err != nil {
 			w.Close()
 			err = gsError(err)
-			if utils.Temporary(err) {
+			if utils.Retriable(err) {
 				continue
 			} else {
 				return fmt.Errorf("gs.upload.copy: %w", err)
@@ -371,7 +371,7 @@ func (s gsStrategy) uploadObjectFrom(ctx context.Context, bucket, object string,
 		if err == nil {
 			return nil
 		}
-		if !utils.Temporary(err) {
+		if !utils.Retriable(err) {
 			return fmt.Errorf("gs.upload.close: %w", err)
 		}
 	}
@@ -391,7 +391,7 @@ func (s gsStrategy) deleteObject(ctx context.Context, bucket, object string, opt
 		if err == nil {
 			return nil
 		}
-		if !utils.Temporary(err) {
+		if !utils.Retriable(err) {
 			return fmt.Errorf("gs.deleteObject[%s/%s]: %w", bucket, object, err)
 		}
 	}

@@ -13,6 +13,7 @@
 - CleanJobs: remove DONEBUTUNTIDY
 - Remove redondant logs
 - maxConnectionAge: default = 15min
+- storage: operations retry when context is cancelled: Add utils.Retriable to test weither an error is retriable.
 
 
 ### Others

@@ -66,7 +66,7 @@ func (p *Publisher) publish(ctx context.Context, retry int, data ...[]byte) erro
 		for i, r := range results {
 			// Block until the result is returned and a server-generated ID is returned for the published message.
 			if _, err := r.Get(ctx); err != nil {
-				if utils.Temporary(err) && retry < p.maxRetries {
+				if utils.Retriable(err) && retry < p.maxRetries {
 					retryIds = append(retryIds, i)
 				} else {
 					return fmt.Errorf("Publish: %w", err)
