@@ -322,12 +322,16 @@ func (svc *Service) getCubeStream(ctx context.Context, datasetsByRecord []SliceM
 
 	// Create a job for each batch of datasets with the same record id and a result channel
 	var jobs []mergeDatasetJob
-	var unorderedSlices []chan CubeSlice
+	var unorderedSlices []<-chan CubeSlice
 	for i, datasets := range datasetsByRecord {
-		jobs = append(jobs, mergeDatasetJob{ID: len(jobs),
+		ackChan := make(chan CubeSlice /** set ", 1" to release the worker as soon as it finishes */)
+		jobs = append(jobs, mergeDatasetJob{
+			ID:    len(jobs),
 			Slice: datasets, Records: grecords[i],
-			OutDesc: &outDesc})
-		unorderedSlices = append(unorderedSlices, make(chan CubeSlice /** set ", 1" to release the worker as soon as it finishes */))
+			OutDesc:    &outDesc,
+			ResultChan: ackChan,
+		})
+		unorderedSlices = append(unorderedSlices, ackChan)
 	}
 
 	// Create a channel for returning the results in order
@@ -341,7 +345,7 @@ func (svc *Service) getCubeStream(ctx context.Context, datasetsByRecord []SliceM
 		jobChan := make(chan mergeDatasetJob, len(jobs))
 		nbWorkers := utils.MinI(len(jobs), utils.MinI(svc.cubeWorkers, getNumberOfWorkers(outDesc.Height*outDesc.Width*outDesc.DataMapping.DType.Size()*10)))
 		for i := 0; i < nbWorkers; i++ {
-			go svc.mergeDatasetsWorker(ctx, jobChan, unorderedSlices)
+			go mergeDatasetsWorker(ctx, jobChan)
 		}
 		// Push jobs
 		for _, j := range jobs {
@@ -384,7 +388,7 @@ func (svc *Service) GetXYZTile(ctx context.Context, recordsID []string, instance
 		}
 	}
 
-	// Get an image from theses records
+	// Get an image from these records
 	ds, err := svc.getMosaic(ctx, recordsID, []string{instanceID}, geogExtent, &outDesc)
 	if err != nil {
 		return nil, fmt.Errorf("GetXYZTile.%w", err)
@@ -448,7 +452,7 @@ func pixToWebMercatorTransform(z int, crs3857 *godal.SpatialRef) (*affine.Affine
 }
 
 // orderResults waits for the result of workers and streams the results sorted by job.id
-func orderResults(ctx context.Context, unordered []chan CubeSlice, ordered chan<- CubeSlice) {
+func orderResults(ctx context.Context, unordered []<-chan CubeSlice, ordered chan<- CubeSlice) {
 	defer close(ordered)
 	var slice CubeSlice
 	for _, chanOut := range unordered {
@@ -469,10 +473,11 @@ func orderResults(ctx context.Context, unordered []chan CubeSlice, ordered chan<
 }
 
 type mergeDatasetJob struct {
-	ID      int
-	Slice   SliceMeta
-	Records []*geocube.Record
-	OutDesc *internalImage.GdalDatasetDescriptor
+	ID         int
+	Slice      SliceMeta
+	Records    []*geocube.Record
+	OutDesc    *internalImage.GdalDatasetDescriptor
+	ResultChan chan<- CubeSlice
 }
 
 func mergeTags(records []*geocube.Record) map[string]string {
@@ -499,43 +504,46 @@ func mergeTags(records []*geocube.Record) map[string]string {
 }
 
 // mergeDatasetsWorker panics if datasets is empty
-func (svc *Service) mergeDatasetsWorker(ctx context.Context, jobs <-chan mergeDatasetJob, slicesOut []chan CubeSlice) {
+func mergeDatasetsWorker(ctx context.Context, jobs <-chan mergeDatasetJob) {
 	for job := range jobs {
-		// In case of early cancellation
-		if utils.IsCancelled(ctx) {
-			return
-		}
-
-		// Run mergeDatasets
-		start := time.Now()
-		var bitmap *geocube.Bitmap
-		ds, err := internalImage.MergeDatasets(ctx, job.Slice.Datasets, job.OutDesc)
-		if err == nil {
-			// Convert to image
-			switch job.OutDesc.Format {
-			case "GTiff":
-				tags := mergeTags(job.Records)
-				bitmap = geocube.NewBitmapHeader(image.Rect(0, 0, job.OutDesc.Width, job.OutDesc.Height), job.OutDesc.DataMapping.DType, job.OutDesc.Bands)
-				bitmap.Bytes, err = internalImage.DatasetToTiffAsBytes(ds, job.OutDesc.DataMapping, tags, nil)
-			default:
-				bitmap, err = geocube.NewBitmapFromDataset(ds)
+		func() {
+			defer close(job.ResultChan)
+			// In case of early cancellation
+			if utils.IsCancelled(ctx) {
+				return
 			}
-			ds.Close()
-		}
 
-		metadata := map[string]string{fmt.Sprintf("Merge %d", len(job.Slice.Datasets)): fmt.Sprintf("%v", time.Since(start))}
+			// Run mergeDatasets
+			start := time.Now()
+			var bitmap *geocube.Bitmap
+			ds, err := internalImage.MergeDatasets(ctx, job.Slice.Datasets, job.OutDesc)
+			if err == nil {
+				// Convert to image
+				switch job.OutDesc.Format {
+				case "GTiff":
+					tags := mergeTags(job.Records)
+					bitmap = geocube.NewBitmapHeader(image.Rect(0, 0, job.OutDesc.Width, job.OutDesc.Height), job.OutDesc.DataMapping.DType, job.OutDesc.Bands)
+					bitmap.Bytes, err = internalImage.DatasetToTiffAsBytes(ds, job.OutDesc.DataMapping, tags, nil)
+				default:
+					bitmap, err = geocube.NewBitmapFromDataset(ds)
+				}
+				ds.Close()
+			}
 
-		// Send bitmap
-		select {
-		case <-ctx.Done():
-			return
-		case slicesOut[job.ID] <- CubeSlice{
-			Image:        bitmap,
-			Err:          err,
-			Records:      job.Records,
-			Metadata:     metadata,
-			DatasetsMeta: job.Slice}:
-		}
+			metadata := map[string]string{fmt.Sprintf("Merge %d", len(job.Slice.Datasets)): fmt.Sprintf("%v", time.Since(start))}
+
+			// Send bitmap
+			select {
+			case <-ctx.Done():
+				return
+			case job.ResultChan <- CubeSlice{
+				Image:        bitmap,
+				Err:          err,
+				Records:      job.Records,
+				Metadata:     metadata,
+				DatasetsMeta: job.Slice}:
+			}
+		}()
 	}
 }
 
