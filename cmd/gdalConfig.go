@@ -5,9 +5,9 @@ import (
 	"flag"
 	"io"
 	"os"
+	"strconv"
 
 	"github.com/airbusgeo/geocube/interface/storage/gcs"
-	"github.com/airbusgeo/geocube/internal/image"
 	"github.com/airbusgeo/godal"
 	"github.com/airbusgeo/osio"
 
@@ -47,7 +47,7 @@ func GDALConfigFlags() *GDALConfig {
 	gdalConfig := GDALConfig{}
 	flag.StringVar(&gdalConfig.BlockSize, "gdalBlockSize", "1Mb", "gdal blocksize value (default 1Mb)")
 	flag.IntVar(&gdalConfig.NumCachedBlocks, "gdalNumCachedBlocks", 500, "gdal blockcache value (default 500)")
-	flag.IntVar(&gdalConfig.NumThreads, "gdalNumThreads", 1, "number of threads for gdal warp (-wo NUM_THREADS=) (-1 means ALL_CPUS)")
+	flag.IntVar(&gdalConfig.NumThreads, "gdalNumThreads", 1, "set GDAL_NUM_THREADS env var (-1 means ALL_CPUS)")
 	flag.BoolVar(&gdalConfig.WithGCS, "with-gcs", false, "configure GDAL to use gcs storage (may need authentication)")
 	flag.BoolVar(&gdalConfig.WithS3, "with-s3", false, "configure GDAL to use s3 storage (may need authentication)")
 	flag.StringVar(&gdalConfig.AwsRegion, "aws-region", "", "define aws_region for GDAL to use s3 storage (--with-s3)")
@@ -59,6 +59,12 @@ func GDALConfigFlags() *GDALConfig {
 
 func InitGDAL(ctx context.Context, gdalConfig *GDALConfig) error {
 	os.Setenv("GDAL_DISABLE_READDIR_ON_OPEN", "EMPTY_DIR")
+
+	if gdalConfig.NumThreads > 0 {
+		os.Setenv("GDAL_NUM_THREADS", strconv.Itoa(gdalConfig.NumThreads))
+	} else if gdalConfig.NumThreads == -1 {
+		os.Setenv("GDAL_NUM_THREADS", "ALL_CPUS")
+	}
 
 	godal.RegisterAll()
 	if gdalConfig.RegisterPNG {
@@ -137,7 +143,6 @@ func InitGDAL(ctx context.Context, gdalConfig *GDALConfig) error {
 		}*/
 		// Else no debug > Nothing to do
 	}
-	image.GdalNumThreads = gdalConfig.NumThreads
 
 	return nil
 }

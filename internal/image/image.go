@@ -19,8 +19,6 @@ import (
 	"github.com/google/uuid"
 )
 
-var GdalNumThreads int
-
 type Dataset struct {
 	URI         string
 	SubDir      string
@@ -32,7 +30,7 @@ func (d Dataset) GDALURI() string {
 	return geocube.GDALURI(d.URI, d.SubDir)
 }
 
-var ErrLoger = godal.ErrLogger(func(ec godal.ErrorCategory, code int, msg string) error {
+var ErrLogger = godal.ErrLogger(func(ec godal.ErrorCategory, code int, msg string) error {
 	if ec <= godal.CE_Warning {
 		return nil
 	}
@@ -56,11 +54,23 @@ var (
 	ErrUnableToCast    = errors.New("unableToCast")
 )
 
-// CastDataset creates a new dataset and cast fromDFormat toDFormat
-// The caller is responsible to close the dataset
+// castDatasetOptions returns the translate options to create a new data with toDFormat and converts the ds.pixels fromRange toDFormat (using an non-linear mapping if exponent != 1)
+func castDatasetOptions(fromRange geocube.Range, exponent float64, toDFormat geocube.DataFormat) []string {
+	options := []string{
+		"-ot", toDFormat.DType.ToGDAL().String(),
+		"-scale", toS(fromRange.Min), toS(fromRange.Max), toS(toDFormat.Range.Min), toS(toDFormat.Range.Max),
+		"-a_nodata", toS(toDFormat.NoData),
+	}
+	if exponent != 1 {
+		options = append(options, "-exponent", toS(exponent))
+	}
+
+	return options
+}
+
+// CastDatasetOptions returns the translate options to cast fromDFormat toDFormat
 // fromDFormat: NoData is ignored
-// dstDS [optional] If empty, the dataset is stored in memory
-func CastDataset(ctx context.Context, ds *godal.Dataset, fromDFormat, toDFormat geocube.DataMapping, dstDS string) (*godal.Dataset, error) {
+func CastDatasetOptions(fromDFormat, toDFormat geocube.DataMapping) ([]string, error) {
 	if fromDFormat.Equals(toDFormat) {
 		return nil, ErrNoCastToPerform
 	}
@@ -72,27 +82,27 @@ func CastDataset(ctx context.Context, ds *godal.Dataset, fromDFormat, toDFormat 
 		/*
 			This is just a special case of the following
 			if toDFormat.Range == toDFormat.RangeExt {
-				return castDataset(ds, fromDFormat.Range, fromDFormat.Exponent, geocube.DataFormat{
+				return castDatasetOptions(fromDFormat.Range, fromDFormat.Exponent, geocube.DataFormat{
 					DType:  toDFormat.DType,
 					Range:  fromDFormat.RangeExt,
 					NoData: toDFormat.NoData,
-				}, dstDS)
+				}), nil
 			}
 		*/
 		f := toDFormat.Range.Interval() / toDFormat.RangeExt.Interval()
 		rangeEq := geocube.Range{Min: toDFormat.Range.Min + (fromDFormat.RangeExt.Min-toDFormat.RangeExt.Min)*f}
 		rangeEq.Max = fromDFormat.RangeExt.Interval()*f + rangeEq.Min
-		return castDataset(ds, fromDFormat.Range, fromDFormat.Exponent, geocube.DataFormat{
+		return castDatasetOptions(fromDFormat.Range, fromDFormat.Exponent, geocube.DataFormat{
 			DType:  toDFormat.DType,
 			Range:  rangeEq,
 			NoData: toDFormat.NoData,
-		}, dstDS)
+		}), nil
 	}
 	if fromDFormat.Exponent == 1 {
 		f := fromDFormat.Range.Interval() / fromDFormat.RangeExt.Interval()
 		rangeEq := geocube.Range{Min: fromDFormat.Range.Min + (toDFormat.RangeExt.Min-fromDFormat.RangeExt.Min)*f}
 		rangeEq.Max = toDFormat.RangeExt.Interval()*f + rangeEq.Min
-		return castDataset(ds, rangeEq, 1/toDFormat.Exponent, toDFormat.DataFormat, dstDS)
+		return castDatasetOptions(rangeEq, 1/toDFormat.Exponent, toDFormat.DataFormat), nil
 	}
 
 	if fromDFormat.Exponent == toDFormat.Exponent {
@@ -102,35 +112,45 @@ func CastDataset(ctx context.Context, ds *godal.Dataset, fromDFormat, toDFormat 
 				Min: toDFormat.Range.Min,
 				Max: toDFormat.Range.Interval()*math.Pow(f, 1/toDFormat.Exponent) + toDFormat.Range.Min,
 			}
-			return castDataset(ds, fromDFormat.Range, 1, geocube.DataFormat{
+			return castDatasetOptions(fromDFormat.Range, 1, geocube.DataFormat{
 				DType:  toDFormat.DType,
 				Range:  rangeEq,
 				NoData: toDFormat.NoData,
-			}, dstDS)
+			}), nil
 		}
 	}
 
 	return nil, fmt.Errorf(" Unable to cast %v to %v %w", fromDFormat, toDFormat, ErrUnableToCast)
 }
 
-// castDataset creates a new dataset with toDFormat and converts the ds.pixels fromRange toDFormat (using an non-linear mapping if exponent != 1)
-// The caller is responsible to close the dataset
-// dstDS [optional] If empty, the dataset is stored in memory
-func castDataset(ds *godal.Dataset, fromRange geocube.Range, exponent float64, toDFormat geocube.DataFormat, dstDS string) (*godal.Dataset, error) {
-	options := []string{
-		"-ot", toDFormat.DType.ToGDAL().String(),
-		"-scale", toS(fromRange.Min), toS(fromRange.Max), toS(toDFormat.Range.Min), toS(toDFormat.Range.Max),
-		"-a_nodata", toS(toDFormat.NoData),
+func ExtractBandsOption(ds *godal.Dataset, bands []int64) []string {
+	if bands == nil || (isASuite(bands) && len(ds.Bands()) == len(bands)) {
+		return nil
 	}
-	if exponent != 1 {
-		options = append(options, "-exponent", toS(exponent))
-	}
+	var options []string
+	for _, b := range bands {
+		options = append(options, "-b", strconv.Itoa(int(b)))
 
-	var opts []godal.DatasetTranslateOption
-	if dstDS == "" {
-		opts = append(opts, godal.Memory)
 	}
-	outDs, err := ds.Translate(dstDS, options, opts...)
+	return options
+}
+
+// CastDataset creates a new dataset and cast <bands> fromDFormat toDFormat
+// The caller is responsible to close the dataset
+// fromDFormat: NoData is ignored
+// bands: if not nil, extracts the bands
+// dstDS [optional] If empty, the dataset is stored in memory
+func CastDataset(ctx context.Context, ds *godal.Dataset, bands []int64, fromDFormat, toDFormat geocube.DataMapping, dstDS string) (*godal.Dataset, error) {
+	options, err := CastDatasetOptions(fromDFormat, toDFormat)
+	if err != nil {
+		return nil, err
+	}
+	options = append(options, ExtractBandsOption(ds, bands)...)
+
+	if dstDS == "" {
+		options = append(options, "-of", "MEM")
+	}
+	outDs, err := ds.Translate(dstDS, options)
 	if err != nil {
 		return nil, fmt.Errorf("castDataset.Translate: %w", err)
 	}
@@ -183,7 +203,7 @@ func MergeDatasets(ctx context.Context, datasets []*Dataset, outDesc *GdalDatase
 		// Convert dataset to outDesc.DataFormat
 		if !commonDMapping.Equals(outDesc.DataMapping) {
 			tmpDS := mergedDs
-			mergedDs, err = CastDataset(ctx, tmpDS, commonDMapping, outDesc.DataMapping, "")
+			mergedDs, err = CastDataset(ctx, tmpDS, nil, commonDMapping, outDesc.DataMapping, "")
 			tmpDS.Close()
 			if err != nil {
 				return nil, fmt.Errorf("mergeDatasets: %w", err)
@@ -218,7 +238,7 @@ func MergeDatasets(ctx context.Context, datasets []*Dataset, outDesc *GdalDatase
 // mosaicDatasets calls godal.Warp to merge all the datasets into one without reprojection
 // The caller is responsible to close the output dataset
 func mosaicDatasets(datasets []*godal.Dataset, rx, ry float64) (*godal.Dataset, error) {
-	outDs, err := godal.Warp("", datasets, []string{"-tr", toS(rx), toS(ry)}, godal.Memory, ErrLoger)
+	outDs, err := godal.Warp("", datasets, []string{"-tr", toS(rx), toS(ry)}, godal.Memory, ErrLogger)
 	if err != nil {
 		if outDs != nil {
 			outDs.Close()
@@ -239,6 +259,33 @@ func isASuite(s []int64) bool {
 	return true
 }
 
+func warpDatasetOptions(wktCRS string, transform *affine.Affine, width, height float64, resampling geocube.Resampling, commonDFormat geocube.DataFormat) []string {
+
+	options := []string{
+		"-t_srs", wktCRS,
+		"-ts", toS(width), toS(height),
+		"-ovr", "AUTO", //TODO user-defined ?
+		"-wo", "INIT_DEST=" + toS(commonDFormat.NoData),
+		"-wm", "500",
+		"-ot", commonDFormat.DType.ToGDAL().String(),
+		"-r", resampling.String(),
+		"-srcnodata", toS(commonDFormat.NoData),
+		"-nomd",
+		"-multi",
+	}
+
+	if commonDFormat.NoDataDefined() {
+		options = append(options, "-dstnodata", toS(commonDFormat.NoData))
+	}
+
+	if transform != nil {
+		xMin, yMax := transform.Transform(0, 0)
+		xMax, yMin := transform.Transform(width, height)
+		options = append(options, "-te", toS(xMin), toS(yMin), toS(xMax), toS(yMax))
+	}
+	return options
+}
+
 // warpDatasets calls godal.Warp on datasets, performing a reprojection
 // The caller is responsible to close the output dataset
 func warpDatasets(datasets []*Dataset, wktCRS string, transform *affine.Affine, width, height float64, resampling geocube.Resampling, commonDFormat geocube.DataFormat) (*godal.Dataset, error) {
@@ -247,7 +294,7 @@ func warpDatasets(datasets []*Dataset, wktCRS string, transform *affine.Affine, 
 	for i, dataset := range datasets {
 		var err error
 		uri := dataset.GDALURI()
-		if gdatasets[i], err = godal.Open(uri, ErrLoger); err != nil {
+		if gdatasets[i], err = godal.Open(uri, ErrLogger); err != nil {
 			return nil, fmt.Errorf("while opening %s: %w", uri, err)
 		}
 		defer gdatasets[i].Close()
@@ -267,37 +314,8 @@ func warpDatasets(datasets []*Dataset, wktCRS string, transform *affine.Affine, 
 			}(gdatasets[i])
 		}
 	}
-
-	options := []string{
-		"-t_srs", wktCRS,
-		"-ts", toS(width), toS(height),
-		"-ovr", "AUTO", //TODO user-defined ?
-		"-wo", "INIT_DEST=" + toS(commonDFormat.NoData),
-		"-wm", "500",
-		"-ot", commonDFormat.DType.ToGDAL().String(),
-		"-r", resampling.String(),
-		"-srcnodata", toS(commonDFormat.NoData),
-		"-nomd",
-		"-multi",
-	}
-
-	if GdalNumThreads > 1 {
-		options = append(options, "-wo", "NUM_THREADS=", strconv.Itoa(GdalNumThreads))
-	} else if GdalNumThreads == -1 {
-		options = append(options, "-wo", "NUM_THREADS=ALL_CPUS")
-	}
-
-	if commonDFormat.NoDataDefined() {
-		options = append(options, "-dstnodata", toS(commonDFormat.NoData))
-	}
-
-	if transform != nil {
-		xMin, yMax := transform.Transform(0, 0)
-		xMax, yMin := transform.Transform(width, height)
-		options = append(options, "-te", toS(xMin), toS(yMin), toS(xMax), toS(yMax))
-	}
-
-	outDs, err := godal.Warp("", gdatasets, options, godal.Memory, ErrLoger)
+	options := warpDatasetOptions(wktCRS, transform, width, height, resampling, commonDFormat)
+	outDs, err := godal.Warp("", gdatasets, options, godal.Memory, ErrLogger)
 	if err != nil {
 		if outDs != nil {
 			outDs.Close()
@@ -314,7 +332,7 @@ func WarpedExtent(ctx context.Context, datasets []*Dataset, wktCRS string, resx,
 	for i, dataset := range datasets {
 		var err error
 		uri := dataset.GDALURI()
-		if gdatasets[i], err = godal.Open(uri, ErrLoger); err != nil {
+		if gdatasets[i], err = godal.Open(uri, ErrLogger); err != nil {
 			return [4]float64{}, fmt.Errorf("while opening %s: %w", uri, err)
 		}
 		defer gdatasets[i].Close()
@@ -326,7 +344,7 @@ func WarpedExtent(ctx context.Context, datasets []*Dataset, wktCRS string, resx,
 	}
 
 	virtualname := "/vsimem/" + uuid.New().String() + ".vrt"
-	ds, err := godal.Warp(virtualname, gdatasets, options, godal.VRT, ErrLoger)
+	ds, err := godal.Warp(virtualname, gdatasets, options, godal.VRT, ErrLogger)
 	if err != nil {
 		return [4]float64{}, fmt.Errorf("failed to warp dataset: %w", err)
 	}
@@ -409,7 +427,7 @@ func DatasetToPngAsBytes(ctx context.Context, ds *godal.Dataset, fromDFormat geo
 	}
 
 	// Cast to PNG
-	pngDs, err := CastDataset(ctx, ds, fromDFormat, toDformat, virtualname)
+	pngDs, err := CastDataset(ctx, ds, nil, fromDFormat, toDformat, virtualname)
 	if err != nil {
 		return nil, fmt.Errorf("DatasetToPngAsBytes.%w", err)
 	}

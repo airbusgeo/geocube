@@ -266,7 +266,7 @@ func (svc *Service) validateRemoteContainer(ctx context.Context, container *geoc
 // validateAndSetRemoteDataset validates and completes Dataset
 func (svc *Service) validateAndSetRemoteDataset(ctx context.Context, dataset *geocube.Dataset) error {
 	datasetURI := dataset.GDALURI()
-	ds, err := godal.Open(datasetURI, image.ErrLoger)
+	ds, err := godal.Open(datasetURI, image.ErrLogger)
 	if err != nil {
 		return geocube.NewValidationError("%s is not reachable: %v", datasetURI, err)
 	}

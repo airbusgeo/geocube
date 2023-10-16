@@ -56,7 +56,7 @@ var _ = Describe("CastDataset", func() {
 		pwd, _ := os.Getwd()
 		fromDs, returnedError = godal.Open(path.Join(pwd, fromPath))
 		Expect(returnedError).To(BeNil())
-		returnedDs, returnedError = image.CastDataset(ctx, fromDs, fromDFormat, toDFormat, "")
+		returnedDs, returnedError = image.CastDataset(ctx, fromDs, nil, fromDFormat, toDFormat, "")
 	})
 
 	JustAfterEach(func() {
