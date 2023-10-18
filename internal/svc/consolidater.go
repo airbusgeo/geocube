@@ -555,6 +555,9 @@ func (svc *Service) csldIndex(ctx context.Context, job *geocube.Job) (err error)
 				}
 				newDatasets = append(newDatasets, newDataset)
 			}
+			if len(newDatasets) == 1 {
+				newDatasets[0].ContainerSubDir = ""
+			}
 
 			log.Logger(ctx).Sugar().Debugf("Index consolidated container %s containing %d datasets", newContainer.URI, len(newDatasets))
 			job.LogMsgf(geocube.DEBUG, "Preparing indexation of %d new datasets", len(newDatasets))
