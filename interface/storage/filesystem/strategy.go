@@ -175,6 +175,11 @@ func (s fileSystemStrategy) GetAttrs(ctx context.Context, uri string) (geocubeSt
 	}
 	defer f.Close()
 
+	fi, err := f.Stat()
+	if err != nil {
+		return geocubeStorage.Attrs{}, err
+	}
+
 	// Only the first 512 bytes are used to sniff the content type.
 	buffer := make([]byte, 512)
 	_, err = f.Seek(0, io.SeekStart)
@@ -195,6 +200,7 @@ func (s fileSystemStrategy) GetAttrs(ctx context.Context, uri string) (geocubeSt
 	return geocubeStorage.Attrs{
 		ContentType:  contentType,
 		StorageClass: "filesystem",
+		Size:         fi.Size(),
 	}, nil
 }
 

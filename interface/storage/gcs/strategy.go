@@ -211,6 +211,7 @@ func (s gsStrategy) GetAttrs(ctx context.Context, uri string) (geocubeStorage.At
 	return geocubeStorage.Attrs{
 		StorageClass: attrs.StorageClass,
 		ContentType:  attrs.ContentType,
+		Size:         attrs.Size,
 	}, nil
 }
 

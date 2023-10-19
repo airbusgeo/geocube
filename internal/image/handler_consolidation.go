@@ -8,6 +8,7 @@ import (
 	"path"
 	"strings"
 	"sync"
+	"sync/atomic"
 
 	"github.com/airbusgeo/geocube/interface/storage"
 	"github.com/airbusgeo/godal"
@@ -41,16 +42,16 @@ type handlerConsolidation struct {
 	mucog                MucogGenerator
 	cancelledJobsStorage string
 	workers              int
-	localDownload        bool // Locally download the datasets before starting the consolidation (generally faster than letting GDAL to download them tile by tile)
+	localDownloadMaxMb   int // Maximum storage usable to download the datasets before starting the consolidation (generally faster than letting GDAL to download them tile by tile)
 }
 
-func NewHandleConsolidation(c CogGenerator, m MucogGenerator, cancelledJobsStorage string, workers int, localDownload bool) Handler {
+func NewHandleConsolidation(c CogGenerator, m MucogGenerator, cancelledJobsStorage string, workers int, localDownloadMaxMb int) Handler {
 	return &handlerConsolidation{
 		cog:                  c,
 		mucog:                m,
 		cancelledJobsStorage: cancelledJobsStorage,
 		workers:              workers,
-		localDownload:        localDownload,
+		localDownloadMaxMb:   localDownloadMaxMb,
 	}
 }
 
@@ -242,28 +243,28 @@ func (h *handlerConsolidation) getLocalDatasetsByRecord(ctx context.Context, cEv
 	// Prepare local dataset and list files to download
 	datasetsByRecord := map[string][]*Dataset{}
 	filesToDownload := map[uri.DefaultUri]string{}
+
 	tmpFileCounter := map[string]int{}
 	for _, record := range cEvent.Records {
 		var datasets []*Dataset
 		for _, dataset := range record.Datasets {
-			localUri := dataset.URI
-			if h.localDownload {
+			if h.localDownloadMaxMb > 0 {
 				sourceUri, err := uri.ParseUri(dataset.URI)
 				if err != nil {
 					return nil, nil, fmt.Errorf("getLocalDatasetsByRecord: %w", err)
 				}
 				if sourceUri.Protocol() != "" {
-					var ok bool
-					if localUri, ok = filesToDownload[sourceUri]; !ok {
+					if localUri, ok := filesToDownload[sourceUri]; !ok {
 						localUri = path.Join(workDir, uuid.New().String())
 						filesToDownload[sourceUri] = localUri
-						tmpFileCounter[localUri] = 0
+						tmpFileCounter[localUri] = 1
+					} else {
+						tmpFileCounter[localUri] += 1
 					}
-					tmpFileCounter[localUri] += 1
 				}
 			}
 			gDataset := &Dataset{
-				URI:         localUri,
+				URI:         dataset.URI,
 				SubDir:      dataset.Subdir,
 				Bands:       dataset.Bands,
 				DataMapping: dataset.DatasetFormat,
@@ -274,6 +275,7 @@ func (h *handlerConsolidation) getLocalDatasetsByRecord(ctx context.Context, cEv
 	}
 
 	// Push download jobs
+	remainingSize := int64(h.localDownloadMaxMb * 1024 * 1024)
 	if len(filesToDownload) > 0 {
 		log.Logger(ctx).Sugar().Debugf("downloading %d files", len(filesToDownload))
 		files := make(chan FileToDownload, len(filesToDownload))
@@ -284,23 +286,55 @@ func (h *handlerConsolidation) getLocalDatasetsByRecord(ctx context.Context, cEv
 
 		// Start download workers
 		g, gCtx := errgroup.WithContext(ctx)
-		for i := 0; i < 20; i++ {
+		for i := 0; i < 10; i++ {
 			g.Go(func() error {
+				var err error
 				for file := range files {
-					if utils.IsCancelled(ctx) {
-						return ctx.Err()
+					if err != nil {
+						continue
 					}
-					if err := file.URI.DownloadToFile(gCtx, file.LocalURI); err != nil {
-						return fmt.Errorf("%s: %w", file.URI.String(), err)
-					}
+					err = func() error {
+						if utils.IsCancelled(ctx) {
+							return ctx.Err()
+						}
+						attr, err := file.URI.GetAttrs(ctx)
+						if err != nil {
+							return err
+						}
+						if atomic.AddInt64(&remainingSize, -attr.Size) < 0 {
+							filesToDownload[file.URI] = "" // max quota reached: cancel downloading
+						} else {
+							log.Logger(ctx).Sugar().Debugf("download %s to %s", file.URI.String(), file.LocalURI)
+							if err := file.URI.DownloadToFile(gCtx, file.LocalURI); err != nil {
+								return fmt.Errorf("%s: %w", file.URI.String(), err)
+							}
+						}
+						return nil
+					}()
 				}
-				return nil
+				return err
 			})
 		}
 
 		if err := g.Wait(); err != nil {
 			return nil, nil, fmt.Errorf("failed to download one of the sources: %w", err)
 		}
+
+		// Update datasetsByRecord with the downloaded files
+		downloadedFiles := map[string]string{}
+		for uri, localUri := range filesToDownload {
+			if localUri != "" {
+				downloadedFiles[uri.String()] = localUri
+			}
+		}
+		for _, datasets := range datasetsByRecord {
+			for _, dataset := range datasets {
+				if localUri, ok := downloadedFiles[dataset.URI]; ok {
+					dataset.URI = localUri
+				}
+			}
+		}
+
 	}
 
 	return datasetsByRecord, tmpFileCounter, nil

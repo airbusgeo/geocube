@@ -5,6 +5,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"math"
 	"math/rand"
 	"net/http"
 	"time"
@@ -107,8 +108,11 @@ func run(ctx context.Context) error {
 	if eventPublisher == nil {
 		return fmt.Errorf("missing configuration for eventPublisher")
 	}
+	if consolidaterConfig.LocalDownload && consolidaterConfig.LocalDownloadMaxMb == 0 {
+		consolidaterConfig.LocalDownloadMaxMb = math.MaxInt64
+	}
 
-	handlerConsolidation := image.NewHandleConsolidation(image.NewCogGenerator(), image.NewMucogGenerator(), consolidaterConfig.CancelledJobsStorage, consolidaterConfig.Workers, consolidaterConfig.LocalDownload)
+	handlerConsolidation := image.NewHandleConsolidation(image.NewCogGenerator(), image.NewMucogGenerator(), consolidaterConfig.CancelledJobsStorage, consolidaterConfig.Workers, consolidaterConfig.LocalDownloadMaxMb)
 	log.Logger(ctx).Sugar().Debugf("consolidater starts "+logMessaging+" with %d worker(s)", consolidaterConfig.Workers)
 	for {
 		err := taskConsumer.Pull(ctx, func(ctx context.Context, msg *messaging.Message) error {
@@ -174,7 +178,8 @@ func newConsolidationAppConfig() (*consolidaterConfig, error) {
 	flag.StringVar(&consolidaterConfig.CancelledJobsStorage, "cancelledJobs", "", "storage where cancelled jobs are referenced")
 	flag.IntVar(&consolidaterConfig.RetryCount, "retryCount", 1, "number of retries when consolidation job failed with a temporary error")
 	flag.IntVar(&consolidaterConfig.Workers, "workers", 1, "number of workers to parallelize the processing of the slices of a cube (see also GdalMultithreading)")
-	flag.BoolVar(&consolidaterConfig.LocalDownload, "local-download", true, "locally download the datasets before starting the consolidation (generally faster than letting GDAL to download them tile by tile)")
+	flag.BoolVar(&consolidaterConfig.LocalDownload, "local-download", true, "DEPRECTATED: use --local-download-max-mb instead. locally download the datasets before starting the consolidation (generally faster than letting GDAL to download them tile by tile)")
+	flag.IntVar(&consolidaterConfig.LocalDownloadMaxMb, "local-download-max-mb", 0, "maximum storage (in Mb) usable to download the datasets before starting the consolidation (generally faster than letting GDAL to download them tile by tile). 0 to disable local download.")
 
 	// Messaging
 	flag.StringVar(&consolidaterConfig.PgqDbConnection, "pgqConnection", "", "url of the postgres database to enable pgqueue messaging system (pgqueue only)")
@@ -207,6 +212,7 @@ type consolidaterConfig struct {
 	RetryCount           int
 	Workers              int
 	LocalDownload        bool
+	LocalDownloadMaxMb   int
 	GDALConfig           *cmd.GDALConfig
 }
 

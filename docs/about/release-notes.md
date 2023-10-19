@@ -1,5 +1,17 @@
 # Release notes
 
+## 1.1.0
+### Functionalities 
+- Consolidater: add --local-download-max-mb to limit the size of the files downloaded by the consolidater (--local-download is deprecated)
+
+
+### API
+
+### Bug fixes
+
+### Others
+
+
 ## 1.0.3
 
 ### Functionalities

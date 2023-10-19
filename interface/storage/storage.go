@@ -104,6 +104,7 @@ type ExcludeFunc func(objectName string) bool
 type Attrs struct {
 	ContentType  string
 	StorageClass string
+	Size         int64
 }
 
 func MaxTries(n int) Option {
