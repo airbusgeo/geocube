@@ -306,6 +306,7 @@ func statusWithError(status JobStatus) bool {
 		StartDeletionFailed,
 		RemovalFailed,
 		DeletionFailed,
+		DeletionNotReady,
 		RollbackFailed:
 		return true
 	}
@@ -316,7 +317,7 @@ func statusWithError(status JobStatus) bool {
 // panic if an error is set and it's a non-error status and inversely
 func NewJobEvent(jobID string, status JobStatus, err string) *JobEvent {
 	if statusWithError(status) != (err != "") {
-		panic("Status & error are not compatible")
+		panic(fmt.Sprintf("Status & error are not compatible: %s and %v", status.String(), err))
 	}
 
 	return &JobEvent{
