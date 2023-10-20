@@ -2202,6 +2202,7 @@ Optionnaly, the job can be done step by step, pausing and waiting for user actio
 | instance_id | [string](#string) |  |  |
 | layout_name | [string](#string) |  |  |
 | execution_level | [ExecutionLevel](#geocube-ExecutionLevel) |  | Execution level of a job. A consolidation job cannot be executed synchronously |
+| collapse_on_record_id | [string](#string) |  | [Optional] Collapse all records on this record (in this case only, original datasets are kept, data is duplicated) |
 | records | [RecordIdList](#geocube-RecordIdList) |  | At least one |
 | filters | [RecordFilters](#geocube-RecordFilters) |  |  |
 

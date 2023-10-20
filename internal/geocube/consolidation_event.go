@@ -197,7 +197,7 @@ func NewConsolidationDataset(d *Dataset) *ConsolidationDataset {
 	}
 }
 
-// MarshalConsolidationEvent is used to send a ConsolidationEvent over pubsub
+// MarshalConsolidationEvent is used to send a ConsolidationEvent to messagery
 func MarshalConsolidationEvent(evt ConsolidationEvent) ([]byte, error) {
 	var data bytes.Buffer
 	if err := gob.NewEncoder(&data).Encode(&evt); err != nil {
@@ -207,7 +207,7 @@ func MarshalConsolidationEvent(evt ConsolidationEvent) ([]byte, error) {
 	return data.Bytes(), nil
 }
 
-// UnmarshalConsolidationEvent is used to retrieve a ConsolidationEvent from pubsub
+// UnmarshalConsolidationEvent is used to retrieve a ConsolidationEvent from messagery
 func UnmarshalConsolidationEvent(r io.Reader) (*ConsolidationEvent, error) {
 	var evt ConsolidationEvent
 	if err := gob.NewDecoder(r).Decode(&evt); err != nil {

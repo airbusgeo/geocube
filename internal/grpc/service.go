@@ -593,8 +593,14 @@ func (svc *Service) Consolidate(ctx context.Context, req *pb.ConsolidateRequest)
 		return nil, newValidationError("Invalid Instance.uuid " + req.GetInstanceId() + ": " + err.Error())
 	}
 
+	if req.CollapseOnRecordId != "" {
+		if _, err := uuid.Parse(req.CollapseOnRecordId); err != nil {
+			return nil, newValidationError("Invalid CollapseRecord.uuid " + req.GetCollapseOnRecordId() + ": " + err.Error())
+		}
+	}
+
 	// Create the job
-	job, err := geocube.NewConsolidationJob(req.GetJobName(), req.GetLayoutName(), req.GetInstanceId(), geocube.ExecutionLevel(req.ExecutionLevel))
+	job, err := geocube.NewConsolidationJob(req.GetJobName(), req.GetLayoutName(), req.GetInstanceId(), req.GetCollapseOnRecordId(), geocube.ExecutionLevel(req.ExecutionLevel))
 	if err != nil {
 		return nil, formatError("backend.%w", err)
 	}
@@ -924,9 +930,7 @@ func getCubeLog(ctx context.Context, slice internal.CubeSlice, header *pb.ImageH
 }
 
 func compressSlicesQueue(sliceQueue <-chan internal.CubeSlice, compressedSliceQueue chan<- internal.CubeSlice, deflater *flate.Writer) {
-	defer func() {
-		close(compressedSliceQueue)
-	}()
+	defer close(compressedSliceQueue)
 	for res := range sliceQueue {
 		// Get image
 		if deflater != nil && res.Image != nil && res.Image.Bytes != nil {

@@ -151,10 +151,11 @@ message GetConsolidationParamsResponse {
   * - 3: after all steps
   */
 message ConsolidateRequest {
-    string         job_name        = 1;
-    string         instance_id     = 2;
-    string         layout_name     = 7;
-    ExecutionLevel execution_level = 6; // Execution level of a job. A consolidation job cannot be executed synchronously
+    string         job_name              = 1;
+    string         instance_id           = 2;
+    string         layout_name           = 7;
+    ExecutionLevel execution_level       = 6; // Execution level of a job. A consolidation job cannot be executed synchronously
+    string         collapse_on_record_id = 9; // [Optional] Collapse all records on this record (in this case only, original datasets are kept, data is duplicated)
 
     oneof records_lister{
         RecordIdList  records = 8; // At least one

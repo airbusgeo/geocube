@@ -182,7 +182,7 @@ var _ = Describe("Consolidater", func() {
 				panic(err)
 			}
 
-			jobToUse, _ = geocube.NewConsolidationJob("test_consolidation", "layoutID", "instanceID", geocube.ExecutionAsynchronous)
+			jobToUse, _ = geocube.NewConsolidationJob("test_consolidation", "layoutID", "instanceID", "", geocube.ExecutionAsynchronous)
 			jobToUse.Tasks = append(jobToUse.Tasks, &geocube.Task{
 				ID:      "task1",
 				State:   geocube.TaskStateDONE,
@@ -379,7 +379,7 @@ var _ = Describe("Consolidater", func() {
 				panic(err)
 			}
 
-			jobToUse, _ = geocube.NewConsolidationJob("test_consolidation", "layoutID", "instanceID", geocube.ExecutionAsynchronous)
+			jobToUse, _ = geocube.NewConsolidationJob("test_consolidation", "layoutID", "instanceID", "", geocube.ExecutionAsynchronous)
 			/*jobToUse.Tasks = append(jobToUse.Tasks, &geocube.Task{
 				ID:      "task1",
 				State:   geocube.TaskStatePENDING,

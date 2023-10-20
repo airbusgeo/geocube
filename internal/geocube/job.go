@@ -93,9 +93,10 @@ const (
 
 // JobPayload contains all the information to process a job
 type JobPayload struct {
-	Layout     string `json:"layout,omitempty"`
-	InstanceID string `json:"instance_id,omitempty"`
-	ParamsID   string `json:"params_id,omitempty"`
+	Layout           string `json:"layout,omitempty"`
+	InstanceID       string `json:"instance_id,omitempty"`
+	ParamsID         string `json:"params_id,omitempty"`
+	CollapseRecordId string `json:"collapse_record_id,omitempty"`
 }
 
 type JobLogs []JobLog
@@ -161,7 +162,6 @@ type Job struct {
 	FailedTasks    int
 	ExecutionLevel ExecutionLevel
 	Waiting        bool
-
 	// These following fields may not be loaded
 	Tasks  []*Task
 	Params JobParams
@@ -176,7 +176,7 @@ func NewJob(id string) *Job {
 }
 
 // NewConsolidationJob creates a new consolidation Job
-func NewConsolidationJob(jobName, layout, instanceID string, executionLevel ExecutionLevel) (*Job, error) {
+func NewConsolidationJob(jobName, layout, instanceID, collapseRecordId string, executionLevel ExecutionLevel) (*Job, error) {
 	id := uuid.New().String()
 	if executionLevel == ExecutionSynchronous {
 		return nil, NewValidationError("a consolidation job cannot be executed synchronously")
@@ -191,9 +191,10 @@ func NewConsolidationJob(jobName, layout, instanceID string, executionLevel Exec
 		ActiveTasks:      0,
 		FailedTasks:      0,
 		Payload: JobPayload{
-			Layout:     layout,
-			InstanceID: instanceID,
-			ParamsID:   id, // By default ParamsID is JobID
+			Layout:           layout,
+			InstanceID:       instanceID,
+			ParamsID:         id, // By default ParamsID is JobID
+			CollapseRecordId: collapseRecordId,
 		},
 		NewLogs: JobLogs{{
 			Severity: "INFO",

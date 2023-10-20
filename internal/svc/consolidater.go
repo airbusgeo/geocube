@@ -182,6 +182,16 @@ func (svc *Service) csldPrepareOrders(ctx context.Context, job *geocube.Job) err
 		logger.Debugf("FindRecords (%d):%v\n", len(recordsTime), time.Since(start))
 		start = time.Now()
 
+		// Get CollapseRecord if any
+		var collapseRecord *geocube.Record
+		if job.Payload.CollapseRecordId != "" {
+			records, err := txn.ReadRecords(ctx, []string{job.Payload.CollapseRecordId})
+			if err != nil {
+				return fmt.Errorf("csldPrepareOrders.%w", err)
+			}
+			collapseRecord = records[0]
+		}
+
 		// Get Variable
 		variable, err := txn.ReadVariableFromInstanceID(ctx, job.Payload.InstanceID)
 		if err != nil {
@@ -264,6 +274,9 @@ func (svc *Service) csldPrepareOrders(ctx context.Context, job *geocube.Job) err
 
 			// Create a basic ConsolidationContainer
 			containerBaseName := utils.URLJoin(svc.ingestionStoragePath, layout.Name, cell.URI, job.Payload.InstanceID)
+			if collapseRecord != nil {
+				containerBaseName = utils.URLJoin(containerBaseName, job.Payload.CollapseRecordId)
+			}
 			containerBase, err := geocube.NewConsolidationContainer(containerBaseName, variable, params, layout, cell.Cell)
 			if err != nil {
 				return fmt.Errorf("csldPrepareOrders.%w", err)
@@ -285,8 +298,9 @@ func (svc *Service) csldPrepareOrders(ctx context.Context, job *geocube.Job) err
 			}
 
 			// Exclude full containers
-			datasets = csldPrepareOrdersExcludeFullContainers(datasets, layout.MaxRecords)
-
+			if collapseRecord == nil {
+				datasets = csldPrepareOrdersExcludeFullContainers(datasets, layout.MaxRecords)
+			}
 			// Check that datasets are available
 			checkAvailability := false
 			if checkAvailability {
@@ -311,12 +325,12 @@ func (svc *Service) csldPrepareOrders(ctx context.Context, job *geocube.Job) err
 			// Group datasets by records
 			job.LogMsg(geocube.DEBUG, "Grouping datasets by records...")
 			records := make([]geocube.ConsolidationRecord, 0, len(datasets))
-			for i := 0; i < len(datasets); {
+			if collapseRecord != nil {
 				var datasetIDS []string
-				record := geocube.ConsolidationRecord{ID: datasets[i].RecordID, DateTime: recordsTime[datasets[i].RecordID]}
-				for ; i < len(datasets) && record.ID == datasets[i].RecordID; i++ {
-					record.Datasets = append(record.Datasets, datasets[i].Event)
-					datasetIDS = append(datasetIDS, datasets[i].ID)
+				record := geocube.ConsolidationRecord{ID: collapseRecord.ID, DateTime: collapseRecord.Time.Format("2006-01-02 15:04:05")}
+				for _, dataset := range datasets {
+					record.Datasets = append(record.Datasets, dataset.Event)
+					datasetIDS = append(datasetIDS, dataset.ID)
 				}
 				if record.ValidShape, err = svc.db.ComputeValidShapeFromCell(ctx, datasetIDS, cell.Cell); err != nil {
 					if geocube.IsError(err, geocube.EntityNotFound) {
@@ -329,6 +343,26 @@ func (svc *Service) csldPrepareOrders(ctx context.Context, job *geocube.Job) err
 					datasetsToBeConsolidated.Push(datasetID)
 				}
 				records = append(records, record)
+			} else {
+				for i := 0; i < len(datasets); {
+					var datasetIDS []string
+					record := geocube.ConsolidationRecord{ID: datasets[i].RecordID, DateTime: recordsTime[datasets[i].RecordID]}
+					for ; i < len(datasets) && record.ID == datasets[i].RecordID; i++ {
+						record.Datasets = append(record.Datasets, datasets[i].Event)
+						datasetIDS = append(datasetIDS, datasets[i].ID)
+					}
+					if record.ValidShape, err = svc.db.ComputeValidShapeFromCell(ctx, datasetIDS, cell.Cell); err != nil {
+						if geocube.IsError(err, geocube.EntityNotFound) {
+							log.Logger(ctx).Sugar().Debugf("csldPrepareOrders: skip record %v: %v", record.DateTime, err)
+							continue
+						}
+						return fmt.Errorf("csldPrepareOrders: failed to compute valid shape from cell (%v): %w", cell.Ring.Coords(), err)
+					}
+					for _, datasetID := range datasetIDS {
+						datasetsToBeConsolidated.Push(datasetID)
+					}
+					records = append(records, record)
+				}
 			}
 			if len(records) == 0 {
 				continue
@@ -351,7 +385,7 @@ func (svc *Service) csldPrepareOrders(ctx context.Context, job *geocube.Job) err
 					return fmt.Errorf("csldPrepareOrders.%w", err)
 				}
 			}
-			job.LogMsgf(geocube.DEBUG, "Prepare %d container(s) with %d record(s) and %d dataset(s) (geographic: %v)", nbOfContainers, len(records), len(datasets), cell.GeographicRing.Coords())
+			job.LogMsgf(geocube.DEBUG, "Prepare %d container(s) with %d record(s) and %d dataset(s) (Cell:%s, geographic: %v)", nbOfContainers, len(records), len(datasets), cell.URI, cell.GeographicRing.Coords())
 			svc.saveJobLogs(ctx, nil, job)
 		}
 		if len(job.Tasks) != 0 {
@@ -611,15 +645,15 @@ func (svc *Service) csldSwapDatasets(ctx context.Context, job *geocube.Job) erro
 	job.LogMsg(geocube.INFO, "Swap datasets...")
 
 	return svc.unitOfWork(ctx, func(txn database.GeocubeTxBackend) error {
-		// Active datasets are tagged to_delete
-		err := txn.ChangeDatasetsStatus(ctx, job.ID, geocube.DatasetStatusACTIVE, geocube.DatasetStatusTODELETE)
-		if err != nil {
-			return err
+		// Active datasets are tagged to_delete (except when collapsing)
+		if job.Payload.CollapseRecordId == "" {
+			if err := txn.ChangeDatasetsStatus(ctx, job.ID, geocube.DatasetStatusACTIVE, geocube.DatasetStatusTODELETE); err != nil {
+				return err
+			}
 		}
 
 		// Inactive datasets are tagged active
-		err = txn.ChangeDatasetsStatus(ctx, job.ID, geocube.DatasetStatusINACTIVE, geocube.DatasetStatusACTIVE)
-		if err != nil {
+		if err := txn.ChangeDatasetsStatus(ctx, job.ID, geocube.DatasetStatusINACTIVE, geocube.DatasetStatusACTIVE); err != nil {
 			return err
 		}
 		// Release all the new datasets
