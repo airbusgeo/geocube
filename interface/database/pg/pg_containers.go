@@ -331,7 +331,7 @@ func (b Backend) ComputeValidShapeFromCell(ctx context.Context, datasetIDS []str
 		`WITH intersection(shape) AS (
 			SELECT ST_Multi(ST_Intersection(ST_Union(ST_Transform(d.shape,$1::int)),$2)) FROM geocube.datasets d  WHERE d.id = ANY($3)
 		)
-		SELECT shape from intersection where NOT St_IsEmpty(shape) and st_dimension(shape) > 1`, srid, &cell.Ring, pq.Array(datasetIDS)).Scan(&computeShape)
+		SELECT st_collectionextract(shape,3) from intersection where NOT St_IsEmpty(shape) and st_dimension(shape) > 1`, srid, &cell.Ring, pq.Array(datasetIDS)).Scan(&computeShape)
 	switch pqErrorCode(err) {
 	case noError:
 		return &computeShape, nil
