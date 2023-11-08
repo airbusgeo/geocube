@@ -9,7 +9,7 @@
 |    GDAL    	|  >= 3.3 	|             https://gdal.org            	|
 |   Python   	|  >= 3.7 	|    https://www.python.org/downloads/    	|
 | PostgreSQL 	|  >= 11  	|   https://www.postgresql.org/download/  	|
-|   PostGIS  	|  >= 2.5 	|       https://postgis.net/install/      	|
+|   PostGIS  	|  >= 3.1 	|       https://postgis.net/install/      	|
 |   Docker   	|    NC   	| https://docs.docker.com/engine/install/ 	|
 
 ## Clone repository

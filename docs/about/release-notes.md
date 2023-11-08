@@ -15,6 +15,7 @@
 - maxConnectionAge: default = 15min
 - storage: operations retry when context is cancelled: Add utils.Retriable to test weither an error is retriable.
 - Consolidation failed because of invalid geometry in ComputeValidShapeFromCell
+- Update postGis to 3.1 to fix a bug with geography intersection (GetCube does not return all datasets)
 
 ### Others
 - Update golang-mod
