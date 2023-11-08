@@ -3,10 +3,10 @@
 ## 1.0.3beta
 
 ### Functionalities
-- apiserver/downloader: add --gdalNumThreads to change the -wo options of gdal.warp. 1 by default, -1 means ALL_CPUS. gdalNumThreads+workers should be lower than the number of CPUS.
+- apiserver/downloader/consolidater: add --gdalNumThreads to change the -wo options of gdal.warp. 1 by default, -1 means ALL_CPUS. gdalNumThreads+workers should be lower than the number of CPUS.
 - downloader: add --chunkSize (1Mbytes by default)
 - apiServer.GetCube: add CompressionLevel=-3 to disable the compression
-- gdalwarp use wm=500 instead of 2047
+- gdalwarp uses wm=500 instead of 2047 and -multi option
 - Min/Max to GetXYZTile to scale tile values between min and max.
 
 ### Bug fixes
@@ -14,11 +14,16 @@
 - Remove redondant logs
 - maxConnectionAge: default = 15min
 - storage: operations retry when context is cancelled: Add utils.Retriable to test weither an error is retriable.
+- Panic during dataset deletion when status is DeletionNotReady
+- Consolidation used GTIFF_SUBDIR when there was no subdir
 - Consolidation failed because of invalid geometry in ComputeValidShapeFromCell
 - Update postGis to 3.1 to fix a bug with geography intersection (GetCube does not return all datasets)
 
+
 ### Others
 - Update golang-mod
+- Use google-cloud-go instead of go-genproto package
+- Memory optimisation
 
 
 ## 1.0.2
