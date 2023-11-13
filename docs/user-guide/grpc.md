@@ -2479,6 +2479,8 @@ List jobs given a name pattern
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | name_like | [string](#string) |  |  |
+| page | [int32](#int32) |  |  |
+| limit | [int32](#int32) |  |  |
 
 
 

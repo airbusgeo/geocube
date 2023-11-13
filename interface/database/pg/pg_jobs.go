@@ -32,7 +32,7 @@ func reverse(log geocube.JobLogs) {
 }
 
 // FindJobs implements GeocubeBackend
-func (b Backend) FindJobs(ctx context.Context, nameLike string) ([]*geocube.Job, error) {
+func (b Backend) FindJobs(ctx context.Context, nameLike string, page, limit int) ([]*geocube.Job, error) {
 	wc := joinClause{}
 	if nameLike != "" {
 		nameLike, operator := parseLike(nameLike)
@@ -42,7 +42,7 @@ func (b Backend) FindJobs(ctx context.Context, nameLike string) ([]*geocube.Job,
 	rows, err := b.pg.QueryContext(ctx,
 		"SELECT id, name, type, creation_ts, last_update_ts, state, active_tasks, failed_tasks, payload, execution_level, waiting, logs"+
 			" FROM "+fmt.Sprintf(logsSubtable, 0, 10)+
-			wc.WhereClause(), wc.Parameters...)
+			wc.WhereClause()+limitOffsetClause(page, limit), wc.Parameters...)
 
 	if err != nil {
 		return nil, pqErrorFormat("FindJobs: %w", err)

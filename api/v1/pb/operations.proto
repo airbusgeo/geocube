@@ -190,6 +190,8 @@ message ConsolidateResponse{
   */
 message ListJobsRequest{
     string name_like = 1;
+    int32  page      = 2;
+    int32  limit     = 3;
 }
 
 /**

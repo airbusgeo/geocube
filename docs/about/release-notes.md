@@ -17,6 +17,7 @@
 - GetCube: add Predownload option to download file before warping to save time. It is efficient when gdal needs the whole image to compute the Cube requested, but its not when a small part of the image is required. Be careful when the data has been consolidated.
 - Consolidation: add collapse_on_record_id: to consolidate by collapsing all datasets on the given record (data is copied)
 - Get information on containers from their uris
+- FindJobs: add page/limit
 
 ### Bug fixes
 - CleanJobs: remove DONEBUTUNTIDY

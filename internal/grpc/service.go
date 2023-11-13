@@ -68,7 +68,7 @@ type GeocubeService interface {
 	GetConsolidationParams(ctx context.Context, ID string) (*geocube.ConsolidationParams, error)
 	ConsolidateFromRecords(ctx context.Context, job *geocube.Job, recordsID []string) error
 	ConsolidateFromFilters(ctx context.Context, job *geocube.Job, tags map[string]string, fromTime, toTime time.Time) error
-	ListJobs(ctx context.Context, nameLike string) ([]*geocube.Job, error)
+	ListJobs(ctx context.Context, nameLike string, page, limit int) ([]*geocube.Job, error)
 	GetJob(ctx context.Context, jobID string, opts ...database.ReadJobOptions) (*geocube.Job, error)
 	RetryJob(ctx context.Context, jobID string, forceAnyState bool) error
 	CancelJob(ctx context.Context, jobID string, forceAnyState bool) error
@@ -668,7 +668,7 @@ func (svc *Service) CleanJobs(ctx context.Context, req *pb.CleanJobsRequest) (*p
 // ListJobs list job with name like nameLike
 func (svc *Service) ListJobs(ctx context.Context, req *pb.ListJobsRequest) (*pb.ListJobsResponse, error) {
 	// List jobs
-	jobs, err := svc.gsvc.ListJobs(ctx, req.GetNameLike())
+	jobs, err := svc.gsvc.ListJobs(ctx, req.GetNameLike(), int(req.Page), int(req.Limit))
 	if err != nil {
 		return nil, formatError("backend.%w", err)
 	}

@@ -508,8 +508,8 @@ func (svc *Service) TileAOI(ctx context.Context, aoi *geocube.AOI, layoutName st
 
 // ListJobs implements GeocubeService
 // ListJobs retrieves only the Job but not the tasks
-func (svc *Service) ListJobs(ctx context.Context, nameLike string) ([]*geocube.Job, error) {
-	jobs, err := svc.db.FindJobs(ctx, nameLike)
+func (svc *Service) ListJobs(ctx context.Context, nameLike string, page, limit int) ([]*geocube.Job, error) {
+	jobs, err := svc.db.FindJobs(ctx, nameLike, page, limit)
 	if err != nil {
 		return nil, fmt.Errorf("ListJobs.%w", err)
 	}

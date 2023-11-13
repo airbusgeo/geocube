@@ -199,7 +199,7 @@ type GeocubeBackend interface {
 	CreateJob(ctx context.Context, job *geocube.Job) error
 	// FindJobs retrieves the jobs but not their tasks (support "*?" and "(?i)" suffix for case insensitivity)
 	// Raise geocube.EntityNotFound
-	FindJobs(ctx context.Context, nameLike string) ([]*geocube.Job, error)
+	FindJobs(ctx context.Context, nameLike string, page, limit int) ([]*geocube.Job, error)
 	// ReadJob retrieves the job but not its tasks
 	// Raise geocube.EntityNotFound
 	ReadJob(ctx context.Context, jobID string, opts ...ReadJobOptions) (*geocube.Job, error)

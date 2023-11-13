@@ -391,7 +391,7 @@ func (_m *GeocubeBackend) CreateJob(ctx context.Context, job *geocube.Job) error
 	return r0
 }
 
-func (_m *GeocubeBackend) FindJobs(ctx context.Context, nameLike string) ([]*geocube.Job, error) {
+func (_m *GeocubeBackend) FindJobs(ctx context.Context, nameLike string, page, limit int) ([]*geocube.Job, error) {
 	panic("implement me")
 }
 
