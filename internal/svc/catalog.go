@@ -365,39 +365,43 @@ func (svc *Service) getCubeStream(ctx context.Context, datasetsByRecord []SliceM
 	return orderedSlices, nil
 }
 
-// GetXYZTile implements GeocubeService
-func (svc *Service) GetXYZTile(ctx context.Context, recordsID []string, instanceID string, a, b, z int, min, max float64) ([]byte, error) {
-
+func (svc *Service) infoFromTile(a, b, z int) (*proj.GeographicRing, internalImage.GdalDatasetDescriptor, error) {
+	// Create the geographic extent from tile coordinates (a, b) and zoom level z
 	outDesc := internalImage.GdalDatasetDescriptor{Width: 256, Height: 256}
 
-	// Create the geographic extent from tile coordinates (a, b) and zoom level z
-	var geogExtent proj.GeographicRing
-	{
-		// Get WebMercator CRS
-		crs, err := proj.CRSFromEPSG(3857)
-		if err != nil {
-			return nil, fmt.Errorf("GetXYZTile.%w", err)
-		}
-		outDesc.WktCRS, _ = crs.WKT()
+	// Get WebMercator CRS
+	crs, err := proj.CRSFromEPSG(3857)
+	if err != nil {
+		return nil, outDesc, fmt.Errorf("infoFromTile: %w", err)
+	}
+	outDesc.WktCRS, _ = crs.WKT()
 
-		// Get the tile to CRS transform
-		outDesc.PixToCRS, err = pixToWebMercatorTransform(z, crs)
-		if err != nil {
-			return nil, fmt.Errorf("GetXYZTile.%w", err)
-		}
-
-		// Get transform from tile coordinates to crs coordinates
-		outDesc.PixToCRS = outDesc.PixToCRS.Multiply(affine.Translation(float64(outDesc.Width*a), float64(outDesc.Height*b)))
-
-		// Create the geographic bbox
-		geogExtent, err = proj.NewGeographicRingFromExtent(outDesc.PixToCRS, outDesc.Width, outDesc.Height, crs)
-		if err != nil {
-			return nil, fmt.Errorf("GetXYZTile.%w", err)
-		}
+	// Get the tile to CRS transform
+	outDesc.PixToCRS, err = pixToWebMercatorTransform(z, crs)
+	if err != nil {
+		return nil, outDesc, fmt.Errorf("infoFromTile.%w", err)
 	}
 
-	// Get an image from these records
-	ds, err := svc.getMosaic(ctx, recordsID, []string{instanceID}, geogExtent, &outDesc)
+	// Get transform from tile coordinates to crs coordinates
+	outDesc.PixToCRS = outDesc.PixToCRS.Multiply(affine.Translation(float64(outDesc.Width*a), float64(outDesc.Height*b)))
+
+	// Create the geographic bbox
+	geogExtent, err := proj.NewGeographicRingFromExtent(outDesc.PixToCRS, outDesc.Width, outDesc.Height, crs)
+	if err != nil {
+		return nil, outDesc, fmt.Errorf("infoFromTile: %w", err)
+	}
+	return &geogExtent, outDesc, nil
+}
+
+// GetXYZTile implements GeocubeService
+func (svc *Service) GetXYZTile(ctx context.Context, instanceID string, recordsID []string, a, b, z int, min, max float64) ([]byte, error) {
+	geogExtent, outDesc, err := svc.infoFromTile(a, b, z)
+	if err != nil {
+		return nil, fmt.Errorf("GetXYZTileFromFilters.%w", err)
+	}
+
+	// Get an image from these filters
+	ds, err := svc.getMosaic(ctx, []string{instanceID}, recordsID, geocube.Metadata{}, time.Time{}, time.Time{}, *geogExtent, &outDesc)
 	if err != nil {
 		return nil, fmt.Errorf("GetXYZTile.%w", err)
 	}
@@ -406,6 +410,30 @@ func (svc *Service) GetXYZTile(ctx context.Context, recordsID []string, instance
 	}
 	defer ds.Close()
 
+	return svc.getXYZTile(ctx, instanceID, ds, outDesc, min, max)
+}
+
+// GetXYZTileFromFilters implements GeocubeService
+func (svc *Service) GetXYZTileFromFilters(ctx context.Context, instanceID string, recordTags geocube.Metadata, fromTime, toTime time.Time, a, b, z int, min, max float64) ([]byte, error) {
+	geogExtent, outDesc, err := svc.infoFromTile(a, b, z)
+	if err != nil {
+		return nil, fmt.Errorf("GetXYZTileFromFilters.%w", err)
+	}
+
+	// Get an image from these filters
+	ds, err := svc.getMosaic(ctx, []string{instanceID}, nil, recordTags, fromTime, toTime, *geogExtent, &outDesc)
+	if err != nil {
+		return nil, fmt.Errorf("GetXYZTile.%w", err)
+	}
+	if ds == nil {
+		return nil, geocube.NewEntityNotFound("", "", "", "No data found")
+	}
+	defer ds.Close()
+
+	return svc.getXYZTile(ctx, instanceID, ds, outDesc, min, max)
+}
+
+func (svc *Service) getXYZTile(ctx context.Context, instanceID string, ds *godal.Dataset, outDesc internalImage.GdalDatasetDescriptor, min, max float64) ([]byte, error) {
 	// Get Palette
 	var palette *geocube.Palette
 	{
@@ -576,7 +604,7 @@ func mergeDatasetsWorker(ctx context.Context, jobs <-chan mergeDatasetJob) {
 
 // getMosaic returns a mosaic given recordsID and instancesID (both not empty)
 // The caller is responsible to close the output dataset
-func (svc *Service) getMosaic(ctx context.Context, recordsID, instancesID []string, geogExtent proj.GeographicRing, outDesc *internalImage.GdalDatasetDescriptor) (*godal.Dataset, error) {
+func (svc *Service) getMosaic(ctx context.Context, instancesID, recordsID []string, recordTags geocube.Metadata, fromTime, toTime time.Time, geogExtent proj.GeographicRing, outDesc *internalImage.GdalDatasetDescriptor) (*godal.Dataset, error) {
 	// Read Variable
 	variable, err := svc.db.ReadVariableFromInstanceID(ctx, instancesID[0])
 	if err != nil {
@@ -589,7 +617,7 @@ func (svc *Service) getMosaic(ctx context.Context, recordsID, instancesID []stri
 	}
 
 	// Retrieve datasets
-	datasets, err := svc.db.FindDatasets(ctx, geocube.DatasetStatusACTIVE, nil, "", instancesID, recordsID, geocube.Metadata{}, time.Time{}, time.Time{}, &geogExtent, nil, 0, 0, true)
+	datasets, err := svc.db.FindDatasets(ctx, geocube.DatasetStatusACTIVE, nil, "", instancesID, recordsID, recordTags, fromTime, toTime, &geogExtent, nil, 0, 0, true)
 	if err != nil {
 		return nil, fmt.Errorf("GetMosaic.%w", err)
 	}

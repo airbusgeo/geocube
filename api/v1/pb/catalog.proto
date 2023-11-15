@@ -151,7 +151,7 @@ message GetTileRequest {
 
     oneof records_lister{
         GroupedRecordIds records = 6; // Group of record ids. At least one. All the datasets of the group of records will be merged together using the latest first.
-        //RecordFilters filters = 7; // Not supported right now
+        RecordFilters filters = 7; // All the datasets whose records have RecordTags and time between from_time and to_time
     }
 }
 

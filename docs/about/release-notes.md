@@ -18,6 +18,7 @@
 - Consolidation: add collapse_on_record_id: to consolidate by collapsing all datasets on the given record (data is copied)
 - Get information on containers from their uris
 - FindJobs: add page/limit
+- GetXYZTile support filters: records.tags, records.from_date and records.to_date (e.g. ?filters.from_time=YYYY-MM-DD&filters.to_time=YYYY-MM-DD&filters.tags[key1]=value1&filter.tags[key2]=value2...)
 
 ### Bug fixes
 - CleanJobs: remove DONEBUTUNTIDY

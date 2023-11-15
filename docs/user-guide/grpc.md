@@ -1571,6 +1571,7 @@ Request a web-mercator tile, given a variable and a group of records
 | min | [float](#float) |  |  |
 | max | [float](#float) |  |  |
 | records | [GroupedRecordIds](#geocube-GroupedRecordIds) |  | Group of record ids. At least one. All the datasets of the group of records will be merged together using the latest first. |
+| filters | [RecordFilters](#geocube-RecordFilters) |  | All the datasets whose records have RecordTags and time between from_time and to_time |
 
 
 

@@ -85,7 +85,8 @@ type GeocubeService interface {
 	FindContainerLayouts(ctx context.Context, instanceId string, aoi *geocube.AOI, recordIds []string, tags map[string]string, fromTime, toTime time.Time) ([]string, [][]string, error)
 	TileAOI(ctx context.Context, aoi *geocube.AOI, layoutName string, layout *geocube.Layout) (<-chan geocube.StreamedCell, error)
 
-	GetXYZTile(ctx context.Context, recordsID []string, instanceID string, a, b, z int, min, max float64) ([]byte, error)
+	GetXYZTile(ctx context.Context, instanceID string, recordsID []string, a, b, z int, min, max float64) ([]byte, error)
+	GetXYZTileFromFilters(ctx context.Context, instanceID string, recordTags geocube.Metadata, fromTime, toTime time.Time, a, b, z int, min, max float64) ([]byte, error)
 	GetCubeFromRecords(ctx context.Context, recordsID [][]string, instancesID []string, crs *godal.SpatialRef, pixToCRS *affine.Affine, width, height int, options internal.GetCubeOptions) (internal.CubeInfo, <-chan internal.CubeSlice, error)
 	GetCubeFromFilters(ctx context.Context, recordTags geocube.Metadata, fromTime, toTime time.Time, instancesID []string, crs *godal.SpatialRef, pixToCRS *affine.Affine, width, height int, options internal.GetCubeOptions) (internal.CubeInfo, <-chan internal.CubeSlice, error)
 }
@@ -1048,11 +1049,17 @@ func (svc *Service) GetXYZTile(ctx context.Context, req *pb.GetTileRequest) (*pb
 		}
 
 		// Get Tile
-		if image, err = svc.gsvc.GetXYZTile(ctx, records.GetIds(), req.GetInstanceId(), int(req.GetX()), int(req.GetY()), int(req.GetZ()), float64(req.Min), float64(req.Max)); err != nil {
+		if image, err = svc.gsvc.GetXYZTile(ctx, req.GetInstanceId(), records.GetIds(), int(req.GetX()), int(req.GetY()), int(req.GetZ()), float64(req.Min), float64(req.Max)); err != nil {
+			return nil, formatError("backend.%w", err)
+		}
+	} else if filters := req.GetFilters(); filters != nil {
+		fromTime := timeFromTimestamp(filters.GetFromTime())
+		toTime := timeFromTimestamp(filters.GetToTime())
+		if image, err = svc.gsvc.GetXYZTileFromFilters(ctx, req.GetInstanceId(), filters.Tags, fromTime, toTime, int(req.GetX()), int(req.GetY()), int(req.GetZ()), float64(req.Min), float64(req.Max)); err != nil {
 			return nil, formatError("backend.%w", err)
 		}
 	} else {
-		return nil, fmt.Errorf("TODO/Not implemented")
+		return nil, fmt.Errorf("either record ids or record filters must be provided")
 	}
 
 	// Format response
