@@ -39,8 +39,8 @@ RUN apk update && \
         libwebp \
         sqlite-libs \
         tiff \
+        uuidgen \
         zstd-libs &&\
     ldconfig /usr/local/lib
-RUN apk --no-cache add ossp-uuid --repository http://dl-3.alpinelinux.org/alpine/edge/testing/ --allow-untrusted
 EXPOSE 8080
 COPY --from=builder /go/bin/consolidater /

@@ -161,7 +161,7 @@ containers:
 [...]
     args:
       - |
-        UUID=`uuid`;
+        UUID=`uuidgen`;
         WORKDIR=/local-ssd/$UUID;
         mkdir -p $WORKDIR;
         /consolidater -eventsQueue events -consolidationsQueue consolidations -workdir $WORKDIR -cancelledJobs=/geocube-cancelled-jobs or gs://my-bucket/geocube-cancelled-jobs || true;

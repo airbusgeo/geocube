@@ -18,6 +18,7 @@
 - Consolidation used GTIFF_SUBDIR when there was no subdir
 - Consolidation failed because of invalid geometry in ComputeValidShapeFromCell
 - Update postGis to 3.1 to fix a bug with geography intersection (GetCube does not return all datasets)
+- Docker Consolidater use uuidgen instead of ossp-uuid
 
 
 ### Others

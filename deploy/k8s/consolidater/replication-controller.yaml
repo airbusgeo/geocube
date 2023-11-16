@@ -40,7 +40,7 @@ spec:
           command: ["/bin/sh","-c"]
           args:
             - |
-              UUID=`uuid`;
+              UUID=`uuidgen`;
               WORKDIR=/local-ssd/$UUID;
               mkdir -p $WORKDIR;
               /consolidater -eventsQueue events -consolidationsQueue consolidations -workdir $WORKDIR -cancelledJobs={{CANCELLED_JOBS_STORAGE}} || true;
