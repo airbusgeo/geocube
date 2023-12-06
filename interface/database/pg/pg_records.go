@@ -79,7 +79,7 @@ func appendTagsFilters(wc *joinClause, tags geocube.Metadata) {
 // FindRecords implements GeocubeBackend
 func (b Backend) FindRecords(ctx context.Context, namelike string, tags geocube.Metadata, fromTime, toTime time.Time, jobID string, aoi *geocube.AOI, page, limit int, order, loadAOI bool) (records []*geocube.Record, err error) {
 	// Create the selectClause
-	query := "SELECT DISTINCT r.id, r.name, r.datetime, r.tags, r.aoi_id"
+	query := "SELECT r.id, r.name, r.datetime, r.tags, r.aoi_id"
 	if loadAOI {
 		query += ", st_AsBinary(a.geom)"
 	}

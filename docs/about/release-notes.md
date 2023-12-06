@@ -8,6 +8,7 @@
 - apiServer.GetCube: add CompressionLevel=-3 to disable the compression
 - gdalwarp uses wm=500 instead of 2047 and -multi option
 - Min/Max to GetXYZTile to scale tile values between min and max.
+- Add index on pg.records.datetime (execute interface/database/pg/update_X.X.X.sql)
 
 ### Bug fixes
 - CleanJobs: remove DONEBUTUNTIDY
@@ -19,6 +20,7 @@
 - Consolidation failed because of invalid geometry in ComputeValidShapeFromCell
 - Update postGis to 3.1 to fix a bug with geography intersection (GetCube does not return all datasets)
 - Docker Consolidater use uuidgen instead of ossp-uuid
+- slow FindRecords
 
 
 ### Others

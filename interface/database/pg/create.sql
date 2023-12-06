@@ -36,6 +36,7 @@ CREATE TABLE geocube.records (
 	FOREIGN KEY(aoi_id) REFERENCES geocube.aoi (id) MATCH FULL
 );
 CREATE INDEX idx_records_aoi ON geocube.records (aoi_id);
+CREATE INDEX idx_records_datetime ON geocube.records (datetime);
 
 CREATE TABLE geocube.palette (
 	name TEXT NOT NULL,
