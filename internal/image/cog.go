@@ -190,14 +190,14 @@ func (c *cogGenerator) getBlockOffset(band godal.Band) int {
 
 func (c *cogGenerator) addCompressionOption(container geocube.ConsolidationContainer, options []string) []string {
 	switch container.DatasetFormat.DType {
-	case geocube.DTypeINT8, geocube.DTypeUINT8, geocube.DTypeINT16, geocube.DTypeUINT16, geocube.DTypeINT32, geocube.DTypeUINT32:
+	case geocube.DTypeINT8, geocube.DTypeUINT8, geocube.DTypeINT16, geocube.DTypeUINT16, geocube.DTypeINT32, geocube.DTypeUINT32, geocube.DTypeFLOAT32:
 		switch container.Compression {
 		case geocube.CompressionLOSSY:
 			options = append(options, "-co", "COMPRESS=LERC", "-co", "MAX_Z_ERROR=0.01")
 		case geocube.CompressionLOSSLESS:
 			options = append(options, "-co", "COMPRESS=ZSTD", "-co", "PREDICTOR=2")
 		}
-	case geocube.DTypeFLOAT32, geocube.DTypeFLOAT64:
+	case geocube.DTypeFLOAT64:
 		switch container.Compression {
 		case geocube.CompressionLOSSY:
 			options = append(options, "-co", "COMPRESS=LERC_ZSTD", "-co", "MAX_Z_ERROR=0.01")

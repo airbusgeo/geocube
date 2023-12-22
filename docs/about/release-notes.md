@@ -21,6 +21,7 @@
 - Update postGis to 3.1 to fix a bug with geography intersection (GetCube does not return all datasets)
 - Docker Consolidater use uuidgen instead of ossp-uuid
 - slow FindRecords
+- float32 is compressed with ZSTD instead of LERC_ZSTD
 
 
 ### Others
