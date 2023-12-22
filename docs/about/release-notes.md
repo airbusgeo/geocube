@@ -9,6 +9,7 @@
 - gdalwarp uses wm=500 instead of 2047 and -multi option
 - Min/Max to GetXYZTile to scale tile values between min and max.
 - Add index on pg.records.datetime (execute interface/database/pg/update_X.X.X.sql)
+- GCS: automatically retry or mark as temporary some errors 
 
 ### Bug fixes
 - CleanJobs: remove DONEBUTUNTIDY

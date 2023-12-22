@@ -44,10 +44,12 @@ var retriableOAuth2Errors = []string{
 var retriableSuffixErrors = []string{
 	"http2: client connection lost",
 	"http2: client connection force closed via ClientConn.Close",
+	"connection reset by peer",
+	"cannot assign requested address",
 	"EOF", // Unexpected EOF is a temporary error
 }
 
-func gsError(err error) error {
+func GsError(err error) error {
 	if err == nil {
 		return nil
 	}
@@ -82,7 +84,7 @@ func NewGsStrategy(ctx context.Context) (geocubeStorage.Strategy, error) {
 
 	gsClient, err := storage.NewClient(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create gs Client : %w", gsError(err))
+		return nil, fmt.Errorf("failed to create gs Client : %w", GsError(err))
 	}
 
 	return gsStrategy{
@@ -153,12 +155,12 @@ func (s gsStrategy) UploadFile(ctx context.Context, uri string, data io.ReadClos
 	_, err = io.Copy(writer, data)
 	if err != nil {
 		writer.Close()
-		return fmt.Errorf("UploadFile: failed to copy: %w", gsError(err))
+		return fmt.Errorf("UploadFile: failed to copy: %w", GsError(err))
 
 	}
 	err = writer.Close()
 	if err != nil {
-		return fmt.Errorf("UploadFile: failed to close writer: %w", gsError(err))
+		return fmt.Errorf("UploadFile: failed to close writer: %w", GsError(err))
 	}
 
 	return nil
@@ -186,7 +188,7 @@ func (s gsStrategy) Exist(ctx context.Context, uri string) (bool, error) {
 		case storage.ErrObjectNotExist:
 			return false, geocubeStorage.ErrFileNotFound
 		default:
-			return false, fmt.Errorf("failed to check if file exist on storage: %w", gsError(err))
+			return false, fmt.Errorf("failed to check if file exist on storage: %w", GsError(err))
 		}
 	}
 
@@ -203,7 +205,7 @@ func (s gsStrategy) GetAttrs(ctx context.Context, uri string) (geocubeStorage.At
 	if err == storage.ErrObjectNotExist {
 		return geocubeStorage.Attrs{}, geocubeStorage.ErrFileNotFound
 	} else if err != nil {
-		return geocubeStorage.Attrs{}, fmt.Errorf("failed to get file attributes from GCS : %w", gsError(err))
+		return geocubeStorage.Attrs{}, fmt.Errorf("failed to get file attributes from GCS : %w", GsError(err))
 	}
 
 	return geocubeStorage.Attrs{
@@ -301,7 +303,7 @@ func (s gsStrategy) downloadObjectTo(ctx context.Context, bucket, path string, w
 		bckt := s.gsClient.Bucket(bucket)
 		r, err = bckt.Object(path).NewRangeReader(ctx, curOffset, bytesRemaining)
 		if err != nil {
-			err = gsError(err)
+			err = GsError(err)
 			if utils.Retriable(err) {
 				continue
 			} else {
@@ -315,7 +317,7 @@ func (s gsStrategy) downloadObjectTo(ctx context.Context, bucket, path string, w
 		if err == nil {
 			return nil
 		}
-		err = gsError(err)
+		err = GsError(err)
 		if !utils.Retriable(err) {
 			return fmt.Errorf("gs.download.copy: %w", err)
 		}
@@ -330,7 +332,7 @@ func (s gsStrategy) downloadObjectTo(ctx context.Context, bucket, path string, w
 
 func (s gsStrategy) uploadObject(ctx context.Context, bucket, object string, data []byte, opts ...geocubeStorage.Option) error {
 	r := bytes.NewReader(data)
-	return gsError(s.uploadObjectFrom(ctx, bucket, object, r, opts...))
+	return GsError(s.uploadObjectFrom(ctx, bucket, object, r, opts...))
 }
 
 func (s gsStrategy) uploadObjectFrom(ctx context.Context, bucket, object string, r io.ReadSeeker, opts ...geocubeStorage.Option) error {
@@ -345,7 +347,7 @@ func (s gsStrategy) uploadObjectFrom(ctx context.Context, bucket, object string,
 			d *= 2
 			_, err = r.Seek(off, io.SeekStart)
 			if err != nil {
-				err = gsError(err)
+				err = GsError(err)
 				if utils.Retriable(err) {
 					continue
 				} else {
@@ -360,14 +362,14 @@ func (s gsStrategy) uploadObjectFrom(ctx context.Context, bucket, object string,
 		_, err = io.Copy(w, r)
 		if err != nil {
 			w.Close()
-			err = gsError(err)
+			err = GsError(err)
 			if utils.Retriable(err) {
 				continue
 			} else {
 				return fmt.Errorf("gs.upload.copy: %w", err)
 			}
 		}
-		err = gsError(w.Close())
+		err = GsError(w.Close())
 		if err == nil {
 			return nil
 		}
@@ -387,7 +389,7 @@ func (s gsStrategy) deleteObject(ctx context.Context, bucket, object string, opt
 			time.Sleep(d)
 			d *= 2
 		}
-		err = gsError(s.gsClient.Bucket(bucket).Object(object).Delete(ctx))
+		err = GsError(s.gsClient.Bucket(bucket).Object(object).Delete(ctx))
 		if err == nil {
 			return nil
 		}

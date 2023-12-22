@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	neturl "net/url"
+	"strings"
 	"sync"
 	"syscall"
 
@@ -59,7 +60,9 @@ func Retriable(err error) bool {
 	if errors.As(err, &gapiError) {
 		return gapiError.Code == 429 || (gapiError.Code >= 500 && gapiError.Code < 600)
 	}
-	return false
+
+	errmsg := err.Error()
+	return strings.Contains(errmsg, "timeout")
 }
 
 // ErrWaitGroup is a collection of goroutines working on subtasks that are part of the same overall task.
