@@ -52,6 +52,8 @@ type GeocubeClient interface {
 	DeleteInstance(ctx context.Context, in *DeleteInstanceRequest, opts ...grpc.CallOption) (*DeleteInstanceResponse, error)
 	// Create or update a palette that can be used to create a display of a dataset
 	CreatePalette(ctx context.Context, in *CreatePaletteRequest, opts ...grpc.CallOption) (*CreatePaletteResponse, error)
+	// GetInfo on containers
+	GetContainers(ctx context.Context, in *GetContainersRequest, opts ...grpc.CallOption) (*GetContainersResponse, error)
 	// Index new datasets in the Geocube
 	IndexDatasets(ctx context.Context, in *IndexDatasetsRequest, opts ...grpc.CallOption) (*IndexDatasetsResponse, error)
 	// Configurate a consolidation process
@@ -320,6 +322,15 @@ func (c *geocubeClient) DeleteInstance(ctx context.Context, in *DeleteInstanceRe
 func (c *geocubeClient) CreatePalette(ctx context.Context, in *CreatePaletteRequest, opts ...grpc.CallOption) (*CreatePaletteResponse, error) {
 	out := new(CreatePaletteResponse)
 	err := c.cc.Invoke(ctx, "/geocube.Geocube/CreatePalette", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *geocubeClient) GetContainers(ctx context.Context, in *GetContainersRequest, opts ...grpc.CallOption) (*GetContainersResponse, error) {
+	out := new(GetContainersResponse)
+	err := c.cc.Invoke(ctx, "/geocube.Geocube/GetContainers", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -647,6 +658,8 @@ type GeocubeServer interface {
 	DeleteInstance(context.Context, *DeleteInstanceRequest) (*DeleteInstanceResponse, error)
 	// Create or update a palette that can be used to create a display of a dataset
 	CreatePalette(context.Context, *CreatePaletteRequest) (*CreatePaletteResponse, error)
+	// GetInfo on containers
+	GetContainers(context.Context, *GetContainersRequest) (*GetContainersResponse, error)
 	// Index new datasets in the Geocube
 	IndexDatasets(context.Context, *IndexDatasetsRequest) (*IndexDatasetsResponse, error)
 	// Configurate a consolidation process
@@ -746,6 +759,9 @@ func (UnimplementedGeocubeServer) DeleteInstance(context.Context, *DeleteInstanc
 }
 func (UnimplementedGeocubeServer) CreatePalette(context.Context, *CreatePaletteRequest) (*CreatePaletteResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreatePalette not implemented")
+}
+func (UnimplementedGeocubeServer) GetContainers(context.Context, *GetContainersRequest) (*GetContainersResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetContainers not implemented")
 }
 func (UnimplementedGeocubeServer) IndexDatasets(context.Context, *IndexDatasetsRequest) (*IndexDatasetsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method IndexDatasets not implemented")
@@ -1134,6 +1150,24 @@ func _Geocube_CreatePalette_Handler(srv interface{}, ctx context.Context, dec fu
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(GeocubeServer).CreatePalette(ctx, req.(*CreatePaletteRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Geocube_GetContainers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetContainersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GeocubeServer).GetContainers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/geocube.Geocube/GetContainers",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GeocubeServer).GetContainers(ctx, req.(*GetContainersRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1595,6 +1629,10 @@ var Geocube_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreatePalette",
 			Handler:    _Geocube_CreatePalette_Handler,
+		},
+		{
+			MethodName: "GetContainers",
+			Handler:    _Geocube_GetContainers_Handler,
 		},
 		{
 			MethodName: "IndexDatasets",

@@ -146,6 +146,8 @@
     - [Dataset](#geocube-Dataset)
     - [GetConsolidationParamsRequest](#geocube-GetConsolidationParamsRequest)
     - [GetConsolidationParamsResponse](#geocube-GetConsolidationParamsResponse)
+    - [GetContainersRequest](#geocube-GetContainersRequest)
+    - [GetContainersResponse](#geocube-GetContainersResponse)
     - [GetJobRequest](#geocube-GetJobRequest)
     - [GetJobResponse](#geocube-GetJobResponse)
     - [IndexDatasetsRequest](#geocube-IndexDatasetsRequest)
@@ -210,6 +212,7 @@ Documentation may be detailed in Request/Response sections.
 | UpdateInstance | [UpdateInstanceRequest](#geocube-UpdateInstanceRequest) | [UpdateInstanceResponse](#geocube-UpdateInstanceResponse) | Update metadata of an instance |
 | DeleteInstance | [DeleteInstanceRequest](#geocube-DeleteInstanceRequest) | [DeleteInstanceResponse](#geocube-DeleteInstanceResponse) | Delete an instance iif no dataset has a reference on |
 | CreatePalette | [CreatePaletteRequest](#geocube-CreatePaletteRequest) | [CreatePaletteResponse](#geocube-CreatePaletteResponse) | Create or update a palette that can be used to create a display of a dataset |
+| GetContainers | [GetContainersRequest](#geocube-GetContainersRequest) | [GetContainersResponse](#geocube-GetContainersResponse) | GetInfo on containers |
 | IndexDatasets | [IndexDatasetsRequest](#geocube-IndexDatasetsRequest) | [IndexDatasetsResponse](#geocube-IndexDatasetsResponse) | Index new datasets in the Geocube |
 | ConfigConsolidation | [ConfigConsolidationRequest](#geocube-ConfigConsolidationRequest) | [ConfigConsolidationResponse](#geocube-ConfigConsolidationResponse) | Configurate a consolidation process |
 | GetConsolidationParams | [GetConsolidationParamsRequest](#geocube-GetConsolidationParamsRequest) | [GetConsolidationParamsResponse](#geocube-GetConsolidationParamsResponse) | Get the configuration of a consolidation |
@@ -2346,6 +2349,36 @@ Return consolidation parameters
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | consolidation_params | [ConsolidationParams](#geocube-ConsolidationParams) |  |  |
+
+
+
+
+
+
+<a name="geocube-GetContainersRequest"></a>
+
+### GetContainersRequest
+Request info on containers
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| uris | [string](#string) | repeated | List of container uris |
+
+
+
+
+
+
+<a name="geocube-GetContainersResponse"></a>
+
+### GetContainersResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| containers | [Container](#geocube-Container) | repeated |  |
 
 
 

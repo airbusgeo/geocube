@@ -328,6 +328,15 @@ func (svc *Service) validateAndSetRemoteDataset(ctx context.Context, dataset *ge
 	return nil
 }
 
+// GetContainers implements GeocubeService
+func (svc *Service) GetContainers(ctx context.Context, containerUris []string) ([]*geocube.Container, error) {
+	containers, err := svc.db.ReadContainers(ctx, containerUris)
+	if err != nil {
+		return nil, fmt.Errorf("GetVariable.%w", err)
+	}
+	return containers, nil
+}
+
 // IndexExternalDatasets implements GeocubeService
 // Index datasets that are not fully known. Checks that the container is reachable and get some missing informations.
 func (svc *Service) IndexExternalDatasets(ctx context.Context, newcontainer *geocube.Container, datasets []*geocube.Dataset) error {

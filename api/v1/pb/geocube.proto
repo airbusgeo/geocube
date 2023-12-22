@@ -57,6 +57,8 @@ service Geocube {
     // Create or update a palette that can be used to create a display of a dataset
     rpc CreatePalette(CreatePaletteRequest)returns (CreatePaletteResponse){}
 
+    // GetInfo on containers
+    rpc GetContainers(GetContainersRequest)                   returns (GetContainersResponse) {}
     // Index new datasets in the Geocube
     rpc IndexDatasets(IndexDatasetsRequest)                   returns (IndexDatasetsResponse) {}
     // Configurate a consolidation process

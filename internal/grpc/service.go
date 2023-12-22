@@ -62,6 +62,7 @@ type GeocubeService interface {
 	CreatePalette(ctx context.Context, palette *geocube.Palette, replaceIfExists bool) error
 
 	// Index datasets that are not fully known. Checks that the container is reachable and get some missing informations.
+	GetContainers(ctx context.Context, containerUris []string) ([]*geocube.Container, error)
 	IndexExternalDatasets(ctx context.Context, container *geocube.Container, datasets []*geocube.Dataset) error
 	ConfigConsolidation(ctx context.Context, variableID string, params geocube.ConsolidationParams) error
 	GetConsolidationParams(ctx context.Context, ID string) (*geocube.ConsolidationParams, error)
@@ -518,6 +519,21 @@ func (svc *Service) CreatePalette(ctx context.Context, req *pb.CreatePaletteRequ
 
 	// Format response
 	return &pb.CreatePaletteResponse{}, nil
+}
+
+func (svc *Service) GetContainers(ctx context.Context, req *pb.GetContainersRequest) (*pb.GetContainersResponse, error) {
+	containers, err := svc.gsvc.GetContainers(ctx, req.Uris)
+	if err != nil {
+		return nil, formatError("backend.%w", err)
+	}
+	response := pb.GetContainersResponse{
+		Containers: make([]*pb.Container, 0, len(containers)),
+	}
+	for _, container := range containers {
+		response.Containers = append(response.Containers, container.ToProtobuf())
+	}
+
+	return &response, nil
 }
 
 // IndexDatasets adds datasets in database

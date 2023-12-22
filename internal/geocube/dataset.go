@@ -120,6 +120,20 @@ func NewDatasetFromIncomplete(d Dataset, consolidationRecord ConsolidationRecord
 	return &d, nil
 }
 
+// ToProtobuf convers a dataset to protobuf
+func (d *Dataset) ToProtobuf() *pb.Dataset {
+	return &pb.Dataset{
+		RecordId:        d.RecordID,
+		InstanceId:      d.InstanceID,
+		ContainerSubdir: d.ContainerSubDir,
+		Bands:           d.Bands,
+		Dformat:         d.DataMapping.ToProtobuf(),
+		RealMinValue:    d.DataMapping.RangeExt.Min,
+		RealMaxValue:    d.DataMapping.RangeExt.Max,
+		Exponent:        d.DataMapping.Exponent,
+	}
+}
+
 // SetShape sets the shape in a given CRS and bounding boxes of a new dataset
 func (d *Dataset) SetShape(shape *geom.MultiPolygon, crsS string) error {
 	if !d.IsNew() {

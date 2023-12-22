@@ -81,6 +81,21 @@ message Job {
     bool                      waiting          = 11; // If true, the job is waiting for user to continue
 }
 
+
+/**
+  * Request info on containers
+  */
+  message GetContainersRequest {
+    repeated string uris = 1;  // List of container uris
+}
+
+/**
+  * 
+  */
+message GetContainersResponse {
+  repeated Container containers = 1;
+}
+
 /**
   * Request to index all the datasets of a container
   */

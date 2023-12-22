@@ -60,6 +60,19 @@ func NewContainerFromConsolidation(oc *ConsolidationContainer) (*Container, erro
 	return &c, nil
 }
 
+// ToProtobuf converts a container to protobuf
+func (c *Container) ToProtobuf() *pb.Container {
+	container := pb.Container{
+		Uri:      c.URI,
+		Managed:  c.Managed,
+		Datasets: make([]*pb.Dataset, 0, len(c.Datasets)),
+	}
+	for _, d := range c.Datasets {
+		container.Datasets = append(container.Datasets, d.ToProtobuf())
+	}
+	return &container
+}
+
 func (c Container) validate() error {
 	//TODO validate URI
 	return nil
