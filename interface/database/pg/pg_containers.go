@@ -2,7 +2,10 @@ package pg
 
 import (
 	"context"
+	"database/sql/driver"
 	"fmt"
+	"math"
+	"strings"
 	"time"
 
 	"github.com/airbusgeo/geocube/internal/log"
@@ -105,10 +108,86 @@ func (b Backend) DeletePendingContainers(ctx context.Context) (int64, error) {
 	return res.RowsAffected()
 }
 
+type Valuer interface {
+	Value() (driver.Value, error)
+}
+
+type splitGeomInterface interface {
+	geom.T
+	Valuer
+}
+
+func floor(f float64) int {
+	return int(math.Floor(f))
+}
+
+func (b Backend) splitGeom(ctx context.Context, g splitGeomInterface, geography bool) (Valuer, error) {
+	bounds := g.Bounds()
+	if (!geography || bounds.Max(0)-bounds.Min(0) <= 90) && bounds.Max(0) <= 180 && bounds.Min(0) >= -180 {
+		return g, nil
+	}
+
+	var collection []string
+	var minI, maxI, maxLonI int
+	if geography {
+		// Split every 90°
+		maxLon := 90.0
+		maxLonI = 90
+		minI, maxI = maxLonI*floor(bounds.Min(0)/maxLon), maxLonI*floor(bounds.Max(0)/maxLon)
+	} else {
+		// Only split what is before -180° or after 180°
+		maxLonI = 360
+		minI, maxI = maxLonI*floor((bounds.Min(0)+180)/360)-180, maxLonI*floor((bounds.Max(0)+180)/360)-180
+	}
+	if float64(maxI) == bounds.Max(0) {
+		maxI--
+	}
+	for i := minI; i <= maxI; i += maxLonI {
+		translate := 360 * int(math.Floor(float64(i+180)/360))
+		collection = append(collection, fmt.Sprintf("ST_GeomFromText('POLYGON((%d 90, %d -90, %d -90, %d 90, %d 90))', 4326), %d", i, i, i+maxLonI, i+maxLonI, i, translate))
+	}
+
+	shape := proj.Shape{}
+	query := `
+		SELECT ST_Collect(intersection.geom) FROM (
+			SELECT (ST_Dump(ST_Translate(ST_Intersection($1, hemisphere.geom), -hemisphere.translate, 0))).geom as geom
+			FROM (
+				VALUES (` + strings.Join(collection, "), (") + `)
+			) as hemisphere(geom, translate)
+		) as intersection
+		WHERE ST_GeometryType(intersection.geom) = 'ST_Polygon';
+	`
+	err := b.pg.QueryRowContext(ctx, query, g).Scan(&shape)
+	switch pqErrorCode(err) {
+	case noError:
+		return &shape, nil
+	default:
+		return nil, pqErrorFormat("splitGeom: %w", err)
+	}
+}
+
 // CreateDatasets implements GeocubeBackend
 func (b Backend) CreateDatasets(ctx context.Context, datasets []*geocube.Dataset) error {
 	if len(datasets) == 0 {
 		return nil
+	}
+
+	// Prepare AOI (must be done before PrepareContext, otherwise, COPY is in progress and splitGeog might not work)
+	var geometries []Valuer
+	for _, dataset := range datasets {
+		g, err := b.splitGeom(ctx, &dataset.GeomShape, false)
+		if err != nil {
+			return pqErrorFormat("CreateDatasets.%w", err)
+		}
+		geometries = append(geometries, g)
+	}
+	var geographies []Valuer
+	for _, dataset := range datasets {
+		g, err := b.splitGeom(ctx, &dataset.GeogShape, true)
+		if err != nil {
+			return pqErrorFormat("CreateDatasets.%w", err)
+		}
+		geographies = append(geographies, g)
 	}
 
 	// Prepare the insert
@@ -125,9 +204,9 @@ func (b Backend) CreateDatasets(ctx context.Context, datasets []*geocube.Dataset
 	}()
 
 	// Append the datasets
-	for _, dataset := range datasets {
+	for i, dataset := range datasets {
 		if _, err = stmt.ExecContext(ctx, dataset.ID, dataset.RecordID, dataset.InstanceID, dataset.ContainerURI,
-			&dataset.GeogShape, &dataset.GeomShape, &dataset.Shape, dataset.ContainerSubDir, pq.Array(dataset.Bands), dataset.Status,
+			geographies[i], geometries[i], &dataset.Shape, dataset.ContainerSubDir, pq.Array(dataset.Bands), dataset.Status,
 			dataset.DataMapping.DType, dataset.DataMapping.NoData, dataset.DataMapping.Range.Min, dataset.DataMapping.Range.Max,
 			dataset.DataMapping.RangeExt.Min, dataset.DataMapping.RangeExt.Max, dataset.DataMapping.Exponent, dataset.Overviews); err != nil {
 			return pqErrorFormat("CreateDatasets.append.exec: %w", err)
@@ -221,7 +300,11 @@ func (b Backend) findDatasets(ctx context.Context, status []geocube.DatasetStatu
 	appendTagsFilters(&wc, recordTags)
 
 	if geog != nil {
-		wc.append("ST_Intersects(d.geog,  $%d)", geog)
+		g, err := b.splitGeom(ctx, geog, true)
+		if err != nil {
+			return nil, pqErrorFormat("FindDataset.%w", err)
+		}
+		wc.append("ST_Intersects(d.geog,  $%d)", g)
 		if refined != nil {
 			wc.append("(CASE WHEN ST_SRID(d.shape) = $%d THEN ST_Relate(d.shape,  $%d, 'T********') ELSE true END)", refined.SRID(), refined)
 		}
@@ -331,7 +414,7 @@ func (b Backend) ComputeValidShapeFromCell(ctx context.Context, datasetIDS []str
 		`WITH intersection(shape) AS (
 			SELECT ST_Multi(ST_Intersection(ST_Union(ST_Transform(d.shape,$1::int)),$2)) FROM geocube.datasets d  WHERE d.id = ANY($3)
 		)
-		SELECT st_collectionextract(shape,3) from intersection where NOT St_IsEmpty(shape) and st_dimension(shape) > 1`, srid, &cell.Ring, pq.Array(datasetIDS)).Scan(&computeShape)
+		SELECT st_makevalid(st_collectionextract(shape,3)) from intersection where NOT St_IsEmpty(shape) and st_dimension(shape) > 1`, srid, &cell.Ring, pq.Array(datasetIDS)).Scan(&computeShape)
 	switch pqErrorCode(err) {
 	case noError:
 		return &computeShape, nil

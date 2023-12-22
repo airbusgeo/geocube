@@ -24,6 +24,8 @@
 - slow FindRecords
 - float32 is compressed with ZSTD instead of LERC_ZSTD
 - Container deletion ignores FileNotFound error
+- Handling of extents that crosses dateline
+- Handling of extents wider than 180° of longitude
 
 
 ### Others
