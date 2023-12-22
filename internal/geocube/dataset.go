@@ -220,7 +220,7 @@ func ToStorageClass(s string) (StorageClass, error) {
 	return StorageClassUNDEFINED, NewValidationError("Unknown storage class: " + s)
 }
 
-// identicalTo compares two datasets and returns true if they are equals with exception of ID and persistentState
+// identicalTo compares two datasets and returns true if they are equals with exception of ID, persistentState and Geog/GeomShape (which can be slightly different because of antemeridian crossing)
 func (d *Dataset) identicalTo(d2 *Dataset) bool {
 	return d.RecordID == d2.RecordID &&
 		d.InstanceID == d2.InstanceID &&
@@ -230,8 +230,8 @@ func (d *Dataset) identicalTo(d2 *Dataset) bool {
 		d.Status == d2.Status &&
 		d.Overviews == d2.Overviews &&
 		d.Shape.Equal(&d2.Shape) &&
-		d.GeogShape.Equal(&d2.GeogShape.Shape) &&
-		d.GeomShape.Equal(&d2.GeomShape.Shape) &&
+		//d.GeogShape.Equal(&d2.GeogShape.Shape) &&
+		//d.GeomShape.Equal(&d2.GeomShape.Shape) &&
 		utils.SliceInt64Equal(d.Bands, d2.Bands)
 }
 

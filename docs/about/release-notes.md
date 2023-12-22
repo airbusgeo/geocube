@@ -26,6 +26,7 @@
 - Container deletion ignores FileNotFound error
 - Handling of extents that crosses dateline
 - Handling of extents wider than 180° of longitude
+- reindex dataset crossing antemeridian
 
 
 ### Others

@@ -3,6 +3,7 @@ package geocube
 //go:generate go run github.com/dmarkham/enumer -json -sql -type StorageClass -trimprefix StorageClass
 
 import (
+	"fmt"
 	"strings"
 
 	pb "github.com/airbusgeo/geocube/internal/pb"
@@ -121,8 +122,24 @@ func (c *Container) AddDataset(d *Dataset) error {
 				return nil
 			}
 			bs := utils.JoinInt64(d.Bands, "-")
+			reason := "which is different"
+			if d.RecordID != dataset.RecordID {
+				reason = "of another record (" + dataset.RecordID + ")"
+			} else if d.InstanceID != dataset.InstanceID {
+				reason = "of another instance (" + dataset.InstanceID + ")"
+			} else if !d.DataMapping.Equals(dataset.DataMapping) {
+				reason = "with another datamapping"
+			} else if d.Status != dataset.Status {
+				reason = "with a different internal status (" + dataset.Status.String() + ")"
+			} else if !utils.SliceInt64Equal(d.Bands, dataset.Bands) {
+				reason = "with a different set of bands"
+			} else if d.Overviews != dataset.Overviews {
+				reason = "with different overviews"
+			} else if !d.Shape.Equal(&dataset.Shape) {
+				reason = fmt.Sprintf("with different shape (%v != %v)", d.GeomShape.Coords(), dataset.GeomShape.Coords())
+			}
 			return NewEntityAlreadyExists("dataset", "subdir/bands", d.ContainerSubDir+"/"+bs,
-				"A different dataset (record, instance or dformat) already refers to the container "+c.URI+", the subdir '"+d.ContainerSubDir+"' and one of the bands among: "+bs)
+				"A dataset "+reason+" already refers to the container "+c.URI+", the subdir '"+d.ContainerSubDir+"' and one of the bands among: "+bs)
 		}
 	}
 

@@ -550,6 +550,9 @@ func (svc *Service) csldIndex(ctx context.Context, job *geocube.Job) (err error)
 			// Specialize incompleteDataset
 			newDatasets := make([]*geocube.Dataset, 0, len(records))
 			for i, r := range records {
+				if r.ValidShape != nil && r.ValidShape.SRID() != incompleteDataset.Shape.SRID() {
+					return fmt.Errorf("csldIndex: container.srid=%d != dataset.srid=%d (container.crs=%s)", incompleteDataset.Shape.SRID(), r.ValidShape.SRID(), container.CRS)
+				}
 				newDataset, err := geocube.NewDatasetFromIncomplete(*incompleteDataset, r, "GTIFF_DIR:"+strconv.Itoa(i+1))
 				if err != nil {
 					return fmt.Errorf("csldIndex.%w", err)

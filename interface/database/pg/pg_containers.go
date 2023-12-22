@@ -417,6 +417,10 @@ func (b Backend) ComputeValidShapeFromCell(ctx context.Context, datasetIDS []str
 		SELECT st_makevalid(st_collectionextract(shape,3)) from intersection where NOT St_IsEmpty(shape) and st_dimension(shape) > 1`, srid, &cell.Ring, pq.Array(datasetIDS)).Scan(&computeShape)
 	switch pqErrorCode(err) {
 	case noError:
+		if computeShape.SRID() != srid {
+			log.Logger(ctx).Sugar().Warnf("computeShape.SRID()!=cell.CRS.srid (%d, %d)", computeShape.SRID(), srid)
+			computeShape.SetSRID(srid)
+		}
 		return &computeShape, nil
 	case noDataFound, noData:
 		return nil, geocube.NewEntityNotFound("", "", "", "empty intersection with %v", cell.Ring.Coords())
