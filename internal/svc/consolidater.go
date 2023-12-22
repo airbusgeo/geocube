@@ -818,6 +818,7 @@ func (svc *Service) csldRollback(ctx context.Context, job *geocube.Job) error {
 	return nil
 }
 
+// csldSubFncDeleteContainers deletes containers, ignoring FileNotFoundError
 func (svc *Service) csldSubFncDeleteContainers(ctx context.Context, containersURI []string) error {
 	// Delete containers
 	workers := 20

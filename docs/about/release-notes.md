@@ -23,6 +23,7 @@
 - Docker Consolidater use uuidgen instead of ossp-uuid
 - slow FindRecords
 - float32 is compressed with ZSTD instead of LERC_ZSTD
+- Container deletion ignores FileNotFound error
 
 
 ### Others

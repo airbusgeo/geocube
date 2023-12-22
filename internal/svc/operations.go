@@ -2,11 +2,13 @@ package svc
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
 
 	"github.com/airbusgeo/geocube/interface/database"
+	"github.com/airbusgeo/geocube/interface/storage"
 	"github.com/airbusgeo/geocube/interface/storage/uri"
 	"github.com/airbusgeo/geocube/internal/geocube"
 	"github.com/airbusgeo/geocube/internal/log"
@@ -353,6 +355,7 @@ func (svc *Service) delDeleteContainers(ctx context.Context, job *geocube.Job) e
 	wg := sync.WaitGroup{}
 	mutex := sync.Mutex{}
 	var errs error
+	nbErrors := 0
 
 	wg.Add(workers)
 	for w := 0; w < workers; w++ {
@@ -369,7 +372,16 @@ func (svc *Service) delDeleteContainers(ctx context.Context, job *geocube.Job) e
 				}
 				mutex.Lock()
 				job.UpdateTask(*geocube.NewTaskEvent(job.ID, task.ID, status, err))
-				errs = utils.MergeErrors(true, errs, err)
+
+				if err != nil {
+					nbErrors++
+					log.Logger(ctx).Sugar().Debugf("%v", err)
+					if nbErrors == 1000 {
+						errs = utils.MergeErrors(true, errs, utils.MakeTemporary(fmt.Errorf("more than 1000 errors")))
+					} else if nbErrors < 1000 {
+						errs = utils.MergeErrors(true, errs, err)
+					}
+				}
 				mutex.Unlock()
 			}
 			return nil
@@ -417,12 +429,13 @@ func (svc *Service) delRollback(ctx context.Context, job *geocube.Job) error {
 	return nil
 }
 
+// opSubFncDeleteContainer deletes a container, ignoring FileNotFoundError
 func (svc *Service) opSubFncDeleteContainer(ctx context.Context, containerURI string) error {
 	URI, err := uri.ParseUri(containerURI)
 	if err != nil {
 		return fmt.Errorf("opSubFncDeleteContainer.%w", err)
 	}
-	if err := URI.Delete(ctx); err != nil {
+	if err := URI.Delete(ctx); err != nil && !errors.Is(err, storage.ErrFileNotFound) {
 		return fmt.Errorf("opSubFncDeleteContainer[%s].%w", containerURI, err)
 	}
 	return nil
