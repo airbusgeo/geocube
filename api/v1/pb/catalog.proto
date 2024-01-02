@@ -124,6 +124,7 @@ message GetCubeMetadataRequest{
   string                   crs             = 6;
   Size                     size            = 7;
   FileFormat               format          = 8; // Format of the output data
+  bool                     predownload     = 9; // Predownload the datasets before merging them. When the dataset is remote and all the dataset is required, it is more efficient to predownload it.
 }
 
 /**

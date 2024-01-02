@@ -14,6 +14,7 @@
 ### API
 - DeleteRecords: add NoFail to delete all the pending records and let the others
 - GetCube: add CompressionLevel=-3 to disable the compression
+- GetCube: add Predownload option to download file before warping to save time. It is efficient when gdal needs the whole image to compute the Cube requested, but its not when a small part of the image is required. Be careful when the data has been consolidated.
 
 ### Bug fixes
 - CleanJobs: remove DONEBUTUNTIDY

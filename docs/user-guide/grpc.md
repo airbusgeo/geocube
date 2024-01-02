@@ -1467,6 +1467,7 @@ Request a cube from metadatas (provided by Geocube.GetCube())
 | crs | [string](#string) |  |  |
 | size | [Size](#geocube-Size) |  |  |
 | format | [FileFormat](#geocube-FileFormat) |  | Format of the output data |
+| predownload | [bool](#bool) |  | Predownload the datasets before merging them. When the dataset is remote and all the dataset is required, it is more efficient to predownload it. |
 
 
 

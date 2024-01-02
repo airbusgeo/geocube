@@ -115,6 +115,7 @@ func newDownloaderAppConfig() (*serverConfig, error) {
 	flag.IntVar(&serverConfig.MaxConnectionAge, "maxConnectionAge", 15*60, "grpc max age connection in seconds")
 	flag.IntVar(&serverConfig.CubeWorkers, "workers", 1, "number of workers to parallelize the processing of the slices of a cube (see also GdalMultithreading)")
 	flag.IntVar(&serverConfig.ChunkSizeByte, "chunk-size", 1024*1024, "chunk size for grpc streaming of images in bytes. If an image is bigger than chunk_size_bytes, it is divided into chunks and streamed. Grpc recommends a chunk_size of 64kbytes, but in localhost, performances are better with a bigger chunk_size, such as 1Mbytes. By default, chunk_size is limited by Grpc to 4Mbytes.")
+	flag.StringVar(&svc.PredownloadDir, "workdir", os.TempDir(), "temporary directory (for predownload)")
 	serverConfig.GDALConfig = cmd.GDALConfigFlags()
 
 	flag.Parse()

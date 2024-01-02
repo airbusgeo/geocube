@@ -185,7 +185,7 @@ func (svc *Service) delInit(ctx context.Context, job *geocube.Job, instanceIDs, 
 			return err
 		}
 		if len(datasets) == 0 {
-			return geocube.NewEntityNotFound("", "", "", "No dataset found for theses records, instances and/or pattern")
+			return geocube.NewEntityNotFound("", "", "", "No dataset found for these records, instances and/or pattern")
 		}
 		datasetsID := make([]string, len(datasets))
 		for i, dataset := range datasets {

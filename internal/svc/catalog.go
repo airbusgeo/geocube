@@ -22,6 +22,7 @@ type GetCubeOptions struct {
 	Format      string
 	HeadersOnly bool
 	Resampling  geocube.Resampling
+	Predownload bool
 }
 
 // CubeSlice is a slice of a cube, an image corresponding to a group of record
@@ -115,7 +116,7 @@ func (svc *Service) GetCubeFromMetadatas(ctx context.Context, metadatas []SliceM
 	if err != nil {
 		return CubeInfo{}, nil, fmt.Errorf("getCubeFromMetadatas.ToWKT: %w", err)
 	}
-	stream, err := svc.getCubeStream(ctx, metadatas, grecords, outDesc, false)
+	stream, err := svc.getCubeStream(ctx, metadatas, grecords, outDesc, options)
 	if err != nil {
 		return CubeInfo{}, nil, err
 	}
@@ -159,7 +160,7 @@ func (svc *Service) GetCubeFromRecords(ctx context.Context, grecordsID [][]strin
 	datasetsByRecord, grecords = groupDatasetsByRecordsGroup(datasetsByRecord, records, recordIdx, grecordsID)
 
 	// GetCube
-	stream, err := svc.getCubeStream(ctx, datasetsByRecord, grecords, outDesc, options.HeadersOnly)
+	stream, err := svc.getCubeStream(ctx, datasetsByRecord, grecords, outDesc, options)
 	return CubeInfo{NbImages: len(datasetsByRecord),
 		NbDatasets:    len(datasets),
 		Resampling:    outDesc.Resampling,
@@ -196,7 +197,7 @@ func (svc *Service) GetCubeFromFilters(ctx context.Context, recordTags geocube.M
 	}
 
 	// GetCube
-	stream, err := svc.getCubeStream(ctx, datasetsByRecord, grecords, outDesc, options.HeadersOnly)
+	stream, err := svc.getCubeStream(ctx, datasetsByRecord, grecords, outDesc, options)
 	return CubeInfo{NbImages: len(datasetsByRecord),
 		NbDatasets:    len(datasets),
 		Resampling:    outDesc.Resampling,
@@ -303,8 +304,8 @@ func getNumberOfWorkers(memoryUsageBytes int) int {
 	return utils.MinI(10, utils.MaxI(1, ramSize/memoryUsageBytes))
 }
 
-func (svc *Service) getCubeStream(ctx context.Context, datasetsByRecord []SliceMeta, grecords [][]*geocube.Record, outDesc internalImage.GdalDatasetDescriptor, headersOnly bool) (<-chan CubeSlice, error) {
-	if headersOnly {
+func (svc *Service) getCubeStream(ctx context.Context, datasetsByRecord []SliceMeta, grecords [][]*geocube.Record, outDesc internalImage.GdalDatasetDescriptor, options GetCubeOptions) (<-chan CubeSlice, error) {
+	if options.HeadersOnly {
 		// Push the headers into a channel
 		headersOut := make(chan CubeSlice, len(grecords))
 		for i, records := range grecords {
@@ -320,6 +321,12 @@ func (svc *Service) getCubeStream(ctx context.Context, datasetsByRecord []SliceM
 		return headersOut, nil
 	}
 
+	// Predownload datasets if required
+	datasetsAvailability := make([]DatasetsAvailability, len(datasetsByRecord))
+	if options.Predownload {
+		PredownloadRemoteDatasets(ctx, datasetsByRecord, datasetsAvailability)
+	}
+
 	// Create a job for each batch of datasets with the same record id and a result channel
 	var jobs []mergeDatasetJob
 	var unorderedSlices []<-chan CubeSlice
@@ -328,8 +335,9 @@ func (svc *Service) getCubeStream(ctx context.Context, datasetsByRecord []SliceM
 		jobs = append(jobs, mergeDatasetJob{
 			ID:    len(jobs),
 			Slice: datasets, Records: grecords[i],
-			OutDesc:    &outDesc,
-			ResultChan: ackChan,
+			OutDesc:           &outDesc,
+			AvailabilityChans: datasetsAvailability[i],
+			ResultChan:        ackChan,
 		})
 		unorderedSlices = append(unorderedSlices, ackChan)
 	}
@@ -464,20 +472,23 @@ func orderResults(ctx context.Context, unordered []<-chan CubeSlice, ordered cha
 		}
 
 		// Stream the results
-		select {
-		case ordered <- slice:
-		case <-ctx.Done():
-			return
+		if slice.Image != nil {
+			select {
+			case ordered <- slice:
+			case <-ctx.Done():
+				return
+			}
 		}
 	}
 }
 
 type mergeDatasetJob struct {
-	ID         int
-	Slice      SliceMeta
-	Records    []*geocube.Record
-	OutDesc    *internalImage.GdalDatasetDescriptor
-	ResultChan chan<- CubeSlice
+	ID                int
+	Slice             SliceMeta
+	Records           []*geocube.Record
+	OutDesc           *internalImage.GdalDatasetDescriptor
+	AvailabilityChans DatasetsAvailability
+	ResultChan        chan<- CubeSlice
 }
 
 func mergeTags(records []*geocube.Record) map[string]string {
@@ -513,10 +524,26 @@ func mergeDatasetsWorker(ctx context.Context, jobs <-chan mergeDatasetJob) {
 				return
 			}
 
+			metadata := map[string]string{}
+
+			// Wait datasets
+			var acks []DownloadAck
+			if len(job.AvailabilityChans) > 0 {
+				start := time.Now()
+				acks = WaitForAvailability(job.Slice.Datasets, job.AvailabilityChans)
+				metadata[fmt.Sprintf("WaitDownload %d", len(job.AvailabilityChans))] = fmt.Sprintf("%v", time.Since(start))
+			}
+
 			// Run mergeDatasets
 			start := time.Now()
 			var bitmap *geocube.Bitmap
 			ds, err := internalImage.MergeDatasets(ctx, job.Slice.Datasets, job.OutDesc)
+			// Acq downloaded images
+			for _, ack := range acks {
+				if !utils.IsCancelled(ack.Ctx) {
+					ack.AckChan <- struct{}{}
+				}
+			}
 			if err == nil {
 				// Convert to image
 				switch job.OutDesc.Format {
@@ -530,7 +557,7 @@ func mergeDatasetsWorker(ctx context.Context, jobs <-chan mergeDatasetJob) {
 				ds.Close()
 			}
 
-			metadata := map[string]string{fmt.Sprintf("Merge %d", len(job.Slice.Datasets)): fmt.Sprintf("%v", time.Since(start))}
+			metadata[fmt.Sprintf("Merge %d", len(job.Slice.Datasets))] = fmt.Sprintf("%v", time.Since(start))
 
 			// Send bitmap
 			select {

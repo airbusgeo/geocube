@@ -110,8 +110,9 @@ func (svc *DownloaderService) DownloadCube(req *pb.GetCubeMetadataRequest, strea
 		width,
 		height,
 		internal.GetCubeOptions{
-			Format:     req.Format.String(),
-			Resampling: geocube.Resampling(req.GetResamplingAlg()),
+			Format:      req.Format.String(),
+			Resampling:  geocube.Resampling(req.GetResamplingAlg()),
+			Predownload: req.Predownload,
 		})
 	if err != nil {
 		return formatError("GetCube.%w", err)

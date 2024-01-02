@@ -108,7 +108,7 @@ func (svc *Service) csldOnEnterNewState(ctx context.Context, j *geocube.Job) err
 func (svc Service) csldInit(ctx context.Context, job *geocube.Job, datasetsID []string) error {
 	job.LogMsgf(geocube.DEBUG, "Init with %d datasets", len(datasetsID))
 	if len(datasetsID) == 0 {
-		return geocube.NewEntityNotFound("", "", "", "No dataset found for theses records and instances")
+		return geocube.NewEntityNotFound("", "", "", "No dataset found for these records and instances")
 	}
 
 	if err := svc.unitOfWork(ctx, func(txn database.GeocubeTxBackend) error {
