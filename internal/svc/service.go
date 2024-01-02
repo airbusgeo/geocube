@@ -76,10 +76,14 @@ func (svc *Service) GetRecords(ctx context.Context, ids []string) ([]*geocube.Re
 }
 
 // DeleteRecords implements GeocubeService
-func (svc *Service) DeleteRecords(ctx context.Context, ids []string) (int64, error) {
+func (svc *Service) DeleteRecords(ctx context.Context, ids []string, noFail bool) (int64, error) {
 	var nb int64
 	err := svc.unitOfWork(ctx, func(txn database.GeocubeTxBackend) (err error) {
-		nb, err = txn.DeleteRecords(ctx, ids)
+		if noFail && len(ids) > 0 {
+			nb, err = txn.DeletePendingRecords(ctx, ids)
+		} else {
+			nb, err = txn.DeleteRecords(ctx, ids)
+		}
 		return err
 	})
 	return nb, err

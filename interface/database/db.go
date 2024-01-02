@@ -44,8 +44,8 @@ type GeocubeBackend interface {
 	AddRecordsTags(ctx context.Context, ids []string, tags geocube.Metadata) (int64, error)
 	// RemoveRecordsTags remove tags on list of records
 	RemoveRecordsTags(ctx context.Context, ids []string, tagsKey []string) (int64, error)
-	// DeletePendingRecords deletes records that are not linked to any datasets
-	DeletePendingRecords(ctx context.Context) (int64, error)
+	// DeletePendingRecords deletes records that are not linked to any datasets. If ids is empty, it deletes all the pending records
+	DeletePendingRecords(ctx context.Context, ids []string) (int64, error)
 	// ReadRecords with the given ids
 	// Preserve order, removing duplicates
 	// Raise EntityNotFound

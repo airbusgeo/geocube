@@ -28,7 +28,7 @@ type GeocubeClient interface {
 	AddRecordsTags(ctx context.Context, in *AddRecordsTagsRequest, opts ...grpc.CallOption) (*AddRecordsTagsResponse, error)
 	// Update records, removing tags
 	RemoveRecordsTags(ctx context.Context, in *RemoveRecordsTagsRequest, opts ...grpc.CallOption) (*RemoveRecordsTagsResponse, error)
-	// Delete records iif no dataset has a reference on
+	// Delete records
 	DeleteRecords(ctx context.Context, in *DeleteRecordsRequest, opts ...grpc.CallOption) (*DeleteRecordsResponse, error)
 	// Create an AOI if not exists or returns the aoi id of the aoi.
 	CreateAOI(ctx context.Context, in *CreateAOIRequest, opts ...grpc.CallOption) (*CreateAOIResponse, error)
@@ -623,7 +623,7 @@ type GeocubeServer interface {
 	AddRecordsTags(context.Context, *AddRecordsTagsRequest) (*AddRecordsTagsResponse, error)
 	// Update records, removing tags
 	RemoveRecordsTags(context.Context, *RemoveRecordsTagsRequest) (*RemoveRecordsTagsResponse, error)
-	// Delete records iif no dataset has a reference on
+	// Delete records
 	DeleteRecords(context.Context, *DeleteRecordsRequest) (*DeleteRecordsResponse, error)
 	// Create an AOI if not exists or returns the aoi id of the aoi.
 	CreateAOI(context.Context, *CreateAOIRequest) (*CreateAOIResponse, error)

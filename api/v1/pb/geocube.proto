@@ -28,7 +28,7 @@ service Geocube {
     rpc AddRecordsTags(AddRecordsTagsRequest) returns (AddRecordsTagsResponse) {}
     // Update records, removing tags
     rpc RemoveRecordsTags(RemoveRecordsTagsRequest) returns (RemoveRecordsTagsResponse) {}
-    // Delete records iif no dataset has a reference on
+    // Delete records
     rpc DeleteRecords(DeleteRecordsRequest) returns (DeleteRecordsResponse) {}
     
     // Create an AOI if not exists or returns the aoi id of the aoi.

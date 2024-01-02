@@ -198,7 +198,7 @@ Documentation may be detailed in Request/Response sections.
 | ListRecords | [ListRecordsRequest](#geocube-ListRecordsRequest) | [ListRecordsResponseItem](#geocube-ListRecordsResponseItem) stream | List records given criterias |
 | AddRecordsTags | [AddRecordsTagsRequest](#geocube-AddRecordsTagsRequest) | [AddRecordsTagsResponse](#geocube-AddRecordsTagsResponse) | Update records, adding or updating tags |
 | RemoveRecordsTags | [RemoveRecordsTagsRequest](#geocube-RemoveRecordsTagsRequest) | [RemoveRecordsTagsResponse](#geocube-RemoveRecordsTagsResponse) | Update records, removing tags |
-| DeleteRecords | [DeleteRecordsRequest](#geocube-DeleteRecordsRequest) | [DeleteRecordsResponse](#geocube-DeleteRecordsResponse) | Delete records iif no dataset has a reference on |
+| DeleteRecords | [DeleteRecordsRequest](#geocube-DeleteRecordsRequest) | [DeleteRecordsResponse](#geocube-DeleteRecordsResponse) | Delete records |
 | CreateAOI | [CreateAOIRequest](#geocube-CreateAOIRequest) | [CreateAOIResponse](#geocube-CreateAOIResponse) | Create an AOI if not exists or returns the aoi id of the aoi. |
 | GetAOI | [GetAOIRequest](#geocube-GetAOIRequest) | [GetAOIResponse](#geocube-GetAOIResponse) | Get an AOI from its ID |
 | CreateVariable | [CreateVariableRequest](#geocube-CreateVariableRequest) | [CreateVariableResponse](#geocube-CreateVariableResponse) | Create a variable |
@@ -576,6 +576,7 @@ Delete records by ID
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | ids | [string](#string) | repeated |  |
+| no_fail | [bool](#bool) |  | If true, do not fail if some records still have datasets that refer to them and delete the others. |
 
 
 

@@ -5,11 +5,15 @@
 ### Functionalities
 - apiserver/downloader/consolidater: add --gdalNumThreads to change the -wo options of gdal.warp. 1 by default, -1 means ALL_CPUS. gdalNumThreads+workers should be lower than the number of CPUS.
 - downloader: add --chunkSize (1Mbytes by default)
-- apiServer.GetCube: add CompressionLevel=-3 to disable the compression
 - gdalwarp uses wm=500 instead of 2047 and -multi option
 - Min/Max to GetXYZTile to scale tile values between min and max.
 - Add index on pg.records.datetime (execute interface/database/pg/update_X.X.X.sql)
 - GCS: automatically retry or mark as temporary some errors 
+
+
+### API
+- DeleteRecords: add NoFail to delete all the pending records and let the others
+- GetCube: add CompressionLevel=-3 to disable the compression
 
 ### Bug fixes
 - CleanJobs: remove DONEBUTUNTIDY

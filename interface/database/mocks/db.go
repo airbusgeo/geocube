@@ -80,7 +80,7 @@ func (_m *GeocubeBackend) RemoveRecordsTags(ctx context.Context, ids []string, t
 	panic("implement me")
 }
 
-func (_m *GeocubeBackend) DeletePendingRecords(ctx context.Context) (int64, error) {
+func (_m *GeocubeBackend) DeletePendingRecords(ctx context.Context, ids []string) (int64, error) {
 	panic("implement me")
 }
 

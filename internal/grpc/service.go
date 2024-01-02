@@ -43,7 +43,7 @@ type GeocubeService interface {
 	GetAOI(ctx context.Context, aoiID string) (*geocube.AOI, error)
 	CreateRecords(ctx context.Context, records []*geocube.Record) error
 	GetRecords(ctx context.Context, ids []string) ([]*geocube.Record, error)
-	DeleteRecords(ctx context.Context, ids []string) (int64, error)
+	DeleteRecords(ctx context.Context, ids []string, noFail bool) (int64, error)
 	ListRecords(ctx context.Context, namelike string, tags geocube.Metadata, fromTime, toTime time.Time, aoi *geocube.AOI, page, limit int, withAOI bool) ([]*geocube.Record, error)
 	AddRecordsTags(ctx context.Context, ids []string, tags geocube.Metadata) (int64, error)
 	RemoveRecordsTags(ctx context.Context, ids []string, tagsKey []string) (int64, error)
@@ -261,7 +261,7 @@ func (svc *Service) DeleteRecords(ctx context.Context, req *pb.DeleteRecordsRequ
 		}
 	}
 
-	nb, err := svc.gsvc.DeleteRecords(ctx, req.Ids)
+	nb, err := svc.gsvc.DeleteRecords(ctx, req.Ids, req.NoFail)
 	if err != nil {
 		return nil, formatError("backend.%w", err)
 	}

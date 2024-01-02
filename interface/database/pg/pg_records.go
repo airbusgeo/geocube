@@ -173,8 +173,15 @@ func (b Backend) DeleteRecords(ctx context.Context, ids []string) (int64, error)
 }
 
 // DeletePendingRecords implements GeocubeBackend
-func (b Backend) DeletePendingRecords(ctx context.Context) (int64, error) {
-	res, err := b.pg.ExecContext(ctx, "DELETE FROM geocube.records r WHERE NOT EXISTS (SELECT NULL FROM geocube.datasets d WHERE r.id = d.record_id)")
+func (b Backend) DeletePendingRecords(ctx context.Context, ids []string) (int64, error) {
+	// Create the Where clause
+	wc := joinClause{}
+	if len(ids) > 0 {
+		wc.append("r.id = ANY($%d)", pq.Array(ids))
+	}
+	wc.append("NOT EXISTS (SELECT NULL FROM geocube.datasets d WHERE r.id = d.record_id)")
+
+	res, err := b.pg.ExecContext(ctx, "DELETE FROM geocube.records r "+wc.WhereClause(), wc.Parameters...)
 
 	if err != nil {
 		return 0, pqErrorFormat("DeletePendingRecords: %w", err)

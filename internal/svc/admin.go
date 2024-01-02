@@ -19,7 +19,7 @@ func (svc *Service) TidyPending(ctx context.Context, aois, records, variables, i
 
 	err := svc.unitOfWork(ctx, func(txn database.GeocubeTxBackend) (err error) {
 		if records {
-			if nbs[1], err = txn.DeletePendingRecords(ctx); err != nil {
+			if nbs[1], err = txn.DeletePendingRecords(ctx, nil); err != nil {
 				return fmt.Errorf("tidy records: %w", err)
 			}
 		}
