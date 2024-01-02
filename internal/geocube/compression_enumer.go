@@ -9,11 +9,11 @@ import (
 	"strings"
 )
 
-const _CompressionName = "NOLOSSLESSLOSSY"
+const _CompressionName = "NOLOSSLESSLOSSYCUSTOM"
 
-var _CompressionIndex = [...]uint8{0, 2, 10, 15}
+var _CompressionIndex = [...]uint8{0, 2, 10, 15, 21}
 
-const _CompressionLowerName = "nolosslesslossy"
+const _CompressionLowerName = "nolosslesslossycustom"
 
 func (i Compression) String() string {
 	if i < 0 || i >= Compression(len(_CompressionIndex)-1) {
@@ -29,9 +29,10 @@ func _CompressionNoOp() {
 	_ = x[CompressionNO-(0)]
 	_ = x[CompressionLOSSLESS-(1)]
 	_ = x[CompressionLOSSY-(2)]
+	_ = x[CompressionCUSTOM-(3)]
 }
 
-var _CompressionValues = []Compression{CompressionNO, CompressionLOSSLESS, CompressionLOSSY}
+var _CompressionValues = []Compression{CompressionNO, CompressionLOSSLESS, CompressionLOSSY, CompressionCUSTOM}
 
 var _CompressionNameToValueMap = map[string]Compression{
 	_CompressionName[0:2]:        CompressionNO,
@@ -40,12 +41,15 @@ var _CompressionNameToValueMap = map[string]Compression{
 	_CompressionLowerName[2:10]:  CompressionLOSSLESS,
 	_CompressionName[10:15]:      CompressionLOSSY,
 	_CompressionLowerName[10:15]: CompressionLOSSY,
+	_CompressionName[15:21]:      CompressionCUSTOM,
+	_CompressionLowerName[15:21]: CompressionCUSTOM,
 }
 
 var _CompressionNames = []string{
 	_CompressionName[0:2],
 	_CompressionName[2:10],
 	_CompressionName[10:15],
+	_CompressionName[15:21],
 }
 
 // CompressionString retrieves an enum value from the enum constants string name.

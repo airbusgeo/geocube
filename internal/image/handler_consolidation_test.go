@@ -104,6 +104,14 @@ var _ = Describe("HandleConsolidation", func() {
 			itShouldCreateMucog()
 		})
 
+		Context("default with 1 record and 1 dataset RGB to JPEG", func() {
+			BeforeEach(func() {
+				consolidationEventToUse = ConsolidationEvent1RecordRGB
+			})
+			itShouldNotReturnAnError()
+			itShouldCreateMucog()
+		})
+
 		Context("default with 1 record and 2 datasets", func() {
 			BeforeEach(func() {
 				consolidationEventToUse = ConsolidationEvent1Record2dataset

@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/airbusgeo/geocube/internal/utils"
 
@@ -29,22 +30,8 @@ func NewCogGenerator() CogGenerator {
 type cogGenerator struct{}
 
 func (c *cogGenerator) Create(dataset *godal.Dataset, oContainer geocube.ConsolidationContainer, recordId, workDir string) (string, error) {
-	options := []string{
-		"-co", "TILED=YES",
-		"-co", fmt.Sprintf("BLOCKXSIZE=%d", oContainer.BlockXSize),
-		"-co", fmt.Sprintf("BLOCKYSIZE=%d", oContainer.BlockYSize),
-		"-co", fmt.Sprintf("NUM_THREADS=%v", "ALL_CPUS"),
-		"-co", "SPARSE_OK=TRUE",
-	}
-
-	if oContainer.Compression != geocube.CompressionNO {
-		options = c.addCompressionOption(oContainer, options)
-	}
-
 	isBig := (oContainer.Width * oContainer.Height) >= (10000 * 10000)
-	if isBig {
-		options = append(options, "-co", "BIGTIFF=YES")
-	}
+	options := gtiffOptions(oContainer.BlockXSize, oContainer.BlockYSize, oContainer.CreationParams, isBig)
 
 	tiffDatasetPath := filepath.Join("/vsimem", fmt.Sprintf("tiff_%s.tif", recordId))
 	tiffDataset, err := dataset.Translate(tiffDatasetPath, options)
@@ -58,24 +45,23 @@ func (c *cogGenerator) Create(dataset *godal.Dataset, oContainer geocube.Consoli
 
 	for i := 0; i < tiffDataset.Structure().NBands; i++ {
 		band := tiffDataset.Bands()[i]
-		err = band.SetNoData(oContainer.DatasetFormat.NoData)
-		if err != nil {
+		if err := band.SetNoData(oContainer.DatasetFormat.NoData); err != nil {
 			return "", fmt.Errorf("Create.SetNoData: %w", err)
 		}
 	}
 
 	if oContainer.OverviewsMinSize != geocube.NO_OVERVIEW {
-		if err := c.buildOverviews(tiffDataset, oContainer.OvrResamplingAlg, oContainer.OverviewsMinSize); err != nil {
+		if err := c.buildOverviews(tiffDataset, oContainer.OvrResamplingAlg, oContainer.OverviewsMinSize, oContainer.DatasetFormat.DType, oContainer.CreationParams); err != nil {
 			return "", fmt.Errorf("Create.%w", err)
 		}
 	}
 
-	if err = tiffDataset.Close(); err != nil {
+	if err := tiffDataset.Close(); err != nil {
 		return "", fmt.Errorf("Create.Close: %w", err)
 	}
 
 	cogDatasetPath := filepath.Join(workDir, fmt.Sprintf("cog_%s.tif", recordId))
-	if err = c.rewriteTiff(tiffDatasetPath, cogDatasetPath); err != nil {
+	if err := c.rewriteTiff(tiffDatasetPath, cogDatasetPath); err != nil {
 		return "", fmt.Errorf("Create.%w", err)
 	}
 
@@ -188,33 +174,18 @@ func (c *cogGenerator) getBlockOffset(band godal.Band) int {
 	return -1
 }
 
-func (c *cogGenerator) addCompressionOption(container geocube.ConsolidationContainer, options []string) []string {
-	switch container.DatasetFormat.DType {
-	case geocube.DTypeINT8, geocube.DTypeUINT8, geocube.DTypeINT16, geocube.DTypeUINT16, geocube.DTypeINT32, geocube.DTypeUINT32, geocube.DTypeFLOAT32:
-		switch container.Compression {
-		case geocube.CompressionLOSSY:
-			options = append(options, "-co", "COMPRESS=LERC", "-co", "MAX_Z_ERROR=0.01")
-		case geocube.CompressionLOSSLESS:
-			options = append(options, "-co", "COMPRESS=ZSTD", "-co", "PREDICTOR=2")
+func (c *cogGenerator) buildOverviews(d *godal.Dataset, resampling geocube.Resampling, overviewsMinSize int, dtype geocube.DType, creationParams map[string]string) error {
+	strOptions := creationOptions(creationParams, true)
+	options := []godal.BuildOverviewsOption{
+		godal.Resampling(resampling.ToGDAL()), godal.MinSize(overviewsMinSize), godal.ConfigOption("SPARSE_OK_OVERVIEW=ON"),
+	}
+	for _, opt := range strOptions {
+		if !strings.HasPrefix(opt, "-") {
+			options = append(options, godal.ConfigOption(opt))
 		}
-	case geocube.DTypeFLOAT64:
-		switch container.Compression {
-		case geocube.CompressionLOSSY:
-			options = append(options, "-co", "COMPRESS=LERC_ZSTD", "-co", "MAX_Z_ERROR=0.01")
-		case geocube.CompressionLOSSLESS:
-			options = append(options, "-co", "COMPRESS=LERC_ZSTD", "-co", "MAX_Z_ERROR=0")
-		}
-	case geocube.DTypeCOMPLEX64:
-		options = append(options, "")
-	default:
-		options = append(options, "")
 	}
 
-	return options
-}
-
-func (c *cogGenerator) buildOverviews(d *godal.Dataset, resampling geocube.Resampling, overviewsMinSize int) error {
-	if err := d.BuildOverviews(godal.Resampling(resampling.ToGDAL()), godal.MinSize(overviewsMinSize)); err != nil {
+	if err := d.BuildOverviews(options...); err != nil {
 		return fmt.Errorf("buildOverviews: %w", err)
 	}
 
@@ -239,7 +210,13 @@ func (c *cogGenerator) rewriteTiff(src, dest string) error {
 }
 
 func (c *cogGenerator) openDatasetTiffs(datasetFileName string) (tiff.ReadAtReadSeeker, io.Closer, error) {
-	fd, err := godal.VSIOpen(datasetFileName)
+	var fd io.ReadCloser
+	var err error
+	if strings.HasPrefix(datasetFileName, "/vsi") {
+		fd, err = godal.VSIOpen(datasetFileName)
+	} else {
+		fd, err = os.Open(datasetFileName)
+	}
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to open file [%s]: %w", datasetFileName, err)
 	}

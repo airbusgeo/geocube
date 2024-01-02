@@ -54,7 +54,59 @@ var (
 			InterlacingPattern: mucog.MUCOGPattern,
 			OverviewsMinSize:   geocube.NO_OVERVIEW,
 			ResamplingAlg:      geocube.ResamplingNEAR,
-			Compression:        geocube.CompressionLOSSLESS,
+			CreationParams:     map[string]string{},
+			StorageClass:       geocube.StorageClassSTANDARD,
+		},
+	}
+	ConsolidationEvent1RecordRGB = &geocube.ConsolidationEvent{
+		JobID:  "JobID",
+		TaskID: "TaskID",
+		Records: []geocube.ConsolidationRecord{
+			{
+				ID:       "recordID1",
+				DateTime: "2020-11-02 09:44:00",
+				Datasets: []geocube.ConsolidationDataset{
+					{
+						URI:       "test_data/image_warp5.tif",
+						Subdir:    "",
+						Bands:     []int64{1, 2, 3},
+						Overviews: false,
+						DatasetFormat: geocube.DataMapping{
+							DataFormat: geocube.DataFormat{
+								DType:  geocube.DTypeUINT8,
+								Range:  geocube.Range{Min: 0, Max: 255},
+								NoData: 0,
+							},
+							RangeExt: geocube.Range{Min: 0, Max: 1},
+							Exponent: 1,
+						},
+					},
+				},
+			},
+		},
+		Container: geocube.ConsolidationContainer{
+			URI: "file://test_data/mucog.tif",
+			DatasetFormat: geocube.DataMapping{
+				DataFormat: geocube.DataFormat{
+					DType:  geocube.DTypeUINT8,
+					Range:  geocube.Range{Min: 0, Max: 255},
+					NoData: 0,
+				},
+				RangeExt: geocube.Range{Min: 0, Max: 1},
+				Exponent: 1,
+			},
+			CRS:                `PROJCS["WGS 84 / Pseudo-Mercator",GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]],PROJECTION["Mercator_1SP"],PARAMETER["central_meridian",0],PARAMETER["scale_factor",1],PARAMETER["false_easting",0],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["Easting",EAST],AXIS["Northing",NORTH],EXTENSION["PROJ4","+proj=merc +a=6378137 +b=6378137 +lat_ts=0 +lon_0=0 +x_0=0 +y_0=0 +k=1 +units=m +nadgrids=@null +wktext +no_defs"],AUTHORITY["EPSG","3857"]]`,
+			Transform:          [6]float64{994443.0, 10.0, 0.0, 7608734.0, 0.0, -10.0},
+			Width:              38,
+			Height:             32,
+			Cutline:            "",
+			BandsCount:         3,
+			BlockXSize:         256,
+			BlockYSize:         256,
+			InterlacingPattern: mucog.MUCOGPattern,
+			OverviewsMinSize:   geocube.NO_OVERVIEW,
+			ResamplingAlg:      geocube.ResamplingNEAR,
+			CreationParams:     map[string]string{"COMPRESS": "JPEG"},
 			StorageClass:       geocube.StorageClassSTANDARD,
 		},
 	}
@@ -121,7 +173,7 @@ var (
 			InterlacingPattern: mucog.MUCOGPattern,
 			OverviewsMinSize:   geocube.NO_OVERVIEW,
 			ResamplingAlg:      geocube.ResamplingNEAR,
-			Compression:        geocube.CompressionLOSSLESS,
+			CreationParams:     map[string]string{},
 			StorageClass:       geocube.StorageClassSTANDARD,
 		},
 	}
@@ -194,7 +246,7 @@ var (
 			InterlacingPattern: mucog.MUCOGPattern,
 			OverviewsMinSize:   geocube.NO_OVERVIEW,
 			ResamplingAlg:      geocube.ResamplingNEAR,
-			Compression:        geocube.CompressionLOSSLESS,
+			CreationParams:     map[string]string{},
 			StorageClass:       geocube.StorageClassSTANDARD,
 		},
 	}
@@ -247,7 +299,7 @@ var (
 			InterlacingPattern: mucog.MUCOGPattern,
 			OverviewsMinSize:   geocube.NO_OVERVIEW,
 			ResamplingAlg:      geocube.ResamplingNEAR,
-			Compression:        geocube.CompressionLOSSLESS,
+			CreationParams:     map[string]string{},
 			StorageClass:       geocube.StorageClassSTANDARD,
 		},
 	}
@@ -303,7 +355,7 @@ var (
 			InterlacingPattern: mucog.MUCOGPattern,
 			OverviewsMinSize:   geocube.NO_OVERVIEW,
 			ResamplingAlg:      0,
-			Compression:        0,
+			CreationParams:     map[string]string{},
 			StorageClass:       0,
 		},
 	}

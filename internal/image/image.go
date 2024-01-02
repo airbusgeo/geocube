@@ -11,6 +11,7 @@ import (
 	"io"
 	"math"
 	"strconv"
+	"strings"
 
 	"github.com/airbusgeo/geocube/internal/geocube"
 	"github.com/airbusgeo/geocube/internal/utils"
@@ -284,6 +285,34 @@ func warpDatasetOptions(wktCRS string, transform *affine.Affine, width, height f
 		options = append(options, "-te", toS(xMin), toS(yMin), toS(xMax), toS(yMax))
 	}
 	return options
+}
+
+func creationOptions(creationParams map[string]string, overview bool) []string {
+	var options []string
+	for k, v := range creationParams {
+		if overview == strings.HasSuffix(k, "_OVERVIEW") {
+			options = append(options, "-co", k+"="+v)
+		}
+	}
+	return options
+}
+
+func gtiffOptions(blockSizeX, blockSizeY int, creationParams map[string]string, bigtiff bool) []string {
+	options := []string{
+		"-co", "TILED=YES",
+		"-co", "SPARSE_OK=TRUE",
+	}
+	if blockSizeX != 0 {
+		options = append(options, "-co", fmt.Sprintf("BLOCKXSIZE=%d", blockSizeX))
+	}
+	if blockSizeY != 0 {
+		options = append(options, "-co", fmt.Sprintf("BLOCKYSIZE=%d", blockSizeY))
+	}
+	if bigtiff {
+		options = append(options, "-co", "BIGTIFF=YES")
+	}
+
+	return append(options, creationOptions(creationParams, false)...)
 }
 
 // warpDatasets calls godal.Warp on datasets, performing a reprojection

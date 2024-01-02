@@ -94,6 +94,7 @@ func (h *handlerConsolidation) Consolidate(ctx context.Context, cEvent *geocube.
 				localDatasets := datasetsByRecords[recordID]
 
 				gCtx := log.With(gCtx, "Record", recordID)
+				log.Logger(gCtx).Sugar().Debugf("start cog generation: from %d datasets for record: %s (%d/%d)", len(localDatasets), recordID, recordIdx+1, len(cEvent.Records))
 				if cogFile, ok := h.isAlreadyUsableCOG(gCtx, localDatasets, cEvent.Container, recordID, workDir); ok {
 					log.Logger(gCtx).Sugar().Debugf("skip record (already a cog): %s (%d/%d)", recordID, recordIdx+1, len(cEvent.Records))
 					cogListFile[recordIdx] = cogFile

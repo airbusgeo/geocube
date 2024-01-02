@@ -134,19 +134,19 @@ const (
 type ConsolidationContainer struct {
 	URI                string // "gs://bucket/mucog/random_name.TIF"
 	DatasetFormat      DataMapping
-	CRS                string       // "+init=epsg:XXXX" or WKT
-	Transform          [6]float64   // [x0, 10, 0, y_0, 0, -10] Pixels of the image to coordinates in the CRS
-	Width, Height      int          // 4096, 4096
-	Cutline            string       // POLYGON(coords)
-	BandsCount         int          // 3
-	BlockXSize         int          // 256
-	BlockYSize         int          // 256
-	InterlacingPattern string       // L=0>T>I>P;I>L=1:>T>P (see github.com/airbusgeo/mucog)
-	OverviewsMinSize   int          // Maximum width or height of the smallest overview level. 0=NO_OVERVIEW, -1=OVERVIEWS_DEFAULT_MIN_SIZE (=256)
-	ResamplingAlg      Resampling   // "bilinear"
-	OvrResamplingAlg   Resampling   // "regular"
-	Compression        Compression  // "NO", "LOSSLESS", "LOSSY"
-	StorageClass       StorageClass // "COLDLINE"
+	CRS                string            // "+init=epsg:XXXX" or WKT
+	Transform          [6]float64        // [x0, 10, 0, y_0, 0, -10] Pixels of the image to coordinates in the CRS
+	Width, Height      int               // 4096, 4096
+	Cutline            string            // POLYGON(coords)
+	BandsCount         int               // 3
+	BlockXSize         int               // 256
+	BlockYSize         int               // 256
+	InterlacingPattern string            // L=0>T>I>P;I>L=1:>T>P (see github.com/airbusgeo/mucog)
+	OverviewsMinSize   int               // Maximum width or height of the smallest overview level. 0=NO_OVERVIEW, -1=OVERVIEWS_DEFAULT_MIN_SIZE (=256)
+	ResamplingAlg      Resampling        // "bilinear"
+	OvrResamplingAlg   Resampling        // "regular"
+	CreationParams     map[string]string // Some of GDAL Creation Options (see protobuf for supported options)
+	StorageClass       StorageClass      // "COLDLINE"
 }
 
 // NewConsolidationContainer initializes a new ConsolidationContainer
@@ -181,7 +181,7 @@ func NewConsolidationContainer(URI string, variable *Variable, params *Consolida
 		OverviewsMinSize:   layout.OverviewsMinSize,
 		ResamplingAlg:      params.ResamplingAlg,
 		OvrResamplingAlg:   ovrResamplingAlg,
-		Compression:        params.Compression,
+		CreationParams:     params.CreationParams,
 		StorageClass:       params.StorageClass,
 	}, nil
 }

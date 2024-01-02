@@ -4,7 +4,7 @@ CREATE EXTENSION IF NOT EXISTS hstore;
 CREATE EXTENSION IF NOT EXISTS postgis;
 CREATE EXTENSION IF NOT EXISTS btree_gist;
 CREATE TYPE geocube.datatypes AS ENUM ('BOOL', 'UINT8', 'UINT16', 'INT16', 'UINT32', 'INT32', 'FLOAT32', 'FLOAT64', 'COMPLEX64');
-CREATE TYPE geocube.compression AS ENUM ('NO', 'LOSSLESS', 'LOSSY');
+CREATE TYPE geocube.compression AS ENUM ('NO', 'LOSSLESS', 'LOSSY', 'CUSTOM');
 CREATE TYPE geocube.resampling AS ENUM ('NEAR', 'BILINEAR', 'CUBIC', 'CUBICSPLINE', 'LANCZOS', 'AVERAGE', 'MODE', 'MAX', 'MIN', 'MED', 'Q1', 'Q3');
 CREATE TYPE geocube.dataset_status AS ENUM ('ACTIVE', 'TODELETE', 'INACTIVE');
 CREATE TYPE geocube.data_types AS ENUM ('BOOL', 'UINT8', 'UINT16', 'INT16', 'UINT32', 'INT32', 'FLOAT32', 'FLOAT64', 'COMPLEX64');
@@ -158,6 +158,7 @@ CREATE TABLE geocube.consolidation_params (
 	max_value double precision NOT NULL,
 	exponent double precision NOT NULL,
 	compression geocube.compression NOT NULL,
+	creation_params hstore NOT NULL,
 	resampling_alg geocube.resampling NOT NULL,
 	storage_class geocube.storage_class NOT NULL,
 	PRIMARY KEY (id)

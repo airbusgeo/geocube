@@ -140,6 +140,7 @@
     - [ConsolidateRequest](#geocube-ConsolidateRequest)
     - [ConsolidateResponse](#geocube-ConsolidateResponse)
     - [ConsolidationParams](#geocube-ConsolidationParams)
+    - [ConsolidationParams.CreationParamsEntry](#geocube-ConsolidationParams-CreationParamsEntry)
     - [Container](#geocube-Container)
     - [ContinueJobRequest](#geocube-ContinueJobRequest)
     - [ContinueJobResponse](#geocube-ContinueJobResponse)
@@ -2234,8 +2235,10 @@ Return the id of the job created
 
 ### ConsolidationParams
 Parameters of consolidation that are linked to a variable, to define:
-- how to store the data
 - how to resample the data during consolidation
+- how to store the data:
+  - Compression
+  - CreationParams (supported: see GDAL drivers: PHOTOMETRIC, COMPRESS, PREDICTOR, ZLEVEL, ZSTDLEVEL, MAX_Z_ERROR, JPEGTABLESMODE and with _OVERVIEW suffix if exists)
 
 
 | Field | Type | Label | Description |
@@ -2245,8 +2248,25 @@ Parameters of consolidation that are linked to a variable, to define:
 | create_overviews | [bool](#bool) |  | **Deprecated.** Use Layout.overviews_min_size instead |
 | resampling_alg | [Resampling](#geocube-Resampling) |  | Define how to resample the data during the consolidation (if a reprojection is needed or if the overviews are created) |
 | compression | [ConsolidationParams.Compression](#geocube-ConsolidationParams-Compression) |  | Define how the data is compressed at block level |
+| creation_params | [ConsolidationParams.CreationParamsEntry](#geocube-ConsolidationParams-CreationParamsEntry) | repeated | map of params:value to configure the creation of the file. See Compression to list the supported params |
 | bands_interleave | [bool](#bool) |  | **Deprecated.** If the variable is multibands, define whether the bands are interleaved. Use Layout.interlacing_pattern instead |
 | storage_class | [StorageClass](#geocube-StorageClass) |  | Define the storage class of the created file (support only GCS) |
+
+
+
+
+
+
+<a name="geocube-ConsolidationParams-CreationParamsEntry"></a>
+
+### ConsolidationParams.CreationParamsEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| key | [string](#string) |  |  |
+| value | [string](#string) |  |  |
 
 
 
@@ -2541,6 +2561,7 @@ Retry a job that failed or is stuck (e.g. during consolidation)
 | NO | 0 |  |
 | LOSSLESS | 1 |  |
 | LOSSY | 2 |  |
+| CUSTOM | 3 | configured by creation_params |
 
 
 

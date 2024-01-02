@@ -111,23 +111,27 @@ message IndexDatasetsResponse {}
 
 /**
   * Parameters of consolidation that are linked to a variable, to define:
-  * - how to store the data
   * - how to resample the data during consolidation
+  * - how to store the data:
+  *   - Compression
+  *   - CreationParams (supported: see GDAL drivers: PHOTOMETRIC, COMPRESS, PREDICTOR, ZLEVEL, ZSTDLEVEL, MAX_Z_ERROR, JPEGTABLESMODE and with _OVERVIEW suffix if exists)
   */
 message ConsolidationParams{
     enum Compression{
         NO       = 0;
         LOSSLESS = 1;
         LOSSY    = 2;
+        CUSTOM   = 3; // configured by creation_params
     }
 
-    DataFormat   dformat             = 1; // dataformat of the data. See exponent for the mapping formula.
-    double       exponent            = 2; // 1: linear scaling (RealMax - RealMin) * pow( (Value - Min) / (Max - Min), Exponent) + RealMin
-    bool         create_overviews    = 3 [deprecated = true]; // Use Layout.overviews_min_size instead
-    Resampling   resampling_alg      = 4; // Define how to resample the data during the consolidation (if a reprojection is needed or if the overviews are created)
-    Compression  compression         = 5; // Define how the data is compressed at block level
-    bool         bands_interleave    = 6 [deprecated = true]; // If the variable is multibands, define whether the bands are interleaved. Use Layout.interlacing_pattern instead
-    StorageClass storage_class       = 7; // Define the storage class of the created file (support only GCS)
+    DataFormat          dformat          = 1; // dataformat of the data. See exponent for the mapping formula.
+    double              exponent         = 2; // 1: linear scaling (RealMax - RealMin) * pow( (Value - Min) / (Max - Min), Exponent) + RealMin
+    bool                create_overviews = 3 [deprecated = true]; // Use Layout.overviews_min_size instead
+    Resampling          resampling_alg   = 4; // Define how to resample the data during the consolidation (if a reprojection is needed or if the overviews are created)
+    Compression         compression      = 5; // Define how the data is compressed at block level
+    map<string, string> creation_params  = 8; // map of params:value to configure the creation of the file. See Compression to list the supported params
+    bool                bands_interleave = 6 [deprecated = true]; // If the variable is multibands, define whether the bands are interleaved. Use Layout.interlacing_pattern instead
+    StorageClass        storage_class    = 7; // Define the storage class of the created file (support only GCS)
 }
 
 /**
