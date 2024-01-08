@@ -398,6 +398,7 @@ func csldPrepareOrdersSortDatasets(ctx context.Context, txn database.GeocubeTxBa
 
 // csldPrepareOrdersExcludeFullContainers is a subtask of csldPrepareOrders
 // excluding the datasets belonging to a full container that does not need to be reconsolidated
+// preserve order
 func csldPrepareOrdersExcludeFullContainers(datasets []*CsldDataset, maxRecords int) []*CsldDataset {
 	for ii, i := 0, 0; i < len(datasets); {
 		n := 0

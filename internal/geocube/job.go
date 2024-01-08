@@ -525,7 +525,7 @@ func (j *Job) triggerConsolidation(evt JobEvent) bool {
 	case JobStateFAILED:
 		return false
 	default:
-		panic("trigger: Unknown state")
+		panic(fmt.Sprintf("trigger: Unknown state :%v", j.State))
 	}
 
 	return false
@@ -616,10 +616,20 @@ func (j *Job) triggerDeletion(evt JobEvent) bool {
 			return j.changeState(JobStateFAILED)
 		}
 
+	case JobStateINITIALISATIONFAILED:
+		switch evt.Status {
+		case RetryForced, Retried:
+			j.LogMsg(INFO, "Retried by user")
+			return j.changeState(JobStateCREATED)
+		case CancelledByUserForced:
+			return j.changeState(JobStateFAILED)
+		}
+		return false
+
 	case JobStateFAILED:
 		return false
 	default:
-		panic("trigger: Unknown state")
+		panic(fmt.Sprintf("trigger: Unknown state :%v", j.State))
 	}
 
 	return false
