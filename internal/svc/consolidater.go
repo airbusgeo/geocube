@@ -385,7 +385,7 @@ func (svc *Service) csldPrepareOrders(ctx context.Context, job *geocube.Job) err
 					return fmt.Errorf("csldPrepareOrders.%w", err)
 				}
 			}
-			job.LogMsgf(geocube.DEBUG, "Prepare %d container(s) with %d record(s) and %d dataset(s) (Cell:%s, geographic: %v)", nbOfContainers, len(records), len(datasets), cell.URI, cell.GeographicRing.Coords())
+			job.LogMsgf(geocube.DEBUG, "Prepare %d container(s) with %d record(s) and %d dataset(s) (Cell:%s, geographic: %v) (id:%s)", nbOfContainers, len(records), len(datasets), cell.URI, cell.GeographicRing.Coords(), job.Tasks[len(job.Tasks)-1].ID)
 			svc.saveJobLogs(ctx, nil, job)
 		}
 		if len(job.Tasks) != 0 {
