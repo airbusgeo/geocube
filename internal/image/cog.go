@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -19,7 +20,8 @@ import (
 )
 
 type CogGenerator interface {
-	Create(dataset *godal.Dataset, oContainer geocube.ConsolidationContainer, recordId, workDir string) (string, error)
+	// Create will edit and close the dataset
+	Create(dataset *godal.Dataset, oContainer geocube.ConsolidationContainer, tiffDatasetPath, workDir string) (string, error)
 	Open(ctx context.Context, filePath string) (*godal.Dataset, error)
 }
 
@@ -29,29 +31,11 @@ func NewCogGenerator() CogGenerator {
 
 type cogGenerator struct{}
 
-func (c *cogGenerator) Create(dataset *godal.Dataset, oContainer geocube.ConsolidationContainer, recordId, workDir string) (string, error) {
-	isBig := (oContainer.Width * oContainer.Height) >= (10000 * 10000)
-	options := gtiffOptions(oContainer.BlockXSize, oContainer.BlockYSize, oContainer.CreationParams, isBig)
-
-	tiffDatasetPath := filepath.Join("/vsimem", fmt.Sprintf("tiff_%s.tif", recordId))
-	tiffDataset, err := dataset.Translate(tiffDatasetPath, options)
-	if err != nil {
-		return "", fmt.Errorf("Create.Translate: %w", err)
-	}
-	defer func() {
-		tiffDataset.Close()
-		godal.VSIUnlink(tiffDatasetPath) // Delete the VSI or traditionnal file
-	}()
-
-	for i := 0; i < tiffDataset.Structure().NBands; i++ {
-		band := tiffDataset.Bands()[i]
-		if err := band.SetNoData(oContainer.DatasetFormat.NoData); err != nil {
-			return "", fmt.Errorf("Create.SetNoData: %w", err)
-		}
-	}
+func (c *cogGenerator) Create(tiffDataset *godal.Dataset, oContainer geocube.ConsolidationContainer, tiffDatasetPath, workDir string) (string, error) {
+	defer tiffDataset.Close()
 
 	if oContainer.OverviewsMinSize != geocube.NO_OVERVIEW {
-		if err := c.buildOverviews(tiffDataset, oContainer.OvrResamplingAlg, oContainer.OverviewsMinSize, oContainer.DatasetFormat.DType, oContainer.CreationParams); err != nil {
+		if err := c.buildOverviews(tiffDataset, oContainer.OvrResamplingAlg, oContainer.OverviewsMinSize, oContainer.CreationParams); err != nil {
 			return "", fmt.Errorf("Create.%w", err)
 		}
 	}
@@ -60,7 +44,7 @@ func (c *cogGenerator) Create(dataset *godal.Dataset, oContainer geocube.Consoli
 		return "", fmt.Errorf("Create.Close: %w", err)
 	}
 
-	cogDatasetPath := filepath.Join(workDir, fmt.Sprintf("cog_%s.tif", recordId))
+	cogDatasetPath := filepath.Join(workDir, "cog_"+path.Base(tiffDatasetPath))
 	if err := c.rewriteTiff(tiffDatasetPath, cogDatasetPath); err != nil {
 		return "", fmt.Errorf("Create.%w", err)
 	}
@@ -174,7 +158,7 @@ func (c *cogGenerator) getBlockOffset(band godal.Band) int {
 	return -1
 }
 
-func (c *cogGenerator) buildOverviews(d *godal.Dataset, resampling geocube.Resampling, overviewsMinSize int, dtype geocube.DType, creationParams map[string]string) error {
+func (c *cogGenerator) buildOverviews(d *godal.Dataset, resampling geocube.Resampling, overviewsMinSize int, creationParams map[string]string) error {
 	strOptions := creationOptions(creationParams, true)
 	options := []godal.BuildOverviewsOption{
 		godal.Resampling(resampling.ToGDAL()), godal.MinSize(overviewsMinSize), godal.ConfigOption("SPARSE_OK_OVERVIEW=ON"), ErrLogger,

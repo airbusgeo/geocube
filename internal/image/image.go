@@ -10,6 +10,7 @@ import (
 	"image/png"
 	"io"
 	"math"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -39,15 +40,19 @@ var ErrLogger = godal.ErrLogger(func(ec godal.ErrorCategory, code int, msg strin
 })
 
 type GdalDatasetDescriptor struct {
-	WktCRS        string
-	PixToCRS      *affine.Affine
-	Width, Height int
-	Bands         int
-	Resampling    geocube.Resampling
-	DataMapping   geocube.DataMapping
-	ValidPixPc    int // Minimum percentage of valid pixels (or image not found is returned)
-	Format        string
-	Palette       *geocube.Palette
+	WktCRS         string
+	PixToCRS       *affine.Affine
+	Width, Height  int
+	Bands          int
+	Resampling     geocube.Resampling
+	DataMapping    geocube.DataMapping
+	ValidPixPc     int // Minimum percentage of valid pixels (or image not found is returned)
+	Format         string
+	Palette        *geocube.Palette
+	FileOut        string
+	BlockXSize     int
+	BlockYSize     int
+	CreationParams map[string]string
 }
 
 var (
@@ -286,7 +291,13 @@ func MergeDatasets(ctx context.Context, datasets []*Dataset, outDesc *GdalDatase
 	}
 	// Finally, warped all the datasets
 	warpOptions := warpDatasetOptions(outDesc.WktCRS, outDesc.PixToCRS, float64(outDesc.Width), float64(outDesc.Height), outDesc.Resampling, outDesc.DataMapping.DataFormat)
-	mergedDs, err := godal.Warp("", gdatasets, warpOptions, godal.Memory, ErrLogger)
+	if outDesc.FileOut == "" {
+		warpOptions = append(warpOptions, "-of", "MEM")
+	} else if strings.ToLower(filepath.Ext(outDesc.FileOut)) == ".tif" {
+		gtiffOpts := gtiffOptions(outDesc.BlockXSize, outDesc.BlockYSize, outDesc.CreationParams, outDesc.Width*outDesc.Height*outDesc.Bands > 10000*10000)
+		warpOptions = append(warpOptions, gtiffOpts...)
+	}
+	mergedDs, err := godal.Warp(outDesc.FileOut, gdatasets, warpOptions, ErrLogger)
 	if err != nil {
 		return nil, fmt.Errorf("mergeDatasets.Warp[%v]: %w", warpOptions, err)
 	}

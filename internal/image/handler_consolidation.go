@@ -10,6 +10,7 @@ import (
 	"sync"
 
 	"github.com/airbusgeo/geocube/interface/storage"
+	"github.com/airbusgeo/godal"
 	"github.com/google/uuid"
 
 	"github.com/airbusgeo/geocube/interface/storage/uri"
@@ -73,6 +74,19 @@ func (h *handlerConsolidation) Consolidate(ctx context.Context, cEvent *geocube.
 
 	log.Logger(ctx).Sugar().Infof("starting to create COG files")
 	cogListFile := make([]string, len(cEvent.Records))
+	toDelete := make([]string, 0, len(cEvent.Records))
+	defer func() {
+		for _, f := range toDelete {
+			godal.VSIUnlink(f)
+		}
+
+		if h.isCancelled(ctx, cEvent) {
+			if gsURI, err := uri.ParseUri(cEvent.Container.URI); err == nil {
+				gsURI.Delete(ctx)
+			}
+		}
+
+	}()
 
 	records := make(chan struct {
 		string
@@ -95,7 +109,7 @@ func (h *handlerConsolidation) Consolidate(ctx context.Context, cEvent *geocube.
 
 				gCtx := log.With(gCtx, "Record", recordID)
 				log.Logger(gCtx).Sugar().Debugf("start cog generation: from %d datasets for record: %s (%d/%d)", len(localDatasets), recordID, recordIdx+1, len(cEvent.Records))
-				if cogFile, ok := h.isAlreadyUsableCOG(gCtx, localDatasets, cEvent.Container, recordID, workDir); ok {
+				if cogFile, ok := h.isAlreadyUsableCOG(gCtx, localDatasets, cEvent.Container); ok {
 					log.Logger(gCtx).Sugar().Debugf("skip record (already a cog): %s (%d/%d)", recordID, recordIdx+1, len(cEvent.Records))
 					cogListFile[recordIdx] = cogFile
 					continue
@@ -119,25 +133,37 @@ func (h *handlerConsolidation) Consolidate(ctx context.Context, cEvent *geocube.
 					}
 				}
 
+				tiffPath := fmt.Sprintf("tiff_%s.tif", recordID)
+				if width*height*cEvent.Container.BandsCount < 200*1024*1024 {
+					tiffPath = path.Join("/vsimem", tiffPath)
+				} else {
+					tiffPath = path.Join(workDir, tiffPath)
+				}
+
 				mergeDataset, err := MergeDatasets(gCtx, localDatasets, &GdalDatasetDescriptor{
-					Height:      int(height),
-					Width:       int(width),
-					Bands:       cEvent.Container.BandsCount,
-					DataMapping: cEvent.Container.DatasetFormat,
-					WktCRS:      cEvent.Container.CRS,
-					ValidPixPc:  -1,
-					Resampling:  cEvent.Container.ResamplingAlg,
-					PixToCRS:    pixToCRS,
+					Height:         int(height),
+					Width:          int(width),
+					Bands:          cEvent.Container.BandsCount,
+					DataMapping:    cEvent.Container.DatasetFormat,
+					WktCRS:         cEvent.Container.CRS,
+					ValidPixPc:     -1,
+					Resampling:     cEvent.Container.ResamplingAlg,
+					PixToCRS:       pixToCRS,
+					FileOut:        tiffPath,
+					BlockXSize:     cEvent.Container.BlockXSize,
+					BlockYSize:     cEvent.Container.BlockYSize,
+					CreationParams: cEvent.Container.CreationParams,
 				})
 				if err != nil {
 					return fmt.Errorf("Consolidate.%w", err)
 				}
+				defer godal.VSIUnlink(tiffPath)
 
-				cogDatasetPath, err := h.cog.Create(mergeDataset, cEvent.Container, recordID, workDir)
-				mergeDataset.Close()
+				cogDatasetPath, err := h.cog.Create(mergeDataset, cEvent.Container, tiffPath, workDir)
 				if err != nil {
 					return fmt.Errorf("Consolidate.%w", err)
 				}
+				toDelete = append(toDelete, cogDatasetPath)
 
 				// Delete tmpFile if possible to free memory
 				tmpFileMutex.Lock()
@@ -337,7 +363,7 @@ func (h *handlerConsolidation) isCancelled(ctx context.Context, event *geocube.C
 /*
 isAlreadyUsableCOG return if file is already a Cloud Optimized Geotiff and internal structure is similar that container, otherwise false, and the path of the file.
 */
-func (h *handlerConsolidation) isAlreadyUsableCOG(ctx context.Context, records []*Dataset, container geocube.ConsolidationContainer, recordID, workDir string) (string, bool) {
+func (h *handlerConsolidation) isAlreadyUsableCOG(ctx context.Context, records []*Dataset, container geocube.ConsolidationContainer) (string, bool) {
 	if len(records) > 1 {
 		return "", false
 	}
