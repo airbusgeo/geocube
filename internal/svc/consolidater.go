@@ -650,6 +650,8 @@ func (svc *Service) csldSwapDatasets(ctx context.Context, job *geocube.Job) erro
 			if err := txn.ChangeDatasetsStatus(ctx, job.ID, geocube.DatasetStatusACTIVE, geocube.DatasetStatusTODELETE); err != nil {
 				return err
 			}
+		} else {
+			job.ReleaseDatasets(geocube.LockFlagTODELETE)
 		}
 
 		// Inactive datasets are tagged active
