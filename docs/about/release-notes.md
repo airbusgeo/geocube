@@ -19,6 +19,7 @@
 - Get information on containers from their uris
 - FindJobs: add page/limit
 - GetXYZTile support filters: records.tags, records.from_date and records.to_date (e.g. ?filters.from_time=YYYY-MM-DD&filters.to_time=YYYY-MM-DD&filters.tags[key1]=value1&filter.tags[key2]=value2...)
+- Records: ? and * are not supported anymore for the record tags
 
 ### Bug fixes
 - CleanJobs: remove DONEBUTUNTIDY

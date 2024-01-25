@@ -184,6 +184,12 @@ func (r *Record) validate() error {
 	if !r.Name.valid() {
 		return NewValidationError("Invalid Name: " + r.Name.string())
 	}
+	// Valid tags
+	for k, t := range r.Tags {
+		if strings.ContainsAny(k, "*?") || strings.ContainsAny(t, "*?") {
+			return NewValidationError("Invalid Tag: " + k + ": " + t + ". Cannot contain neither ? or *.")
+		}
+	}
 	return nil
 }
 
