@@ -39,6 +39,7 @@
 - reindex dataset crossing antemeridian
 - Not empty image are returned as empty
 - Consolidation: BuildOverviews fails if GDAL raises a warning
+- Consolidation: NoData=Nan does not work as expected
 
 
 ### Others

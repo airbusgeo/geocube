@@ -277,6 +277,8 @@ func warpDatasetOptions(wktCRS string, transform *affine.Affine, width, height f
 
 	if commonDFormat.NoDataDefined() {
 		options = append(options, "-dstnodata", toS(commonDFormat.NoData))
+	} else {
+		options = append(options, "-dstnodata", "None")
 	}
 
 	if transform != nil {
