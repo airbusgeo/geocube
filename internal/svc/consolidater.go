@@ -718,7 +718,7 @@ func (svc *Service) csldDeleteDatasets(ctx context.Context, job *geocube.Job) er
 // job.Tasks must contain the tasks done at least.
 func (svc *Service) csldSubFncDeletePendingRemoteContainers(ctx context.Context, job *geocube.Job) error {
 	for i, task := range job.Tasks {
-		if task.State == geocube.TaskStateDONE {
+		if task.State == geocube.TaskStateDONE || task.State == geocube.TaskStatePENDING {
 			container, _, err := task.ConsolidationOutput()
 			if err != nil {
 				return fmt.Errorf("DeletePendingRemoteContainers.%w", err)
@@ -733,11 +733,7 @@ func (svc *Service) csldSubFncDeletePendingRemoteContainers(ctx context.Context,
 				continue
 			}
 			// Physically delete the container
-			containerURI, err := uri.ParseUri(container.URI)
-			if err != nil {
-				return fmt.Errorf("DeletePendingRemoteContainers.%w", err)
-			}
-			if err := containerURI.Delete(ctx); err != nil {
+			if err := svc.opSubFncDeleteContainer(ctx, container.URI); err != nil {
 				return fmt.Errorf("DeletePendingRemoteContainers.%w", err)
 			}
 			// Cancel the task so that the deletion is not done twice and save
@@ -762,20 +758,34 @@ func (svc *Service) csldCancel(ctx context.Context, job *geocube.Job) error {
 		return err
 	}
 
-	for taskIndex, task := range job.Tasks {
-		job.CancelTask(taskIndex)
+	workers := 20
+	cancel_tasks := make(chan string)
+	wg := utils.ErrWaitGroup{}
 
-		// Create cancelled file
-		path := svc.cancelledConsolidationPath + "/" + fmt.Sprintf("%s_%s", job.ID, task.ID)
-		cancelledJobsURI, err := uri.ParseUri(path)
-		if err != nil {
-			return fmt.Errorf("%w: %s", err, path)
-		}
-
-		if err := cancelledJobsURI.Upload(ctx, nil); err != nil {
-			return err
-		}
+	for w := 0; w < workers; w++ {
+		wg.Go(func() error {
+			for path := range cancel_tasks {
+				cancelledJobsURI, err := uri.ParseUri(path)
+				if err != nil {
+					return fmt.Errorf("%w: %s", err, path)
+				}
+				if err := cancelledJobsURI.Upload(ctx, nil); err != nil {
+					return err
+				}
+			}
+			return nil
+		})
 	}
+
+	for _, task := range job.Tasks {
+		// Create cancelled file
+		cancel_tasks <- svc.cancelledConsolidationPath + "/" + fmt.Sprintf("%s_%s", job.ID, task.ID)
+	}
+	close(cancel_tasks)
+	if errs := wg.Wait(); len(errs) > 0 {
+		return errs[0]
+	}
+
 	job.LogMsg(geocube.INFO, "Job and associated tasks are cancelled")
 	if err = svc.saveJob(ctx, nil, job); err != nil {
 		return err
@@ -866,12 +876,11 @@ func (svc *Service) csldSubFncDeleteContainers(ctx context.Context, containersUR
 
 	wg.Add(workers)
 	for w := 0; w < workers; w++ {
-		go func() error {
+		go func() {
 			defer wg.Done()
 			for task := range tasks {
 				svc.opSubFncDeleteContainer(ctx, task)
 			}
-			return nil
 		}()
 	}
 	for _, task := range containersURI {

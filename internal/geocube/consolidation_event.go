@@ -145,6 +145,7 @@ type ConsolidationContainer struct {
 	OverviewsMinSize   int               // Maximum width or height of the smallest overview level. 0=NO_OVERVIEW, -1=OVERVIEWS_DEFAULT_MIN_SIZE (=256)
 	ResamplingAlg      Resampling        // "bilinear"
 	OvrResamplingAlg   Resampling        // "regular"
+	OptimizeExtent     bool              // True to crop the dataset to valid pixels
 	CreationParams     map[string]string // Some of GDAL Creation Options (see protobuf for supported options)
 	StorageClass       StorageClass      // "COLDLINE"
 }
@@ -182,6 +183,7 @@ func NewConsolidationContainer(URI string, variable *Variable, params *Consolida
 		ResamplingAlg:      params.ResamplingAlg,
 		OvrResamplingAlg:   ovrResamplingAlg,
 		CreationParams:     params.CreationParams,
+		OptimizeExtent:     false,
 		StorageClass:       params.StorageClass,
 	}, nil
 }

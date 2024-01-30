@@ -55,10 +55,6 @@ func NewHandleConsolidation(c CogGenerator, m MucogGenerator, cancelledJobsStora
 
 // Consolidate generate MUCOG file from list of COG (Cloud Optimized Geotiff).
 func (h *handlerConsolidation) Consolidate(ctx context.Context, cEvent *geocube.ConsolidationEvent, workspace string) error {
-	if h.isCancelled(ctx, cEvent) {
-		return TaskCancelledConsolidationError
-	}
-
 	workDir := path.Join(workspace, cEvent.TaskID)
 	if err := os.MkdirAll(workDir, 0777); err != nil {
 		return err
@@ -69,6 +65,10 @@ func (h *handlerConsolidation) Consolidate(ctx context.Context, cEvent *geocube.
 	datasetsByRecords, tmpFileCounter, err := h.getLocalDatasetsByRecord(ctx, cEvent, workDir)
 	if err != nil {
 		return fmt.Errorf("failed to get local records datasets: %w", err)
+	}
+
+	if h.isCancelled(ctx, cEvent) {
+		return TaskCancelledConsolidationError
 	}
 
 	log.Logger(ctx).Sugar().Infof("starting to create COG files")
@@ -111,9 +111,12 @@ func (h *handlerConsolidation) Consolidate(ctx context.Context, cEvent *geocube.
 				)
 
 				// Get the optimized extent, regarding blocksize using warpVRT
-				pixToCRS, width, height, err := optimizeTransform(gCtx, localDatasets, cEvent.Container.CRS, pixToCRS, cEvent.Container.Width, cEvent.Container.Height, cEvent.Container.BlockXSize, cEvent.Container.BlockYSize)
-				if err != nil {
-					return fmt.Errorf("Consolidate.%w", err)
+				width, height := cEvent.Container.Width, cEvent.Container.Height
+				if cEvent.Container.OptimizeExtent {
+					pixToCRS, width, height, err = optimizeTransform(gCtx, localDatasets, cEvent.Container.CRS, pixToCRS, cEvent.Container.Width, cEvent.Container.Height, cEvent.Container.BlockXSize, cEvent.Container.BlockYSize)
+					if err != nil {
+						return fmt.Errorf("Consolidate.%w", err)
+					}
 				}
 
 				mergeDataset, err := MergeDatasets(gCtx, localDatasets, &GdalDatasetDescriptor{
@@ -173,26 +176,32 @@ func (h *handlerConsolidation) Consolidate(ctx context.Context, cEvent *geocube.
 
 	log.Logger(ctx).Sugar().Infof("%d COGs have been generated", len(cogListFile))
 
+	if h.isCancelled(ctx, cEvent) {
+		return TaskCancelledConsolidationError
+	}
+
 	if len(cogListFile) == 1 {
 		if err := uploadFile(ctx, cogListFile[0], cEvent.Container.URI); err != nil {
 			return fmt.Errorf("failed to upload file on: %s : %w", cEvent.Container.URI, err)
 		}
 
 		log.Logger(ctx).Sugar().Infof("Upload cog on : %s", cEvent.Container.URI)
-		return nil
+	} else {
+		mucogFilePath, err := h.mucog.Create(workDir, cogListFile, cEvent.Container.InterlacingPattern)
+		if err != nil {
+			return fmt.Errorf("failed to create mucog: %w", err)
+		}
+		log.Logger(ctx).Sugar().Debugf("mucog has been generated : %s", mucogFilePath)
+		if err := uploadFile(ctx, mucogFilePath, cEvent.Container.URI); err != nil {
+			return fmt.Errorf("failed to upload file on: %s : %w", cEvent.Container.URI, err)
+		}
+
+		log.Logger(ctx).Sugar().Infof("Upload mucog on : %s", cEvent.Container.URI)
 	}
 
-	mucogFilePath, err := h.mucog.Create(workDir, cogListFile, cEvent.Container.InterlacingPattern)
-	if err != nil {
-		return fmt.Errorf("failed to create mucog: %w", err)
+	if h.isCancelled(ctx, cEvent) {
+		return TaskCancelledConsolidationError
 	}
-
-	log.Logger(ctx).Sugar().Debugf("mucog has been generated : %s", mucogFilePath)
-	if err := uploadFile(ctx, mucogFilePath, cEvent.Container.URI); err != nil {
-		return fmt.Errorf("failed to upload file on: %s : %w", cEvent.Container.URI, err)
-	}
-
-	log.Logger(ctx).Sugar().Infof("Upload mucog on : %s", cEvent.Container.URI)
 
 	return nil
 }

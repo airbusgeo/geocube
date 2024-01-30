@@ -74,15 +74,6 @@ func (svc *Service) handleTaskEvt(ctx context.Context, evt geocube.TaskEvent) er
 		// manage task cancelled
 		return nil
 	case geocube.TaskSuccessful:
-		// manage tasks succeeded but job is cancelled (tasks are deleted)
-		job, err := svc.db.ReadJob(ctx, evt.JobID)
-		if err != nil {
-			return fmt.Errorf("handleTaskEvt(%s).%w", evt.TaskID, err)
-		}
-
-		if job.State == geocube.JobStateABORTED || job.State == geocube.JobStateFAILED || job.State == geocube.JobStateROLLBACKFAILED {
-			return nil
-		}
 	default:
 	}
 
@@ -90,6 +81,9 @@ func (svc *Service) handleTaskEvt(ctx context.Context, evt geocube.TaskEvent) er
 	job, err := svc.db.ReadJobWithTask(ctx, evt.JobID, evt.TaskID)
 	if err != nil {
 		return fmt.Errorf("handleTaskEvt(%s).%w", evt.TaskID, err)
+	}
+	if job.State == geocube.JobStateFAILED {
+		return nil
 	}
 	job.Clean(true)
 
@@ -105,9 +99,12 @@ func (svc *Service) handleTaskEvt(ctx context.Context, evt geocube.TaskEvent) er
 	log.Logger(ctx).Sugar().Debugf("evt %s processed in %v", evt.Status.String(), time.Since(start))
 
 	if job.ActiveTasks == 0 {
-		if job.State == geocube.JobStateCONSOLIDATIONCANCELLING {
+		switch job.State {
+		case geocube.JobStateCONSOLIDATIONCANCELLING:
 			job.LogMsg(geocube.INFO, "Job has been canceled")
 			return svc.publishEvent(ctx, geocube.CancellationDone, job, "")
+		case geocube.JobStateCANCELLATIONFAILED, geocube.JobStateABORTED, geocube.JobStateROLLBACKFAILED, geocube.JobStateFAILED:
+			return nil
 		}
 		if job.FailedTasks > 0 {
 			return svc.publishEvent(ctx, geocube.ConsolidationFailed, job,
@@ -348,6 +345,7 @@ func (svc *Service) delDeleteContainers(ctx context.Context, job *geocube.Job) e
 		job.LogMsg(geocube.DEBUG, "Nothing to delete")
 		return nil
 	}
+	job.LogMsgf(geocube.DEBUG, "Start deletion of %d containers...", len(job.Tasks))
 
 	// Delete containers
 	workers := utils.MinI(20, len(job.Tasks))
@@ -371,6 +369,9 @@ func (svc *Service) delDeleteContainers(ctx context.Context, job *geocube.Job) e
 					status = geocube.TaskFailed
 				}
 				mutex.Lock()
+				if err != nil {
+					log.Logger(ctx).Sugar().Debugf("%v", err)
+				}
 				job.UpdateTask(*geocube.NewTaskEvent(job.ID, task.ID, status, err))
 
 				if err != nil {
@@ -392,6 +393,8 @@ func (svc *Service) delDeleteContainers(ctx context.Context, job *geocube.Job) e
 	}
 	close(tasks)
 	wg.Wait()
+
+	job.LogMsgf(geocube.DEBUG, "End deletion of %d containers...", len(job.Tasks))
 
 	// Delete done tasks
 	for i := range job.Tasks {

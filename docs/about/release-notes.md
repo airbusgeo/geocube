@@ -40,8 +40,9 @@
 - Not empty image are returned as empty
 - Consolidation: BuildOverviews fails if GDAL raises a warning
 - Consolidation: NoData=Nan does not work as expected
-- fix generate with enumer
-- fix AdminUpdateDataset with RecordIds
+- generate with enumer
+- AdminUpdateDataset with RecordIds
+- Better handling of consolidation cancellation
 
 ### Others
 - Update golang-mod
