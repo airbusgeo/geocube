@@ -60,11 +60,68 @@ var (
 	ErrUnableToCast    = errors.New("unableToCast")
 )
 
+// needAlpha checks if an alpha mask is needed
+func needAlpha(dataFormat geocube.DataFormat, options map[string]string) bool {
+	if !dataFormat.NoDataDefined() {
+		return false
+	}
+	jpegLossy := true
+	if quality, ok := options["JPEG_QUALITY"]; ok && quality != "100" {
+		return true
+	} else if ok {
+		jpegLossy = false
+	}
+	if quality, ok := options["JPEG_QUALITY_OVERVIEW"]; ok && quality != "100" {
+		return true
+	} else if ok {
+		jpegLossy = false
+	}
+	// Check if the compression is lossy
+	if compress, ok := options["COMPRESS"]; ok {
+		switch compress {
+		case "WEBP":
+			if lossless, ok := options["WEBP_LOSSLESS"]; !ok || lossless != "TRUE" {
+				return true
+			}
+		case "JPEG":
+			if jpegLossy {
+				return true
+			}
+		}
+	}
+	if compress, ok := options["COMPRESS_OVERVIEW"]; ok {
+		switch compress {
+		case "WEBP":
+			if lossless, ok := options["WEBP_LOSSLESS"]; !ok || lossless != "TRUE" {
+				return true
+			}
+		case "JPEG":
+			if jpegLossy {
+				return true
+			}
+		}
+	}
+	if zerror, ok := options["MAX_Z_ERROR"]; ok && zerror != "0" {
+		return true
+	}
+	if zerror, ok := options["MAX_Z_ERROR_OVERVIEW"]; ok && zerror != "0" {
+		return true
+	}
+	if lossless, ok := options["JXL_LOSSLESS"]; ok && lossless != "TRUE" {
+		return true
+	}
+	return false
+}
+
 // castDatasetOptions returns the translate options to create a new data with toDFormat and converts the ds.pixels fromRange toDFormat (using an non-linear mapping if exponent != 1)
 func castDatasetOptions(fromRange geocube.Range, exponent float64, toDFormat geocube.DataFormat) []string {
 	options := []string{
 		"-ot", toDFormat.DType.ToGDAL().String(),
-		"-a_nodata", toS(toDFormat.NoData),
+	}
+	if toDFormat.NoDataDefined() {
+		options = append(options, "-a_nodata", toS(toDFormat.NoData))
+	} else {
+		options = append(options, "-a_nodata", "none")
 	}
 	if fromRange.Min != toDFormat.Range.Min || fromRange.Max != toDFormat.Range.Max {
 		options = append(options, "-scale", toS(fromRange.Min), toS(fromRange.Max), toS(toDFormat.Range.Min), toS(toDFormat.Range.Max))
@@ -269,6 +326,11 @@ func MergeDatasets(ctx context.Context, datasets []*Dataset, outDesc *GdalDatase
 	var vrts []EphemeralDataset
 	gdatasets := make([]*godal.Dataset, len(datasets))
 
+	needAlpha := needAlpha(outDesc.DataMapping.DataFormat, outDesc.CreationParams)
+	if needAlpha {
+		outDesc.DataMapping.DataFormat.NoData = math.NaN()
+	}
+
 	defer func() {
 		CloseEphemeralDatasets(vrts)
 	}()
@@ -296,6 +358,10 @@ func MergeDatasets(ctx context.Context, datasets []*Dataset, outDesc *GdalDatase
 	} else if strings.ToLower(filepath.Ext(outDesc.FileOut)) == ".tif" {
 		gtiffOpts := gtiffOptions(outDesc.BlockXSize, outDesc.BlockYSize, outDesc.CreationParams, outDesc.Width*outDesc.Height*outDesc.Bands > 10000*10000)
 		warpOptions = append(warpOptions, gtiffOpts...)
+	}
+	// test if a mask is needed
+	if needAlpha {
+		warpOptions = append(warpOptions, "-dstAlpha")
 	}
 	mergedDs, err := godal.Warp(outDesc.FileOut, gdatasets, warpOptions, ErrLogger)
 	if err != nil {

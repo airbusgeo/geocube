@@ -46,6 +46,7 @@
 - AdminUpdateDataset with RecordIds
 - Better handling of consolidation cancellation
 - CleanJobs does not return all errors
+- If nodata != none and lossy compression: use alpha band
 
 ### Others
 - Update golang-mod

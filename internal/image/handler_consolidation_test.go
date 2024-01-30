@@ -43,7 +43,7 @@ var _ = Describe("HandleConsolidation", func() {
 			})
 		}
 
-		itShouldCreateMucog = func() {
+		itShouldCreateMucog = func(withAlphaBand bool) {
 			It("it should create mucog", func() {
 
 				fileInfo, _ := os.Stat("test_data/mucog.tif")
@@ -53,10 +53,11 @@ var _ = Describe("HandleConsolidation", func() {
 				Expect(err).To(BeNil())
 
 				defer dataset.Close()
-				Expect(dataset.Structure().SizeX).To(Equal(consolidationEventToUse.Container.Width))
-				Expect(dataset.Structure().SizeY).To(Equal(consolidationEventToUse.Container.Height))
+				bandsCount := consolidationEventToUse.Container.BandsCount
+				if withAlphaBand {
+					bandsCount++
+				}
 				Expect(dataset.GeoTransform()).To(Equal(consolidationEventToUse.Container.Transform))
-				Expect(dataset.Structure().NBands).To(Equal(consolidationEventToUse.Container.BandsCount))
 				Expect(dataset.Projection()).To(Equal(consolidationEventToUse.Container.CRS))
 				Expect(dataset.Structure()).To(Equal(godal.DatasetStructure{
 					BandStructure: godal.BandStructure{
@@ -67,7 +68,7 @@ var _ = Describe("HandleConsolidation", func() {
 						Scale:      1,
 						DataType:   consolidationEventToUse.Container.DatasetFormat.DType.ToGDAL(),
 					},
-					NBands: consolidationEventToUse.Container.BandsCount,
+					NBands: bandsCount,
 				}))
 			})
 		}
@@ -101,7 +102,7 @@ var _ = Describe("HandleConsolidation", func() {
 				consolidationEventToUse = ConsolidationEvent1Record
 			})
 			itShouldNotReturnAnError()
-			itShouldCreateMucog()
+			itShouldCreateMucog(false)
 		})
 
 		Context("default with 1 record and 1 dataset RGB to JPEG", func() {
@@ -109,7 +110,7 @@ var _ = Describe("HandleConsolidation", func() {
 				consolidationEventToUse = ConsolidationEvent1RecordRGB
 			})
 			itShouldNotReturnAnError()
-			itShouldCreateMucog()
+			itShouldCreateMucog(true)
 		})
 
 		Context("default with 1 record and 2 datasets", func() {
@@ -117,7 +118,7 @@ var _ = Describe("HandleConsolidation", func() {
 				consolidationEventToUse = ConsolidationEvent1Record2dataset
 			})
 			itShouldNotReturnAnError()
-			itShouldCreateMucog()
+			itShouldCreateMucog(false)
 		})
 
 		Context("default with 2 records", func() {
@@ -125,7 +126,7 @@ var _ = Describe("HandleConsolidation", func() {
 				consolidationEventToUse = ConsolidationEvent2Record
 			})
 			itShouldNotReturnAnError()
-			itShouldCreateMucog()
+			itShouldCreateMucog(false)
 		})
 
 		Context("default with other data format output", func() {
@@ -133,7 +134,7 @@ var _ = Describe("HandleConsolidation", func() {
 				consolidationEventToUse = ConsolidationEvent1RecordOtherDataFormat
 			})
 			itShouldNotReturnAnError()
-			itShouldCreateMucog()
+			itShouldCreateMucog(false)
 		})
 
 		Context("when container URI is wrong", func() {
@@ -170,7 +171,7 @@ var _ = Describe("HandleConsolidation", func() {
 				consolidationEventToUse = ConsolidationEvent
 			})
 			itShouldNotReturnAnError()
-			itShouldCreateMucog()
+			itShouldCreateMucog(false)
 		})
 	})
 

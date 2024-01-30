@@ -102,6 +102,16 @@ var _ = Describe("CastDataset", func() {
 		})
 	})
 
+	Context("to the same dataformat removing nodata", func() {
+		BeforeEach(func() {
+			fromPath = images[0]
+			fromDFormat = imagesDFormat[0]
+			toDFormat = imagesDFormat[14]
+		})
+		itShouldNotReturnAnError()
+		itShouldCastDataset(images[14])
+	})
+
 	Context("to rangeExt (toDformat=Id)", func() {
 		BeforeEach(func() {
 			fromPath = images[0]
@@ -257,6 +267,33 @@ var _ = Describe("MergeDataset", func() {
 		itShouldMergeDatasets(images[i])
 	})
 
+	Context("one dataset with lossy compression", func() {
+		i1, i2 := 8, 15
+		BeforeEach(func() {
+			fromPaths = []string{images[i1]}
+			fromDFormats = []geocube.DataMapping{imagesDFormat[i1]}
+			fromBands = [][]int64{{1}}
+			outDesc = image.GdalDatasetDescriptor{
+				WktCRS: "epsg:32632",
+				PixToCRS: affine.Translation(460943.9866000000038184, 6255118.2874999996274710).
+					Multiply(affine.Scale(200.198019801980081, -200.1990049751243816)),
+				Width:  256,
+				Height: 201,
+				Bands:  1,
+
+				Resampling:     geocube.ResamplingNEAR,
+				DataMapping:    imagesDFormat[i2],
+				ValidPixPc:     0,
+				CreationParams: map[string]string{"COMPRESS": "JPEG"},
+				FileOut:        "/tmp/test.tif",
+			}
+		})
+		AfterEach(func() {
+			os.Remove("/tmp/test.tif")
+		})
+		itShouldNotReturnAnError()
+		itShouldMergeDatasets(images[i2])
+	})
 	Context("one dataset with a subset of bands", func() {
 		i1, i2 := 13, 8
 		BeforeEach(func() {
