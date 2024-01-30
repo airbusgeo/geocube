@@ -177,7 +177,7 @@ func (c *cogGenerator) getBlockOffset(band godal.Band) int {
 func (c *cogGenerator) buildOverviews(d *godal.Dataset, resampling geocube.Resampling, overviewsMinSize int, dtype geocube.DType, creationParams map[string]string) error {
 	strOptions := creationOptions(creationParams, true)
 	options := []godal.BuildOverviewsOption{
-		godal.Resampling(resampling.ToGDAL()), godal.MinSize(overviewsMinSize), godal.ConfigOption("SPARSE_OK_OVERVIEW=ON"),
+		godal.Resampling(resampling.ToGDAL()), godal.MinSize(overviewsMinSize), godal.ConfigOption("SPARSE_OK_OVERVIEW=ON"), ErrLogger,
 	}
 	for _, opt := range strOptions {
 		if !strings.HasPrefix(opt, "-") {

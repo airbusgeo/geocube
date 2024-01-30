@@ -37,6 +37,7 @@
 - Handling of extents wider than 180° of longitude
 - reindex dataset crossing antemeridian
 - Not empty image are returned as empty
+- Consolidation: BuildOverviews fails if GDAL raises a warning
 
 
 ### Others
