@@ -110,9 +110,10 @@ func (svc *DownloaderService) DownloadCube(req *pb.GetCubeMetadataRequest, strea
 		width,
 		height,
 		internal.GetCubeOptions{
-			Format:      req.Format.String(),
-			Resampling:  geocube.Resampling(req.GetResamplingAlg()),
-			Predownload: req.Predownload,
+			Format:               req.Format.String(),
+			Resampling:           geocube.Resampling(req.GetResamplingAlg()),
+			Predownload:          req.Predownload,
+			FilterPartialImagePc: 0, // Filter only empty images
 		})
 	if err != nil {
 		return formatError("GetCube.%w", err)

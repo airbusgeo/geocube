@@ -19,10 +19,11 @@ import (
 
 // GetCubeOptions defines user-options for a GetCube
 type GetCubeOptions struct {
-	Format      string
-	HeadersOnly bool
-	Resampling  geocube.Resampling
-	Predownload bool
+	Format               string
+	HeadersOnly          bool
+	Resampling           geocube.Resampling
+	Predownload          bool
+	FilterPartialImagePc int // Filter images that have less than % of valid pixels (-1 to deactivate)
 }
 
 // CubeSlice is a slice of a cube, an image corresponding to a group of record
@@ -109,7 +110,7 @@ func (svc *Service) GetCubeFromMetadatas(ctx context.Context, metadatas []SliceM
 			RangeExt:   refDf.Range,
 			Exponent:   1,
 		},
-		ValidPixPc: 0, // Only exclude empty image
+		ValidPixPc: options.FilterPartialImagePc,
 		Format:     options.Format,
 	}
 	outDesc.WktCRS, err = crs.WKT()
@@ -232,7 +233,7 @@ func (svc *Service) getCubePrepare(ctx context.Context, instancesID []string, cr
 			RangeExt:   variable.DFormat.Range,
 			Exponent:   1,
 		},
-		ValidPixPc: 0, // Only exclude empty image
+		ValidPixPc: options.FilterPartialImagePc,
 		Format:     options.Format,
 	}
 	outDesc.WktCRS, err = crs.WKT()

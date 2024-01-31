@@ -388,7 +388,7 @@ func WarpedExtent(ctx context.Context, datasets []*Dataset, wktCRS string, resx,
 
 func countValidPix(band godal.Band) (uint64, error) {
 	// Histogram does not count nodata
-	histogram, err := band.Histogram(godal.Intervals(1, 0, 1), godal.IncludeOutOfRange(), godal.Approximate())
+	histogram, err := band.Histogram(godal.Intervals(1, 0, 1), godal.IncludeOutOfRange(), ErrLogger)
 	if err != nil {
 		return 0, fmt.Errorf("countValidPix: %w", err)
 	}

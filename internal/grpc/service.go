@@ -850,9 +850,10 @@ func (svc *Service) GetCube(req *pb.GetCubeRequest, stream pb.Geocube_GetCubeSer
 	var slicesQueue <-chan internal.CubeSlice
 	var info internal.CubeInfo
 	options := internal.GetCubeOptions{
-		Format:      req.Format.String(),
-		HeadersOnly: req.HeadersOnly,
-		Resampling:  geocube.Resampling(req.ResamplingAlg),
+		Format:               req.Format.String(),
+		HeadersOnly:          req.HeadersOnly,
+		Resampling:           geocube.Resampling(req.ResamplingAlg),
+		FilterPartialImagePc: 0, // Filter only empty images
 	}
 
 	if req.GetRecords() == nil && req.GetGroupedRecords() == nil {
