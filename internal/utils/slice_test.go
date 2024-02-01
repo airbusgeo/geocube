@@ -33,7 +33,7 @@ func TestSlice(t *testing.T) {
 
 	f := []float32{1.0, 2.0, 3.0, 4.0}
 	b2 = ToSliceByte(unsafe.Pointer(&f[0]), len(f)*4)
-	f2 := SliceByteToFloat32(b2)
+	f2 := SliceByteToGeneric[float32](b2)
 	if len(f2) != len(f) {
 		t.Errorf("len(f2) want:%d get:%d", len(f), len(f2))
 	}

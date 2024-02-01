@@ -224,7 +224,7 @@ func MergeDatasets(ctx context.Context, datasets []*Dataset, outDesc *GdalDatase
 
 	// Test whether image has enough valid pixels
 	if outDesc.ValidPixPc >= 0 {
-		if nb, err := countValidPix(mergedDs.Bands()[0]); err != nil || int(100*nb) <= outDesc.Width*outDesc.Height*outDesc.ValidPixPc {
+		if ok, err := isValid(&mergedDs.Bands()[0], (outDesc.Width*outDesc.Height*outDesc.ValidPixPc)/100); err != nil || !ok {
 			mergedDs.Close()
 			if err != nil {
 				return nil, fmt.Errorf("mergeDatasets.%w", err)
@@ -388,13 +388,16 @@ func WarpedExtent(ctx context.Context, datasets []*Dataset, wktCRS string, resx,
 	return ds.Bounds()
 }
 
-func countValidPix(band godal.Band) (uint64, error) {
-	// Histogram does not count nodata
-	histogram, err := band.Histogram(godal.Intervals(1, 0, 1), godal.IncludeOutOfRange(), ErrLogger)
-	if err != nil {
-		return 0, fmt.Errorf("countValidPix: %w", err)
+func isValid(band *godal.Band, validPix int) (bool, error) {
+	nodata, ok := band.NoData()
+	if !ok {
+		return true, nil
 	}
-	return histogram.Bucket(0).Count, nil
+	image, err := geocube.NewBitmapFromBand(band)
+	if err != nil {
+		return false, fmt.Errorf("countValidPix: %w", err)
+	}
+	return image.IsValid(nodata, validPix), nil
 }
 
 func toS(f float64) string {

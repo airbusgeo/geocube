@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"reflect"
 	"strconv"
 	"strings"
 	"unsafe"
@@ -25,59 +26,11 @@ func convertSize(b []byte, d int) int {
 	return l / d
 }
 
-// SliceByteToUInt16 converts a slice of byte to a slice of uint16
-func SliceByteToUInt16(b []byte) []uint16 {
-	r := (*[1]uint16)(unsafe.Pointer(&b[0]))[:]
-	setCapLen(unsafe.Pointer(&r), convertSize(b, 2))
-	return r
-}
-
-// SliceByteToUInt32 converts a slice of byte to a slice of uint32
-func SliceByteToUInt32(b []byte) []uint32 {
-	r := (*[1]uint32)(unsafe.Pointer(&b[0]))[:]
-	setCapLen(unsafe.Pointer(&r), convertSize(b, 4))
-	return r
-}
-
-// SliceByteToInt8 converts a slice of byte to a slice of int8
-func SliceByteToInt8(b []byte) []int8 {
-	r := (*[1]int8)(unsafe.Pointer(&b[0]))[:]
-	setCapLen(unsafe.Pointer(&r), convertSize(b, 1))
-	return r
-}
-
-// SliceByteToInt16 converts a slice of byte to a slice of int16
-func SliceByteToInt16(b []byte) []int16 {
-	r := (*[1]int16)(unsafe.Pointer(&b[0]))[:]
-	setCapLen(unsafe.Pointer(&r), convertSize(b, 2))
-	return r
-}
-
-// SliceByteToInt32 converts a slice of byte to a slice of int32
-func SliceByteToInt32(b []byte) []int32 {
-	r := (*[1]int32)(unsafe.Pointer(&b[0]))[:]
-	setCapLen(unsafe.Pointer(&r), convertSize(b, 4))
-	return r
-}
-
-// SliceByteToFloat32 converts a slice of byte to a slice of float32
-func SliceByteToFloat32(b []byte) []float32 {
-	r := (*[1]float32)(unsafe.Pointer(&b[0]))[:]
-	setCapLen(unsafe.Pointer(&r), convertSize(b, 4))
-	return r
-}
-
-// SliceByteToFloat64 converts a slice of byte to a slice of float34
-func SliceByteToFloat64(b []byte) []float64 {
-	r := (*[1]float64)(unsafe.Pointer(&b[0]))[:]
-	setCapLen(unsafe.Pointer(&r), convertSize(b, 8))
-	return r
-}
-
-// SliceByteToComplex64 converts a slice of byte to a slice of complex64
-func SliceByteToComplex64(b []byte) []complex64 {
-	r := (*[1]complex64)(unsafe.Pointer(&b[0]))[:]
-	setCapLen(unsafe.Pointer(&r), convertSize(b, 8))
+// SliceByteToGeneric converts a slice of byte to a slice of generic
+func SliceByteToGeneric[T any](b []byte) []T {
+	r := (*[1]T)(unsafe.Pointer(&b[0]))[:]
+	size := reflect.TypeOf((*T)(nil)).Elem().Size()
+	setCapLen(unsafe.Pointer(&r), convertSize(b, int(size)))
 	return r
 }
 

@@ -68,6 +68,22 @@ func NewBitmapFromDataset(ds *godal.Dataset) (*Bitmap, error) {
 	return image, nil
 }
 
+// NewBitmapFromBand creates a new bitmap from the band, copying the memory
+func NewBitmapFromBand(band *godal.Band) (*Bitmap, error) {
+	xSize := band.Structure().SizeX
+	ySize := band.Structure().SizeY
+	dtype := DTypeFromGDal(band.Structure().DataType)
+
+	r := image.Rect(0, 0, xSize, ySize)
+	image := NewBitmapHeader(r, dtype, 1)
+	image.Bytes = make([]byte, dtype.Size()*r.Dx()*r.Dy())
+	if err := band.Read(0, 0, image.getPix(), xSize, ySize); err != nil {
+		return nil, fmt.Errorf("band.IO: %w", err)
+	}
+
+	return image, nil
+}
+
 // SizeX returns the x size of the image
 func (i *Bitmap) SizeX() int {
 	return i.Rect.Dx()
@@ -85,21 +101,21 @@ func (i *Bitmap) getPix() interface{} {
 	case DTypeUINT8:
 		pix = i.Bytes
 	case DTypeUINT16:
-		pix = utils.SliceByteToUInt16(i.Bytes)
+		pix = utils.SliceByteToGeneric[uint16](i.Bytes)
 	case DTypeUINT32:
-		pix = utils.SliceByteToUInt32(i.Bytes)
+		pix = utils.SliceByteToGeneric[uint32](i.Bytes)
 	case DTypeINT8:
-		pix = utils.SliceByteToInt8(i.Bytes)
+		pix = utils.SliceByteToGeneric[int8](i.Bytes)
 	case DTypeINT16:
-		pix = utils.SliceByteToInt16(i.Bytes)
+		pix = utils.SliceByteToGeneric[int16](i.Bytes)
 	case DTypeINT32:
-		pix = utils.SliceByteToInt32(i.Bytes)
+		pix = utils.SliceByteToGeneric[int32](i.Bytes)
 	case DTypeFLOAT32:
-		pix = utils.SliceByteToFloat32(i.Bytes)
+		pix = utils.SliceByteToGeneric[float32](i.Bytes)
 	case DTypeFLOAT64:
-		pix = utils.SliceByteToFloat64(i.Bytes)
+		pix = utils.SliceByteToGeneric[float64](i.Bytes)
 	case DTypeCOMPLEX64:
-		pix = utils.SliceByteToComplex64(i.Bytes)
+		pix = utils.SliceByteToGeneric[complex64](i.Bytes)
 	}
 	return pix
 }
@@ -113,4 +129,47 @@ func nativeEndianness() binary.ByteOrder {
 		return binary.LittleEndian
 	}
 	return binary.BigEndian
+}
+
+// IsValid returns true if <minValidPix> pixels != nodata are found in the image
+func (i *Bitmap) IsValid(nodata float64, minValidPix int) bool {
+	minValidPix *= i.Bands
+	switch i.DType {
+	case DTypeUINT8:
+		return isValid(i.Bytes, uint8(nodata), minValidPix)
+	case DTypeUINT16:
+		pix := utils.SliceByteToGeneric[uint16](i.Bytes)
+		return isValid(pix, uint16(nodata), minValidPix)
+	case DTypeUINT32:
+		pix := utils.SliceByteToGeneric[uint32](i.Bytes)
+		return isValid(pix, uint32(nodata), minValidPix)
+	case DTypeINT8:
+		pix := utils.SliceByteToGeneric[int8](i.Bytes)
+		return isValid(pix, int8(nodata), minValidPix)
+	case DTypeINT16:
+		pix := utils.SliceByteToGeneric[int16](i.Bytes)
+		return isValid(pix, int16(nodata), minValidPix)
+	case DTypeINT32:
+		pix := utils.SliceByteToGeneric[int32](i.Bytes)
+		return isValid(pix, int32(nodata), minValidPix)
+	case DTypeFLOAT32:
+		pix := utils.SliceByteToGeneric[float32](i.Bytes)
+		return isValid(pix, float32(nodata), minValidPix)
+	case DTypeFLOAT64, DTypeCOMPLEX64:
+		pix := utils.SliceByteToGeneric[float64](i.Bytes)
+		return isValid(pix, nodata, minValidPix)
+	}
+	return minValidPix < 0
+}
+
+func isValid[T comparable](pix []T, nodata T, minValidPix int) bool {
+	for _, p := range pix {
+		if p != nodata {
+			minValidPix--
+			if minValidPix < 0 {
+				return true
+			}
+		}
+	}
+	return false
 }
