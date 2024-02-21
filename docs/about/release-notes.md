@@ -41,6 +41,7 @@
 - Consolidation: BuildOverviews fails if GDAL raises a warning
 - Consolidation: NoData=Nan does not work as expected
 - fix generate with enumer
+- fix AdminUpdateDataset with RecordIds
 
 ### Others
 - Update golang-mod

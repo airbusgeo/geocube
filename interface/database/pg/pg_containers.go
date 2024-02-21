@@ -434,8 +434,8 @@ func (b Backend) UpdateDatasets(ctx context.Context, instanceID string, recordId
 
 	// Get impact of the update
 	rows, err := b.pg.QueryContext(ctx,
-		"SELECT COUNT(*), '(' || dtype || ', ' || no_data || ', ' || min_value || ', ' || max_value || ') -> (' || real_min_value || ', ' || real_max_value || ') e' || exponent"+
-			" FROM geocube.datasets WHERE instance_id = $1 and record_is = ANY($2)"+
+		"SELECT COUNT(*), '(' || dtype || ', ' || min_value || ', ' || max_value || ', no_data=' || no_data || ') currently maps to (' || real_min_value || ', ' || real_max_value || ') with exponent=' || exponent"+
+			" FROM geocube.datasets WHERE instance_id = $1 and record_id = ANY($2)"+
 			" GROUP BY dtype, no_data, min_value, max_value, real_min_value, real_max_value, exponent", instanceID, pq.Array(recordIds))
 	if err != nil {
 		return nil, pqErrorFormat("UpdateDatasets: %w", err)
@@ -461,7 +461,7 @@ func (b Backend) UpdateDatasets(ctx context.Context, instanceID string, recordId
 	// Update
 	_, err = b.pg.ExecContext(ctx,
 		"UPDATE geocube.datasets SET no_data = $1, min_value = $2, max_value = $3, real_min_value = $4, real_max_value = $5, exponent = $6"+
-			" WHERE instance_id = $7", dmapping.NoData, dmapping.Range.Min, dmapping.Range.Max, dmapping.RangeExt.Min, dmapping.RangeExt.Max, dmapping.Exponent, instanceID)
+			" WHERE instance_id = $7 and record_id = ANY($8)", dmapping.NoData, dmapping.Range.Min, dmapping.Range.Max, dmapping.RangeExt.Min, dmapping.RangeExt.Max, dmapping.Exponent, instanceID, pq.Array(recordIds))
 
 	switch pqErrorCode(err) {
 	case noError:
