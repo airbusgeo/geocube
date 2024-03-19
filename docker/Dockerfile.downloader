@@ -1,4 +1,4 @@
-ARG BASE_IMAGE=$(CONTAINER_REGISTRY)/geocube-base:latest
+ARG BASE_IMAGE=$(CONTAINER_REGISTRY)/geocube/base:latest
 FROM $BASE_IMAGE AS builder
 
 WORKDIR /build

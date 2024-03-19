@@ -108,7 +108,7 @@ containers:
     env:
       - name: PUBSUB_EMULATOR_HOST
         value: 0.0.0.0:8085
-    image: eu.gcr.io/project/geocube-go-server:v1
+    image: registry/project/geocube-go-server:v1
 ```
 
 ```bash
@@ -150,7 +150,7 @@ Ex:
 ```yaml
 containers:
   - name: consolidater
-    image: eu.gcr.io/project/consolidater:v1
+    image: registry/project/consolidater:v1
     imagePullPolicy: "Always"
     ports:
       - containerPort: 9000
@@ -182,7 +182,7 @@ Ex:
 ```yaml
 containers:
   - name: autoscaler
-    image: eu.gcr.io/project/autoscaler:v1
+    image: registry/project/autoscaler:v1
     imagePullPolicy: Always
     args:
       - -update=30s
