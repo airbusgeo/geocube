@@ -1,6 +1,8 @@
 module github.com/airbusgeo/geocube
 
-go 1.17
+go 1.21
+
+toolchain go1.22.1
 
 require (
 	cloud.google.com/go/monitoring v1.14.0
@@ -15,7 +17,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.18.25
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.33.1
 	github.com/btubbs/pgq v0.0.0-20190101193147-0a3335913e86
-	github.com/dmarkham/enumer v1.5.8
+	github.com/dmarkham/enumer v1.5.9
 	github.com/golang/protobuf v1.5.3
 	github.com/google/tiff v0.0.0-20161109161721-4b31f3041d9a
 	github.com/google/uuid v1.3.0
@@ -28,8 +30,8 @@ require (
 	github.com/stretchr/testify v1.8.2
 	github.com/twpayne/go-geom v1.5.2
 	go.uber.org/zap v1.24.0
-	golang.org/x/net v0.10.0
-	golang.org/x/sync v0.2.0
+	golang.org/x/net v0.16.0
+	golang.org/x/sync v0.4.0
 	google.golang.org/api v0.122.0
 	google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1
 	google.golang.org/grpc v1.55.0
@@ -94,14 +96,14 @@ require (
 	go.opencensus.io v0.24.0 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.8.0 // indirect
-	golang.org/x/crypto v0.7.0 // indirect
-	golang.org/x/mod v0.9.0 // indirect
+	golang.org/x/crypto v0.14.0 // indirect
+	golang.org/x/mod v0.13.0 // indirect
 	golang.org/x/oauth2 v0.7.0 // indirect
-	golang.org/x/sys v0.8.0 // indirect
-	golang.org/x/term v0.8.0 // indirect
-	golang.org/x/text v0.9.0 // indirect
+	golang.org/x/sys v0.13.0 // indirect
+	golang.org/x/term v0.13.0 // indirect
+	golang.org/x/text v0.13.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
-	golang.org/x/tools v0.7.0 // indirect
+	golang.org/x/tools v0.14.0 // indirect
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
