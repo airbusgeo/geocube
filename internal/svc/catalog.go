@@ -501,7 +501,7 @@ func orderResults(ctx context.Context, unordered []<-chan CubeSlice, ordered cha
 		}
 
 		// Stream the results
-		if slice.Image != nil {
+		if slice.Image != nil || slice.Err != nil {
 			select {
 			case ordered <- slice:
 			case <-ctx.Done():
