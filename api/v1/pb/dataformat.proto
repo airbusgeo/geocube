@@ -15,7 +15,7 @@ message DataFormat{
         UInt8     = 1;
         UInt16    = 2;
         UInt32    = 3;
-        //Int8      = 4; Not supported by GDAL
+        Int8      = 4;
         Int16     = 5;
         Int32     = 6;
         Float32   = 7;

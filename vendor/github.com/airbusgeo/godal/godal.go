@@ -45,6 +45,9 @@ const (
 	Byte = DataType(C.GDT_Byte)
 	//UInt16 DataType
 	UInt16 = DataType(C.GDT_UInt16)
+	//Int8 DataType (GDAL>=3.7.0)
+	// [RFC 87]: https://gdal.org/development/rfc/rfc87_signed_int8.html
+	Int8 = DataType(C.GDT_Int8)
 	//Int16 DataType
 	Int16 = DataType(C.GDT_Int16)
 	//UInt32 DataType
@@ -89,7 +92,7 @@ func (dtype DataType) String() string {
 // Size retruns the number of bytes needed for one instance of DataType
 func (dtype DataType) Size() int {
 	switch dtype {
-	case Byte:
+	case Byte, Int8:
 		return 1
 	case Int16, UInt16:
 		return 2
@@ -210,7 +213,7 @@ func (band Band) ClearNoData(opts ...SetNoDataOption) error {
 	return cgc.close()
 }
 
-//SetScaleOffset sets the band's scale and offset
+// SetScaleOffset sets the band's scale and offset
 func (band Band) SetScaleOffset(scale, offset float64, opts ...SetScaleOffsetOption) error {
 	setterOpts := &setScaleOffsetOpts{}
 	for _, opt := range opts {
@@ -539,27 +542,39 @@ func (band Band) SetStatistics(min, max, mean, std float64, opts ...SetStatistic
 }
 
 func cIntArray(in []int) *C.int {
-	ret := make([]C.int, len(in))
-	for i := range in {
-		ret[i] = C.int(in[i])
+	var ptr *C.int
+	if len(in) > 0 {
+		ret := make([]C.int, len(in))
+		for i := range in {
+			ret[i] = C.int(in[i])
+		}
+		ptr = (*C.int)(unsafe.Pointer(&ret[0]))
 	}
-	return (*C.int)(unsafe.Pointer(&ret[0]))
+	return ptr
 }
 
 func cLongArray(in []int64) *C.longlong {
-	ret := make([]C.longlong, len(in))
-	for i := range in {
-		ret[i] = C.longlong(in[i])
+	var ptr *C.longlong
+	if len(in) > 0 {
+		ret := make([]C.longlong, len(in))
+		for i := range in {
+			ret[i] = C.longlong(in[i])
+		}
+		ptr = (*C.longlong)(unsafe.Pointer(&ret[0]))
 	}
-	return (*C.longlong)(unsafe.Pointer(&ret[0]))
+	return ptr
 }
 
 func cDoubleArray(in []float64) *C.double {
-	ret := make([]C.double, len(in))
-	for i := range in {
-		ret[i] = C.double(in[i])
+	var ptr *C.double
+	if len(in) > 0 {
+		ret := make([]C.double, len(in))
+		for i := range in {
+			ret[i] = C.double(in[i])
+		}
+		ptr = (*C.double)(unsafe.Pointer(&ret[0]))
 	}
-	return (*C.double)(unsafe.Pointer(&ret[0]))
+	return ptr
 }
 
 type cStringArray struct {
@@ -891,7 +906,7 @@ func (ds *Dataset) SetNoData(nd float64, opts ...SetNoDataOption) error {
 	return cgc.close()
 }
 
-//SetScale sets the band's scale and offset
+// SetScaleOffset sets the band's scale and offset
 func (ds *Dataset) SetScaleOffset(scale, offset float64, opts ...SetScaleOffsetOption) error {
 	setterOpts := &setScaleOffsetOpts{}
 	for _, opt := range opts {
@@ -1253,6 +1268,22 @@ func RegisterAll() {
 	C.GDALAllRegister()
 }
 
+func RegisterPlugins() {
+	C.godalRegisterPlugins()
+}
+
+func RegisterPlugin(name string, opts ...RegisterPluginOption) error {
+	ro := registerPluginOpts{}
+	for _, o := range opts {
+		o.setRegisterPluginOpt(&ro)
+	}
+	cgc := createCGOContext(nil, ro.errorHandler)
+	cname := C.CString(name)
+	defer C.free(unsafe.Pointer(cname))
+	C.godalRegisterPlugin(cgc.cPointer(), cname)
+	return cgc.close()
+}
+
 // RegisterRaster registers a raster driver by name.
 //
 // Calling RegisterRaster(DriverName) with one of the predefined DriverNames provided by the library will
@@ -1554,13 +1585,22 @@ func (lv LibVersion) Revision() int {
 
 // AssertMinVersion will panic if the runtime version is not at least major.minor.revision
 func AssertMinVersion(major, minor, revision int) {
+	if !CheckMinVersion(major, minor, revision) {
+		runtimeVersion := Version()
+		panic(fmt.Errorf("runtime version %d.%d.%d < %d.%d.%d",
+			runtimeVersion.Major(), runtimeVersion.Minor(), runtimeVersion.Revision(), major, minor, revision))
+	}
+}
+
+// CheckMinVersion will return true if the runtime version is at least major.minor.revision
+func CheckMinVersion(major, minor, revision int) bool {
 	runtimeVersion := Version()
 	if runtimeVersion.Major() < major ||
 		(runtimeVersion.Major() == major && runtimeVersion.Minor() < minor) ||
 		(runtimeVersion.Major() == major && runtimeVersion.Minor() == minor && runtimeVersion.Revision() < revision) {
-		panic(fmt.Errorf("runtime version %d.%d.%d < %d.%d.%d",
-			runtimeVersion.Major(), runtimeVersion.Minor(), runtimeVersion.Revision(), major, minor, revision))
+		return false
 	}
+	return true
 }
 
 func init() {
@@ -1710,10 +1750,41 @@ func (ra ResamplingAlg) rioAlg() (C.GDALRIOResampleAlg, error) {
 	}
 }
 
+func gridAlgFromString(str string) (C.GDALGridAlgorithm, error) {
+	switch str {
+	case "invdist":
+		return C.GGA_InverseDistanceToAPower, nil
+	case "average":
+		return C.GGA_MovingAverage, nil
+	case "nearest":
+		return C.GGA_NearestNeighbor, nil
+	case "minimum":
+		return C.GGA_MetricMinimum, nil
+	case "maximum":
+		return C.GGA_MetricMaximum, nil
+	case "range":
+		return C.GGA_MetricRange, nil
+	case "count":
+		return C.GGA_MetricCount, nil
+	case "average_distance":
+		return C.GGA_MetricAverageDistance, nil
+	case "average_distance_pts":
+		return C.GGA_MetricAverageDistancePts, nil
+	case "linear":
+		return C.GGA_Linear, nil
+	case "invdistnn":
+		return C.GGA_InverseDistanceToAPowerNearestNeighbor, nil
+	default:
+		return C.GGA_InverseDistanceToAPower, fmt.Errorf("unknown gridding algorithm %s", str)
+	}
+}
+
 func bufferType(buffer interface{}) DataType {
 	switch buffer.(type) {
 	case []byte:
 		return Byte
+	case []int8:
+		return Int8
 	case []int16:
 		return Int16
 	case []uint16:
@@ -1745,6 +1816,9 @@ func cBuffer(buffer interface{}, minsize int) unsafe.Pointer {
 	}
 	switch buf := buffer.(type) {
 	case []byte:
+		sizecheck(len(buf))
+		return unsafe.Pointer(&buf[0])
+	case []int8:
 		sizecheck(len(buf))
 		return unsafe.Pointer(&buf[0])
 	case []int16:
@@ -2805,13 +2879,18 @@ func (f *Feature) SetGeometry(geom *Geometry, opts ...SetGeometryOption) error {
 }
 
 // SetGeometryColumnName set the name of feature first geometry field.
-func (f *Feature) SetGeometryColumnName(name string) {
+// Deprecated when running with GDAL 3.6+, use SetGeometryColumnName on Layer instead.
+// No more supported when running with GDAL 3.9+.
+func (f *Feature) SetGeometryColumnName(name string, opts ...SetGeometryColumnNameOption) error {
+	so := &setGeometryColumnNameOpts{}
+	for _, o := range opts {
+		o.setGeometryColumnNameOpt(so)
+	}
 	cname := C.CString(name)
 	defer C.free(unsafe.Pointer(cname))
-	gfdef := C.OGR_F_GetGeomFieldDefnRef(f.handle, C.int(0))
-	if gfdef != nil {
-		C.OGR_GFld_SetName(gfdef, (*C.char)(unsafe.Pointer(cname)))
-	}
+	cgc := createCGOContext(nil, so.errorHandler)
+	C.godalFeatureSetGeometryColumnName(cgc.cPointer(), f.handle, (*C.char)(cname))
+	return cgc.close()
 }
 
 // SetFID set feature identifier
@@ -3214,6 +3293,20 @@ func (layer Layer) DeleteFeature(feat *Feature, opts ...DeleteFeatureOption) err
 	return cgc.close()
 }
 
+// SetGeometryColumnName set the name of feature first geometry field.
+// Only supported when running with GDAL 3.6+.
+func (layer Layer) SetGeometryColumnName(name string, opts ...SetGeometryColumnNameOption) error {
+	so := &setGeometryColumnNameOpts{}
+	for _, o := range opts {
+		o.setGeometryColumnNameOpt(so)
+	}
+	cname := C.CString(name)
+	defer C.free(unsafe.Pointer(cname))
+	cgc := createCGOContext(nil, so.errorHandler)
+	C.godalLayerSetGeometryColumnName(cgc.cPointer(), layer.handle(), (*C.char)(cname))
+	return cgc.close()
+}
+
 // CreateLayer creates a new vector layer
 //
 // Available CreateLayerOptions are
@@ -3432,11 +3525,7 @@ func (g *Geometry) GML(opts ...GMLExportOption) (string, error) {
 	for _, o := range opts {
 		o.setGMLExportOpt(gmlo)
 	}
-	switches := make([]string, len(gmlo.creation))
-	for i, copt := range gmlo.creation {
-		switches[i] = copt
-	}
-	cswitches := sliceToCStringArray(switches)
+	cswitches := sliceToCStringArray(gmlo.creation)
 	defer cswitches.free()
 	cgc := createCGOContext(nil, gmlo.errorHandler)
 	cgml := C.godalExportGeometryGML(cgc.cPointer(), g.handle, cswitches.cPointer())
@@ -3731,6 +3820,372 @@ func BuildVRT(dstVRTName string, sourceDatasets []string, switches []string, opt
 		return nil, err
 	}
 	return &Dataset{majorObject{C.GDALMajorObjectH(hndl)}}, nil
+}
+
+// GridCreate, creates a grid from scattered data, given provided gridding parameters as a string (pszAlgorithm)
+// and the arguments required for `godalGridCreate()` (binding for GDALGridCreate)
+//
+// NOTE: For valid gridding algorithm strings see: https://gdal.org/programs/gdal_grid.html#interpolation-algorithms
+func GridCreate(pszAlgorithm string,
+	xCoords []float64,
+	yCoords []float64,
+	zCoords []float64,
+	dfXMin float64,
+	dfXMax float64,
+	dfYMin float64,
+	dfYMax float64,
+	nXSize int,
+	nYSize int,
+	buffer interface{},
+	opts ...GridCreateOption,
+) error {
+	if len(xCoords) != len(yCoords) || len(yCoords) != len(zCoords) {
+		return errors.New("`xCoords`, `yCoords` and `zCoords` are not all equal length")
+	}
+
+	gco := gridCreateOpts{}
+	for _, o := range opts {
+		o.setGridCreateOpt(&gco)
+	}
+
+	griddingAlgStr := strings.Split(pszAlgorithm, ":")[0]
+	algCEnum, err := gridAlgFromString(griddingAlgStr)
+	if err != nil {
+		return err
+	}
+
+	var (
+		params = unsafe.Pointer(C.CString(pszAlgorithm))
+		cgc    = createCGOContext(nil, gco.errorHandler)
+	)
+	defer C.free(params)
+
+	var (
+		dtype        = bufferType(buffer)
+		dsize        = dtype.Size()
+		numGridBytes = C.int(nXSize * nYSize * dsize)
+		cBuf         = cBuffer(buffer, int(numGridBytes)/dsize)
+	)
+	cgc = createCGOContext(nil, gco.errorHandler)
+	C.godalGridCreate(cgc.cPointer(), (*C.char)(params), algCEnum, C.uint(len(xCoords)), cDoubleArray(xCoords), cDoubleArray(yCoords), cDoubleArray(zCoords), C.double(dfXMin), C.double(dfXMax), C.double(dfYMin), C.double(dfYMax), C.uint(nXSize), C.uint(nYSize), C.GDALDataType(dtype), cBuf)
+	if err := cgc.close(); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Grid runs the library version of gdal_grid.
+// See the gdal_grid doc page to determine the valid flags/opts that can be set in switches.
+//
+// Example switches :
+//
+//	[]string{"-a", "maximum", "-txe", "0", "1"}
+//
+// Creation options and driver may be set in the switches slice with
+//
+//	switches:=[]string{"-co","TILED=YES","-of","GTiff"}
+//
+// NOTE: Some switches are NOT compatible with this binding, as a `nullptr` is passed to a later call to
+// `GDALGridOptionsNew()` (as the 2nd argument). Those switches are: "-oo", "-q", "-quiet"
+func (ds *Dataset) Grid(destPath string, switches []string, opts ...GridOption) (*Dataset, error) {
+	gridOpts := gridOpts{}
+	for _, opt := range opts {
+		opt.setGridOpt(&gridOpts)
+	}
+
+	cswitches := sliceToCStringArray(switches)
+	defer cswitches.free()
+
+	dest := unsafe.Pointer(C.CString(destPath))
+	cgc := createCGOContext(nil, gridOpts.errorHandler)
+	var dsRet C.GDALDatasetH
+	defer C.free(unsafe.Pointer(dest))
+
+	dsRet = C.godalGrid(cgc.cPointer(), (*C.char)(dest), ds.handle(), cswitches.cPointer())
+	if err := cgc.close(); err != nil {
+		return nil, err
+	}
+
+	return &Dataset{majorObject{C.GDALMajorObjectH(dsRet)}}, nil
+}
+
+// Dem runs the library version of gdaldem.
+// See the gdaldem doc page to determine the valid flags/opts that can be set in switches.
+//
+// Example switches (for "hillshade", switches differ per mode):
+//
+//	[]string{"-s", "111120", "-alt", "45"}
+//
+// Creation options and driver may be set in the switches slice with
+//
+//	switches:=[]string{"-co","TILED=YES","-of","GTiff"}
+//
+// NOTE: `colorFilename` is a "text-based color configuration file" that MUST ONLY be
+// provided when `processingMode` == "color-relief"
+func (ds *Dataset) Dem(destPath, processingMode string, colorFilename string, switches []string, opts ...DemOption) (*Dataset, error) {
+	demOpts := demOpts{}
+	for _, opt := range opts {
+		opt.setDemOpt(&demOpts)
+	}
+
+	cswitches := sliceToCStringArray(switches)
+	defer cswitches.free()
+
+	dest := unsafe.Pointer(C.CString(destPath))
+	defer C.free(unsafe.Pointer(dest))
+	alg := unsafe.Pointer(C.CString(processingMode))
+	defer C.free(unsafe.Pointer(alg))
+	var colorFn *C.char
+	if colorFilename != "" {
+		colorFn = C.CString(colorFilename)
+		defer C.free(unsafe.Pointer(colorFn))
+	}
+
+	cgc := createCGOContext(nil, demOpts.errorHandler)
+	dsRet := C.godalDem(cgc.cPointer(), (*C.char)(dest), (*C.char)(alg), colorFn, ds.handle(), cswitches.cPointer())
+	if err := cgc.close(); err != nil {
+		return nil, err
+	}
+
+	return &Dataset{majorObject{C.GDALMajorObjectH(dsRet)}}, nil
+}
+
+// Nearblack runs the library version of nearblack
+//
+// See the nearblack doc page to determine the valid flags/opts that can be set in switches.
+//
+// Example switches :
+//
+//	[]string{"-white", "-near", "10"}
+//
+// Creation options and driver may be set in the switches slice with
+//
+//	switches:=[]string{"-co","TILED=YES","-of","GTiff"}
+//
+// NOTE: Some switches are NOT compatible with this binding, as a `nullptr` is passed to a later call to
+// `GDALNearblackOptionsNew()` (as the 2nd argument). Those switches are: "-o", "-q", "-quiet"
+func (ds *Dataset) Nearblack(dstDS string, switches []string, opts ...NearblackOption) (*Dataset, error) {
+	nearBlackOpts := nearBlackOpts{}
+	for _, opt := range opts {
+		opt.setNearblackOpt(&nearBlackOpts)
+	}
+
+	cswitches := sliceToCStringArray(switches)
+	defer cswitches.free()
+
+	dest := unsafe.Pointer(C.CString(dstDS))
+	defer C.free(dest)
+
+	cgc := createCGOContext(nil, nearBlackOpts.errorHandler)
+
+	ret := C.godalNearblack(cgc.cPointer(), (*C.char)(dest), nil, ds.handle(), cswitches.cPointer())
+	if err := cgc.close(); err != nil {
+		return nil, err
+	}
+
+	return &Dataset{majorObject{C.GDALMajorObjectH(ret)}}, nil
+}
+
+// NearblackInto writes the provided `sourceDs` into the Dataset that this method was called on, and
+// runs the library version of nearblack.
+//
+// See the nearblack doc page to determine the valid flags/opts that can be set in switches.
+//
+// Example switches :
+//
+//	[]string{"-white", "-near", "10"}
+//
+// Creation options and driver may be set in the switches slice with
+//
+//	switches:=[]string{"-co","TILED=YES","-of","GTiff"}
+//
+// NOTE: Some switches are NOT compatible with this binding, as a `nullptr` is passed to a later call to
+// `GDALNearblackOptionsNew()` (as the 2nd argument). Those switches are: "-o", "-q", "-quiet"
+func (ds *Dataset) NearblackInto(sourceDs *Dataset, switches []string, opts ...NearblackOption) error {
+	nearBlackOpts := nearBlackOpts{}
+	for _, opt := range opts {
+		opt.setNearblackOpt(&nearBlackOpts)
+	}
+
+	cswitches := sliceToCStringArray(switches)
+	defer cswitches.free()
+
+	cgc := createCGOContext(nil, nearBlackOpts.errorHandler)
+
+	var srcDsHandle C.GDALDatasetH = nil
+	if sourceDs != nil {
+		srcDsHandle = sourceDs.handle()
+	}
+	_ = C.godalNearblack(cgc.cPointer(), nil, ds.handle(), srcDsHandle, cswitches.cPointer())
+	if err := cgc.close(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// GCP mirrors the structure of the GDAL_GCP type
+type GCP struct {
+	PszId      string
+	PszInfo    string
+	DfGCPPixel float64
+	DfGCPLine  float64
+	DfGCPX     float64
+	DfGCPY     float64
+	DfGCPZ     float64
+}
+
+// gdalGCPToGoGCPArray is a utility function for conversion from `C.GCPsAndCount` (GDAL) to `[]GCP` (Go)
+func gdalGCPToGoGCPArray(gcp C.GCPsAndCount) []GCP {
+	var ret []GCP
+	if gcp.gcpList == nil {
+		return ret
+	}
+
+	//https://github.com/golang/go/wiki/cgo#turning-c-arrays-into-go-slices
+	gcps := (*[1 << 30]C.GDAL_GCP)(unsafe.Pointer(gcp.gcpList))
+	ret = make([]GCP, gcp.numGCPs)
+	for i := 0; i < len(ret); i++ {
+		ret[i] = GCP{
+			PszId:      C.GoString(gcps[i].pszId),
+			PszInfo:    C.GoString(gcps[i].pszInfo),
+			DfGCPPixel: float64(gcps[i].dfGCPPixel),
+			DfGCPLine:  float64(gcps[i].dfGCPLine),
+			DfGCPX:     float64(gcps[i].dfGCPX),
+			DfGCPY:     float64(gcps[i].dfGCPY),
+			DfGCPZ:     float64(gcps[i].dfGCPZ),
+		}
+	}
+
+	return ret
+}
+
+// GetGCPSpatialRef runs the GDALGetGCPSpatialRef function
+func (ds *Dataset) GCPSpatialRef() *SpatialRef {
+	return &SpatialRef{handle: C.godalGetGCPSpatialRef(ds.handle()), isOwned: false}
+}
+
+// GetGCPs runs the GDALGetGCPs function
+func (ds *Dataset) GCPs() []GCP {
+	gcpsAndCount := C.godalGetGCPs(ds.handle())
+	return gdalGCPToGoGCPArray(gcpsAndCount)
+}
+
+// GetGCPProjection runs the GDALGetGCPProjection function
+func (ds *Dataset) GCPProjection() string {
+	return C.GoString(C.godalGetGCPProjection(ds.handle()))
+}
+
+// SetGCPs runs the GDALSetGCPs function
+func (ds *Dataset) SetGCPs(GCPList []GCP, opts ...SetGCPsOption) error {
+	setGCPsOpts := setGCPsOpts{}
+	for _, opt := range opts {
+		opt.setSetGCPsOpt(&setGCPsOpts)
+	}
+
+	// Convert `[]GCP` -> `C.goGCPList`
+	var gcpList C.goGCPList
+	var (
+		ids       = make([]string, len(GCPList))
+		infos     = make([]string, len(GCPList))
+		gcpPixels = make([]float64, len(GCPList))
+		gcpLines  = make([]float64, len(GCPList))
+		gcpXs     = make([]float64, len(GCPList))
+		gcpYs     = make([]float64, len(GCPList))
+		gcpZs     = make([]float64, len(GCPList))
+	)
+	for i, g := range GCPList {
+		ids[i] = g.PszId
+		infos[i] = g.PszInfo
+		gcpPixels[i] = (g.DfGCPPixel)
+		gcpLines[i] = (g.DfGCPLine)
+		gcpXs[i] = (g.DfGCPX)
+		gcpYs[i] = (g.DfGCPY)
+		gcpZs[i] = (g.DfGCPZ)
+	}
+	cIds := sliceToCStringArray(ids)
+	defer cIds.free()
+	cInfos := sliceToCStringArray(infos)
+	defer cInfos.free()
+
+	gcpList.pszIds = cIds.cPointer()
+	gcpList.pszInfos = cInfos.cPointer()
+	gcpList.dfGCPPixels = cDoubleArray(gcpPixels)
+	gcpList.dfGCPLines = cDoubleArray(gcpLines)
+	gcpList.dfGCPXs = cDoubleArray(gcpXs)
+	gcpList.dfGCPYs = cDoubleArray(gcpYs)
+	gcpList.dfGCPZs = cDoubleArray(gcpZs)
+
+	cgc := createCGOContext(nil, setGCPsOpts.errorHandler)
+	if setGCPsOpts.sr != nil {
+		C.godalSetGCPs2(cgc.cPointer(), ds.handle(), C.int(len(GCPList)), gcpList, setGCPsOpts.sr.handle)
+	} else {
+		GCPProj := C.CString(setGCPsOpts.projString)
+		defer C.free(unsafe.Pointer(GCPProj))
+		C.godalSetGCPs(cgc.cPointer(), ds.handle(), C.int(len(GCPList)), gcpList, GCPProj)
+	}
+
+	if err := cgc.close(); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Convert list of GCPs to a GDAL GeoTransorm array
+func GCPsToGeoTransform(GCPList []GCP, opts ...GCPsToGeoTransformOption) ([6]float64, error) {
+	gco := gcpsToGeoTransformOpts{}
+	for _, opt := range opts {
+		opt.setGCPsToGeoTransformOpts(&gco)
+	}
+
+	// Convert `[]GCP` -> `C.goGCPList`
+	var gcpList C.goGCPList
+	var (
+		ids       = make([]string, len(GCPList))
+		infos     = make([]string, len(GCPList))
+		gcpPixels = make([]float64, len(GCPList))
+		gcpLines  = make([]float64, len(GCPList))
+		gcpXs     = make([]float64, len(GCPList))
+		gcpYs     = make([]float64, len(GCPList))
+		gcpZs     = make([]float64, len(GCPList))
+	)
+	for i, g := range GCPList {
+		ids[i] = g.PszId
+		infos[i] = g.PszInfo
+		gcpPixels[i] = (g.DfGCPPixel)
+		gcpLines[i] = (g.DfGCPLine)
+		gcpXs[i] = (g.DfGCPX)
+		gcpYs[i] = (g.DfGCPY)
+		gcpZs[i] = (g.DfGCPZ)
+	}
+	cIds := sliceToCStringArray(ids)
+	defer cIds.free()
+	cInfos := sliceToCStringArray(infos)
+	defer cInfos.free()
+
+	gcpList.pszIds = cIds.cPointer()
+	gcpList.pszInfos = cInfos.cPointer()
+	gcpList.dfGCPPixels = cDoubleArray(gcpPixels)
+	gcpList.dfGCPLines = cDoubleArray(gcpLines)
+	gcpList.dfGCPXs = cDoubleArray(gcpXs)
+	gcpList.dfGCPYs = cDoubleArray(gcpYs)
+	gcpList.dfGCPZs = cDoubleArray(gcpZs)
+
+	gt := make([]C.double, 6)
+	cgt := (*C.double)(unsafe.Pointer(&gt[0]))
+	ret := [6]float64{}
+	var cgc = createCGOContext(nil, gco.errorHandler)
+	C.godalGCPListToGeoTransform(cgc.cPointer(), gcpList, C.int(len(GCPList)), cgt)
+	if err := cgc.close(); err != nil {
+		return ret, err
+	}
+
+	// Copy the values from the C Array into a Go array
+	for i := range gt {
+		ret[i] = float64(gt[i])
+	}
+
+	return ret, nil
 }
 
 type cgoContext struct {

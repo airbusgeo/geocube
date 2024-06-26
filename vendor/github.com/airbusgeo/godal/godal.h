@@ -17,6 +17,7 @@
 
 #define _GNU_SOURCE 1
 #include <gdal.h>
+#include <gdal_alg.h>
 #include <ogr_srs_api.h>
 #include <cpl_conv.h>
 #include "cpl_port.h"
@@ -24,6 +25,12 @@
 
 #if GDAL_VERSION_NUM < 3000000
 	#error "this code is only compatible with gdal version >= 3.0"
+#endif
+
+#if GDAL_VERSION_NUM < GDAL_COMPUTE_VERSION(3, 7, 0)
+typedef enum {
+    /*! 8-bit signed integer (GDAL >= 3.7) */ GDT_Int8 = 14
+} FutureGDALDataType;
 #endif
 
 #ifdef __cplusplus
@@ -46,6 +53,8 @@ extern "C" {
 
 	void godalClose(cctx *ctx, GDALDatasetH ds);
 	int godalRegisterDriver(const char *funcname);
+	void godalRegisterPlugins();
+	void godalRegisterPlugin(cctx *ctx, const char *name);
 	void godalRasterSize(GDALDatasetH ds, int *xsize, int *ysize);
 
 	//returns a null terminated list of bands. the caller must free the returned list
@@ -101,6 +110,8 @@ extern "C" {
 	void godalLayerCreateFeature(cctx *ctx, OGRLayerH layer, OGRFeatureH feat);
 	OGRFeatureH godalLayerNewFeature(cctx *ctx, OGRLayerH layer, OGRGeometryH geom);
 	void godalLayerDeleteFeature(cctx *ctx, OGRLayerH layer, OGRFeatureH feat);
+	void godalLayerSetGeometryColumnName(cctx *ctx, OGRLayerH layer, char *name);
+	void godalFeatureSetGeometryColumnName(cctx *ctx, OGRFeatureH feat, char *name);
 	void godalFeatureSetGeometry(cctx *ctx, OGRFeatureH feat, OGRGeometryH geom);
 	void godalFeatureSetFieldInteger(cctx *ctx, OGRFeatureH feat, int fieldIndex, int value);
 	void godalFeatureSetFieldInteger64(cctx *ctx, OGRFeatureH feat, int fieldIndex, long long value);
@@ -146,10 +157,35 @@ extern "C" {
 	GDALDatasetH godalBuildVRT(cctx *ctx, char *dstname, char **sources, char **switches);
 
 	void test_godal_error_handling(cctx *ctx);
-    void godalClearRasterStatistics(cctx *ctx, GDALDatasetH ds);
-    void godalComputeRasterStatistics(cctx *ctx, GDALRasterBandH bnd, int bApproxOK, double *pdfMin, double *pdfMax, double *pdfMean, double *pdfStdDev);
-    int godalGetRasterStatistics(cctx *ctx, GDALRasterBandH bnd, int bApproxOK, double *pdfMin, double *pdfMax, double *pdfMean, double *pdfStdDev);
-    void godalSetRasterStatistics(cctx *ctx, GDALRasterBandH bnd, double dfMin, double dfMax, double dfMean, double dfStdDev);
+	void godalClearRasterStatistics(cctx *ctx, GDALDatasetH ds);
+	void godalComputeRasterStatistics(cctx *ctx, GDALRasterBandH bnd, int bApproxOK, double *pdfMin, double *pdfMax, double *pdfMean, double *pdfStdDev);
+	int godalGetRasterStatistics(cctx *ctx, GDALRasterBandH bnd, int bApproxOK, double *pdfMin, double *pdfMax, double *pdfMean, double *pdfStdDev);
+	void godalSetRasterStatistics(cctx *ctx, GDALRasterBandH bnd, double dfMin, double dfMax, double dfMean, double dfStdDev);
+	void godalGridCreate(cctx *ctx, char *pszAlgorithm, GDALGridAlgorithm eAlgorithm, GUInt32 nPoints, const double *padfX, const double *padfY, const double *padfZ, double dfXMin, double dfXMax, double dfYMin, double dfYMax, GUInt32 nXSize, GUInt32 nYSize, GDALDataType eType, void *pData);
+	GDALDatasetH godalGrid(cctx *ctx, const char *pszDest, GDALDatasetH hSrcDS, char **switches);
+	GDALDatasetH godalNearblack(cctx *ctx, const char *pszDest, GDALDatasetH hDstDS, GDALDatasetH hSrcDS, char **switches);
+	GDALDatasetH godalDem(cctx *ctx, const char *pszDest, const char *pszProcessing, const char *pszColorFilename, GDALDatasetH hSrcDS, char **switches);
+
+	typedef struct {
+		const GDAL_GCP *gcpList;
+		int numGCPs;
+	} GCPsAndCount;
+	typedef struct {
+		char **pszIds;
+		char **pszInfos;
+		double *dfGCPPixels;
+		double *dfGCPLines;
+		double *dfGCPXs;
+		double *dfGCPYs;
+		double *dfGCPZs;
+	} goGCPList;
+	OGRSpatialReferenceH godalGetGCPSpatialRef(GDALDatasetH hSrcDS);
+	const GCPsAndCount godalGetGCPs(GDALDatasetH hSrcDS);
+	const char *godalGetGCPProjection(GDALDatasetH hSrcDS);
+	void godalSetGCPs(cctx *ctx, GDALDatasetH hSrcDS, int numGCPs, goGCPList GCPList, const char *pszGCPProjection);
+	void godalSetGCPs2(cctx *ctx, GDALDatasetH hSrcDS, int numGCPs, goGCPList GCPList, OGRSpatialReferenceH hSRS);
+	GDAL_GCP *goGCPListToGDALGCP(goGCPList GCPList, int numGCPs);
+	void godalGCPListToGeoTransform(cctx *ctx, goGCPList GCPList, int numGCPs, double *gt);
 #ifdef __cplusplus
 }
 #endif

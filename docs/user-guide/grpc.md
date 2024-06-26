@@ -1433,7 +1433,8 @@ Type of data supported by the Geocube &amp; GDAL
 | UInt8 | 1 |  |
 | UInt16 | 2 |  |
 | UInt32 | 3 |  |
-| Int16 | 5 | Int8 = 4; Not supported by GDAL |
+| Int8 | 4 |  |
+| Int16 | 5 |  |
 | Int32 | 6 |  |
 | Float32 | 7 |  |
 | Float64 | 8 |  |

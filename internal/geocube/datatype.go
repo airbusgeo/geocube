@@ -67,8 +67,6 @@ func (dtype DType) IsFloatingPointFormat() bool {
 
 func (dtype DType) ToGDAL() godal.DataType {
 	switch dtype {
-	//case DTypeBOOL:
-	//	return gdal.Unknown
 	case DTypeUINT8:
 		return godal.Byte
 	case DTypeUINT16:
@@ -76,7 +74,7 @@ func (dtype DType) ToGDAL() godal.DataType {
 	case DTypeUINT32:
 		return godal.UInt32
 	case DTypeINT8:
-		return godal.Unknown
+		return godal.Int8
 	case DTypeINT16:
 		return godal.Int16
 	case DTypeINT32:
@@ -101,6 +99,8 @@ func DTypeFromGDal(dtype godal.DataType) DType {
 		return DTypeUINT16
 	case godal.UInt32:
 		return DTypeUINT32
+	case godal.Int8:
+		return DTypeINT8
 	case godal.Int16:
 		return DTypeINT16
 	case godal.Int32:
@@ -128,6 +128,8 @@ func DTypeFromString(dtype string) DType {
 		return DTypeUINT16
 	case "uint32":
 		return DTypeUINT32
+	case "int8":
+		return DTypeINT8
 	case "int16":
 		return DTypeINT16
 	case "int32":
