@@ -15,7 +15,7 @@ You can create your own registry server: https://docs.docker.com/registry/deploy
 In case the images are stored on https://hub.docker.com, you can define them as follows in your kubernetes configuration files (postgresql example: `image: postgres:11`):
 
 ```yaml
-apiVersion: extensions/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Deployment
 metadata:
   name: postgresql
