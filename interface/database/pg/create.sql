@@ -214,5 +214,6 @@ CREATE TABLE geocube.container_layouts (
 
 
 -- CREATE ROLE apiserver WITH LOGIN;
+-- GRANT USAGE ON SCHEMA geocube TO apiserver;
 -- GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA geocube TO apiserver;
 -- GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA geocube TO apiserver;
