@@ -10,7 +10,7 @@ require (
 	cloud.google.com/go/secretmanager v1.11.1
 	cloud.google.com/go/storage v1.32.0
 	github.com/airbusgeo/cogger v0.0.8-0.20221010142029-a1b17e500a6e
-	github.com/airbusgeo/godal v0.0.12-0.20240711104547-d2a4ab0a7d9d
+	github.com/airbusgeo/godal v0.0.12-0.20240911112204-203295be1c72
 	github.com/airbusgeo/mucog v0.0.0-20220830132435-3f9e26c35c1f
 	github.com/airbusgeo/osio v0.1.3
 	github.com/aws/aws-sdk-go-v2 v1.18.0

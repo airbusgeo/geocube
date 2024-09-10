@@ -66,6 +66,14 @@ func InitGDAL(ctx context.Context, gdalConfig *GDALConfig) error {
 		os.Setenv("GDAL_NUM_THREADS", "ALL_CPUS")
 	}
 
+	// In case of a gcs plugin is available, configure it:
+	if gdalConfig.BlockSize != "" {
+		os.Setenv("GODAL_BLOCKSIZE", gdalConfig.BlockSize)
+	}
+	if gdalConfig.NumCachedBlocks != 0 {
+		os.Setenv("GODAL_NUMBLOCKS", strconv.Itoa(gdalConfig.NumCachedBlocks))
+	}
+
 	godal.RegisterAll()
 	if gdalConfig.RegisterPNG {
 		if err := godal.RegisterRaster("PNG"); err != nil {
@@ -79,6 +87,9 @@ func InitGDAL(ctx context.Context, gdalConfig *GDALConfig) error {
 
 	switch {
 	case gdalConfig.WithGCS:
+		if godal.HasVSIHandler("gs://") {
+			break
+		}
 		var err error
 		if gdalConfig.StorageDebug {
 			adapter, err = gcs.NewGsStrategy(ctx)
@@ -97,9 +108,11 @@ func InitGDAL(ctx context.Context, gdalConfig *GDALConfig) error {
 		if err != nil {
 			return err
 		}
+
 		if err = godal.RegisterVSIHandler("gs://", gcsa); err != nil {
 			return err
 		}
+
 	case gdalConfig.WithS3:
 		resolver := aws.EndpointResolverFunc(func(service, region string) (aws.Endpoint, error) {
 			return aws.Endpoint{
