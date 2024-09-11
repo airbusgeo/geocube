@@ -783,8 +783,8 @@ github.com/airbusgeo/errs v0.0.2/go.mod h1:w6O7kns8m5o+eQeWsbhU7usUNq2Rhmt4xQO+r
 github.com/airbusgeo/errs v0.0.3 h1:+lUcbfm45tPLz/DMUC38QT+y9N60aKrPv4MXqVb7Noc=
 github.com/airbusgeo/errs v0.0.3/go.mod h1:/U1fafLfbdxZXtIqdTGeGGzLqnZcnGJXsJ0S7TaP4P0=
 github.com/airbusgeo/godal v0.0.0-20210506122000-ee62c71eebf8/go.mod h1:u1+hcfW729JnK8qm3ugYivRFNlBCNPN98DRBy3pr4qA=
-github.com/airbusgeo/godal v0.0.12-0.20240911112204-203295be1c72 h1:FfNK9rFe0yZgC+Zw/YilifVgJUGvpa+Rwr4IknW3Co4=
-github.com/airbusgeo/godal v0.0.12-0.20240911112204-203295be1c72/go.mod h1:OctoqHTqjtTNm/a6u6ESfG61jcxs9qh7EwvunPn1BRA=
+github.com/airbusgeo/godal v0.0.12-0.20240912153840-fbf96e7a81be h1:5qRIFOhQoLbnc+PK4Oy6dbHGhxlm1giMYA97nX+/fh0=
+github.com/airbusgeo/godal v0.0.12-0.20240912153840-fbf96e7a81be/go.mod h1:OctoqHTqjtTNm/a6u6ESfG61jcxs9qh7EwvunPn1BRA=
 github.com/airbusgeo/mucog v0.0.0-20220830132435-3f9e26c35c1f h1:+ikgsLUO3laP0p0hYxEQPsuOl351VZ5q83VZdLlwcKM=
 github.com/airbusgeo/mucog v0.0.0-20220830132435-3f9e26c35c1f/go.mod h1:FX4f6++Bh1c9JK3fTC18y4aPJAfrJe9vNZbQVOuw3MU=
 github.com/airbusgeo/osio v0.0.0-20210506100101-26770c6cce5a/go.mod h1:RRWIP4TCR8OIXtihqFQozkS8HkiduDWk0Sotku695og=

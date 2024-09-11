@@ -1770,16 +1770,25 @@ namespace cpl
 
 } // namespace cpl
 
-void VSIInstallGoHandler(cctx *ctx, const char *pszPrefix, size_t bufferSize, size_t cacheSize)
+int godalVSIHasGoHandler(const char *pszPrefix)
 {
-    godalWrap(ctx);
     CSLConstList papszPrefix = VSIFileManager::GetPrefixes();
     for( size_t i = 0; papszPrefix && papszPrefix[i]; ++i ) {
         if(strcmp(papszPrefix[i],pszPrefix)==0) {
-            CPLError(CE_Failure, CPLE_AppDefined, "handler already registered on prefix");
-            godalUnwrap();
-            return;
+            return TRUE;
         }
+    }
+    return FALSE;
+}
+
+void godalVSIInstallGoHandler(cctx *ctx, const char *pszPrefix, size_t bufferSize, size_t cacheSize)
+{
+    bool alreadyExists = godalVSIHasGoHandler(pszPrefix) != 0;
+    godalWrap(ctx);
+    if (alreadyExists) {
+        CPLError(CE_Failure, CPLE_AppDefined, "handler already registered on prefix");
+        godalUnwrap();
+        return;
     }
     VSIFilesystemHandler *poHandler = new cpl::VSIGoFilesystemHandler(bufferSize, cacheSize);
     const std::string sPrefix(pszPrefix);
@@ -1807,6 +1816,10 @@ void godalGridCreate(cctx *ctx, char *pszAlgorithm, GDALGridAlgorithm eAlgorithm
 	}
 
 	void *ppOptions;
+//#define __STRINGIFY(TEXT) #TEXT
+//#define __WARNING(TEXT) __STRINGIFY(GCC warning TEXT)
+//#define WARNING(VALUE) __WARNING(__STRINGIFY(N = VALUE))
+//_Pragma (WARNING(GDAL_VERSION_NUM))
 #if GDAL_VERSION_NUM >= GDAL_COMPUTE_VERSION(3, 7, 0)
 	ret = GDALGridParseAlgorithmAndOptions(pszAlgorithm, &eAlgorithm, &ppOptions);
 #else

@@ -46,7 +46,7 @@ github.com/airbusgeo/cogger
 # github.com/airbusgeo/errs v0.0.3
 ## explicit; go 1.16
 github.com/airbusgeo/errs
-# github.com/airbusgeo/godal v0.0.12-0.20240911112204-203295be1c72
+# github.com/airbusgeo/godal v0.0.12-0.20240912153840-fbf96e7a81be
 ## explicit; go 1.15
 github.com/airbusgeo/godal
 # github.com/airbusgeo/mucog v0.0.0-20220830132435-3f9e26c35c1f
