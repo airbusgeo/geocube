@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://github.com/airbusgeo/geocube/installation/docker-install/" />
+      <link rel="shortcut icon" href="../../img/favicon.ico" />
+    <title>Docker - Geocube Server</title>
+    <link rel="stylesheet" href="../../css/theme.css" />
+    <link rel="stylesheet" href="../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Docker";
+        var mkdocs_page_input_path = "installation/docker-install.md";
+        var mkdocs_page_url = "/airbusgeo/geocube/installation/docker-install/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../.." class="icon icon-home"> Geocube Server
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../quickstart/">Getting started</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Architecture</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../architecture/solution/">Ecosystem</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../architecture/services/">Geocube services</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../architecture/interfaces/">Interfaces</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../architecture/mucog/">MuCOG</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../user-guide/grpc/">GRPC documentation</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Installation</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../prerequisite/">Prerequisite</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../local-install/">Local environment</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Docker</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#clone-repository">Clone repository</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#base-image">Base-image</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#server-consolidater-and-downloader">Server, Consolidater and Downloader</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#run-server-examples">Run server - examples:</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#run-downloader-examples">Run downloader - examples:</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#messaging-broker">Messaging Broker</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#docker-compose">Docker-compose</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../k8s-install/">Deploying with Kubernetes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../others/">Customize environment</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../upgrade/">Upgrade</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">User guide</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../user-guide/tutorials/">Tutorials</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../user-guide/entities/">Entities</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../user-guide/indexation/">Indexation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../user-guide/access/">Access</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../user-guide/consolidation/">Consolidation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../user-guide/deletion/">Deletion</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../user-guide/scaleup/">Scaling-up</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">About</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../about/help/">Getting help</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../about/CONTRIBUTING/">Contributing</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../about/license/">License</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../about/release-notes/">Release Notes</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../..">Geocube Server</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Installation</li>
+      <li class="breadcrumb-item active">Docker</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h2 id="installation-docker">Installation - Docker</h2>
+<h3 id="clone-repository">Clone repository</h3>
+<p>Clone <code>https://github.com/airbusgeo/geocube.git</code> repository.</p>
+<p>All dockerfile are available in the <code>docker</code> folder.</p>
+<h3 id="base-image">Base-image</h3>
+<p>The Dockerfiles of the other services depend on a <code>base-image</code>:</p>
+<pre><code class="language-bash">$ docker build -f docker/Dockerfile.base-image -t geocube-base-image .
+[...]
+Successfully built 62eb9e6d2c0e
+</code></pre>
+<h3 id="server-consolidater-and-downloader">Server, Consolidater and Downloader</h3>
+<p>Then, the <code>BASE_IMAGE</code> must be passed as a parameter in order to build server, consolidater or downloader dockerfile:</p>
+<pre><code class="language-bash">$ docker build -f docker/Dockerfile.server -t geocube . --build-arg BASE_IMAGE=geocube-base-image
+</code></pre>
+<pre><code class="language-bash">$ docker build -f docker/Dockerfile.consolidater -t geocube-consolidater . --build-arg BASE_IMAGE=geocube-base-image
+</code></pre>
+<pre><code class="language-bash">$ docker build -f docker/Dockerfile.downloader -t geocube-downloader . --build-arg BASE_IMAGE=geocube-base-image
+</code></pre>
+<p>You can run “docker run” command in order to start the application.</p>
+<h4 id="run-server-examples">Run server - examples:</h4>
+<pre><code class="language-bash">export STORAGE=/geocube-datasets
+docker run --rm --network=host -e PUBSUB_EMULATOR_HOST=localhost:8085 -v $STORAGE:$STORAGE geocube -project geocube-emulator -ingestionStorage=$STORAGE -dbConnection=postgresql://user:password@localhost:5432/geocube -eventsQueue events -consolidationsQueue consolidations -cancelledJobs $STORAGE/cancelled-jobs
+</code></pre>
+<pre><code class="language-bash">export STORAGE=/geocube-datasets
+docker run --rm --network=host -e PUBSUB_EMULATOR_HOST=localhost:8085 -v $STORAGE:$STORAGE geocube-consolidater /consolidater -psProject geocube-emulator -workdir=/tmp -eventsQueue events -consolidationsQueue consolidations -cancelledJobs $STORAGE/cancelled-jobs
+</code></pre>
+<p>With GCS support (authentication with application_default_credentials.json):</p>
+<pre><code class="language-bash">export STORAGE=/geocube-datasets
+docker run --rm -v ~/.config/gcloud:/root/.config/gcloud geocube -with-gcs [...]
+</code></pre>
+<p>For more information concerning running option, see: https://docs.docker.com/engine/reference/commandline/run/</p>
+<h4 id="run-downloader-examples">Run downloader - examples:</h4>
+<p>Basic example:</p>
+<pre><code class="language-shell">docker run --rm -p 127.0.0.1:8081:8081/tcp geocube-downloader -port 8081 -workers 4
+</code></pre>
+<p>Example with GCS support:</p>
+<p>With GOOGLE_APPLICATION_CREDENTIALS:</p>
+<pre><code class="language-shell">docker run --rm -e GOOGLE_APPLICATION_CREDENTIALS=/account/geocube_server.json -p 127.0.0.1:8081:8081/tcp --mount type=bind,src=~/Documents/account/geocube,dst=/account 65cddc550e9a geocube-downloader -port 8081 -with-gcs -workers 4 -gdalBlockSize 2Mb
+</code></pre>
+<p>With application_default_credentials.json:</p>
+<pre><code class="language-bash">docker run --rm -v ~/.config/gcloud:/root/.config/gcloud -p 127.0.0.1:8081:8081/tcp geocube-downloader -port 8081 -with-gcs -workers 4 -gdalBlockSize 2Mb
+</code></pre>
+<p>Additionnal information <a href="../local-install/#downloader">here</a></p>
+<h3 id="messaging-broker">Messaging Broker</h3>
+<p>cf <a href="../local-install/#messaging-broker">Local environment - Messaging Broker</a></p>
+<h3 id="docker-compose">Docker-compose</h3>
+<p>A docker-compose file is provided as example. It's a minimal example, so feel free to edit it to take advantage of the full power of the Geocube.</p>
+<ul>
+<li>Copy the <code>./docker/.env.example</code> to <code>./docker/.env</code></li>
+<li>Edit <code>./docker/.env</code> to set the <code>STORAGE_URI</code> (it will be mount as a volume to access and store images).</li>
+<li>Build the <a href="#base-image">base image</a></li>
+<li><code>cd docker</code> and <code>docker-compose up</code></li>
+</ul>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../local-install/" class="btn btn-neutral float-left" title="Local environment"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../k8s-install/" class="btn btn-neutral float-right" title="Deploying with Kubernetes">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../local-install/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../k8s-install/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../..";</script>
+    <script src="../../js/theme_extra.js"></script>
+    <script src="../../js/theme.js"></script>
+      <script src="../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

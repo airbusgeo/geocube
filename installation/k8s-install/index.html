@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://github.com/airbusgeo/geocube/installation/k8s-install/" />
+      <link rel="shortcut icon" href="../../img/favicon.ico" />
+    <title>Deploying with Kubernetes - Geocube Server</title>
+    <link rel="stylesheet" href="../../css/theme.css" />
+    <link rel="stylesheet" href="../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Deploying with Kubernetes";
+        var mkdocs_page_input_path = "installation/k8s-install.md";
+        var mkdocs_page_url = "/airbusgeo/geocube/installation/k8s-install/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../.." class="icon icon-home"> Geocube Server
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../quickstart/">Getting started</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Architecture</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../architecture/solution/">Ecosystem</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../architecture/services/">Geocube services</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../architecture/interfaces/">Interfaces</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../architecture/mucog/">MuCOG</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../user-guide/grpc/">GRPC documentation</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Installation</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../prerequisite/">Prerequisite</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../local-install/">Local environment</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../docker-install/">Docker</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Deploying with Kubernetes</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#iam-security">IAM &amp; Security</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#container-registry">Container Registry</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#docker-hub">Docker Hub</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#private-registry">Private Registry</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#database">Database</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#pubsub-emulator">Pubsub Emulator</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#apiserver">Apiserver</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#consolidater">Consolidater</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#reference">Reference</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#kubernetes">Kubernetes</a>
+    </li>
+        </ul>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../others/">Customize environment</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../upgrade/">Upgrade</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">User guide</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../user-guide/tutorials/">Tutorials</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../user-guide/entities/">Entities</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../user-guide/indexation/">Indexation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../user-guide/access/">Access</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../user-guide/consolidation/">Consolidation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../user-guide/deletion/">Deletion</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../user-guide/scaleup/">Scaling-up</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">About</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../about/help/">Getting help</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../about/CONTRIBUTING/">Contributing</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../about/license/">License</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../about/release-notes/">Release Notes</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../..">Geocube Server</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Installation</li>
+      <li class="breadcrumb-item active">Deploying with Kubernetes</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h2 id="installation-kubernetes-cluster">Installation - Kubernetes Cluster</h2>
+<h3 id="iam-security">IAM &amp; Security</h3>
+<p>All the notions of security and service account are not covered in this document. It is the responsibility of the installers.
+The files presented below are available as examples/templates. They do not present any notions of security.</p>
+<h3 id="container-registry">Container Registry</h3>
+<p>You can create your own registry server: https://docs.docker.com/registry/deploying/ </p>
+<h4 id="docker-hub">Docker Hub</h4>
+<p>In case the images are stored on https://hub.docker.com, you can define them as follows in your kubernetes configuration files (postgresql example: <code>image: postgres:11</code>):</p>
+<pre><code class="language-yaml">apiVersion: networking.k8s.io/v1
+kind: Deployment
+metadata:
+  name: postgresql
+spec:
+  replicas: 1
+  template:
+    spec:
+      containers:
+        - name: postgresql
+          image: postgres:11
+</code></pre>
+<p>In this example, <a href="https://hub.docker.com/layers/postgres/library/postgres/11.0/images/sha256-05f9b83f85bdf0382b1cb8fb72d17d7c8098b0287d7dd1df4ff09aa417a0500b?context=explore">postgres:11</a> image will be loaded.</p>
+<h4 id="private-registry">Private Registry</h4>
+<p>You can configure your kubernetes deployment files with private docker registry.</p>
+<p>For more information, see: <a href="https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/">Pull an Image from a Private Registry</a></p>
+<p><code>imagePullSecrets</code> is defined in your kubernetes configuration files and image name is specified as follow ex: <code>image: geocube-private-image:tag</code></p>
+<h3 id="database">Database</h3>
+<p>Geocube server must have sufficient rights in order to read and write into database. For more information, see: <a href="https://www.postgresql.org/docs/11/auth-pg-hba-conf.html">Client Authentication</a>.</p>
+<p>Geocube required that <code>max_connections</code> must be configured as <code>1024</code>.  For more information, see: <a href="https://www.postgresql.org/docs/11/runtime-config-connection.html">Server configuration</a>.</p>
+<p>Kubernetes example configuration files are available in <code>deploy/k8s/database</code> in order to deploy minimal postgresql Database. All the parameters between <code>{{}}</code> are mandatory:</p>
+<ol>
+<li><code>{{POSTGRES_USER}}</code>: user name</li>
+<li><code>{{POSTGRES_PASSWORD}}</code>: user password</li>
+</ol>
+<pre><code class="language-bash">$ kubectl apply -f deploy/k8s/database/database.yaml
+</code></pre>
+<h3 id="pubsub-emulator">Pubsub Emulator</h3>
+<p>Kubernetes configuration files are available in <code>deploy/k8s/pubSubEmulator</code> in order to deploy minimal pubSub emulator. <code>{{PUBSUB_EMULATOR_IMAGE}}</code> is to be defined (eg: <code>&lt;container_registry&gt;/pubsub-emulator:&lt;tag&gt;</code>)</p>
+<pre><code class="language-bash">$ kubectl apply -f deploy/k8s/pubSubEmulator/pubSub.yaml
+</code></pre>
+<p>You have to configure the access between PubSub and geocube’s components.</p>
+<h3 id="apiserver">Apiserver</h3>
+<p>Apiserver must have the necessary access to communicate with the database, the messaging service as well as the rights to read and write to the storage.</p>
+<ul>
+<li>Create apiserver service account</li>
+</ul>
+<p>ApiServer must have suffisant rights in order to manage object storage and secrets access.</p>
+<pre><code class="language-bash">$ kubectl apply -f deploy/k8s/apiserver/service-account.yaml
+</code></pre>
+<ul>
+<li>Create apiserver service</li>
+</ul>
+<pre><code class="language-bash">$ kubectl apply -f deploy/k8s/apiserver/service.yaml
+</code></pre>
+<ul>
+<li>Create apiserver deployment</li>
+</ul>
+<p>In order to start ApiServer, all the parameters between <code>{{}}</code> are to be defined in file <code>deploy/k8s/apiserver/deployment.yaml</code>:</p>
+<ol>
+<li><code>{{GEOCUBE_SERVER_IMAGE}}</code>: Geocube ApiServer Docker Image (eg. <code>&lt;container_registry&gt;/geocube-go-server:&lt;tag&gt;</code>)</li>
+<li>Connection to the database <code>{{BD_HOST}}</code>, <code>{{DB_USER}}</code> and <code>{{DB_PASSWD}}</code></li>
+<li><code>{{INGESTION_STORAGE}}</code>: uri to store ingested datasets (local and gcs uris are supported)</li>
+<li><code>{{PUBSUB_EMULATOR_HOST}}</code> environment variable can be added with pubSub emulator service IP (only if emulator is used)</li>
+<li><code>{{CANCELLED_JOBS_STORAGE}}</code>: uri to store cancelled jobs (local and gcs uris are supported)</li>
+</ol>
+<p>Ex:</p>
+<pre><code class="language-yaml">containers:
+  - args:
+      - -dbName=geocube
+      - -dbUser=apiserver
+      - -dbPassword=mydbPassword
+      - -dbHost=localhost:5432
+      - -eventsQueue=events
+      - -consolidationsQueue=consolidations
+      - -ingestionStorage=/geocube-datasets or gs://my-bucket/geocube-datasets
+      - -maxConnectionAge=3600
+      - -workers=1
+      - -cancelledJobs=/geocube-cancelled-jobs or gs://my-bucket/geocube-cancelled-jobs
+    env:
+      - name: PUBSUB_EMULATOR_HOST
+        value: 0.0.0.0:8085
+    image: registry/project/geocube-go-server:v1
+</code></pre>
+<pre><code class="language-bash">$ kubectl apply -f deploy/k8s/apiserver/deployment.yaml
+</code></pre>
+<h3 id="consolidater">Consolidater</h3>
+<p>Consolidater must have the necessary access to communicate with the messaging service as well as the rights to read and write to the storage.</p>
+<ul>
+<li>Create Consolidater RoleBinding</li>
+</ul>
+<pre><code class="language-bash">$ kubectl apply -f deploy/k8s/consolidater/role-binding.yaml
+</code></pre>
+<ul>
+<li>Create Consolidater Role (CRUD on pods &amp; list on ReplicationControllers)</li>
+</ul>
+<pre><code class="language-bash">$ kubectl apply -f deploy/k8s/consolidater/role.yaml
+</code></pre>
+<ul>
+<li>Create Autoscaler service account</li>
+</ul>
+<pre><code class="language-bash">$ kubectl apply -f deploy/k8s/consolidater/autoscaler-service-account.yaml
+</code></pre>
+<ul>
+<li>Create Autoscaler replication controller</li>
+</ul>
+<p>In order to start Autoscaler replication controller, you have to define some parameters in file <code>deploy/k8s/consolidater/replication-controller.yaml</code>:</p>
+<ol>
+<li><code>{{CONSOLIDATER_IMAGE}}</code>: Consolidater Docker Image (eg. <code>&lt;container_registry&gt;/consolidater:&lt;tag&gt;</code>).</li>
+<li><code>{{PUBSUB_EMULATOR_HOST}}</code> environment variable could be added with pubSub emulator service IP (only if emulator is used).</li>
+<li><code>{{CANCELLED_JOBS_STORAGE}}</code>: uri to store cancelled jobs (local and gcs uris are supported)</li>
+</ol>
+<p>Ex:</p>
+<pre><code class="language-yaml">containers:
+  - name: consolidater
+    image: registry/project/consolidater:v1
+    imagePullPolicy: &quot;Always&quot;
+    ports:
+      - containerPort: 9000
+        protocol: TCP
+    env:
+      - name: PUBSUB_EMULATOR_HOST
+        value: 0.0.0.0:8085       
+[...]
+    args:
+      - |
+        UUID=`uuidgen`;
+        WORKDIR=/local-ssd/$UUID;
+        mkdir -p $WORKDIR;
+        /consolidater -eventsQueue events -consolidationsQueue consolidations -workdir $WORKDIR -cancelledJobs=/geocube-cancelled-jobs or gs://my-bucket/geocube-cancelled-jobs || true;
+        exitcode=$?;
+        rm -rf $WORKDIR;
+        exit $exitcode;
+</code></pre>
+<pre><code class="language-bash">$ kubectl apply -f deploy/k8s/consolidater/replication-controller.yaml
+</code></pre>
+<ul>
+<li>Create autoscaler deployment</li>
+</ul>
+<p>Define Autoscaler Docker Image <code>{{AUTOSCALER_IMAGE}}</code> (eg. <code>&lt;container_registry&gt;/autoscaler:&lt;tag&gt;</code>) in file <code>deploy/k8s/consolidater/autoscaler-deployment.yaml</code></p>
+<p>Ex:</p>
+<pre><code class="language-yaml">containers:
+  - name: autoscaler
+    image: registry/project/autoscaler:v1
+    imagePullPolicy: Always
+    args:
+      - -update=30s
+      - -queue=consolidations
+      - -rc=consolidater
+      - -ns=default
+      - -ratio=1
+      - -minratio=1
+      - -step=16
+      - -max=256
+      - -min=0
+      - -pod.cost.path=/termination_cost
+      - -pod.cost.port=9000
+</code></pre>
+<pre><code class="language-bash">$ kubectl apply -f deploy/k8s/consolidater/autoscaler-deployment.yaml
+</code></pre>
+<h3 id="reference">Reference</h3>
+<h4 id="kubernetes">Kubernetes</h4>
+<ul>
+<li><strong>Deployment</strong> describes a desired state of pod: https://kubernetes.io/docs/concepts/workloads/controllers/deployment</li>
+<li><strong>Pods</strong> is a group of one or more containers: https://kubernetes.io/docs/concepts/workloads/pods</li>
+<li><strong>Secrets</strong> lets you store and manage sensitive information, such as passwords, OAuth tokens, and ssh keys: https://kubernetes.io/docs/concepts/configuration/secret</li>
+<li><strong>Service</strong> is an abstract way to expose an application running on a set of Pods as a network service: https://kubernetes.io/fr/docs/concepts/services-networking/service</li>
+<li><strong>Replication controller</strong> ensures that a specified number of pod replicas are running at any one time: https://kubernetes.io/docs/concepts/workloads/controllers/replicationcontroller</li>
+<li><strong>RoleBinding</strong> and <strong>Role</strong>: https://kubernetes.io/docs/reference/access-authn-authz/rbac/</li>
+</ul>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../docker-install/" class="btn btn-neutral float-left" title="Docker"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../others/" class="btn btn-neutral float-right" title="Customize environment">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../docker-install/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../others/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../..";</script>
+    <script src="../../js/theme_extra.js"></script>
+    <script src="../../js/theme.js"></script>
+      <script src="../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
