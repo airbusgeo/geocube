@@ -98,7 +98,7 @@ func (p *Publisher) publish(ctx context.Context, retry int, data ...[]byte) erro
 	for _, d := range data {
 		jobID, err := p.worker.EnqueueJob(p.queueName, d, opts...)
 		if err != nil {
-			if !utils.Retriable(err) || p.maxRetries >= retry {
+			if !utils.Retriable(err) || retry >= p.maxRetries {
 				return fmt.Errorf("pgQueue.Publish: %w", err)
 			}
 			retryIds = append(retryIds, jobID)
