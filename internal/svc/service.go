@@ -10,6 +10,7 @@ import (
 
 	"github.com/airbusgeo/geocube/interface/messaging"
 	"github.com/airbusgeo/geocube/interface/storage/uri"
+	"github.com/google/uuid"
 
 	"github.com/airbusgeo/geocube/interface/database"
 	"github.com/airbusgeo/geocube/internal/geocube"
@@ -374,6 +375,20 @@ func (svc *Service) IndexExternalDatasets(ctx context.Context, newcontainer *geo
 		}
 		return svc.saveContainer(ctx, txn, newcontainer)
 	})
+}
+
+// DeleteDatasets implements ServiceAdmin
+func (svc *Service) DeleteDatasets(ctx context.Context, jobName string, instanceIDs, recordIDs, datasetPatterns []string, executionLevel geocube.ExecutionLevel) (*geocube.Job, error) {
+	// Create the job
+	if jobName == "" {
+		jobName = uuid.New().String()
+	}
+	job := geocube.NewDeletionJob(jobName, executionLevel)
+
+	if err := svc.delInit(ctx, job, instanceIDs, recordIDs, datasetPatterns); err != nil {
+		return nil, fmt.Errorf("DeleteDatasets.%w", err)
+	}
+	return job, nil
 }
 
 // GetConsolidationParams implements GeocubeService

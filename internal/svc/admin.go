@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"github.com/airbusgeo/geocube/interface/database"
-	"github.com/google/uuid"
 
 	"github.com/airbusgeo/geocube/internal/geocube"
 )
@@ -92,18 +91,4 @@ func (svc *Service) UpdateDatasets(ctx context.Context, simulate bool, instanceI
 	}
 
 	return results, nil
-}
-
-// DeleteDatasets implements ServiceAdmin
-func (svc *Service) DeleteDatasets(ctx context.Context, jobName string, instanceIDs, recordIDs, datasetPatterns []string, executionLevel geocube.ExecutionLevel) (*geocube.Job, error) {
-	// Create the job
-	if jobName == "" {
-		jobName = uuid.New().String()
-	}
-	job := geocube.NewDeletionJob(jobName, executionLevel)
-
-	if err := svc.delInit(ctx, job, instanceIDs, recordIDs, datasetPatterns); err != nil {
-		return nil, fmt.Errorf("DeleteDatasets.%w", err)
-	}
-	return job, nil
 }

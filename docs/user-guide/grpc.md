@@ -10,8 +10,6 @@
     - [GeocubeDownloader](#geocube-GeocubeDownloader)
   
 - [pb/admin.proto](#pb_admin-proto)
-    - [DeleteDatasetsRequest](#geocube-DeleteDatasetsRequest)
-    - [DeleteDatasetsResponse](#geocube-DeleteDatasetsResponse)
     - [TidyDBRequest](#geocube-TidyDBRequest)
     - [TidyDBResponse](#geocube-TidyDBResponse)
     - [UpdateDatasetsRequest](#geocube-UpdateDatasetsRequest)
@@ -145,6 +143,8 @@
     - [ContinueJobRequest](#geocube-ContinueJobRequest)
     - [ContinueJobResponse](#geocube-ContinueJobResponse)
     - [Dataset](#geocube-Dataset)
+    - [DeleteDatasetsRequest](#geocube-DeleteDatasetsRequest)
+    - [DeleteDatasetsResponse](#geocube-DeleteDatasetsResponse)
     - [GetConsolidationParamsRequest](#geocube-GetConsolidationParamsRequest)
     - [GetConsolidationParamsResponse](#geocube-GetConsolidationParamsResponse)
     - [GetContainersRequest](#geocube-GetContainersRequest)
@@ -215,6 +215,7 @@ Documentation may be detailed in Request/Response sections.
 | CreatePalette | [CreatePaletteRequest](#geocube-CreatePaletteRequest) | [CreatePaletteResponse](#geocube-CreatePaletteResponse) | Create or update a palette that can be used to create a display of a dataset |
 | GetContainers | [GetContainersRequest](#geocube-GetContainersRequest) | [GetContainersResponse](#geocube-GetContainersResponse) | GetInfo on containers |
 | IndexDatasets | [IndexDatasetsRequest](#geocube-IndexDatasetsRequest) | [IndexDatasetsResponse](#geocube-IndexDatasetsResponse) | Index new datasets in the Geocube |
+| DeleteDatasets | [DeleteDatasetsRequest](#geocube-DeleteDatasetsRequest) | [DeleteDatasetsResponse](#geocube-DeleteDatasetsResponse) | Delete datasets using records, instances and/or filepath |
 | ConfigConsolidation | [ConfigConsolidationRequest](#geocube-ConfigConsolidationRequest) | [ConfigConsolidationResponse](#geocube-ConfigConsolidationResponse) | Configurate a consolidation process |
 | GetConsolidationParams | [GetConsolidationParamsRequest](#geocube-GetConsolidationParamsRequest) | [GetConsolidationParamsResponse](#geocube-GetConsolidationParamsResponse) | Get the configuration of a consolidation |
 | Consolidate | [ConsolidateRequest](#geocube-ConsolidateRequest) | [ConsolidateResponse](#geocube-ConsolidateResponse) | Start a consolidation job |
@@ -271,43 +272,6 @@ API GeocubeDownloader to download a cube from metadata
 <p align="right"><a href="#top">Top</a></p>
 
 ## pb/admin.proto
-
-
-
-<a name="geocube-DeleteDatasetsRequest"></a>
-
-### DeleteDatasetsRequest
-Remove the datasets referenced by instances and records without any control
-The containers (if empty) are not deleted
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| record_ids | [string](#string) | repeated | bool simulate = 1; // DEPRECATED If true, a simulation is done, nothing is actually deleted. Use StepByStep=2 instead
-
-Instance id that references the datasets to be deleted |
-| instance_ids | [string](#string) | repeated | Record ids that reference the datasets to be deleted |
-| dataset_patterns | [string](#string) | repeated | Dataset file patterns (support * and ? for all or any characters and trailing (?i) for case-insensitiveness) (or empty to ignore) |
-| execution_level | [ExecutionLevel](#geocube-ExecutionLevel) |  | Execution level (see enum) |
-| job_name | [string](#string) |  | Name of the job (if empty, a name will be generated) |
-
-
-
-
-
-
-<a name="geocube-DeleteDatasetsResponse"></a>
-
-### DeleteDatasetsResponse
-Return the number of deleted datasets
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| job | [Job](#geocube-Job) |  | repeated string results = 1; // DEPRECATED: use the log of the job |
-
-
-
 
 
 
@@ -2341,6 +2305,41 @@ A dataset defines:
 | real_min_value | [double](#double) |  | Real min value (dformat.min_value maps to real_min_value) |
 | real_max_value | [double](#double) |  | Real max value (dformat.max_value maps to real_max_value) |
 | exponent | [double](#double) |  | 1: linear scaling (RealMax - RealMin) * pow( (Value - Min) / (Max - Min), Exponent) &#43; RealMin |
+
+
+
+
+
+
+<a name="geocube-DeleteDatasetsRequest"></a>
+
+### DeleteDatasetsRequest
+Remove the datasets referenced by instances and records without any control
+The containers (if empty) are not deleted
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| record_ids | [string](#string) | repeated | Instance id that references the datasets to be deleted |
+| instance_ids | [string](#string) | repeated | Record ids that reference the datasets to be deleted |
+| dataset_patterns | [string](#string) | repeated | Dataset file patterns (support * and ? for all or any characters and trailing (?i) for case-insensitiveness) (or empty to ignore) |
+| execution_level | [ExecutionLevel](#geocube-ExecutionLevel) |  | Execution level (see enum) |
+| job_name | [string](#string) |  | Name of the job (if empty, a name will be generated) |
+
+
+
+
+
+
+<a name="geocube-DeleteDatasetsResponse"></a>
+
+### DeleteDatasetsResponse
+Return the number of deleted datasets
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| job | [Job](#geocube-Job) |  |  |
 
 
 

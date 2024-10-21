@@ -63,6 +63,7 @@ func (svc *ServiceAdmin) UpdateDatasets(ctx context.Context, req *pb.UpdateDatas
 }
 
 // DeleteDatasets implements AdminServer
+// Deprecated: use Service.DeleteDatasets instead
 func (svc *ServiceAdmin) DeleteDatasets(ctx context.Context, req *pb.DeleteDatasetsRequest) (*pb.DeleteDatasetsResponse, error) {
 	job, err := svc.gsvca.DeleteDatasets(ctx, req.JobName, req.GetInstanceIds(), req.GetRecordIds(), req.DatasetPatterns, geocube.ExecutionLevel(req.ExecutionLevel))
 	if err != nil {

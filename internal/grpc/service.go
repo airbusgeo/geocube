@@ -64,6 +64,7 @@ type GeocubeService interface {
 	// Index datasets that are not fully known. Checks that the container is reachable and get some missing informations.
 	GetContainers(ctx context.Context, containerUris []string) ([]*geocube.Container, error)
 	IndexExternalDatasets(ctx context.Context, container *geocube.Container, datasets []*geocube.Dataset) error
+	DeleteDatasets(ctx context.Context, jobName string, instanceIDs, recordIDs, datasetPatterns []string, executionLevel geocube.ExecutionLevel) (*geocube.Job, error)
 	ConfigConsolidation(ctx context.Context, variableID string, params geocube.ConsolidationParams) error
 	GetConsolidationParams(ctx context.Context, ID string) (*geocube.ConsolidationParams, error)
 	ConsolidateFromRecords(ctx context.Context, job *geocube.Job, recordsID []string) error
@@ -561,6 +562,26 @@ func (svc *Service) IndexDatasets(ctx context.Context, req *pb.IndexDatasetsRequ
 	}
 
 	return &pb.IndexDatasetsResponse{}, nil
+}
+
+// DeleteDatasets by record, instances and/or filepath
+func (svc *Service) DeleteDatasets(ctx context.Context, req *pb.DeleteDatasetsRequest) (*pb.DeleteDatasetsResponse, error) {
+	job, err := svc.gsvc.DeleteDatasets(ctx, req.JobName, req.GetInstanceIds(), req.GetRecordIds(), req.DatasetPatterns, geocube.ExecutionLevel(req.ExecutionLevel))
+	if err != nil {
+		return nil, formatError("backend.%w", err)
+	}
+
+	if c := len(job.Logs); c > 1000 {
+		job.Logs = job.Logs[c-1001 : c-1]
+	}
+
+	jobpb, err := job.ToProtobuf(0)
+	if err != nil {
+		return nil, formatError("backend.%w", err)
+	}
+	return &pb.DeleteDatasetsResponse{
+		Job: jobpb,
+	}, nil
 }
 
 // GetConsolidationParams reads the configuration parameters associated to a variable
