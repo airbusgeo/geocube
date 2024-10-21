@@ -444,7 +444,7 @@ func (svc *Service) opSubFncDeleteContainer(ctx context.Context, containerURI st
 	return nil
 }
 
-func (svc *Service) opContactAdmin(ctx context.Context, job *geocube.Job) error {
+func (svc *Service) opContactAdmin(_ context.Context, job *geocube.Job) error {
 	job.LogMsg(geocube.WARN, "Contact admin...")
 	//TODO Contact Admin
 	return nil

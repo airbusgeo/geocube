@@ -44,6 +44,7 @@
 - generate with enumer
 - AdminUpdateDataset with RecordIds
 - Better handling of consolidation cancellation
+- CleanJobs does not return all errors
 
 ### Others
 - Update golang-mod

@@ -15,6 +15,7 @@ import (
 	"github.com/airbusgeo/geocube/internal/geocube"
 	"github.com/airbusgeo/geocube/internal/image"
 	"github.com/airbusgeo/geocube/internal/log"
+	"github.com/airbusgeo/geocube/internal/utils"
 	"github.com/airbusgeo/godal"
 	"github.com/twpayne/go-geom"
 )
@@ -264,7 +265,7 @@ func (svc *Service) validateRemoteContainer(ctx context.Context, container *geoc
 }
 
 // validateAndSetRemoteDataset validates and completes Dataset
-func (svc *Service) validateAndSetRemoteDataset(ctx context.Context, dataset *geocube.Dataset) error {
+func (svc *Service) validateAndSetRemoteDataset(_ context.Context, dataset *geocube.Dataset) error {
 	datasetURI := dataset.GDALURI()
 	ds, err := godal.Open(datasetURI, image.ErrLogger)
 	if err != nil {
@@ -595,7 +596,7 @@ func (svc *Service) CleanJobs(ctx context.Context, nameLike string, state *geocu
 	}
 
 	for _, jobID := range jobsID {
-		err := svc.unitOfWork(ctx, func(txn database.GeocubeTxBackend) error {
+		if e := svc.unitOfWork(ctx, func(txn database.GeocubeTxBackend) error {
 			// Get the job
 			job, err := svc.db.ReadJob(ctx, jobID)
 			if err != nil {
@@ -621,19 +622,14 @@ func (svc *Service) CleanJobs(ctx context.Context, nameLike string, state *geocu
 				return fmt.Errorf("CleanJobs.%w", err)
 			}
 			return nil
-		})
-		if err != nil {
-			// TODO handle error
-			log.Logger(ctx).Sugar().Debugf("Unable to delete job %s: %v", jobID, err)
+		}); e != nil {
+			err = utils.MergeErrors(true, err, fmt.Errorf("unable to delete job %s: %v", jobID, e))
 		} else {
 			count++
 		}
 	}
 
-	if err != nil {
-		return 0, err
-	}
-	return count, nil
+	return count, err
 }
 
 func (svc *Service) unitOfWork(ctx context.Context, f func(txn database.GeocubeTxBackend) error) (err error) {
