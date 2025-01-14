@@ -25,7 +25,7 @@ RUN upx -q /go/bin/consolidater
 
 #---------------------------------------------------------------------------------------------------------------
 
-FROM alpine:3.17
+FROM alpine:3.21
 COPY --from=builder /usr/local/lib /usr/local/lib
 COPY --from=builder /usr/local/share /usr/local/share
 RUN apk update && \
@@ -34,6 +34,8 @@ RUN apk update && \
         ca-certificates \
         libcurl \
         libgcc \
+        proj \
+        geos \
         libjpeg-turbo \
         libstdc++ \
         libwebp \

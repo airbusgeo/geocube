@@ -1,4 +1,4 @@
-FROM golang:alpine3.17
+FROM golang:alpine3.21
 
 RUN apk update && \
     apk upgrade && \
@@ -15,33 +15,12 @@ RUN apk update && \
         tiff-dev \
         unzip \
         zstd-dev \
-        cmake
+        cmake \
+        proj-dev \
+        geos-dev
 
 
 WORKDIR /build
-
-ARG PROJVERSION=7.2.1
-RUN mkdir proj && cd proj &&\
-    curl -sL https://github.com/OSGeo/proj.4/releases/download/$PROJVERSION/proj-$PROJVERSION.tar.gz -o proj-$PROJVERSION.tar.gz &&\
-	mkdir proj && \
-	tar  xzf proj-$PROJVERSION.tar.gz -C proj --strip-components 1 &&\
-    cd proj && \
-	#curl -sL http://download.osgeo.org/proj/proj-datumgrid-1.8.zip -o proj-datumgrid-1.8.zip && \
-	#unzip -o proj-datumgrid-1.8.zip -d data/ && \
-	./configure --disable-static CFLAGS="-O2" CXXFLAGS="-O2" &&\
-	make -j8 && \
-	make install &&\
-    cd /build && rm -rf proj
-
-ARG GEOSVERSION=3.8.1
-RUN mkdir geos && cd geos &&\
-    curl -sL http://download.osgeo.org/geos/geos-$GEOSVERSION.tar.bz2 -o geos.tbz2 &&\
-    tar xf geos.tbz2 &&\
-    cd geos-$GEOSVERSION &&\
-    ./configure CFLAGS="-O2" CXXFLAGS="-O2" &&\
-    make -j8 &&\
-    make install &&\
-    cd /build && rm -rf geos
 
 ARG GDALVERSION=3.8.2
 RUN mkdir gdal && cd gdal &&\
@@ -49,7 +28,7 @@ RUN mkdir gdal && cd gdal &&\
 	mkdir -p gdal/build && \
 	tar  xzf gdal.tar.gz -C gdal --strip-components 1 && \
     cd gdal/build && \
- 	cmake .. -DBUILD_TESTING=OFF -DCMAKE_BUILD_TYPE=Release -DGDAL_USE_TIFF_INTERNAL=ON -DGDAL_USE_GEOTIFF_INTERNAL=ON && \
+    cmake .. -DBUILD_TESTING=OFF -DCMAKE_BUILD_TYPE=Release -DGDAL_USE_TIFF_INTERNAL=ON -DGDAL_USE_GEOTIFF_INTERNAL=ON && \
     cmake --build . --target install && \
     ldconfig /usr/local/lib &&\
     cd /build && rm -rf gdal

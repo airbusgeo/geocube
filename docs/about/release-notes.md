@@ -51,6 +51,7 @@
 - Update golang-mod
 - Use google-cloud-go instead of go-genproto package
 - Memory optimisation
+- Dockerfile uses alpine3.21, golang:alpine3.21
 
 
 ## 1.0.2
@@ -74,6 +75,6 @@ consume a lot of local storage)
 - Cancel consolidation tasks took to much time (due to job being saved at every task)
 - Update mod airbusgeo/cogger to fix a crash with overviews
 - If a deletion task failed, the job must be in "DONEBUTUNTIDY" state
-- Dockerfile uses alpine3.17, golane:alpine3.17
+- Dockerfile uses alpine3.17, golang:alpine3.17
 - GRPC message errors are limited to 3Kb
 - Dataset bands were not taken into account during warping
