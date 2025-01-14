@@ -51,6 +51,7 @@
 - Update golang-mod
 - Use google-cloud-go instead of go-genproto package
 - Memory optimisation
+- Refacto MergeDataset, using vrt.
 - Dockerfile uses alpine3.21, golang:alpine3.21
 
 

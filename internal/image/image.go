@@ -59,14 +59,43 @@ var (
 func castDatasetOptions(fromRange geocube.Range, exponent float64, toDFormat geocube.DataFormat) []string {
 	options := []string{
 		"-ot", toDFormat.DType.ToGDAL().String(),
-		"-scale", toS(fromRange.Min), toS(fromRange.Max), toS(toDFormat.Range.Min), toS(toDFormat.Range.Max),
 		"-a_nodata", toS(toDFormat.NoData),
+	}
+	if fromRange.Min != toDFormat.Range.Min || fromRange.Max != toDFormat.Range.Max {
+		options = append(options, "-scale", toS(fromRange.Min), toS(fromRange.Max), toS(toDFormat.Range.Min), toS(toDFormat.Range.Max))
 	}
 	if exponent != 1 {
 		options = append(options, "-exponent", toS(exponent))
 	}
 
 	return options
+}
+
+// ve = f(vi) = RangeExt.Min + (RangeExt.Max - RangeExt.Min) * ((vi - Range.Min)/(Range.Max - Range.Min))^Exponent
+func castValue(vi float64, rin, rext geocube.Range, exponent float64) float64 {
+	return rext.Min + rext.Interval()*math.Pow((vi-rin.Min)/rin.Interval(), exponent)
+}
+
+func castValueBF(vi float64, fromDFormat, toDFormat geocube.DataMapping) float64 {
+	ve := castValue(vi, fromDFormat.Range, fromDFormat.RangeExt, fromDFormat.Exponent)
+	ve = castValue(ve, toDFormat.RangeExt, toDFormat.Range, 1/toDFormat.Exponent)
+	switch toDFormat.DType {
+	case geocube.DTypeUINT8:
+		return math.Min(math.Max(ve, 0), math.MaxUint8)
+	case geocube.DTypeUINT16:
+		return math.Min(math.Max(ve, 0), math.MaxUint16)
+	case geocube.DTypeUINT32:
+		return math.Min(math.Max(ve, 0), math.MaxUint32)
+	case geocube.DTypeINT8:
+		return math.Min(math.Max(ve, math.MinInt8), math.MaxInt8)
+	case geocube.DTypeINT16:
+		return math.Min(math.Max(ve, math.MinInt16), math.MaxInt16)
+	case geocube.DTypeINT32:
+		return math.Min(math.Max(ve, math.MinInt32), math.MaxInt32)
+	case geocube.DTypeFLOAT32:
+		return math.Min(math.Max(ve, -math.MaxFloat32), math.MaxFloat32)
+	}
+	return ve
 }
 
 // CastDatasetOptions returns the translate options to cast fromDFormat toDFormat
@@ -90,9 +119,10 @@ func CastDatasetOptions(fromDFormat, toDFormat geocube.DataMapping) ([]string, e
 				}), nil
 			}
 		*/
-		f := toDFormat.Range.Interval() / toDFormat.RangeExt.Interval()
-		rangeEq := geocube.Range{Min: toDFormat.Range.Min + (fromDFormat.RangeExt.Min-toDFormat.RangeExt.Min)*f}
-		rangeEq.Max = fromDFormat.RangeExt.Interval()*f + rangeEq.Min
+		rangeEq := geocube.Range{
+			Min: castValue(fromDFormat.RangeExt.Min, toDFormat.RangeExt, toDFormat.Range, 1),
+			Max: castValue(fromDFormat.RangeExt.Max, toDFormat.RangeExt, toDFormat.Range, 1)}
+
 		return castDatasetOptions(fromDFormat.Range, fromDFormat.Exponent, geocube.DataFormat{
 			DType:  toDFormat.DType,
 			Range:  rangeEq,
@@ -100,9 +130,10 @@ func CastDatasetOptions(fromDFormat, toDFormat geocube.DataMapping) ([]string, e
 		}), nil
 	}
 	if fromDFormat.Exponent == 1 {
-		f := fromDFormat.Range.Interval() / fromDFormat.RangeExt.Interval()
-		rangeEq := geocube.Range{Min: fromDFormat.Range.Min + (toDFormat.RangeExt.Min-fromDFormat.RangeExt.Min)*f}
-		rangeEq.Max = toDFormat.RangeExt.Interval()*f + rangeEq.Min
+		rangeEq := geocube.Range{
+			Min: castValue(toDFormat.RangeExt.Min, fromDFormat.RangeExt, fromDFormat.Range, 1),
+			Max: castValue(toDFormat.RangeExt.Max, fromDFormat.RangeExt, fromDFormat.Range, 1)}
+
 		return castDatasetOptions(rangeEq, 1/toDFormat.Exponent, toDFormat.DataFormat), nil
 	}
 
@@ -159,10 +190,67 @@ func CastDataset(ctx context.Context, ds *godal.Dataset, bands []int64, fromDFor
 	return outDs, nil
 }
 
-func closeDatasets(datasets *[]*godal.Dataset) {
-	for _, ds := range *datasets {
-		ds.Close()
+// CastFile creates a new dataset as VRT and cast <bands> fromDFormat toDFormat
+// The caller is responsible to close the dataset
+// fromDFormat: NoData is ignored
+// bands: if not nil, extracts the bands
+func CastFile(ctx context.Context, uri string, bands []int64, fromDFormat, toDFormat geocube.DataMapping) (*EphemeralDataset, error) {
+	ds, err := godal.Open(uri, ErrLogger, godal.Shared())
+	if err != nil {
+		return nil, fmt.Errorf("CastFile[%s]: %w", uri, err)
 	}
+
+	// Cast dataset to output format
+	options, err := CastDatasetOptions(fromDFormat, toDFormat)
+	if err != nil && !errors.Is(err, ErrNoCastToPerform) {
+		ds.Close()
+		return nil, err
+	}
+	options = append(options, ExtractBandsOption(ds, bands)...)
+
+	// Translate if necessary
+	if len(options) == 0 {
+		return &EphemeralDataset{ds, ""}, nil
+	}
+
+	turi := "/vsimem/" + uuid.New().String() + ".vrt"
+	tds, err := ds.Translate(turi, options, ErrLogger)
+	ds.Close()
+	if err != nil {
+		return nil, fmt.Errorf("CastFile.Translate[%s] with options [%v]: %w", uri, options, err)
+	}
+	return &EphemeralDataset{tds, turi}, nil
+}
+
+type EphemeralDataset struct {
+	*godal.Dataset
+	URI string
+}
+
+// UnlinkDataset closes and unlinks dataset whether it's a /vsimem or physical uri
+func UnlinkDataset(dataset *godal.Dataset, uri string) error {
+	if dataset != nil {
+		if err := dataset.Close(); err != nil {
+			return err
+		}
+	}
+	return godal.VSIUnlink(uri)
+}
+
+func (ds *EphemeralDataset) Close() error {
+	err := UnlinkDataset(ds.Dataset, ds.URI)
+	ds.Dataset = nil
+	return err
+}
+
+func CloseEphemeralDatasets(ds []EphemeralDataset) error {
+	var errs error
+	for i := len(ds) - 1; i >= 0; i-- {
+		if err := ds[i].Close(); err != nil {
+			errs = utils.MergeErrors(true, errs, err)
+		}
+	}
+	return errs
 }
 
 // MergeDatasets merge the given datasets into one in the format defined by outDesc
@@ -173,53 +261,34 @@ func MergeDatasets(ctx context.Context, datasets []*Dataset, outDesc *GdalDatase
 		return nil, fmt.Errorf("mergeDatasets: no dataset to merge")
 	}
 
-	// Group datasets that share the same DataMapping
-	groupedDatasets := [][]*Dataset{}
-	for _, dataset := range datasets {
-		found := false
-		for i, groupedDs := range groupedDatasets {
-			if dataset.DataMapping.Equals(groupedDs[0].DataMapping) {
-				groupedDatasets[i] = append(groupedDatasets[i], dataset)
-				found = true
-				break
-			}
-		}
-		if !found {
-			groupedDatasets = append(groupedDatasets, []*Dataset{dataset})
-		}
-	}
+	var vrts []EphemeralDataset
+	gdatasets := make([]*godal.Dataset, len(datasets))
 
-	var err error
-	var mergedDatasets []*godal.Dataset
-	defer closeDatasets(&mergedDatasets)
-
-	for _, groupedDs := range groupedDatasets {
-		// Merge Datasets that share the same DataMapping
-		commonDMapping := groupedDs[0].DataMapping
-		mergedDs, err := warpDatasets(groupedDs, outDesc.WktCRS, outDesc.PixToCRS, float64(outDesc.Width), float64(outDesc.Height), outDesc.Resampling, commonDMapping.DataFormat)
-		if err != nil {
-			return nil, fmt.Errorf("mergeDatasets: %w", err)
-		}
-
-		// Convert dataset to outDesc.DataFormat
-		if !commonDMapping.Equals(outDesc.DataMapping) {
-			tmpDS := mergedDs
-			mergedDs, err = CastDataset(ctx, tmpDS, nil, commonDMapping, outDesc.DataMapping, "")
-			tmpDS.Close()
+	defer func() {
+		CloseEphemeralDatasets(vrts)
+	}()
+	for i, dataset := range datasets {
+		dataset := dataset
+		if err := func() error {
+			outDataMapping := outDesc.DataMapping
+			outDataMapping.NoData = castValueBF(dataset.DataMapping.NoData, dataset.DataMapping, outDataMapping)
+			eds, err := CastFile(ctx, dataset.GDALURI(), dataset.Bands, dataset.DataMapping, outDataMapping)
 			if err != nil {
-				return nil, fmt.Errorf("mergeDatasets: %w", err)
+				return fmt.Errorf("MergeDatasets.%w", err)
 			}
-		}
-		mergedDatasets = append(mergedDatasets, mergedDs)
-	}
+			vrts = append(vrts, *eds)
+			gdatasets[i] = eds.Dataset
 
-	// Merge all the datasets together
-	var mergedDs *godal.Dataset
-	if len(mergedDatasets) == 1 {
-		mergedDs = mergedDatasets[0]
-		mergedDatasets = nil // Prevent "defer" for closing mergedDs
-	} else if mergedDs, err = mosaicDatasets(mergedDatasets, outDesc.PixToCRS.Rx(), outDesc.PixToCRS.Ry()); err != nil {
-		return nil, fmt.Errorf("mergeDatasets.%w", err)
+			return nil
+		}(); err != nil {
+			return nil, err
+		}
+	}
+	// Finally, warped all the datasets
+	warpOptions := warpDatasetOptions(outDesc.WktCRS, outDesc.PixToCRS, float64(outDesc.Width), float64(outDesc.Height), outDesc.Resampling, outDesc.DataMapping.DataFormat)
+	mergedDs, err := godal.Warp("", gdatasets, warpOptions, godal.Memory, ErrLogger)
+	if err != nil {
+		return nil, fmt.Errorf("mergeDatasets.Warp[%v]: %w", warpOptions, err)
 	}
 
 	// Test whether image has enough valid pixels
@@ -234,20 +303,6 @@ func MergeDatasets(ctx context.Context, datasets []*Dataset, outDesc *GdalDatase
 	}
 
 	return mergedDs, nil
-}
-
-// mosaicDatasets calls godal.Warp to merge all the datasets into one without reprojection
-// The caller is responsible to close the output dataset
-func mosaicDatasets(datasets []*godal.Dataset, rx, ry float64) (*godal.Dataset, error) {
-	outDs, err := godal.Warp("", datasets, []string{"-tr", toS(rx), toS(ry)}, godal.Memory, ErrLogger)
-	if err != nil {
-		if outDs != nil {
-			outDs.Close()
-		}
-		return nil, fmt.Errorf("failed to mosaic dataset: %w", err)
-	}
-
-	return outDs, nil
 }
 
 // isASuite return true if s = [1, 2, 3, ..., N]
@@ -270,7 +325,6 @@ func warpDatasetOptions(wktCRS string, transform *affine.Affine, width, height f
 		"-wm", "500",
 		"-ot", commonDFormat.DType.ToGDAL().String(),
 		"-r", resampling.String(),
-		"-srcnodata", toS(commonDFormat.NoData),
 		"-nomd",
 		"-multi",
 	}
@@ -317,46 +371,6 @@ func gtiffOptions(blockSizeX, blockSizeY int, creationParams map[string]string, 
 	return append(options, creationOptions(creationParams, false)...)
 }
 
-// warpDatasets calls godal.Warp on datasets, performing a reprojection
-// The caller is responsible to close the output dataset
-func warpDatasets(datasets []*Dataset, wktCRS string, transform *affine.Affine, width, height float64, resampling geocube.Resampling, commonDFormat geocube.DataFormat) (*godal.Dataset, error) {
-
-	gdatasets := make([]*godal.Dataset, len(datasets))
-	for i, dataset := range datasets {
-		var err error
-		uri := dataset.GDALURI()
-		if gdatasets[i], err = godal.Open(uri, ErrLogger); err != nil {
-			return nil, fmt.Errorf("while opening %s: %w", uri, err)
-		}
-		defer gdatasets[i].Close()
-		// Need to extract bands using a vrt
-		if !isASuite(dataset.Bands) || len(gdatasets[i].Bands()) > len(dataset.Bands) {
-			options := []string{}
-			for _, b := range dataset.Bands {
-				options = append(options, "-b", strconv.Itoa(int(b)))
-			}
-			virtualname := "/vsimem/" + uuid.New().String() + ".vrt"
-			if gdatasets[i], err = gdatasets[i].Translate(virtualname, options); err != nil {
-				return nil, fmt.Errorf("while extracting bands of %s: %w", uri, err)
-			}
-			defer func(ds *godal.Dataset) {
-				ds.Close()
-				godal.VSIUnlink(virtualname)
-			}(gdatasets[i])
-		}
-	}
-	options := warpDatasetOptions(wktCRS, transform, width, height, resampling, commonDFormat)
-	outDs, err := godal.Warp("", gdatasets, options, godal.Memory, ErrLogger)
-	if err != nil {
-		if outDs != nil {
-			outDs.Close()
-		}
-		return nil, fmt.Errorf("failed to warp dataset: %w", err)
-	}
-
-	return outDs, nil
-}
-
 // WarpedExtent calls godal.WarpVRT on datasets, performing a reprojection and returning the extent
 func WarpedExtent(ctx context.Context, datasets []*Dataset, wktCRS string, resx, resy float64) ([4]float64, error) {
 	gdatasets := make([]*godal.Dataset, len(datasets))
@@ -380,10 +394,7 @@ func WarpedExtent(ctx context.Context, datasets []*Dataset, wktCRS string, resx,
 		return [4]float64{}, fmt.Errorf("failed to warp dataset: %w", err)
 	}
 
-	defer func() {
-		ds.Close()
-		godal.VSIUnlink(virtualname)
-	}()
+	defer UnlinkDataset(ds, virtualname)
 
 	return ds.Bounds()
 }
@@ -465,10 +476,7 @@ func DatasetToPngAsBytes(ctx context.Context, ds *godal.Dataset, fromDFormat geo
 	if err != nil {
 		return nil, fmt.Errorf("DatasetToPngAsBytes.%w", err)
 	}
-	defer func() {
-		pngDs.Close()
-		godal.VSIUnlink(virtualname)
-	}()
+	defer UnlinkDataset(pngDs, virtualname)
 
 	// Apply palette
 	if palette256 != nil {
@@ -511,10 +519,7 @@ func DatasetToTiffAsBytes(ds *godal.Dataset, fromDFormat geocube.DataMapping, ta
 	if err != nil {
 		return nil, fmt.Errorf("datasetToTiff.Translate: %w", err)
 	}
-	defer func() {
-		tifDs.Close()
-		godal.VSIUnlink(virtualname)
-	}()
+	defer UnlinkDataset(tifDs, virtualname)
 
 	// Apply palette
 	if palette != nil {

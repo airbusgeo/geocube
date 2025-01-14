@@ -2,6 +2,7 @@ package image_test
 
 import (
 	"context"
+	"math"
 	"os"
 	"path"
 
@@ -24,6 +25,16 @@ var DatasetEquals = func(ds *godal.Dataset, wantedDsPath string) {
 	Expect(ds.Structure().SizeY).To(Equal(wantedDs.Structure().SizeY))
 	Expect(ds.Structure().DataType).To(Equal(wantedDs.Structure().DataType))
 	Expect(ds.Structure().NBands).To(Equal(wantedDs.Structure().NBands))
+	for i := 0; i < ds.Structure().NBands; i++ {
+		dsNoData, dsNoDataOk := ds.Bands()[i].NoData()
+		wantedDsNoData, wantedDsNoDataOk := wantedDs.Bands()[i].NoData()
+		Expect(dsNoDataOk).To(Equal(wantedDsNoDataOk))
+		if math.IsNaN(dsNoData) {
+			Expect(math.IsNaN(wantedDsNoData)).To(BeTrue())
+		} else {
+			Expect(dsNoData).To(Equal(wantedDsNoData))
+		}
+	}
 	geo, err := ds.GeoTransform()
 	Expect(err).To(BeNil())
 	wantedGeo, err := wantedDs.GeoTransform()
