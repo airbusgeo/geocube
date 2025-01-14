@@ -1,21 +1,32 @@
 linters:
   enable:
+  - asasalint
   - asciicheck
+  - bidichk
   - bodyclose
-  - depguard
+  - canonicalheader
+  - containedctx
+  - contextcheck
+  - decorder
   - dogsled
   - dupl
+  - dupword
   - durationcheck
+  - err113
   - errcheck
+  - errchkjson
   - errorlint
   - exportloopref
+  - fatcontext
   - forbidigo
   - forcetypeassert
   - gci
+  - ginkgolinter
+  - gocheckcompilerdirectives
   - gochecknoinits
+  - gochecksumtype
   - gocritic
   - godot
-  - goerr113
   - gofmt
   - gofumpt
   - goimports
@@ -24,33 +35,59 @@ linters:
   - goprintffuncname
   - gosec
   - gosimple
+  - gosmopolitan
   - govet
+  - grouper
   - importas
+  - inamedparam
   - ineffassign
+  - interfacebloat
+  - ireturn
+  - loggercheck
   - makezero
+  - mirror
   - misspell
+  - musttag
   - nakedret
   - nilerr
+  - nilnil
   - noctx
   - nolintlint
+  - nosprintfhostport
+  - perfsprint
   - prealloc
   - predeclared
   - promlinter
+  - protogetter
+  - reassign
   - revive
+  - rowserrcheck
+  - sloglint
+  - spancheck
+  - sqlclosecheck
   - staticcheck
   - stylecheck
+  - tagalign
   - tagliatelle
+  - tenv
+  - testableexamples
+  - testifylint
   - thelper
   - tparallel
   - typecheck
   - unconvert
   - unparam
   - unused
+  - usestdlibvars
+  - wastedassign
   - whitespace
+  - zerologlint
   disable:
   - cyclop
+  - depguard
+  - errname # FIXME renaming ErrXxx to XxxError will require a major version bump
   - exhaustive
-  - exhaustivestruct
+  - exhaustruct
   - funlen
   - gochecknoglobals
   - gocognit
@@ -60,13 +97,15 @@ linters:
   - goheader
   - gomnd
   - lll
+  - maintidx
   - nestif
   - nlreturn
+  - nonamedreturns
   - paralleltest
-  - rowserrcheck # https://github.com/golangci/golangci-lint/issues/2649
-  - sqlclosecheck # https://github.com/golangci/golangci-lint/issues/2649
+  - paralleltest
   - testpackage
-  - wastedassign # https://github.com/golangci/golangci-lint/issues/2649
+  - testpackage
+  - varnamelen
   - wrapcheck
   - wsl
 
@@ -78,6 +117,12 @@ linters-settings:
     - prefix(github.com/twpayne/go-geom)
   goimports:
     local-prefixes: github.com/twpayne/go-geom
+  ireturn:
+    allow:
+    - error
+    - stdlib
+    - ^github\.com/twpayne/go-geom\.T$
+    - ^github\.com/twpayne/go-kml/v3\.Element$
 
 issues:
   exclude-rules:
@@ -105,7 +150,7 @@ issues:
     - godot
     path: "^xyz/"
   - linters:
-    - goerr113
+    - err113
     text: "do not define dynamic errors, use wrapped static errors instead"
   - linters:
     - forbidigo

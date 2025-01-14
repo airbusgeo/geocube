@@ -1,4 +1,4 @@
-// Copyright 2023 Google LLC
+// Copyright 2024 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package monitoring
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"math"
 	"net/url"
 	"time"
@@ -31,7 +32,6 @@ import (
 	gtransport "google.golang.org/api/transport/grpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -54,10 +54,13 @@ type ServiceMonitoringCallOptions struct {
 func defaultServiceMonitoringGRPCClientOptions() []option.ClientOption {
 	return []option.ClientOption{
 		internaloption.WithDefaultEndpoint("monitoring.googleapis.com:443"),
+		internaloption.WithDefaultEndpointTemplate("monitoring.UNIVERSE_DOMAIN:443"),
 		internaloption.WithDefaultMTLSEndpoint("monitoring.mtls.googleapis.com:443"),
+		internaloption.WithDefaultUniverseDomain("googleapis.com"),
 		internaloption.WithDefaultAudience("https://monitoring.googleapis.com/"),
 		internaloption.WithDefaultScopes(DefaultAuthScopes()...),
 		internaloption.EnableJwtWithScope(),
+		internaloption.EnableNewAuthLibrary(),
 		option.WithGRPCDialOption(grpc.WithDefaultCallOptions(
 			grpc.MaxCallRecvMsgSize(math.MaxInt32))),
 	}
@@ -173,9 +176,9 @@ type internalServiceMonitoringClient interface {
 // Methods, except Close, may be called concurrently. However, fields must not be modified concurrently with method calls.
 //
 // The Cloud Monitoring Service-Oriented Monitoring API has endpoints for
-// managing and querying aspects of a workspace’s services. These include the
-// Service's monitored resources, its Service-Level Objectives, and a taxonomy
-// of categorized Health Metrics.
+// managing and querying aspects of a Metrics Scope’s services. These include
+// the Service's monitored resources, its Service-Level Objectives, and a
+// taxonomy of categorized Health Metrics.
 type ServiceMonitoringClient struct {
 	// The internal transport-dependent client.
 	internalClient internalServiceMonitoringClient
@@ -217,7 +220,7 @@ func (c *ServiceMonitoringClient) GetService(ctx context.Context, req *monitorin
 	return c.internalClient.GetService(ctx, req, opts...)
 }
 
-// ListServices list Services for this workspace.
+// ListServices list Services for this Metrics Scope.
 func (c *ServiceMonitoringClient) ListServices(ctx context.Context, req *monitoringpb.ListServicesRequest, opts ...gax.CallOption) *ServiceIterator {
 	return c.internalClient.ListServices(ctx, req, opts...)
 }
@@ -271,16 +274,18 @@ type serviceMonitoringGRPCClient struct {
 	serviceMonitoringClient monitoringpb.ServiceMonitoringServiceClient
 
 	// The x-goog-* metadata to be sent with each request.
-	xGoogMetadata metadata.MD
+	xGoogHeaders []string
+
+	logger *slog.Logger
 }
 
 // NewServiceMonitoringClient creates a new service monitoring service client based on gRPC.
 // The returned client must be Closed when it is done being used to clean up its underlying connections.
 //
 // The Cloud Monitoring Service-Oriented Monitoring API has endpoints for
-// managing and querying aspects of a workspace’s services. These include the
-// Service's monitored resources, its Service-Level Objectives, and a taxonomy
-// of categorized Health Metrics.
+// managing and querying aspects of a Metrics Scope’s services. These include
+// the Service's monitored resources, its Service-Level Objectives, and a
+// taxonomy of categorized Health Metrics.
 func NewServiceMonitoringClient(ctx context.Context, opts ...option.ClientOption) (*ServiceMonitoringClient, error) {
 	clientOpts := defaultServiceMonitoringGRPCClientOptions()
 	if newServiceMonitoringClientHook != nil {
@@ -301,6 +306,7 @@ func NewServiceMonitoringClient(ctx context.Context, opts ...option.ClientOption
 		connPool:                connPool,
 		serviceMonitoringClient: monitoringpb.NewServiceMonitoringServiceClient(connPool),
 		CallOptions:             &client.CallOptions,
+		logger:                  internaloption.GetLogger(opts),
 	}
 	c.setGoogleClientInfo()
 
@@ -323,7 +329,9 @@ func (c *serviceMonitoringGRPCClient) Connection() *grpc.ClientConn {
 func (c *serviceMonitoringGRPCClient) setGoogleClientInfo(keyval ...string) {
 	kv := append([]string{"gl-go", gax.GoVersion}, keyval...)
 	kv = append(kv, "gapic", getVersionClient(), "gax", gax.Version, "grpc", grpc.Version)
-	c.xGoogMetadata = metadata.Pairs("x-goog-api-client", gax.XGoogHeader(kv...))
+	c.xGoogHeaders = []string{
+		"x-goog-api-client", gax.XGoogHeader(kv...),
+	}
 }
 
 // Close closes the connection to the API service. The user should invoke this when
@@ -333,14 +341,15 @@ func (c *serviceMonitoringGRPCClient) Close() error {
 }
 
 func (c *serviceMonitoringGRPCClient) CreateService(ctx context.Context, req *monitoringpb.CreateServiceRequest, opts ...gax.CallOption) (*monitoringpb.Service, error) {
-	md := metadata.Pairs("x-goog-request-params", fmt.Sprintf("%s=%v", "parent", url.QueryEscape(req.GetParent())))
+	hds := []string{"x-goog-request-params", fmt.Sprintf("%s=%v", "parent", url.QueryEscape(req.GetParent()))}
 
-	ctx = insertMetadata(ctx, c.xGoogMetadata, md)
+	hds = append(c.xGoogHeaders, hds...)
+	ctx = gax.InsertMetadataIntoOutgoingContext(ctx, hds...)
 	opts = append((*c.CallOptions).CreateService[0:len((*c.CallOptions).CreateService):len((*c.CallOptions).CreateService)], opts...)
 	var resp *monitoringpb.Service
 	err := gax.Invoke(ctx, func(ctx context.Context, settings gax.CallSettings) error {
 		var err error
-		resp, err = c.serviceMonitoringClient.CreateService(ctx, req, settings.GRPC...)
+		resp, err = executeRPC(ctx, c.serviceMonitoringClient.CreateService, req, settings.GRPC, c.logger, "CreateService")
 		return err
 	}, opts...)
 	if err != nil {
@@ -350,14 +359,15 @@ func (c *serviceMonitoringGRPCClient) CreateService(ctx context.Context, req *mo
 }
 
 func (c *serviceMonitoringGRPCClient) GetService(ctx context.Context, req *monitoringpb.GetServiceRequest, opts ...gax.CallOption) (*monitoringpb.Service, error) {
-	md := metadata.Pairs("x-goog-request-params", fmt.Sprintf("%s=%v", "name", url.QueryEscape(req.GetName())))
+	hds := []string{"x-goog-request-params", fmt.Sprintf("%s=%v", "name", url.QueryEscape(req.GetName()))}
 
-	ctx = insertMetadata(ctx, c.xGoogMetadata, md)
+	hds = append(c.xGoogHeaders, hds...)
+	ctx = gax.InsertMetadataIntoOutgoingContext(ctx, hds...)
 	opts = append((*c.CallOptions).GetService[0:len((*c.CallOptions).GetService):len((*c.CallOptions).GetService)], opts...)
 	var resp *monitoringpb.Service
 	err := gax.Invoke(ctx, func(ctx context.Context, settings gax.CallSettings) error {
 		var err error
-		resp, err = c.serviceMonitoringClient.GetService(ctx, req, settings.GRPC...)
+		resp, err = executeRPC(ctx, c.serviceMonitoringClient.GetService, req, settings.GRPC, c.logger, "GetService")
 		return err
 	}, opts...)
 	if err != nil {
@@ -367,9 +377,10 @@ func (c *serviceMonitoringGRPCClient) GetService(ctx context.Context, req *monit
 }
 
 func (c *serviceMonitoringGRPCClient) ListServices(ctx context.Context, req *monitoringpb.ListServicesRequest, opts ...gax.CallOption) *ServiceIterator {
-	md := metadata.Pairs("x-goog-request-params", fmt.Sprintf("%s=%v", "parent", url.QueryEscape(req.GetParent())))
+	hds := []string{"x-goog-request-params", fmt.Sprintf("%s=%v", "parent", url.QueryEscape(req.GetParent()))}
 
-	ctx = insertMetadata(ctx, c.xGoogMetadata, md)
+	hds = append(c.xGoogHeaders, hds...)
+	ctx = gax.InsertMetadataIntoOutgoingContext(ctx, hds...)
 	opts = append((*c.CallOptions).ListServices[0:len((*c.CallOptions).ListServices):len((*c.CallOptions).ListServices)], opts...)
 	it := &ServiceIterator{}
 	req = proto.Clone(req).(*monitoringpb.ListServicesRequest)
@@ -385,7 +396,7 @@ func (c *serviceMonitoringGRPCClient) ListServices(ctx context.Context, req *mon
 		}
 		err := gax.Invoke(ctx, func(ctx context.Context, settings gax.CallSettings) error {
 			var err error
-			resp, err = c.serviceMonitoringClient.ListServices(ctx, req, settings.GRPC...)
+			resp, err = executeRPC(ctx, c.serviceMonitoringClient.ListServices, req, settings.GRPC, c.logger, "ListServices")
 			return err
 		}, opts...)
 		if err != nil {
@@ -412,14 +423,15 @@ func (c *serviceMonitoringGRPCClient) ListServices(ctx context.Context, req *mon
 }
 
 func (c *serviceMonitoringGRPCClient) UpdateService(ctx context.Context, req *monitoringpb.UpdateServiceRequest, opts ...gax.CallOption) (*monitoringpb.Service, error) {
-	md := metadata.Pairs("x-goog-request-params", fmt.Sprintf("%s=%v", "service.name", url.QueryEscape(req.GetService().GetName())))
+	hds := []string{"x-goog-request-params", fmt.Sprintf("%s=%v", "service.name", url.QueryEscape(req.GetService().GetName()))}
 
-	ctx = insertMetadata(ctx, c.xGoogMetadata, md)
+	hds = append(c.xGoogHeaders, hds...)
+	ctx = gax.InsertMetadataIntoOutgoingContext(ctx, hds...)
 	opts = append((*c.CallOptions).UpdateService[0:len((*c.CallOptions).UpdateService):len((*c.CallOptions).UpdateService)], opts...)
 	var resp *monitoringpb.Service
 	err := gax.Invoke(ctx, func(ctx context.Context, settings gax.CallSettings) error {
 		var err error
-		resp, err = c.serviceMonitoringClient.UpdateService(ctx, req, settings.GRPC...)
+		resp, err = executeRPC(ctx, c.serviceMonitoringClient.UpdateService, req, settings.GRPC, c.logger, "UpdateService")
 		return err
 	}, opts...)
 	if err != nil {
@@ -429,27 +441,29 @@ func (c *serviceMonitoringGRPCClient) UpdateService(ctx context.Context, req *mo
 }
 
 func (c *serviceMonitoringGRPCClient) DeleteService(ctx context.Context, req *monitoringpb.DeleteServiceRequest, opts ...gax.CallOption) error {
-	md := metadata.Pairs("x-goog-request-params", fmt.Sprintf("%s=%v", "name", url.QueryEscape(req.GetName())))
+	hds := []string{"x-goog-request-params", fmt.Sprintf("%s=%v", "name", url.QueryEscape(req.GetName()))}
 
-	ctx = insertMetadata(ctx, c.xGoogMetadata, md)
+	hds = append(c.xGoogHeaders, hds...)
+	ctx = gax.InsertMetadataIntoOutgoingContext(ctx, hds...)
 	opts = append((*c.CallOptions).DeleteService[0:len((*c.CallOptions).DeleteService):len((*c.CallOptions).DeleteService)], opts...)
 	err := gax.Invoke(ctx, func(ctx context.Context, settings gax.CallSettings) error {
 		var err error
-		_, err = c.serviceMonitoringClient.DeleteService(ctx, req, settings.GRPC...)
+		_, err = executeRPC(ctx, c.serviceMonitoringClient.DeleteService, req, settings.GRPC, c.logger, "DeleteService")
 		return err
 	}, opts...)
 	return err
 }
 
 func (c *serviceMonitoringGRPCClient) CreateServiceLevelObjective(ctx context.Context, req *monitoringpb.CreateServiceLevelObjectiveRequest, opts ...gax.CallOption) (*monitoringpb.ServiceLevelObjective, error) {
-	md := metadata.Pairs("x-goog-request-params", fmt.Sprintf("%s=%v", "parent", url.QueryEscape(req.GetParent())))
+	hds := []string{"x-goog-request-params", fmt.Sprintf("%s=%v", "parent", url.QueryEscape(req.GetParent()))}
 
-	ctx = insertMetadata(ctx, c.xGoogMetadata, md)
+	hds = append(c.xGoogHeaders, hds...)
+	ctx = gax.InsertMetadataIntoOutgoingContext(ctx, hds...)
 	opts = append((*c.CallOptions).CreateServiceLevelObjective[0:len((*c.CallOptions).CreateServiceLevelObjective):len((*c.CallOptions).CreateServiceLevelObjective)], opts...)
 	var resp *monitoringpb.ServiceLevelObjective
 	err := gax.Invoke(ctx, func(ctx context.Context, settings gax.CallSettings) error {
 		var err error
-		resp, err = c.serviceMonitoringClient.CreateServiceLevelObjective(ctx, req, settings.GRPC...)
+		resp, err = executeRPC(ctx, c.serviceMonitoringClient.CreateServiceLevelObjective, req, settings.GRPC, c.logger, "CreateServiceLevelObjective")
 		return err
 	}, opts...)
 	if err != nil {
@@ -459,14 +473,15 @@ func (c *serviceMonitoringGRPCClient) CreateServiceLevelObjective(ctx context.Co
 }
 
 func (c *serviceMonitoringGRPCClient) GetServiceLevelObjective(ctx context.Context, req *monitoringpb.GetServiceLevelObjectiveRequest, opts ...gax.CallOption) (*monitoringpb.ServiceLevelObjective, error) {
-	md := metadata.Pairs("x-goog-request-params", fmt.Sprintf("%s=%v", "name", url.QueryEscape(req.GetName())))
+	hds := []string{"x-goog-request-params", fmt.Sprintf("%s=%v", "name", url.QueryEscape(req.GetName()))}
 
-	ctx = insertMetadata(ctx, c.xGoogMetadata, md)
+	hds = append(c.xGoogHeaders, hds...)
+	ctx = gax.InsertMetadataIntoOutgoingContext(ctx, hds...)
 	opts = append((*c.CallOptions).GetServiceLevelObjective[0:len((*c.CallOptions).GetServiceLevelObjective):len((*c.CallOptions).GetServiceLevelObjective)], opts...)
 	var resp *monitoringpb.ServiceLevelObjective
 	err := gax.Invoke(ctx, func(ctx context.Context, settings gax.CallSettings) error {
 		var err error
-		resp, err = c.serviceMonitoringClient.GetServiceLevelObjective(ctx, req, settings.GRPC...)
+		resp, err = executeRPC(ctx, c.serviceMonitoringClient.GetServiceLevelObjective, req, settings.GRPC, c.logger, "GetServiceLevelObjective")
 		return err
 	}, opts...)
 	if err != nil {
@@ -476,9 +491,10 @@ func (c *serviceMonitoringGRPCClient) GetServiceLevelObjective(ctx context.Conte
 }
 
 func (c *serviceMonitoringGRPCClient) ListServiceLevelObjectives(ctx context.Context, req *monitoringpb.ListServiceLevelObjectivesRequest, opts ...gax.CallOption) *ServiceLevelObjectiveIterator {
-	md := metadata.Pairs("x-goog-request-params", fmt.Sprintf("%s=%v", "parent", url.QueryEscape(req.GetParent())))
+	hds := []string{"x-goog-request-params", fmt.Sprintf("%s=%v", "parent", url.QueryEscape(req.GetParent()))}
 
-	ctx = insertMetadata(ctx, c.xGoogMetadata, md)
+	hds = append(c.xGoogHeaders, hds...)
+	ctx = gax.InsertMetadataIntoOutgoingContext(ctx, hds...)
 	opts = append((*c.CallOptions).ListServiceLevelObjectives[0:len((*c.CallOptions).ListServiceLevelObjectives):len((*c.CallOptions).ListServiceLevelObjectives)], opts...)
 	it := &ServiceLevelObjectiveIterator{}
 	req = proto.Clone(req).(*monitoringpb.ListServiceLevelObjectivesRequest)
@@ -494,7 +510,7 @@ func (c *serviceMonitoringGRPCClient) ListServiceLevelObjectives(ctx context.Con
 		}
 		err := gax.Invoke(ctx, func(ctx context.Context, settings gax.CallSettings) error {
 			var err error
-			resp, err = c.serviceMonitoringClient.ListServiceLevelObjectives(ctx, req, settings.GRPC...)
+			resp, err = executeRPC(ctx, c.serviceMonitoringClient.ListServiceLevelObjectives, req, settings.GRPC, c.logger, "ListServiceLevelObjectives")
 			return err
 		}, opts...)
 		if err != nil {
@@ -521,14 +537,15 @@ func (c *serviceMonitoringGRPCClient) ListServiceLevelObjectives(ctx context.Con
 }
 
 func (c *serviceMonitoringGRPCClient) UpdateServiceLevelObjective(ctx context.Context, req *monitoringpb.UpdateServiceLevelObjectiveRequest, opts ...gax.CallOption) (*monitoringpb.ServiceLevelObjective, error) {
-	md := metadata.Pairs("x-goog-request-params", fmt.Sprintf("%s=%v", "service_level_objective.name", url.QueryEscape(req.GetServiceLevelObjective().GetName())))
+	hds := []string{"x-goog-request-params", fmt.Sprintf("%s=%v", "service_level_objective.name", url.QueryEscape(req.GetServiceLevelObjective().GetName()))}
 
-	ctx = insertMetadata(ctx, c.xGoogMetadata, md)
+	hds = append(c.xGoogHeaders, hds...)
+	ctx = gax.InsertMetadataIntoOutgoingContext(ctx, hds...)
 	opts = append((*c.CallOptions).UpdateServiceLevelObjective[0:len((*c.CallOptions).UpdateServiceLevelObjective):len((*c.CallOptions).UpdateServiceLevelObjective)], opts...)
 	var resp *monitoringpb.ServiceLevelObjective
 	err := gax.Invoke(ctx, func(ctx context.Context, settings gax.CallSettings) error {
 		var err error
-		resp, err = c.serviceMonitoringClient.UpdateServiceLevelObjective(ctx, req, settings.GRPC...)
+		resp, err = executeRPC(ctx, c.serviceMonitoringClient.UpdateServiceLevelObjective, req, settings.GRPC, c.logger, "UpdateServiceLevelObjective")
 		return err
 	}, opts...)
 	if err != nil {
@@ -538,108 +555,15 @@ func (c *serviceMonitoringGRPCClient) UpdateServiceLevelObjective(ctx context.Co
 }
 
 func (c *serviceMonitoringGRPCClient) DeleteServiceLevelObjective(ctx context.Context, req *monitoringpb.DeleteServiceLevelObjectiveRequest, opts ...gax.CallOption) error {
-	md := metadata.Pairs("x-goog-request-params", fmt.Sprintf("%s=%v", "name", url.QueryEscape(req.GetName())))
+	hds := []string{"x-goog-request-params", fmt.Sprintf("%s=%v", "name", url.QueryEscape(req.GetName()))}
 
-	ctx = insertMetadata(ctx, c.xGoogMetadata, md)
+	hds = append(c.xGoogHeaders, hds...)
+	ctx = gax.InsertMetadataIntoOutgoingContext(ctx, hds...)
 	opts = append((*c.CallOptions).DeleteServiceLevelObjective[0:len((*c.CallOptions).DeleteServiceLevelObjective):len((*c.CallOptions).DeleteServiceLevelObjective)], opts...)
 	err := gax.Invoke(ctx, func(ctx context.Context, settings gax.CallSettings) error {
 		var err error
-		_, err = c.serviceMonitoringClient.DeleteServiceLevelObjective(ctx, req, settings.GRPC...)
+		_, err = executeRPC(ctx, c.serviceMonitoringClient.DeleteServiceLevelObjective, req, settings.GRPC, c.logger, "DeleteServiceLevelObjective")
 		return err
 	}, opts...)
 	return err
-}
-
-// ServiceIterator manages a stream of *monitoringpb.Service.
-type ServiceIterator struct {
-	items    []*monitoringpb.Service
-	pageInfo *iterator.PageInfo
-	nextFunc func() error
-
-	// Response is the raw response for the current page.
-	// It must be cast to the RPC response type.
-	// Calling Next() or InternalFetch() updates this value.
-	Response interface{}
-
-	// InternalFetch is for use by the Google Cloud Libraries only.
-	// It is not part of the stable interface of this package.
-	//
-	// InternalFetch returns results from a single call to the underlying RPC.
-	// The number of results is no greater than pageSize.
-	// If there are no more results, nextPageToken is empty and err is nil.
-	InternalFetch func(pageSize int, pageToken string) (results []*monitoringpb.Service, nextPageToken string, err error)
-}
-
-// PageInfo supports pagination. See the google.golang.org/api/iterator package for details.
-func (it *ServiceIterator) PageInfo() *iterator.PageInfo {
-	return it.pageInfo
-}
-
-// Next returns the next result. Its second return value is iterator.Done if there are no more
-// results. Once Next returns Done, all subsequent calls will return Done.
-func (it *ServiceIterator) Next() (*monitoringpb.Service, error) {
-	var item *monitoringpb.Service
-	if err := it.nextFunc(); err != nil {
-		return item, err
-	}
-	item = it.items[0]
-	it.items = it.items[1:]
-	return item, nil
-}
-
-func (it *ServiceIterator) bufLen() int {
-	return len(it.items)
-}
-
-func (it *ServiceIterator) takeBuf() interface{} {
-	b := it.items
-	it.items = nil
-	return b
-}
-
-// ServiceLevelObjectiveIterator manages a stream of *monitoringpb.ServiceLevelObjective.
-type ServiceLevelObjectiveIterator struct {
-	items    []*monitoringpb.ServiceLevelObjective
-	pageInfo *iterator.PageInfo
-	nextFunc func() error
-
-	// Response is the raw response for the current page.
-	// It must be cast to the RPC response type.
-	// Calling Next() or InternalFetch() updates this value.
-	Response interface{}
-
-	// InternalFetch is for use by the Google Cloud Libraries only.
-	// It is not part of the stable interface of this package.
-	//
-	// InternalFetch returns results from a single call to the underlying RPC.
-	// The number of results is no greater than pageSize.
-	// If there are no more results, nextPageToken is empty and err is nil.
-	InternalFetch func(pageSize int, pageToken string) (results []*monitoringpb.ServiceLevelObjective, nextPageToken string, err error)
-}
-
-// PageInfo supports pagination. See the google.golang.org/api/iterator package for details.
-func (it *ServiceLevelObjectiveIterator) PageInfo() *iterator.PageInfo {
-	return it.pageInfo
-}
-
-// Next returns the next result. Its second return value is iterator.Done if there are no more
-// results. Once Next returns Done, all subsequent calls will return Done.
-func (it *ServiceLevelObjectiveIterator) Next() (*monitoringpb.ServiceLevelObjective, error) {
-	var item *monitoringpb.ServiceLevelObjective
-	if err := it.nextFunc(); err != nil {
-		return item, err
-	}
-	item = it.items[0]
-	it.items = it.items[1:]
-	return item, nil
-}
-
-func (it *ServiceLevelObjectiveIterator) bufLen() int {
-	return len(it.items)
-}
-
-func (it *ServiceLevelObjectiveIterator) takeBuf() interface{} {
-	b := it.items
-	it.items = nil
-	return b
 }

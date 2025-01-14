@@ -99,7 +99,9 @@ func (h *Handler) StreamAt(key string, off int64, n int64) (io.ReadCloser, int64
 		if err != nil {
 			return handleS3ApiError(fmt.Errorf("new reader for s3://%s/%s: %w", bucket, object, err))
 		}
-		size = r.ContentLength
+		if r.ContentLength != nil {
+			size = *r.ContentLength
+		}
 	}
 
 	// GET request to fetch range

@@ -28,7 +28,7 @@ func (e ErrDimensionalityTooLow) Error() string {
 type ErrUnsupportedType string
 
 func (e ErrUnsupportedType) Error() string {
-	return fmt.Sprintf("geojson: unsupported type: %s", string(e))
+	return "geojson: unsupported type: " + string(e)
 }
 
 // CRS is a deprecated field but still populated in some programs (e.g. PostGIS).
@@ -114,7 +114,7 @@ func guessLayout3(coords3 [][][]geom.Coord) (geom.Layout, error) {
 // Decode decodes g to a geometry.
 func (g *Geometry) Decode() (geom.T, error) {
 	if g == nil {
-		return nil, nil
+		return nil, nil //nolint:nilnil
 	}
 	switch g.Type {
 	case "Point":
@@ -313,7 +313,7 @@ func EncodeGeometryWithBBox() EncodeGeometryOption {
 // EncodeGeometryWithCRS adds the crs field to the Geometry GeoJSON encoding.
 func EncodeGeometryWithCRS(crs *CRS) EncodeGeometryOption {
 	return EncodeGeometryOption{
-		onGeometryHandler: func(g *Geometry, t geom.T, opts ...EncodeGeometryOption) error {
+		onGeometryHandler: func(g *Geometry, _ geom.T, _ ...EncodeGeometryOption) error {
 			var err error
 			g.CRS = crs
 			return err
@@ -332,7 +332,7 @@ func EncodeGeometryWithMaxDecimalDigits(maxDecimalDigits int) EncodeGeometryOpti
 // Encode encodes g as a GeoJSON geometry.
 func Encode(g geom.T, opts ...EncodeGeometryOption) (*Geometry, error) {
 	if g == nil {
-		return nil, nil
+		return nil, nil //nolint:nilnil
 	}
 	ret, err := encode(g, opts...)
 	if err != nil {
@@ -351,7 +351,7 @@ func Encode(g geom.T, opts ...EncodeGeometryOption) (*Geometry, error) {
 // encode encodes the geometry assuming it is not nil.
 func encode(g geom.T, opts ...EncodeGeometryOption) (*Geometry, error) {
 	if g == nil {
-		return nil, nil
+		return nil, nil //nolint:nilnil
 	}
 	switch g := g.(type) {
 	case *geom.Point:
@@ -493,18 +493,10 @@ func Marshal(g geom.T, opts ...EncodeGeometryOption) ([]byte, error) {
 
 // Unmarshal unmarshalls a []byte to an arbitrary geometry.
 func Unmarshal(data []byte, g *geom.T) error {
-	if bytes.Equal(data, nullGeometry) {
-		*g = nil
-		return nil
-	}
-	// FIXME The following lint error is suppressed, but there is probably a genuine error here
-	//
-	//nolint:staticcheck
 	gg := &Geometry{}
-	if err := json.Unmarshal(data, gg); err != nil {
+	if err := json.Unmarshal(data, &gg); err != nil {
 		return err
 	}
-	//nolint:staticcheck
 	if gg == nil {
 		*g = nil
 		return nil
