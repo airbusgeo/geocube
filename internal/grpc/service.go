@@ -1,8 +1,6 @@
 package grpc
 
 import (
-	"bytes"
-	"compress/flate"
 	"context"
 	"encoding/binary"
 	"errors"
@@ -107,7 +105,7 @@ func New(gsvc GeocubeService, maxConnectionAgeSec int) *Service {
 }
 
 func newValidationError(desc string) error {
-	return formatError("", geocube.NewValidationError(desc))
+	return formatError("", geocube.NewValidationError("%s", desc))
 }
 
 func _limit_size(s string, size_limit int) string {
@@ -846,6 +844,8 @@ func (svc *Service) prepareGetCube(req *pb.GetCubeRequest) (*cubeInfo, error) {
 
 // GetCube retrieves, rescale and reproject datasets and serves them as a cube
 func (svc *Service) GetCube(req *pb.GetCubeRequest, stream pb.Geocube_GetCubeServer) error {
+	chunkSize := 512 * 1024
+
 	start := time.Now()
 
 	ctx, cancel := context.WithTimeout(stream.Context(), svc.maxConnectionAge*time.Second)
@@ -853,20 +853,16 @@ func (svc *Service) GetCube(req *pb.GetCubeRequest, stream pb.Geocube_GetCubeSer
 		cancel()
 	}()
 
+	// Configure the compression
+	if req.CompressionLevel < -3 || req.CompressionLevel > 9 {
+		return newValidationError("CompressionLevel must be in [-3, 9]")
+	}
+
 	cubeInfo, err := svc.prepareGetCube(req)
 	if err != nil {
 		return err
 	}
 	defer cubeInfo.crs.Close()
-
-	// Configure the compression
-	var deflater *flate.Writer
-	if req.CompressionLevel != -3 {
-		if deflater, err = flate.NewWriter(nil, int(req.CompressionLevel)); err != nil {
-			return newValidationError(err.Error())
-		}
-	}
-
 	// Get the cube
 	var slicesQueue <-chan internal.CubeSlice
 	var info internal.CubeInfo
@@ -923,35 +919,52 @@ func (svc *Service) GetCube(req *pb.GetCubeRequest, stream pb.Geocube_GetCubeSer
 
 	// Start the compression routine
 	compressedSlicesQueue := make(chan internal.CubeSlice)
-	go compressSlicesQueue(slicesQueue, compressedSlicesQueue, deflater)
+	go compressChunksSlicesQueue(ctx, slicesQueue, compressedSlicesQueue, int(req.CompressionLevel), chunkSize)
 
 	// If context close, compressedSlicesQueue is automatically closed
 	n := 1
 	for slice := range compressedSlicesQueue {
-		header, chunks := getCubeCreateResponses(&slice, 64*1024, req.CompressionLevel != -3)
+		header := getCubeCreateHeader(&slice, chunkSize, req.CompressionLevel != -3)
 
 		getCubeLog(ctx, slice, header, req.GetHeadersOnly(), n)
 		n++
 
-		response := []*pb.GetCubeResponse{{Response: &pb.GetCubeResponse_Header{Header: header}}}
-		for _, c := range chunks {
-			response = append(response, &pb.GetCubeResponse{Response: &pb.GetCubeResponse_Chunk{Chunk: c}})
+		// Send header
+		if err := stream.Send(&pb.GetCubeResponse{Response: &pb.GetCubeResponse_Header{Header: header}}); err != nil {
+			return formatError("backend.GetCube.SendHeader%w", err)
 		}
 
-		// Send response
-		for _, r := range response {
-			if err := stream.Send(r); err != nil {
-				return formatError("backend.GetCube.%w", err)
+		// Send chunks
+		for i := int32(1); i < header.NbParts; i++ {
+			if chunk, err := slice.Image.Chunks.Next(chunkSize); err != nil {
+				return formatError("backend.GetCube.SendChunks.%w", err)
+			} else if err := stream.Send(&pb.GetCubeResponse{Response: &pb.GetCubeResponse_Chunk{Chunk: &pb.ImageChunk{Part: i, Data: chunk}}}); err != nil {
+				return formatError("backend.GetCube.SendChunks.%w", err)
+			} else if len(chunk) == 0 && req.ProtocolV11X {
+				break // We can stop here: the client will not listen anymore
 			}
 		}
 	}
 	if req.GetHeadersOnly() {
-		log.Logger(ctx).Sugar().Infof("GetCubeHeader : %d images from %d datasets (%v)\n", info.NbImages, info.NbDatasets, time.Since(start))
+		log.Logger(ctx).Sugar().Infof("GetCubeHeader : %d image(s) from %d dataset(s) (%v)\n", info.NbImages, info.NbDatasets, time.Since(start))
 	} else {
-		log.Logger(ctx).Sugar().Infof("GetCube (%d, %d): %d images from %d datasets in %v (preparation: %v)\n", cubeInfo.width, cubeInfo.height, info.NbImages, info.NbDatasets, time.Since(start), metadataPreparationTime)
+		log.Logger(ctx).Sugar().Infof("GetCube (%d, %d): %d image(s) from %d dataset(s) in %v (preparation: %v)\n", cubeInfo.width, cubeInfo.height, info.NbImages, info.NbDatasets, time.Since(start), metadataPreparationTime)
 	}
 	defer gcs.GetMetrics(ctx)
 	return ctx.Err()
+}
+
+func humanise(d int64) string {
+	if d < 10*1024 {
+		return fmt.Sprintf("%d", d)
+	}
+	if d < 10*1024*1024 {
+		return fmt.Sprintf("%dk", d/1024)
+	}
+	if d < 10*1024*1024*1024 {
+		return fmt.Sprintf("%dM", d/1024/1024)
+	}
+	return fmt.Sprintf("%dG", d/1024/1024/1024)
 }
 
 func getCubeLog(ctx context.Context, slice internal.CubeSlice, header *pb.ImageHeader, headerOnly bool, n int) {
@@ -964,35 +977,52 @@ func getCubeLog(ctx context.Context, slice internal.CubeSlice, header *pb.ImageH
 		}
 
 		shape := header.Shape
-		log.Logger(ctx).Sugar().Debugf("stream image %d %dx%dx%d %dbytes in %d parts %s\n", n, shape.Dim1, shape.Dim2, shape.Dim3, header.Size, header.NbParts, metadata)
+		log.Logger(ctx).Sugar().Debugf("stream image %d %dx%dx%d %sbytes in %d chunks maximum %s\n", n, shape.Dim1, shape.Dim2, shape.Dim3, humanise(header.Size), header.NbParts, metadata)
 	}
 }
 
-func compressSlicesQueue(sliceQueue <-chan internal.CubeSlice, compressedSliceQueue chan<- internal.CubeSlice, deflater *flate.Writer) {
+// ChunkChan implements geocube.ChunkReader and read from a channel
+type ChunkChan struct {
+	length int
+	chunks <-chan utils.ChunkElem
+}
+
+// Next returns the next chunk, whatever the chunksize provided
+func (cc ChunkChan) Next(_ int) ([]byte, error) {
+	chunkElem := <-cc.chunks
+	return chunkElem.Chunk, chunkElem.Err
+}
+
+// Len is usually an over estimation of the final length (as the chunks are compressed...)
+func (cc ChunkChan) Len() int {
+	return cc.length
+}
+
+func (cc ChunkChan) Reset() error {
+	return fmt.Errorf("cannot reset a ChunkChan, it can only be read once")
+}
+
+func compressChunksSlicesQueue(ctx context.Context, sliceQueue <-chan internal.CubeSlice, compressedSliceQueue chan<- internal.CubeSlice, compressionLevel, chunkSize int) {
 	defer close(compressedSliceQueue)
 	for res := range sliceQueue {
-		// Get image
-		if deflater != nil && res.Image != nil && res.Image.Bytes != nil {
-			start := time.Now()
-			// Compress image
-			var compressed bytes.Buffer
-			deflater.Reset(&compressed)
-			if _, err := deflater.Write(res.Image.Bytes); err != nil {
-				res.Err = err
-			} else if err := deflater.Close(); err != nil {
-				res.Err = err
-			} else {
-				res.Image.Bytes = compressed.Bytes()
+		if compressionLevel != -3 && res.Image != nil && res.Image.Chunks != nil {
+			deflater, _ := utils.NewCompressionStreamer(compressionLevel, chunkSize) // compressionLevel is in [-2, 9] => No error
+			res.Image.Chunks = ChunkChan{
+				chunks: deflater.Compress(ctx, res.Image.Chunks),
+				length: res.Image.Chunks.Len(),
 			}
-			res.Metadata["Compression"] = fmt.Sprintf("%v", time.Since(start))
 		}
-		compressedSliceQueue <- res
+
+		select {
+		case <-ctx.Done():
+		case compressedSliceQueue <- res:
+		}
 	}
 }
 
-// getCubeCreateResponses
+// getCubeCreateHeader
 // chunkSize in bytes, 4Mo maximum by default
-func getCubeCreateResponses(slice *internal.CubeSlice, chunkSize int, compression bool) (*pb.ImageHeader, []*pb.ImageChunk) {
+func getCubeCreateHeader(slice *internal.CubeSlice, chunkSize int, compression bool) *pb.ImageHeader {
 	// Create the header
 	header := &pb.ImageHeader{
 		GroupedRecords: &pb.GroupedRecords{Records: make([]*pb.Record, len(slice.Records))},
@@ -1020,34 +1050,29 @@ func getCubeCreateResponses(slice *internal.CubeSlice, chunkSize int, compressio
 		}
 	}
 
-	// Split the image into chunks
-	var chunks []*pb.ImageChunk
 	if slice.Err != nil {
 		// Only send a header with the error
 		header.Error = formatError("backend.GetCube.%w", slice.Err).Error()
-	} else {
-		// Image header
-		header.Shape = &pb.Shape{Dim1: int32(slice.Image.Bands), Dim2: int32(slice.Image.SizeX()), Dim3: int32(slice.Image.SizeY())}
-		header.Dtype = pb.DataFormat_Dtype(slice.Image.DType)
-		header.NbParts = int32((len(slice.Image.Bytes) + chunkSize - 1) / chunkSize)
-		header.Size = int64(len(slice.Image.Bytes))
-		header.Order = pb.ByteOrder_LittleEndian
-		if slice.Image.ByteOrder == binary.BigEndian {
-			header.Order = pb.ByteOrder_BigEndian
-		}
-
-		// Image chunks
-		reader := bytes.NewBuffer(slice.Image.Bytes)
-		header.Data = reader.Next(chunkSize)
-		for part := int32(1); part < header.NbParts; part++ {
-			chunks = append(chunks, &pb.ImageChunk{
-				Part: int32(part),
-				Data: reader.Next(chunkSize),
-			})
-		}
+		return header
 	}
 
-	return header, chunks
+	// Image header
+	header.Shape = &pb.Shape{Dim1: int32(slice.Image.Bands), Dim2: int32(slice.Image.SizeX()), Dim3: int32(slice.Image.SizeY())}
+	header.Dtype = pb.DataFormat_Dtype(slice.Image.DType)
+	header.NbParts = int32((slice.Image.Len() + chunkSize - 1) / chunkSize)
+	header.Size = int64(slice.Image.Len())
+	header.Order = pb.ByteOrder_LittleEndian
+	if slice.Image.ByteOrder == binary.BigEndian {
+		header.Order = pb.ByteOrder_BigEndian
+	}
+	if slice.Image.Chunks != nil {
+		var err error
+		header.Data, err = slice.Image.Chunks.Next(chunkSize)
+		if err != nil {
+			header.Error = formatError("backend.GetCube.%w", err).Error()
+		}
+	}
+	return header
 }
 
 // GetXYZTile TODO

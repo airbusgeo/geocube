@@ -579,7 +579,10 @@ func mergeDatasetsWorker(ctx context.Context, jobs <-chan mergeDatasetJob) {
 				case "GTiff":
 					tags := mergeTags(job.Records)
 					bitmap = geocube.NewBitmapHeader(image.Rect(0, 0, job.OutDesc.Width, job.OutDesc.Height), job.OutDesc.DataMapping.DType, job.OutDesc.Bands)
-					bitmap.Bytes, err = internalImage.DatasetToTiffAsBytes(ds, job.OutDesc.DataMapping, tags, nil)
+					var bytes []byte
+					bytes, err = internalImage.DatasetToTiffAsBytes(ds, job.OutDesc.DataMapping, tags, nil)
+					bitmap.Chunks = &geocube.ByteArray{Bytes: bytes}
+
 				default:
 					bitmap, err = geocube.NewBitmapFromDataset(ds)
 				}

@@ -46,7 +46,11 @@ var DatasetEquals = func(ds *godal.Dataset, wantedDsPath string) {
 	Expect(err).To(BeNil())
 	wantedBmp, err := geocube.NewBitmapFromDataset(wantedDs)
 	Expect(err).To(BeNil())
-	Expect(returnedBmp.Bytes).To(Equal(wantedBmp.Bytes))
+	returnedAllBytes, err := returnedBmp.ReadAllBytes()
+	Expect(err).To(BeNil())
+	wanterAllBytes, err := wantedBmp.ReadAllBytes()
+	Expect(err).To(BeNil())
+	Expect(returnedAllBytes).To(Equal(wanterAllBytes))
 }
 
 var _ = Describe("CastDataset", func() {

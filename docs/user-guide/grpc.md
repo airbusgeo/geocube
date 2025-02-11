@@ -1437,6 +1437,7 @@ Request a cube from metadatas (provided by Geocube.GetCube())
 | size | [Size](#geocube-Size) |  |  |
 | format | [FileFormat](#geocube-FileFormat) |  | Format of the output data |
 | predownload | [bool](#bool) |  | Predownload the datasets before merging them. When the dataset is remote and all the dataset is required, it is more efficient to predownload it. |
+| protocol_v11x | [bool](#bool) |  | For compatibility with older clients. Clients with version above 1.1.0 must set this field to true. |
 
 
 
@@ -1479,6 +1480,7 @@ Request a cube of data
 | headers_only | [bool](#bool) |  | Only returns headers (including all metadatas on datasets) |
 | format | [FileFormat](#geocube-FileFormat) |  | Format of the output images |
 | resampling_alg | [Resampling](#geocube-Resampling) |  | Resampling algorithm used for reprojecion. If undefined, the default resampling algorithm associated to the variable is used. |
+| protocol_v11x | [bool](#bool) |  | For compatibility with older clients. Clients with version above 1.1.0 must set this field to true. |
 
 
 

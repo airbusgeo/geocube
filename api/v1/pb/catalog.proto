@@ -87,6 +87,7 @@ message GetCubeRequest {
     bool            headers_only      = 8; // Only returns headers (including all metadatas on datasets)
     FileFormat      format            = 9; // Format of the output images
     Resampling      resampling_alg    = 10; // Resampling algorithm used for reprojecion. If undefined, the default resampling algorithm associated to the variable is used.
+    bool            protocol_v11x     = 13; // For compatibility with older clients. Clients with version above 1.1.0 must set this field to true.
 }
 
 /**
@@ -125,6 +126,7 @@ message GetCubeMetadataRequest{
   Size                     size            = 7;
   FileFormat               format          = 8; // Format of the output data
   bool                     predownload     = 9; // Predownload the datasets before merging them. When the dataset is remote and all the dataset is required, it is more efficient to predownload it.
+  bool                     protocol_v11x   = 10; // For compatibility with older clients. Clients with version above 1.1.0 must set this field to true.
 }
 
 /**

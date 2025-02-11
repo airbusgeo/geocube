@@ -129,20 +129,22 @@ func (svc *DownloaderService) DownloadCube(req *pb.GetCubeMetadataRequest, strea
 
 	n := 1
 	for slice := range slicesQueue {
-		header, chunks := getCubeCreateResponses(&slice, svc.chunkSizeBytes, false)
+		header := getCubeCreateHeader(&slice, svc.chunkSizeBytes, false)
 
 		getCubeLog(ctx, slice, header, false, n)
 		n++
 
-		responses := []*pb.GetCubeMetadataResponse{{Response: &pb.GetCubeMetadataResponse_Header{Header: header}}}
-		for _, c := range chunks {
-			responses = append(responses, &pb.GetCubeMetadataResponse{Response: &pb.GetCubeMetadataResponse_Chunk{Chunk: c}})
+		// Send header
+		if err := stream.Send(&pb.GetCubeMetadataResponse{Response: &pb.GetCubeMetadataResponse_Header{Header: header}}); err != nil {
+			return formatError("backend.GetCube.SendHeader%w", err)
 		}
 
-		// Send responses
-		for _, r := range responses {
-			if err := stream.Send(r); err != nil {
-				return formatError("GetCube.Send: %w", err)
+		// Send chunks
+		for i := int32(1); i < header.NbParts; i++ {
+			if chunk, err := slice.Image.Chunks.Next(svc.chunkSizeBytes); err != nil {
+				return formatError("backend.GetCube.SendChunks.%w", err)
+			} else if err := stream.Send(&pb.GetCubeMetadataResponse{Response: &pb.GetCubeMetadataResponse_Chunk{Chunk: &pb.ImageChunk{Part: i, Data: chunk}}}); err != nil {
+				return formatError("backend.GetCube.SendChunks.%w", err)
 			}
 		}
 		slice.Image = nil

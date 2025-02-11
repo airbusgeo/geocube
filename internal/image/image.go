@@ -562,7 +562,9 @@ func DatasetToPngAsBytes(ctx context.Context, ds *godal.Dataset, fromDFormat geo
 			return nil, fmt.Errorf("DatasetToPngAsBytes.%w", err)
 		}
 		paletted := image.NewPaletted(bitmap.Rect, palette256)
-		paletted.Pix = bitmap.Bytes
+		if paletted.Pix, err = bitmap.ReadAllBytes(); err != nil {
+			return nil, fmt.Errorf("DatasetToPngAsBytes.%w", err)
+		}
 		b := bytes.Buffer{}
 		if err = png.Encode(&b, paletted); err != nil {
 			return nil, fmt.Errorf("DatasetToPngAsBytes.PngEncode: %w", err)
