@@ -55,7 +55,7 @@ func NewContainerFromConsolidation(oc *ConsolidationContainer) (*Container, erro
 		StorageClass:     oc.StorageClass,
 	}
 	if err = c.validate(); err != nil {
-		return nil, NewValidationError(err.Error())
+		return nil, NewValidationError("%v", err)
 	}
 	return &c, nil
 }
@@ -128,13 +128,21 @@ func (c *Container) AddDataset(d *Dataset) error {
 		return NewValidationError("AddDataset: dataset is not new")
 	}
 
+	bs := utils.JoinInt64(d.Bands, "-")
+	descError := func(reason string) string {
+		return fmt.Sprintf("A dataset %s already refers to the container %s, the subdir '%s' and one of the bands among: %s", reason, c.URI, d.ContainerSubDir, bs)
+	}
+
 	for _, dataset := range c.Datasets {
+		switch dataset.Status {
+		case DatasetStatusTODELETE, DatasetStatusINACTIVE:
+			return NewEntityAlreadyExists("dataset", "status", dataset.Status.String(), descError("with the status "+dataset.Status.String()))
+		}
 		if dataset.ContainerSubDir == d.ContainerSubDir && bandsIntersect(dataset.Bands, d.Bands) {
 			// Check whether it's the same dataset
 			if dataset.identicalTo(d) {
 				return nil
 			}
-			bs := utils.JoinInt64(d.Bands, "-")
 			reason := "which is different"
 			if d.RecordID != dataset.RecordID {
 				reason = "of another record (" + dataset.RecordID + ")"
@@ -151,8 +159,7 @@ func (c *Container) AddDataset(d *Dataset) error {
 			} else if !d.Shape.Equal(&dataset.Shape) {
 				reason = fmt.Sprintf("with different shape (%v != %v)", d.GeomShape.Coords(), dataset.GeomShape.Coords())
 			}
-			return NewEntityAlreadyExists("dataset", "subdir/bands", d.ContainerSubDir+"/"+bs,
-				"A dataset "+reason+" already refers to the container "+c.URI+", the subdir '"+d.ContainerSubDir+"' and one of the bands among: "+bs)
+			return NewEntityAlreadyExists("dataset", "subdir/bands", d.ContainerSubDir+"/"+bs, descError(reason))
 		}
 	}
 
@@ -198,5 +205,5 @@ func ToGcStorageClass(s string) (StorageClass, error) {
 	case "ARCHIVE":
 		return StorageClassDEEPARCHIVE, nil
 	}
-	return StorageClassUNDEFINED, NewValidationError("Unknown storage class: " + s)
+	return StorageClassUNDEFINED, NewValidationError("Unknown storage class: %s", s)
 }

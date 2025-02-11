@@ -42,6 +42,7 @@ func NewValidationError(desc string, a ...interface{}) error {
 }
 
 // NewEntityNotFound creates a new error stating that an entity has not been found
+// The value <id> corresponding to the parameter <KeyID> is linked to the reason why the error is raised
 func NewEntityNotFound(entity, keyID, id, desc string, a ...interface{}) error {
 	if desc == "" {
 		desc = formatEntityWith(entity, keyID, id)
@@ -49,7 +50,8 @@ func NewEntityNotFound(entity, keyID, id, desc string, a ...interface{}) error {
 	return GeocubeError{code: EntityNotFound, desc: fmt.Sprintf(desc, a...), details: []string{entity, keyID, id}}
 }
 
-// NewEntityAlreadyExists creates a new error stating that an entity already exists
+// NewEntityAlreadyExists creates a new error stating that an entity already exists.
+// The value <id> corresponding to the parameter <KeyID> is linked to the reason why the error is raised
 func NewEntityAlreadyExists(entity, keyID, id, desc string, a ...interface{}) error {
 	if desc == "" {
 		desc = formatEntityWith(entity, keyID, id)
@@ -58,6 +60,7 @@ func NewEntityAlreadyExists(entity, keyID, id, desc string, a ...interface{}) er
 }
 
 // NewDependencyStillExists creates a new error stating that a dependency between entity still exists and prevents deletion
+// The value <id> corresponding to the parameter <KeyID> is linked to the reason why the error is raised
 func NewDependencyStillExists(entity1, entity2, keyID, id, desc string, a ...interface{}) error {
 	if desc == "" {
 		if entity2 != "" {

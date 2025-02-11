@@ -270,7 +270,7 @@ func (svc *Service) validateAndSetRemoteDataset(_ context.Context, dataset *geoc
 	datasetURI := dataset.GDALURI()
 	ds, err := godal.Open(datasetURI, image.ErrLogger)
 	if err != nil {
-		return geocube.NewValidationError("%s is not reachable: %v", datasetURI, err)
+		return geocube.NewValidationError("%s cannot be opened: %v", datasetURI, err)
 	}
 	defer ds.Close()
 

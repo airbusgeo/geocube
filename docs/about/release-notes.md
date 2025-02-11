@@ -47,6 +47,7 @@
 - AdminUpdateDataset with RecordIds
 - Better handling of consolidation cancellation
 - CleanJobs does not return all errors
+- Index a dataset with the status INACTIVE or TO_DELETE
 - If nodata != none and lossy compression: use alpha band
 
 ### Others
