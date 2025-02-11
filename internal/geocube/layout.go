@@ -116,7 +116,7 @@ func (l *Layout) Covers(ctx context.Context, aoi *geom.MultiPolygon, removeDupli
 // Do not validate name if ignoreName is true
 func (l *Layout) validate(ignoreName bool) error {
 	if !ignoreName && !isValidURN(l.Name) {
-		return NewValidationError("invalid name: " + l.Name)
+		return NewValidationError("invalid name: %s", l.Name)
 	}
 	if l.BlockXSize <= 0 || l.BlockYSize <= 0 {
 		return NewValidationError("blocksize must be positive")

@@ -79,21 +79,21 @@ func (g *Grid) ToProtobuf() *pb.Grid {
 // validate returns an error if grid has an invalid format
 func (g *Grid) validate() error {
 	if matched, err := regexp.MatchString("^[a-zA-Z0-9-:_]+$", g.Name); err != nil || !matched {
-		return NewValidationError("invalid name: " + g.Name)
+		return NewValidationError("invalid name: %s", g.Name)
 	}
 	lowerName := strings.ToLower(g.Name)
 	for _, name := range gridlib.ReservedNames {
 		if lowerName == name {
-			return NewValidationError("reserved name: " + g.Name)
+			return NewValidationError("reserved name: %s", g.Name)
 		}
 	}
 	cellIds := utils.StringSet{}
 	for _, cell := range g.Cells {
 		if !isValidURN(cell.ID) {
-			return NewValidationError("invalid cell-id: " + cell.ID)
+			return NewValidationError("invalid cell-id: %s", cell.ID)
 		}
 		if cellIds.Exists(cell.ID) {
-			return NewValidationError("Duplicate cell-id: " + cell.ID)
+			return NewValidationError("Duplicate cell-id:%s", cell.ID)
 		}
 		cellIds.Push(cell.ID)
 	}

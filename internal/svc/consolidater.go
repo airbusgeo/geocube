@@ -308,13 +308,13 @@ func (svc *Service) csldPrepareOrders(ctx context.Context, job *geocube.Job) err
 				for _, dataset := range datasets {
 					uri, e := uri.ParseUri(dataset.Event.URI)
 					if e != nil {
-						err = utils.MergeErrors(true, err, fmt.Errorf(dataset.Event.URI+": %w", e))
+						err = utils.MergeErrors(true, err, fmt.Errorf("%s: %w", dataset.Event.URI, e))
 						continue
 					}
 					if exist, e := uri.Exist(ctx); e != nil {
-						err = utils.MergeErrors(true, err, fmt.Errorf(dataset.Event.URI+": %w", e))
+						err = utils.MergeErrors(true, err, fmt.Errorf("%s: %w", dataset.Event.URI, e))
 					} else if !exist {
-						err = utils.MergeErrors(true, err, fmt.Errorf(dataset.Event.URI+" does not exists"))
+						err = utils.MergeErrors(true, err, fmt.Errorf("%s does not exists", dataset.Event.URI))
 					}
 				}
 				if err != nil {
@@ -729,7 +729,7 @@ func (svc *Service) csldSubFncDeletePendingRemoteContainers(ctx context.Context,
 					return fmt.Errorf("DeletePendingRemoteContainers.%w", err)
 				}
 				// The container exists in the database. It is not pending. Issue a warning
-				job.LogMsg(geocube.WARN, "Rollback: RemoteContainer "+container.URI+" is not pending and cannot be deleted.")
+				job.LogMsg(geocube.WARN, fmt.Sprintf("Rollback: RemoteContainer %s is not pending and cannot be deleted.", container.URI))
 				continue
 			}
 			// Physically delete the container

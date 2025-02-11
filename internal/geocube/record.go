@@ -61,7 +61,7 @@ func (aoi *AOI) HashGeometry() (string, error) {
 // Only returns ValidationError
 func NewRecordFromProtobuf(record *pb.NewRecord) (*Record, error) {
 	if err := record.GetTime().CheckValid(); err != nil {
-		return nil, NewValidationError("Invalid time: " + err.Error())
+		return nil, NewValidationError("Invalid time: %v", err)
 	}
 	r := Record{
 		persistenceState: persistenceStateNEW,
@@ -81,7 +81,7 @@ func NewRecordFromProtobuf(record *pb.NewRecord) (*Record, error) {
 // Only returns ValidationError
 func RecordFromProtobuf(record *pb.Record) (*Record, error) {
 	if err := record.GetTime().CheckValid(); err != nil {
-		return nil, NewValidationError("Invalid time: " + err.Error())
+		return nil, NewValidationError("Invalid time: %v", err)
 	}
 	r := Record{
 		persistenceState: persistenceStateCLEAN,
@@ -174,20 +174,20 @@ func (aoi *AOI) ToProtobuf() *pb.AOI {
 // validate returns an error if record has an invalid format
 func (r *Record) validate() error {
 	if _, err := uuid.Parse(r.ID); err != nil {
-		return NewValidationError("Invalid uuid: " + r.ID)
+		return NewValidationError("Invalid uuid: %s", r.ID)
 	}
 
 	if _, err := uuid.Parse(r.AOI.ID); err != nil {
-		return NewValidationError("Invalid AOI uuid: " + r.AOI.ID)
+		return NewValidationError("Invalid AOI uuid: %s", r.AOI.ID)
 	}
 
 	if !r.Name.valid() {
-		return NewValidationError("Invalid Name: " + r.Name.string())
+		return NewValidationError("Invalid Name: %s", r.Name.string())
 	}
 	// Valid tags
 	for k, t := range r.Tags {
 		if strings.ContainsAny(k, "*?") || strings.ContainsAny(t, "*?") {
-			return NewValidationError("Invalid Tag: " + k + ": " + t + ". Cannot contain neither ? or *.")
+			return NewValidationError("Invalid Tag: %s: %s. Cannot contain neither ? or *.", k, t)
 		}
 	}
 	return nil

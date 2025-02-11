@@ -54,7 +54,7 @@ func (p Palette) PaletteN(n int) color.Palette {
 // Validate valids the Palette
 func (p Palette) Validate() error {
 	if !isValidURN(p.Name) {
-		return NewValidationError("Invalid Palette Name: " + p.Name)
+		return NewValidationError("Invalid Palette Name: %s", p.Name)
 	}
 	if len(p.Points) < 2 {
 		return NewValidationError("Invalid Palette Points: Not enough points (%v)", p.Points)

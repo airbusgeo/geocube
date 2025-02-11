@@ -384,7 +384,7 @@ func (j *Job) Trigger(evt JobEvent) error {
 		}
 		return nil
 	}
-	return NewUnhandledEvent("Job " + j.ID + ": Unable to trigger " + evt.Status.String() + " (current state=" + j.State.String() + ")")
+	return NewUnhandledEvent("Job %s: Unable to trigger %v (current state=%v)", j.ID, evt.Status, j.State)
 }
 
 func (j *Job) triggerConsolidation(evt JobEvent) bool {

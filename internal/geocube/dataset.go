@@ -142,7 +142,7 @@ func (d *Dataset) SetShape(shape *geom.MultiPolygon, crsS string) error {
 
 	crs, srid, err := proj.CRSFromUserInput(crsS)
 	if err != nil {
-		return NewValidationError("Invalid Crs: " + crsS)
+		return NewValidationError("Invalid Crs: %s", crsS)
 	}
 
 	defer crs.Close()
@@ -155,11 +155,11 @@ func (d *Dataset) SetShape(shape *geom.MultiPolygon, crsS string) error {
 func (d *Dataset) setGeomGeogShape(crs *godal.SpatialRef) (err error) {
 	d.GeomShape, err = proj.NewGeometricShapeFromShape(d.Shape, crs)
 	if err != nil {
-		return NewValidationError("Invalid crs or bbox: " + err.Error())
+		return NewValidationError("Invalid crs or bbox: %v", err)
 	}
 	d.GeogShape, err = proj.NewGeographicShapeFromShape(d.Shape, crs)
 	if err != nil {
-		return NewValidationError("Invalid crs or bbox: " + err.Error())
+		return NewValidationError("Invalid crs or bbox: %v", err)
 	}
 	return nil
 }
@@ -197,9 +197,8 @@ func (d *Dataset) ValidateWithVariable(v *Variable) error {
 	}
 
 	if d.DataMapping.RangeExt.Min >= v.DFormat.Range.Max || d.DataMapping.RangeExt.Max <= v.DFormat.Range.Min {
-		return NewValidationError(
-			fmt.Sprintf("Range of external values of the dataset [%f,%f] does not intersect the range of values of the variable [%f,%f]",
-				d.DataMapping.RangeExt.Min, d.DataMapping.RangeExt.Max, v.DFormat.Range.Min, v.DFormat.Range.Max))
+		return NewValidationError("Range of external values of the dataset [%f,%f] does not intersect the range of values of the variable [%f,%f]",
+			d.DataMapping.RangeExt.Min, d.DataMapping.RangeExt.Max, v.DFormat.Range.Min, v.DFormat.Range.Max)
 	}
 	return nil
 }
@@ -208,10 +207,10 @@ func (d *Dataset) ValidateWithVariable(v *Variable) error {
 // Only returns ValidationError
 func (d *Dataset) validate() error {
 	if _, err := uuid.Parse(d.RecordID); err != nil {
-		return NewValidationError("Invalid record id: " + d.RecordID)
+		return NewValidationError("Invalid record id: %s", d.RecordID)
 	}
 	if _, err := uuid.Parse(d.InstanceID); err != nil {
-		return NewValidationError("Invalid instance id: " + d.InstanceID)
+		return NewValidationError("Invalid instance id: %s", d.InstanceID)
 	}
 	if err := d.DataMapping.validate(); err != nil {
 		return NewValidationError("Invalid Dataset.DataMapping (%s): %v", d.DataMapping.string(), err)
@@ -231,7 +230,7 @@ func ToStorageClass(s string) (StorageClass, error) {
 	case "ARCHIVE":
 		return StorageClassDEEPARCHIVE, nil
 	}
-	return StorageClassUNDEFINED, NewValidationError("Unknown storage class: " + s)
+	return StorageClassUNDEFINED, NewValidationError("Unknown storage class: %s", s)
 }
 
 // identicalTo compares two datasets and returns true if they are equals with exception of ID, persistentState and Geog/GeomShape (which can be slightly different because of antemeridian crossing)

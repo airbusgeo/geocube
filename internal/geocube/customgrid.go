@@ -57,11 +57,11 @@ func newCustomGrid(ctx context.Context, initializer CustomGridInitializer, flags
 func (cg *CustomGrid) Cell(uri string) (*gridlib.Cell, error) {
 	split := strings.SplitN(uri, "/", 2)
 	if len(split) < 2 {
-		return nil, fmt.Errorf("customGrid.Cell: invalid uri : '" + uri + "' must be CellID/uri")
+		return nil, fmt.Errorf("customGrid.Cell: invalid uri : '%s' must be CellID/uri", uri)
 	}
 	grid, ok := cg.activeSubGrids[split[0]]
 	if !ok {
-		return nil, fmt.Errorf("customGrid.Cell: unknown cell identifier: " + split[0])
+		return nil, fmt.Errorf("customGrid.Cell: unknown cell identifier: %s", split[0])
 	}
 	return grid.Cell(split[1])
 }

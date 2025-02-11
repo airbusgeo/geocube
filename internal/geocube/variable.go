@@ -285,25 +285,25 @@ func (v *Variable) UpdateInstance(instanceID string, name *string, newMetadata m
 
 func (vi *VariableInstance) validate() error {
 	if _, err := uuid.Parse(vi.ID); err != nil {
-		return NewValidationError("Invalid uuid: " + vi.ID)
+		return NewValidationError("Invalid uuid: %s", vi.ID)
 	}
 	if m, err := regexp.MatchString("^[a-zA-Z0-9-:_]+$", vi.Name); err != nil || !m {
-		return NewValidationError("Invalid Name: " + vi.Name)
+		return NewValidationError("Invalid Name: %s", vi.Name)
 	}
 	return nil
 }
 
 func (v *Variable) validate() error {
 	if _, err := uuid.Parse(v.ID); err != nil {
-		return NewValidationError("Invalid uuid: " + v.ID)
+		return NewValidationError("Invalid uuid: %s", v.ID)
 	}
 
 	if !isValidURN(v.Name) {
-		return NewValidationError("Incorrect name: " + v.Name)
+		return NewValidationError("Incorrect name: %s", v.Name)
 	}
 
 	if v.Palette != "" && !isValidURN(v.Palette) {
-		return NewValidationError("Incorrect palette name: " + v.Palette)
+		return NewValidationError("Incorrect palette name: %s", v.Palette)
 	}
 
 	if v.Palette != "" && len(v.Bands) != 1 {
@@ -311,7 +311,7 @@ func (v *Variable) validate() error {
 	}
 
 	if err := v.DFormat.validate(); err != nil {
-		return NewValidationError("Incorrect data format: " + err.Error())
+		return NewValidationError("Incorrect data format: %v", err)
 	}
 
 	if len(v.Bands) == 0 {

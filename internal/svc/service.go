@@ -251,7 +251,7 @@ func (svc *Service) validateRemoteContainer(ctx context.Context, container *geoc
 		// Validate storage class
 		storageClass, err = geocube.ToGcStorageClass(attrs.StorageClass)
 		if err != nil {
-			return geocube.NewValidationError(container.URI + ": " + err.Error())
+			return geocube.NewValidationError("%s: %v", container.URI, err)
 		}
 	}
 
@@ -259,7 +259,7 @@ func (svc *Service) validateRemoteContainer(ctx context.Context, container *geoc
 	if container.StorageClass == geocube.StorageClassUNDEFINED {
 		container.SetStorageClass(storageClass)
 	} else if container.StorageClass != storageClass {
-		return geocube.NewValidationError(container.URI + " has wrong storage class")
+		return geocube.NewValidationError("%s has wrong storage class", container.URI)
 	}
 
 	return nil
