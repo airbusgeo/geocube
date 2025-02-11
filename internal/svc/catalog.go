@@ -90,6 +90,22 @@ func NewSliceMetaFromProtobuf(pbmeta *pb.DatasetMeta) *SliceMeta {
 	return s
 }
 
+// ListDatasets implements GeocubeService
+func (svc *Service) ListDatasets(ctx context.Context, instanceID string, recordsID []string, recordTags geocube.Metadata, fromTime, toTime time.Time) ([]SliceMeta, []*geocube.Record, error) {
+	// Find the datasets that fit
+	datasets, err := svc.db.FindDatasets(ctx, geocube.DatasetStatusACTIVE, nil, "", []string{instanceID}, recordsID, recordTags, fromTime, toTime, nil, nil, 0, 0, true)
+	if err != nil {
+		return nil, nil, fmt.Errorf("GetCubeFromRecords.%w", err)
+	}
+
+	// Group datasets by record
+	datasetsByRecord, records, err := svc.groupDatasetsByRecord(ctx, datasets)
+	if err != nil {
+		return nil, nil, fmt.Errorf("GetCubeFromRecords.%w", err)
+	}
+	return datasetsByRecord, records, nil
+}
+
 // GetCubeFromDatasets implements GeocubeDownloaderService
 // panics if instancesID is empty
 func (svc *Service) GetCubeFromMetadatas(ctx context.Context, metadatas []SliceMeta, grecords [][]*geocube.Record,

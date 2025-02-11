@@ -70,6 +70,25 @@ enum FileFormat{
 }
 
 /**
+  * List Datasets
+  */
+message ListDatasetsRequest {
+    string instance_id = 1; // Instance of a variable defining the kind of datasets requested.
+    oneof records_lister{
+        RecordIdList  records = 2; // List of record ids requested.
+        RecordFilters filters = 3;  // Filters to list the records that will be used to create the cube
+    }
+}
+
+/**
+  * Returns metadata on datasets that match records x instance
+  */
+message ListDatasetsResponse{
+    repeated Record      records       = 1; // List of records
+    repeated DatasetMeta dataset_metas = 2; // For each record, list of the datasets
+}
+
+/**
   * Request a cube of data
   */
 message GetCubeRequest {

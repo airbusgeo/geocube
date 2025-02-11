@@ -56,6 +56,8 @@ type GeocubeClient interface {
 	GetContainers(ctx context.Context, in *GetContainersRequest, opts ...grpc.CallOption) (*GetContainersResponse, error)
 	// Index new datasets in the Geocube
 	IndexDatasets(ctx context.Context, in *IndexDatasetsRequest, opts ...grpc.CallOption) (*IndexDatasetsResponse, error)
+	// List datasets from the Geocube
+	ListDatasets(ctx context.Context, in *ListDatasetsRequest, opts ...grpc.CallOption) (*ListDatasetsResponse, error)
 	// Delete datasets using records, instances and/or filepath
 	DeleteDatasets(ctx context.Context, in *DeleteDatasetsRequest, opts ...grpc.CallOption) (*DeleteDatasetsResponse, error)
 	// Configurate a consolidation process
@@ -342,6 +344,15 @@ func (c *geocubeClient) GetContainers(ctx context.Context, in *GetContainersRequ
 func (c *geocubeClient) IndexDatasets(ctx context.Context, in *IndexDatasetsRequest, opts ...grpc.CallOption) (*IndexDatasetsResponse, error) {
 	out := new(IndexDatasetsResponse)
 	err := c.cc.Invoke(ctx, "/geocube.Geocube/IndexDatasets", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *geocubeClient) ListDatasets(ctx context.Context, in *ListDatasetsRequest, opts ...grpc.CallOption) (*ListDatasetsResponse, error) {
+	out := new(ListDatasetsResponse)
+	err := c.cc.Invoke(ctx, "/geocube.Geocube/ListDatasets", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -673,6 +684,8 @@ type GeocubeServer interface {
 	GetContainers(context.Context, *GetContainersRequest) (*GetContainersResponse, error)
 	// Index new datasets in the Geocube
 	IndexDatasets(context.Context, *IndexDatasetsRequest) (*IndexDatasetsResponse, error)
+	// List datasets from the Geocube
+	ListDatasets(context.Context, *ListDatasetsRequest) (*ListDatasetsResponse, error)
 	// Delete datasets using records, instances and/or filepath
 	DeleteDatasets(context.Context, *DeleteDatasetsRequest) (*DeleteDatasetsResponse, error)
 	// Configurate a consolidation process
@@ -778,6 +791,9 @@ func (UnimplementedGeocubeServer) GetContainers(context.Context, *GetContainersR
 }
 func (UnimplementedGeocubeServer) IndexDatasets(context.Context, *IndexDatasetsRequest) (*IndexDatasetsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method IndexDatasets not implemented")
+}
+func (UnimplementedGeocubeServer) ListDatasets(context.Context, *ListDatasetsRequest) (*ListDatasetsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListDatasets not implemented")
 }
 func (UnimplementedGeocubeServer) DeleteDatasets(context.Context, *DeleteDatasetsRequest) (*DeleteDatasetsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteDatasets not implemented")
@@ -1202,6 +1218,24 @@ func _Geocube_IndexDatasets_Handler(srv interface{}, ctx context.Context, dec fu
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(GeocubeServer).IndexDatasets(ctx, req.(*IndexDatasetsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Geocube_ListDatasets_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListDatasetsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GeocubeServer).ListDatasets(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/geocube.Geocube/ListDatasets",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GeocubeServer).ListDatasets(ctx, req.(*ListDatasetsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1671,6 +1705,10 @@ var Geocube_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "IndexDatasets",
 			Handler:    _Geocube_IndexDatasets_Handler,
+		},
+		{
+			MethodName: "ListDatasets",
+			Handler:    _Geocube_ListDatasets_Handler,
 		},
 		{
 			MethodName: "DeleteDatasets",

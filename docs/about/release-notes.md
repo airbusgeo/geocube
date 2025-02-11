@@ -22,6 +22,7 @@
 - Records: ? and * are not supported anymore for the record tags
 - Support Int8 datatype
 - DeleteDatasets is moved from Admin to Client (retrocompatibility is ensured for previous clients)
+- ListDatasets(records, instance): to list the datasets indexed with the given records and instances
 
 ### Bug fixes
 - CleanJobs: remove DONEBUTUNTIDY

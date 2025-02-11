@@ -98,6 +98,8 @@
     - [ImageChunk](#geocube-ImageChunk)
     - [ImageFile](#geocube-ImageFile)
     - [ImageHeader](#geocube-ImageHeader)
+    - [ListDatasetsRequest](#geocube-ListDatasetsRequest)
+    - [ListDatasetsResponse](#geocube-ListDatasetsResponse)
     - [Shape](#geocube-Shape)
   
     - [ByteOrder](#geocube-ByteOrder)
@@ -215,6 +217,7 @@ Documentation may be detailed in Request/Response sections.
 | CreatePalette | [CreatePaletteRequest](#geocube-CreatePaletteRequest) | [CreatePaletteResponse](#geocube-CreatePaletteResponse) | Create or update a palette that can be used to create a display of a dataset |
 | GetContainers | [GetContainersRequest](#geocube-GetContainersRequest) | [GetContainersResponse](#geocube-GetContainersResponse) | GetInfo on containers |
 | IndexDatasets | [IndexDatasetsRequest](#geocube-IndexDatasetsRequest) | [IndexDatasetsResponse](#geocube-IndexDatasetsResponse) | Index new datasets in the Geocube |
+| ListDatasets | [ListDatasetsRequest](#geocube-ListDatasetsRequest) | [ListDatasetsResponse](#geocube-ListDatasetsResponse) | List datasets from the Geocube |
 | DeleteDatasets | [DeleteDatasetsRequest](#geocube-DeleteDatasetsRequest) | [DeleteDatasetsResponse](#geocube-DeleteDatasetsResponse) | Delete datasets using records, instances and/or filepath |
 | ConfigConsolidation | [ConfigConsolidationRequest](#geocube-ConfigConsolidationRequest) | [ConfigConsolidationResponse](#geocube-ConfigConsolidationResponse) | Configurate a consolidation process |
 | GetConsolidationParams | [GetConsolidationParamsRequest](#geocube-GetConsolidationParamsRequest) | [GetConsolidationParamsResponse](#geocube-GetConsolidationParamsResponse) | Get the configuration of a consolidation |
@@ -1615,6 +1618,39 @@ It describes the image, the underlying datasets and the way to recreate it from 
 | grouped_records | [GroupedRecords](#geocube-GroupedRecords) |  | Group of records used to generate this image |
 | dataset_meta | [DatasetMeta](#geocube-DatasetMeta) |  | All information on the underlying datasets that composed the image |
 | error | [string](#string) |  | If not empty, an error occured and the image was not retrieved. |
+
+
+
+
+
+
+<a name="geocube-ListDatasetsRequest"></a>
+
+### ListDatasetsRequest
+List Datasets
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| instance_id | [string](#string) |  | Instance of a variable defining the kind of datasets requested. |
+| records | [RecordIdList](#geocube-RecordIdList) |  | List of record ids requested. |
+| filters | [RecordFilters](#geocube-RecordFilters) |  | Filters to list the records that will be used to create the cube |
+
+
+
+
+
+
+<a name="geocube-ListDatasetsResponse"></a>
+
+### ListDatasetsResponse
+Returns metadata on datasets that match records x instance
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| records | [Record](#geocube-Record) | repeated | List of records |
+| dataset_metas | [DatasetMeta](#geocube-DatasetMeta) | repeated | For each record, list of the datasets |
 
 
 

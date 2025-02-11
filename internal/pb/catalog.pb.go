@@ -414,6 +414,154 @@ func (x *ImageFile) GetData() []byte {
 }
 
 // *
+// List Datasets
+type ListDatasetsRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	InstanceId string `protobuf:"bytes,1,opt,name=instance_id,json=instanceId,proto3" json:"instance_id,omitempty"` // Instance of a variable defining the kind of datasets requested.
+	// Types that are assignable to RecordsLister:
+	//
+	//	*ListDatasetsRequest_Records
+	//	*ListDatasetsRequest_Filters
+	RecordsLister isListDatasetsRequest_RecordsLister `protobuf_oneof:"records_lister"`
+}
+
+func (x *ListDatasetsRequest) Reset() {
+	*x = ListDatasetsRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_pb_catalog_proto_msgTypes[4]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ListDatasetsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListDatasetsRequest) ProtoMessage() {}
+
+func (x *ListDatasetsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_pb_catalog_proto_msgTypes[4]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListDatasetsRequest.ProtoReflect.Descriptor instead.
+func (*ListDatasetsRequest) Descriptor() ([]byte, []int) {
+	return file_pb_catalog_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *ListDatasetsRequest) GetInstanceId() string {
+	if x != nil {
+		return x.InstanceId
+	}
+	return ""
+}
+
+func (m *ListDatasetsRequest) GetRecordsLister() isListDatasetsRequest_RecordsLister {
+	if m != nil {
+		return m.RecordsLister
+	}
+	return nil
+}
+
+func (x *ListDatasetsRequest) GetRecords() *RecordIdList {
+	if x, ok := x.GetRecordsLister().(*ListDatasetsRequest_Records); ok {
+		return x.Records
+	}
+	return nil
+}
+
+func (x *ListDatasetsRequest) GetFilters() *RecordFilters {
+	if x, ok := x.GetRecordsLister().(*ListDatasetsRequest_Filters); ok {
+		return x.Filters
+	}
+	return nil
+}
+
+type isListDatasetsRequest_RecordsLister interface {
+	isListDatasetsRequest_RecordsLister()
+}
+
+type ListDatasetsRequest_Records struct {
+	Records *RecordIdList `protobuf:"bytes,2,opt,name=records,proto3,oneof"` // List of record ids requested.
+}
+
+type ListDatasetsRequest_Filters struct {
+	Filters *RecordFilters `protobuf:"bytes,3,opt,name=filters,proto3,oneof"` // Filters to list the records that will be used to create the cube
+}
+
+func (*ListDatasetsRequest_Records) isListDatasetsRequest_RecordsLister() {}
+
+func (*ListDatasetsRequest_Filters) isListDatasetsRequest_RecordsLister() {}
+
+// *
+// Returns metadata on datasets that match records x instance
+type ListDatasetsResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Records      []*Record      `protobuf:"bytes,1,rep,name=records,proto3" json:"records,omitempty"`                               // List of records
+	DatasetMetas []*DatasetMeta `protobuf:"bytes,2,rep,name=dataset_metas,json=datasetMetas,proto3" json:"dataset_metas,omitempty"` // For each record, list of the datasets
+}
+
+func (x *ListDatasetsResponse) Reset() {
+	*x = ListDatasetsResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_pb_catalog_proto_msgTypes[5]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ListDatasetsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListDatasetsResponse) ProtoMessage() {}
+
+func (x *ListDatasetsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_pb_catalog_proto_msgTypes[5]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListDatasetsResponse.ProtoReflect.Descriptor instead.
+func (*ListDatasetsResponse) Descriptor() ([]byte, []int) {
+	return file_pb_catalog_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *ListDatasetsResponse) GetRecords() []*Record {
+	if x != nil {
+		return x.Records
+	}
+	return nil
+}
+
+func (x *ListDatasetsResponse) GetDatasetMetas() []*DatasetMeta {
+	if x != nil {
+		return x.DatasetMetas
+	}
+	return nil
+}
+
+// *
 // Request a cube of data
 type GetCubeRequest struct {
 	state         protoimpl.MessageState
@@ -440,7 +588,7 @@ type GetCubeRequest struct {
 func (x *GetCubeRequest) Reset() {
 	*x = GetCubeRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pb_catalog_proto_msgTypes[4]
+		mi := &file_pb_catalog_proto_msgTypes[6]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -453,7 +601,7 @@ func (x *GetCubeRequest) String() string {
 func (*GetCubeRequest) ProtoMessage() {}
 
 func (x *GetCubeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_pb_catalog_proto_msgTypes[4]
+	mi := &file_pb_catalog_proto_msgTypes[6]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -466,7 +614,7 @@ func (x *GetCubeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCubeRequest.ProtoReflect.Descriptor instead.
 func (*GetCubeRequest) Descriptor() ([]byte, []int) {
-	return file_pb_catalog_proto_rawDescGZIP(), []int{4}
+	return file_pb_catalog_proto_rawDescGZIP(), []int{6}
 }
 
 func (m *GetCubeRequest) GetRecordsLister() isGetCubeRequest_RecordsLister {
@@ -600,7 +748,7 @@ type GetCubeResponseHeader struct {
 func (x *GetCubeResponseHeader) Reset() {
 	*x = GetCubeResponseHeader{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pb_catalog_proto_msgTypes[5]
+		mi := &file_pb_catalog_proto_msgTypes[7]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -613,7 +761,7 @@ func (x *GetCubeResponseHeader) String() string {
 func (*GetCubeResponseHeader) ProtoMessage() {}
 
 func (x *GetCubeResponseHeader) ProtoReflect() protoreflect.Message {
-	mi := &file_pb_catalog_proto_msgTypes[5]
+	mi := &file_pb_catalog_proto_msgTypes[7]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -626,7 +774,7 @@ func (x *GetCubeResponseHeader) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCubeResponseHeader.ProtoReflect.Descriptor instead.
 func (*GetCubeResponseHeader) Descriptor() ([]byte, []int) {
-	return file_pb_catalog_proto_rawDescGZIP(), []int{5}
+	return file_pb_catalog_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *GetCubeResponseHeader) GetCount() int64 {
@@ -689,7 +837,7 @@ type GetCubeResponse struct {
 func (x *GetCubeResponse) Reset() {
 	*x = GetCubeResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pb_catalog_proto_msgTypes[6]
+		mi := &file_pb_catalog_proto_msgTypes[8]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -702,7 +850,7 @@ func (x *GetCubeResponse) String() string {
 func (*GetCubeResponse) ProtoMessage() {}
 
 func (x *GetCubeResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_pb_catalog_proto_msgTypes[6]
+	mi := &file_pb_catalog_proto_msgTypes[8]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -715,7 +863,7 @@ func (x *GetCubeResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCubeResponse.ProtoReflect.Descriptor instead.
 func (*GetCubeResponse) Descriptor() ([]byte, []int) {
-	return file_pb_catalog_proto_rawDescGZIP(), []int{6}
+	return file_pb_catalog_proto_rawDescGZIP(), []int{8}
 }
 
 func (m *GetCubeResponse) GetResponse() isGetCubeResponse_Response {
@@ -790,7 +938,7 @@ type GetCubeMetadataRequest struct {
 func (x *GetCubeMetadataRequest) Reset() {
 	*x = GetCubeMetadataRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pb_catalog_proto_msgTypes[7]
+		mi := &file_pb_catalog_proto_msgTypes[9]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -803,7 +951,7 @@ func (x *GetCubeMetadataRequest) String() string {
 func (*GetCubeMetadataRequest) ProtoMessage() {}
 
 func (x *GetCubeMetadataRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_pb_catalog_proto_msgTypes[7]
+	mi := &file_pb_catalog_proto_msgTypes[9]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -816,7 +964,7 @@ func (x *GetCubeMetadataRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCubeMetadataRequest.ProtoReflect.Descriptor instead.
 func (*GetCubeMetadataRequest) Descriptor() ([]byte, []int) {
-	return file_pb_catalog_proto_rawDescGZIP(), []int{7}
+	return file_pb_catalog_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *GetCubeMetadataRequest) GetDatasetsMeta() []*DatasetMeta {
@@ -907,7 +1055,7 @@ type GetCubeMetadataResponse struct {
 func (x *GetCubeMetadataResponse) Reset() {
 	*x = GetCubeMetadataResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pb_catalog_proto_msgTypes[8]
+		mi := &file_pb_catalog_proto_msgTypes[10]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -920,7 +1068,7 @@ func (x *GetCubeMetadataResponse) String() string {
 func (*GetCubeMetadataResponse) ProtoMessage() {}
 
 func (x *GetCubeMetadataResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_pb_catalog_proto_msgTypes[8]
+	mi := &file_pb_catalog_proto_msgTypes[10]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -933,7 +1081,7 @@ func (x *GetCubeMetadataResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCubeMetadataResponse.ProtoReflect.Descriptor instead.
 func (*GetCubeMetadataResponse) Descriptor() ([]byte, []int) {
-	return file_pb_catalog_proto_rawDescGZIP(), []int{8}
+	return file_pb_catalog_proto_rawDescGZIP(), []int{10}
 }
 
 func (m *GetCubeMetadataResponse) GetResponse() isGetCubeMetadataResponse_Response {
@@ -1009,7 +1157,7 @@ type GetTileRequest struct {
 func (x *GetTileRequest) Reset() {
 	*x = GetTileRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pb_catalog_proto_msgTypes[9]
+		mi := &file_pb_catalog_proto_msgTypes[11]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1022,7 +1170,7 @@ func (x *GetTileRequest) String() string {
 func (*GetTileRequest) ProtoMessage() {}
 
 func (x *GetTileRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_pb_catalog_proto_msgTypes[9]
+	mi := &file_pb_catalog_proto_msgTypes[11]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1035,7 +1183,7 @@ func (x *GetTileRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetTileRequest.ProtoReflect.Descriptor instead.
 func (*GetTileRequest) Descriptor() ([]byte, []int) {
-	return file_pb_catalog_proto_rawDescGZIP(), []int{9}
+	return file_pb_catalog_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *GetTileRequest) GetInstanceId() string {
@@ -1130,7 +1278,7 @@ type GetTileResponse struct {
 func (x *GetTileResponse) Reset() {
 	*x = GetTileResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pb_catalog_proto_msgTypes[10]
+		mi := &file_pb_catalog_proto_msgTypes[12]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1143,7 +1291,7 @@ func (x *GetTileResponse) String() string {
 func (*GetTileResponse) ProtoMessage() {}
 
 func (x *GetTileResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_pb_catalog_proto_msgTypes[10]
+	mi := &file_pb_catalog_proto_msgTypes[12]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1156,7 +1304,7 @@ func (x *GetTileResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetTileResponse.ProtoReflect.Descriptor instead.
 func (*GetTileResponse) Descriptor() ([]byte, []int) {
-	return file_pb_catalog_proto_rawDescGZIP(), []int{10}
+	return file_pb_catalog_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *GetTileResponse) GetImage() *ImageFile {
@@ -1211,7 +1359,26 @@ var file_pb_catalog_proto_rawDesc = []byte{
 	0x64, 0x61, 0x74, 0x61, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x04, 0x64, 0x61, 0x74, 0x61,
 	0x22, 0x1f, 0x0a, 0x09, 0x49, 0x6d, 0x61, 0x67, 0x65, 0x46, 0x69, 0x6c, 0x65, 0x12, 0x12, 0x0a,
 	0x04, 0x64, 0x61, 0x74, 0x61, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x04, 0x64, 0x61, 0x74,
-	0x61, 0x22, 0xbe, 0x04, 0x0a, 0x0e, 0x47, 0x65, 0x74, 0x43, 0x75, 0x62, 0x65, 0x52, 0x65, 0x71,
+	0x61, 0x22, 0xaf, 0x01, 0x0a, 0x13, 0x4c, 0x69, 0x73, 0x74, 0x44, 0x61, 0x74, 0x61, 0x73, 0x65,
+	0x74, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x1f, 0x0a, 0x0b, 0x69, 0x6e, 0x73,
+	0x74, 0x61, 0x6e, 0x63, 0x65, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0a,
+	0x69, 0x6e, 0x73, 0x74, 0x61, 0x6e, 0x63, 0x65, 0x49, 0x64, 0x12, 0x31, 0x0a, 0x07, 0x72, 0x65,
+	0x63, 0x6f, 0x72, 0x64, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x15, 0x2e, 0x67, 0x65,
+	0x6f, 0x63, 0x75, 0x62, 0x65, 0x2e, 0x52, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x49, 0x64, 0x4c, 0x69,
+	0x73, 0x74, 0x48, 0x00, 0x52, 0x07, 0x72, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x73, 0x12, 0x32, 0x0a,
+	0x07, 0x66, 0x69, 0x6c, 0x74, 0x65, 0x72, 0x73, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x16,
+	0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75, 0x62, 0x65, 0x2e, 0x52, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x46,
+	0x69, 0x6c, 0x74, 0x65, 0x72, 0x73, 0x48, 0x00, 0x52, 0x07, 0x66, 0x69, 0x6c, 0x74, 0x65, 0x72,
+	0x73, 0x42, 0x10, 0x0a, 0x0e, 0x72, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x73, 0x5f, 0x6c, 0x69, 0x73,
+	0x74, 0x65, 0x72, 0x22, 0x7c, 0x0a, 0x14, 0x4c, 0x69, 0x73, 0x74, 0x44, 0x61, 0x74, 0x61, 0x73,
+	0x65, 0x74, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x29, 0x0a, 0x07, 0x72,
+	0x65, 0x63, 0x6f, 0x72, 0x64, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x0f, 0x2e, 0x67,
+	0x65, 0x6f, 0x63, 0x75, 0x62, 0x65, 0x2e, 0x52, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x52, 0x07, 0x72,
+	0x65, 0x63, 0x6f, 0x72, 0x64, 0x73, 0x12, 0x39, 0x0a, 0x0d, 0x64, 0x61, 0x74, 0x61, 0x73, 0x65,
+	0x74, 0x5f, 0x6d, 0x65, 0x74, 0x61, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x14, 0x2e,
+	0x67, 0x65, 0x6f, 0x63, 0x75, 0x62, 0x65, 0x2e, 0x44, 0x61, 0x74, 0x61, 0x73, 0x65, 0x74, 0x4d,
+	0x65, 0x74, 0x61, 0x52, 0x0c, 0x64, 0x61, 0x74, 0x61, 0x73, 0x65, 0x74, 0x4d, 0x65, 0x74, 0x61,
+	0x73, 0x22, 0xbe, 0x04, 0x0a, 0x0e, 0x47, 0x65, 0x74, 0x43, 0x75, 0x62, 0x65, 0x52, 0x65, 0x71,
 	0x75, 0x65, 0x73, 0x74, 0x12, 0x31, 0x0a, 0x07, 0x72, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x73, 0x18,
 	0x0b, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x15, 0x2e, 0x67, 0x65, 0x6f, 0x63, 0x75, 0x62, 0x65, 0x2e,
 	0x52, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x49, 0x64, 0x4c, 0x69, 0x73, 0x74, 0x48, 0x00, 0x52, 0x07,
@@ -1361,7 +1528,7 @@ func file_pb_catalog_proto_rawDescGZIP() []byte {
 }
 
 var file_pb_catalog_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_pb_catalog_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
+var file_pb_catalog_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_pb_catalog_proto_goTypes = []interface{}{
 	(ByteOrder)(0),                  // 0: geocube.ByteOrder
 	(FileFormat)(0),                 // 1: geocube.FileFormat
@@ -1369,62 +1536,69 @@ var file_pb_catalog_proto_goTypes = []interface{}{
 	(*ImageHeader)(nil),             // 3: geocube.ImageHeader
 	(*ImageChunk)(nil),              // 4: geocube.ImageChunk
 	(*ImageFile)(nil),               // 5: geocube.ImageFile
-	(*GetCubeRequest)(nil),          // 6: geocube.GetCubeRequest
-	(*GetCubeResponseHeader)(nil),   // 7: geocube.GetCubeResponseHeader
-	(*GetCubeResponse)(nil),         // 8: geocube.GetCubeResponse
-	(*GetCubeMetadataRequest)(nil),  // 9: geocube.GetCubeMetadataRequest
-	(*GetCubeMetadataResponse)(nil), // 10: geocube.GetCubeMetadataResponse
-	(*GetTileRequest)(nil),          // 11: geocube.GetTileRequest
-	(*GetTileResponse)(nil),         // 12: geocube.GetTileResponse
-	(DataFormat_Dtype)(0),           // 13: geocube.DataFormat.Dtype
-	(*GroupedRecords)(nil),          // 14: geocube.GroupedRecords
-	(*DatasetMeta)(nil),             // 15: geocube.DatasetMeta
-	(*RecordIdList)(nil),            // 16: geocube.RecordIdList
-	(*RecordFilters)(nil),           // 17: geocube.RecordFilters
-	(*GroupedRecordIdsList)(nil),    // 18: geocube.GroupedRecordIdsList
-	(*GeoTransform)(nil),            // 19: geocube.GeoTransform
-	(*Size)(nil),                    // 20: geocube.Size
-	(Resampling)(0),                 // 21: geocube.Resampling
-	(*DataFormat)(nil),              // 22: geocube.DataFormat
-	(*GroupedRecordIds)(nil),        // 23: geocube.GroupedRecordIds
+	(*ListDatasetsRequest)(nil),     // 6: geocube.ListDatasetsRequest
+	(*ListDatasetsResponse)(nil),    // 7: geocube.ListDatasetsResponse
+	(*GetCubeRequest)(nil),          // 8: geocube.GetCubeRequest
+	(*GetCubeResponseHeader)(nil),   // 9: geocube.GetCubeResponseHeader
+	(*GetCubeResponse)(nil),         // 10: geocube.GetCubeResponse
+	(*GetCubeMetadataRequest)(nil),  // 11: geocube.GetCubeMetadataRequest
+	(*GetCubeMetadataResponse)(nil), // 12: geocube.GetCubeMetadataResponse
+	(*GetTileRequest)(nil),          // 13: geocube.GetTileRequest
+	(*GetTileResponse)(nil),         // 14: geocube.GetTileResponse
+	(DataFormat_Dtype)(0),           // 15: geocube.DataFormat.Dtype
+	(*GroupedRecords)(nil),          // 16: geocube.GroupedRecords
+	(*DatasetMeta)(nil),             // 17: geocube.DatasetMeta
+	(*RecordIdList)(nil),            // 18: geocube.RecordIdList
+	(*RecordFilters)(nil),           // 19: geocube.RecordFilters
+	(*Record)(nil),                  // 20: geocube.Record
+	(*GroupedRecordIdsList)(nil),    // 21: geocube.GroupedRecordIdsList
+	(*GeoTransform)(nil),            // 22: geocube.GeoTransform
+	(*Size)(nil),                    // 23: geocube.Size
+	(Resampling)(0),                 // 24: geocube.Resampling
+	(*DataFormat)(nil),              // 25: geocube.DataFormat
+	(*GroupedRecordIds)(nil),        // 26: geocube.GroupedRecordIds
 }
 var file_pb_catalog_proto_depIdxs = []int32{
 	2,  // 0: geocube.ImageHeader.shape:type_name -> geocube.Shape
-	13, // 1: geocube.ImageHeader.dtype:type_name -> geocube.DataFormat.Dtype
+	15, // 1: geocube.ImageHeader.dtype:type_name -> geocube.DataFormat.Dtype
 	0,  // 2: geocube.ImageHeader.order:type_name -> geocube.ByteOrder
-	14, // 3: geocube.ImageHeader.grouped_records:type_name -> geocube.GroupedRecords
-	15, // 4: geocube.ImageHeader.dataset_meta:type_name -> geocube.DatasetMeta
-	16, // 5: geocube.GetCubeRequest.records:type_name -> geocube.RecordIdList
-	17, // 6: geocube.GetCubeRequest.filters:type_name -> geocube.RecordFilters
-	18, // 7: geocube.GetCubeRequest.grouped_records:type_name -> geocube.GroupedRecordIdsList
-	19, // 8: geocube.GetCubeRequest.pix_to_crs:type_name -> geocube.GeoTransform
-	20, // 9: geocube.GetCubeRequest.size:type_name -> geocube.Size
-	1,  // 10: geocube.GetCubeRequest.format:type_name -> geocube.FileFormat
-	21, // 11: geocube.GetCubeRequest.resampling_alg:type_name -> geocube.Resampling
-	22, // 12: geocube.GetCubeResponseHeader.ref_dformat:type_name -> geocube.DataFormat
-	21, // 13: geocube.GetCubeResponseHeader.resampling_alg:type_name -> geocube.Resampling
-	19, // 14: geocube.GetCubeResponseHeader.geotransform:type_name -> geocube.GeoTransform
-	7,  // 15: geocube.GetCubeResponse.global_header:type_name -> geocube.GetCubeResponseHeader
-	3,  // 16: geocube.GetCubeResponse.header:type_name -> geocube.ImageHeader
-	4,  // 17: geocube.GetCubeResponse.chunk:type_name -> geocube.ImageChunk
-	15, // 18: geocube.GetCubeMetadataRequest.datasets_meta:type_name -> geocube.DatasetMeta
-	14, // 19: geocube.GetCubeMetadataRequest.grouped_records:type_name -> geocube.GroupedRecords
-	22, // 20: geocube.GetCubeMetadataRequest.ref_dformat:type_name -> geocube.DataFormat
-	21, // 21: geocube.GetCubeMetadataRequest.resampling_alg:type_name -> geocube.Resampling
-	19, // 22: geocube.GetCubeMetadataRequest.pix_to_crs:type_name -> geocube.GeoTransform
-	20, // 23: geocube.GetCubeMetadataRequest.size:type_name -> geocube.Size
-	1,  // 24: geocube.GetCubeMetadataRequest.format:type_name -> geocube.FileFormat
-	7,  // 25: geocube.GetCubeMetadataResponse.global_header:type_name -> geocube.GetCubeResponseHeader
-	3,  // 26: geocube.GetCubeMetadataResponse.header:type_name -> geocube.ImageHeader
-	4,  // 27: geocube.GetCubeMetadataResponse.chunk:type_name -> geocube.ImageChunk
-	23, // 28: geocube.GetTileRequest.records:type_name -> geocube.GroupedRecordIds
-	17, // 29: geocube.GetTileRequest.filters:type_name -> geocube.RecordFilters
-	5,  // 30: geocube.GetTileResponse.image:type_name -> geocube.ImageFile
-	31, // [31:31] is the sub-list for method output_type
-	31, // [31:31] is the sub-list for method input_type
-	31, // [31:31] is the sub-list for extension type_name
-	31, // [31:31] is the sub-list for extension extendee
-	0,  // [0:31] is the sub-list for field type_name
+	16, // 3: geocube.ImageHeader.grouped_records:type_name -> geocube.GroupedRecords
+	17, // 4: geocube.ImageHeader.dataset_meta:type_name -> geocube.DatasetMeta
+	18, // 5: geocube.ListDatasetsRequest.records:type_name -> geocube.RecordIdList
+	19, // 6: geocube.ListDatasetsRequest.filters:type_name -> geocube.RecordFilters
+	20, // 7: geocube.ListDatasetsResponse.records:type_name -> geocube.Record
+	17, // 8: geocube.ListDatasetsResponse.dataset_metas:type_name -> geocube.DatasetMeta
+	18, // 9: geocube.GetCubeRequest.records:type_name -> geocube.RecordIdList
+	19, // 10: geocube.GetCubeRequest.filters:type_name -> geocube.RecordFilters
+	21, // 11: geocube.GetCubeRequest.grouped_records:type_name -> geocube.GroupedRecordIdsList
+	22, // 12: geocube.GetCubeRequest.pix_to_crs:type_name -> geocube.GeoTransform
+	23, // 13: geocube.GetCubeRequest.size:type_name -> geocube.Size
+	1,  // 14: geocube.GetCubeRequest.format:type_name -> geocube.FileFormat
+	24, // 15: geocube.GetCubeRequest.resampling_alg:type_name -> geocube.Resampling
+	25, // 16: geocube.GetCubeResponseHeader.ref_dformat:type_name -> geocube.DataFormat
+	24, // 17: geocube.GetCubeResponseHeader.resampling_alg:type_name -> geocube.Resampling
+	22, // 18: geocube.GetCubeResponseHeader.geotransform:type_name -> geocube.GeoTransform
+	9,  // 19: geocube.GetCubeResponse.global_header:type_name -> geocube.GetCubeResponseHeader
+	3,  // 20: geocube.GetCubeResponse.header:type_name -> geocube.ImageHeader
+	4,  // 21: geocube.GetCubeResponse.chunk:type_name -> geocube.ImageChunk
+	17, // 22: geocube.GetCubeMetadataRequest.datasets_meta:type_name -> geocube.DatasetMeta
+	16, // 23: geocube.GetCubeMetadataRequest.grouped_records:type_name -> geocube.GroupedRecords
+	25, // 24: geocube.GetCubeMetadataRequest.ref_dformat:type_name -> geocube.DataFormat
+	24, // 25: geocube.GetCubeMetadataRequest.resampling_alg:type_name -> geocube.Resampling
+	22, // 26: geocube.GetCubeMetadataRequest.pix_to_crs:type_name -> geocube.GeoTransform
+	23, // 27: geocube.GetCubeMetadataRequest.size:type_name -> geocube.Size
+	1,  // 28: geocube.GetCubeMetadataRequest.format:type_name -> geocube.FileFormat
+	9,  // 29: geocube.GetCubeMetadataResponse.global_header:type_name -> geocube.GetCubeResponseHeader
+	3,  // 30: geocube.GetCubeMetadataResponse.header:type_name -> geocube.ImageHeader
+	4,  // 31: geocube.GetCubeMetadataResponse.chunk:type_name -> geocube.ImageChunk
+	26, // 32: geocube.GetTileRequest.records:type_name -> geocube.GroupedRecordIds
+	19, // 33: geocube.GetTileRequest.filters:type_name -> geocube.RecordFilters
+	5,  // 34: geocube.GetTileResponse.image:type_name -> geocube.ImageFile
+	35, // [35:35] is the sub-list for method output_type
+	35, // [35:35] is the sub-list for method input_type
+	35, // [35:35] is the sub-list for extension type_name
+	35, // [35:35] is the sub-list for extension extendee
+	0,  // [0:35] is the sub-list for field type_name
 }
 
 func init() { file_pb_catalog_proto_init() }
@@ -1487,7 +1661,7 @@ func file_pb_catalog_proto_init() {
 			}
 		}
 		file_pb_catalog_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetCubeRequest); i {
+			switch v := v.(*ListDatasetsRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1499,7 +1673,7 @@ func file_pb_catalog_proto_init() {
 			}
 		}
 		file_pb_catalog_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetCubeResponseHeader); i {
+			switch v := v.(*ListDatasetsResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1511,7 +1685,7 @@ func file_pb_catalog_proto_init() {
 			}
 		}
 		file_pb_catalog_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetCubeResponse); i {
+			switch v := v.(*GetCubeRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1523,7 +1697,7 @@ func file_pb_catalog_proto_init() {
 			}
 		}
 		file_pb_catalog_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetCubeMetadataRequest); i {
+			switch v := v.(*GetCubeResponseHeader); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1535,7 +1709,7 @@ func file_pb_catalog_proto_init() {
 			}
 		}
 		file_pb_catalog_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetCubeMetadataResponse); i {
+			switch v := v.(*GetCubeResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1547,7 +1721,7 @@ func file_pb_catalog_proto_init() {
 			}
 		}
 		file_pb_catalog_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetTileRequest); i {
+			switch v := v.(*GetCubeMetadataRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1559,6 +1733,30 @@ func file_pb_catalog_proto_init() {
 			}
 		}
 		file_pb_catalog_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*GetCubeMetadataResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_pb_catalog_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*GetTileRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_pb_catalog_proto_msgTypes[12].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*GetTileResponse); i {
 			case 0:
 				return &v.state
@@ -1572,21 +1770,25 @@ func file_pb_catalog_proto_init() {
 		}
 	}
 	file_pb_catalog_proto_msgTypes[4].OneofWrappers = []interface{}{
+		(*ListDatasetsRequest_Records)(nil),
+		(*ListDatasetsRequest_Filters)(nil),
+	}
+	file_pb_catalog_proto_msgTypes[6].OneofWrappers = []interface{}{
 		(*GetCubeRequest_Records)(nil),
 		(*GetCubeRequest_Filters)(nil),
 		(*GetCubeRequest_GroupedRecords)(nil),
 	}
-	file_pb_catalog_proto_msgTypes[6].OneofWrappers = []interface{}{
+	file_pb_catalog_proto_msgTypes[8].OneofWrappers = []interface{}{
 		(*GetCubeResponse_GlobalHeader)(nil),
 		(*GetCubeResponse_Header)(nil),
 		(*GetCubeResponse_Chunk)(nil),
 	}
-	file_pb_catalog_proto_msgTypes[8].OneofWrappers = []interface{}{
+	file_pb_catalog_proto_msgTypes[10].OneofWrappers = []interface{}{
 		(*GetCubeMetadataResponse_GlobalHeader)(nil),
 		(*GetCubeMetadataResponse_Header)(nil),
 		(*GetCubeMetadataResponse_Chunk)(nil),
 	}
-	file_pb_catalog_proto_msgTypes[9].OneofWrappers = []interface{}{
+	file_pb_catalog_proto_msgTypes[11].OneofWrappers = []interface{}{
 		(*GetTileRequest_Records)(nil),
 		(*GetTileRequest_Filters)(nil),
 	}
@@ -1596,7 +1798,7 @@ func file_pb_catalog_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_pb_catalog_proto_rawDesc,
 			NumEnums:      2,
-			NumMessages:   11,
+			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

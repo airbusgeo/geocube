@@ -62,6 +62,7 @@ type GeocubeService interface {
 	// Index datasets that are not fully known. Checks that the container is reachable and get some missing informations.
 	GetContainers(ctx context.Context, containerUris []string) ([]*geocube.Container, error)
 	IndexExternalDatasets(ctx context.Context, container *geocube.Container, datasets []*geocube.Dataset) error
+	ListDatasets(ctx context.Context, instanceID string, recordsID []string, recordTags geocube.Metadata, fromTime, toTime time.Time) ([]internal.SliceMeta, []*geocube.Record, error)
 	DeleteDatasets(ctx context.Context, jobName string, instanceIDs, recordIDs, datasetPatterns []string, executionLevel geocube.ExecutionLevel) (*geocube.Job, error)
 	ConfigConsolidation(ctx context.Context, variableID string, params geocube.ConsolidationParams) error
 	GetConsolidationParams(ctx context.Context, ID string) (*geocube.ConsolidationParams, error)
@@ -560,6 +561,34 @@ func (svc *Service) IndexDatasets(ctx context.Context, req *pb.IndexDatasetsRequ
 	}
 
 	return &pb.IndexDatasetsResponse{}, nil
+}
+
+// ListDatasets retrieves datasets given records & instance
+func (svc *Service) ListDatasets(ctx context.Context, req *pb.ListDatasetsRequest) (*pb.ListDatasetsResponse, error) {
+	filters := req.GetFilters()
+	// Convert times
+	fromTime := timeFromTimestamp(filters.GetFromTime())
+	toTime := timeFromTimestamp(filters.GetToTime())
+	metadata, records, err := svc.gsvc.ListDatasets(ctx,
+		req.InstanceId,
+		req.GetRecords().GetIds(), // Either records id or tags/fromTime/toTime is nil
+		filters.GetTags(),
+		fromTime,
+		toTime)
+	if err != nil {
+		return &pb.ListDatasetsResponse{}, formatError("backend.%w", err)
+	}
+
+	response := pb.ListDatasetsResponse{
+		Records:      make([]*pb.Record, len(records)),
+		DatasetMetas: make([]*pb.DatasetMeta, len(records)),
+	}
+	for i, record := range records {
+		response.Records[i] = record.ToProtobuf(false)
+		response.DatasetMetas[i] = metadata[i].ToProtobuf()
+	}
+
+	return &response, nil
 }
 
 // DeleteDatasets by record, instances and/or filepath

@@ -61,6 +61,8 @@ service Geocube {
     rpc GetContainers(GetContainersRequest)                   returns (GetContainersResponse) {}
     // Index new datasets in the Geocube
     rpc IndexDatasets(IndexDatasetsRequest)                   returns (IndexDatasetsResponse) {}
+    // List datasets from the Geocube
+    rpc ListDatasets(ListDatasetsRequest)                     returns (ListDatasetsResponse) {}
     // Delete datasets using records, instances and/or filepath
     rpc DeleteDatasets(DeleteDatasetsRequest)                 returns (DeleteDatasetsResponse){}
     // Configurate a consolidation process
