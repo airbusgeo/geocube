@@ -1,4 +1,4 @@
-package geocube
+package bitmap
 
 import (
 	"encoding/binary"

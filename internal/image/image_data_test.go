@@ -4,6 +4,7 @@ import (
 	"math"
 
 	"github.com/airbusgeo/geocube/internal/geocube"
+	"github.com/airbusgeo/geocube/internal/utils/bitmap"
 )
 
 var (
@@ -28,7 +29,7 @@ var (
 
 	imageDFormatFloat32NoData0 = geocube.DataMapping{
 		DataFormat: geocube.DataFormat{
-			DType:  geocube.DTypeFLOAT32,
+			DType:  bitmap.DTypeFLOAT32,
 			NoData: 0,
 			Range:  geocube.Range{Min: 0, Max: 1},
 		},
@@ -38,7 +39,7 @@ var (
 	imagesDFormat = []geocube.DataMapping{
 		{
 			DataFormat: geocube.DataFormat{
-				DType:  geocube.DTypeINT16,
+				DType:  bitmap.DTypeINT16,
 				NoData: -10001,
 				Range:  geocube.Range{Min: -10000, Max: 10000},
 			},
@@ -47,7 +48,7 @@ var (
 		},
 		{
 			DataFormat: geocube.DataFormat{
-				DType:  geocube.DTypeFLOAT32,
+				DType:  bitmap.DTypeFLOAT32,
 				NoData: math.NaN(),
 				Range:  geocube.Range{Min: -1, Max: 1},
 			},
@@ -56,7 +57,7 @@ var (
 		},
 		{
 			DataFormat: geocube.DataFormat{
-				DType:  geocube.DTypeUINT8,
+				DType:  bitmap.DTypeUINT8,
 				NoData: 255,
 				Range:  geocube.Range{Min: 0, Max: 254},
 			},
@@ -65,7 +66,7 @@ var (
 		},
 		{
 			DataFormat: geocube.DataFormat{
-				DType:  geocube.DTypeUINT8,
+				DType:  bitmap.DTypeUINT8,
 				NoData: 255,
 				Range:  geocube.Range{Min: 0, Max: 254},
 			},
@@ -74,7 +75,7 @@ var (
 		},
 		{
 			DataFormat: geocube.DataFormat{
-				DType:  geocube.DTypeUINT8,
+				DType:  bitmap.DTypeUINT8,
 				NoData: 255,
 				Range:  geocube.Range{Min: 0, Max: 254},
 			},
@@ -83,7 +84,7 @@ var (
 		},
 		{
 			DataFormat: geocube.DataFormat{
-				DType:  geocube.DTypeUINT8,
+				DType:  bitmap.DTypeUINT8,
 				NoData: 255,
 				Range:  geocube.Range{Min: 0, Max: 254},
 			},
@@ -92,7 +93,7 @@ var (
 		},
 		{
 			DataFormat: geocube.DataFormat{
-				DType:  geocube.DTypeUINT8,
+				DType:  bitmap.DTypeUINT8,
 				NoData: 255,
 				Range:  geocube.Range{Min: 0, Max: 254},
 			},
@@ -101,7 +102,7 @@ var (
 		},
 		{
 			DataFormat: geocube.DataFormat{
-				DType:  geocube.DTypeINT16,
+				DType:  bitmap.DTypeINT16,
 				NoData: -10001,
 				Range:  geocube.Range{Min: 0, Max: 10000},
 			},
@@ -112,7 +113,7 @@ var (
 		imageDFormatFloat32NoData0,
 		{
 			DataFormat: geocube.DataFormat{
-				DType:  geocube.DTypeFLOAT32,
+				DType:  bitmap.DTypeFLOAT32,
 				NoData: -1,
 				Range:  geocube.Range{Min: 0, Max: 1},
 			},
@@ -124,7 +125,7 @@ var (
 		imageDFormatFloat32NoData0,
 		{
 			DataFormat: geocube.DataFormat{
-				DType:  geocube.DTypeINT16,
+				DType:  bitmap.DTypeINT16,
 				NoData: math.NaN(),
 				Range:  geocube.Range{Min: -10000, Max: 10000},
 			},
@@ -133,7 +134,7 @@ var (
 		},
 		{
 			DataFormat: geocube.DataFormat{
-				DType:  geocube.DTypeUINT8,
+				DType:  bitmap.DTypeUINT8,
 				NoData: 0,
 				Range:  geocube.Range{Min: 0, Max: 255},
 			},

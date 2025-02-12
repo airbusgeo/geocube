@@ -17,6 +17,7 @@ import (
 	"github.com/airbusgeo/geocube/internal/geocube"
 	"github.com/airbusgeo/geocube/internal/utils"
 	"github.com/airbusgeo/geocube/internal/utils/affine"
+	"github.com/airbusgeo/geocube/internal/utils/bitmap"
 	"github.com/airbusgeo/godal"
 	"github.com/google/uuid"
 )
@@ -142,19 +143,19 @@ func castValueBF(vi float64, fromDFormat, toDFormat geocube.DataMapping) float64
 	ve := castValue(vi, fromDFormat.Range, fromDFormat.RangeExt, fromDFormat.Exponent)
 	ve = castValue(ve, toDFormat.RangeExt, toDFormat.Range, 1/toDFormat.Exponent)
 	switch toDFormat.DType {
-	case geocube.DTypeUINT8:
+	case bitmap.DTypeUINT8:
 		return math.Min(math.Max(ve, 0), math.MaxUint8)
-	case geocube.DTypeUINT16:
+	case bitmap.DTypeUINT16:
 		return math.Min(math.Max(ve, 0), math.MaxUint16)
-	case geocube.DTypeUINT32:
+	case bitmap.DTypeUINT32:
 		return math.Min(math.Max(ve, 0), math.MaxUint32)
-	case geocube.DTypeINT8:
+	case bitmap.DTypeINT8:
 		return math.Min(math.Max(ve, math.MinInt8), math.MaxInt8)
-	case geocube.DTypeINT16:
+	case bitmap.DTypeINT16:
 		return math.Min(math.Max(ve, math.MinInt16), math.MaxInt16)
-	case geocube.DTypeINT32:
+	case bitmap.DTypeINT32:
 		return math.Min(math.Max(ve, math.MinInt32), math.MaxInt32)
-	case geocube.DTypeFLOAT32:
+	case bitmap.DTypeFLOAT32:
 		return math.Min(math.Max(ve, -math.MaxFloat32), math.MaxFloat32)
 	}
 	return ve
@@ -481,7 +482,7 @@ func isValid(band *godal.Band, validPix int) (bool, error) {
 	if !ok {
 		return true, nil
 	}
-	image, err := geocube.NewBitmapFromBand(band)
+	image, err := bitmap.NewBitmapFromBand(band)
 	if err != nil {
 		return false, fmt.Errorf("countValidPix: %w", err)
 	}
@@ -532,7 +533,7 @@ func DatasetToPngAsBytes(ctx context.Context, ds *godal.Dataset, fromDFormat geo
 		}
 	} else {
 		toDformat.DataFormat = geocube.DataFormat{
-			DType:  geocube.DTypeUINT8,
+			DType:  bitmap.DTypeUINT8,
 			NoData: 255,
 			Range:  geocube.Range{Min: 0, Max: 254},
 		}
@@ -557,7 +558,7 @@ func DatasetToPngAsBytes(ctx context.Context, ds *godal.Dataset, fromDFormat geo
 
 	// Apply palette
 	if palette256 != nil {
-		bitmap, err := geocube.NewBitmapFromDataset(pngDs)
+		bitmap, err := bitmap.NewBitmapFromDataset(pngDs)
 		if err != nil {
 			return nil, fmt.Errorf("DatasetToPngAsBytes.%w", err)
 		}

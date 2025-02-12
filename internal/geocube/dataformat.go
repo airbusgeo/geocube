@@ -6,11 +6,12 @@ import (
 
 	pb "github.com/airbusgeo/geocube/internal/pb"
 	"github.com/airbusgeo/geocube/internal/utils"
+	"github.com/airbusgeo/geocube/internal/utils/bitmap"
 )
 
 // DataFormat describes the internal format of a raster
 type DataFormat struct {
-	DType  DType
+	DType  bitmap.DType
 	NoData float64
 	Range  Range
 }
@@ -35,7 +36,7 @@ func (r Range) Interval() float64 {
 
 func NewDataFormatFromProtobuf(pbdf *pb.DataFormat) *DataFormat {
 	return &DataFormat{
-		DType:  DType(pbdf.GetDtype()),
+		DType:  bitmap.DType(pbdf.GetDtype()),
 		NoData: pbdf.GetNoData(),
 		Range:  Range{Min: pbdf.GetMinValue(), Max: pbdf.GetMaxValue()},
 	}
@@ -73,8 +74,8 @@ func (dm DataMapping) validate() error {
 }
 
 func (df DataFormat) validate() error {
-	minValue := df.DType.minValue()
-	maxValue := df.DType.maxValue()
+	minValue := df.DType.MinValue()
+	maxValue := df.DType.MaxValue()
 
 	if !(df.Range.Min >= minValue && df.Range.Max <= maxValue) {
 		return fmt.Errorf("min/max value are out of bounds [%f, %f]", minValue, maxValue)
@@ -110,7 +111,7 @@ func (df DataFormat) Equals(df2 DataFormat) bool {
 }
 
 func (df DataFormat) canCastTo(dTo *DataFormat) bool {
-	return df.DType.canCastTo(dTo.DType)
+	return df.DType.CanCastTo(dTo.DType)
 }
 
 func (df DataFormat) validForPacking() bool {

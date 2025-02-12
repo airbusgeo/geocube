@@ -3,6 +3,7 @@ package svc_test
 import (
 	"github.com/airbusgeo/geocube/internal/geocube"
 	"github.com/airbusgeo/geocube/internal/svc"
+	"github.com/airbusgeo/geocube/internal/utils/bitmap"
 )
 
 var (
@@ -12,7 +13,7 @@ var (
 
 	dataMappingF = geocube.DataMapping{
 		DataFormat: geocube.DataFormat{
-			DType:  geocube.DTypeFLOAT32,
+			DType:  bitmap.DTypeFLOAT32,
 			NoData: 0,
 			Range:  geocube.Range{Min: 0, Max: 1},
 		},
@@ -22,7 +23,7 @@ var (
 
 	dataMappingI = geocube.DataMapping{
 		DataFormat: geocube.DataFormat{
-			DType:  geocube.DTypeINT16,
+			DType:  bitmap.DTypeINT16,
 			NoData: 0,
 			Range:  geocube.Range{Min: 0, Max: 10000},
 		},

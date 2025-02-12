@@ -17,6 +17,7 @@ import (
 	"github.com/airbusgeo/geocube/internal/image"
 	"github.com/airbusgeo/geocube/internal/log"
 	"github.com/airbusgeo/geocube/internal/utils"
+	"github.com/airbusgeo/geocube/internal/utils/bitmap"
 	"github.com/airbusgeo/godal"
 	"github.com/twpayne/go-geom"
 )
@@ -306,11 +307,11 @@ func (svc *Service) validateAndSetRemoteDataset(_ context.Context, dataset *geoc
 			return geocube.NewValidationError("%s : all bands must have the same data type (found %s and %s)", datasetURI, gdaldtype.String(), bstruct.DataType.String())
 		}
 	}
-	dtype := geocube.DTypeFromGDal(gdaldtype)
-	if dtype == geocube.DTypeUNDEFINED {
+	dtype := bitmap.DTypeFromGDal(gdaldtype)
+	if dtype == bitmap.DTypeUNDEFINED {
 		return geocube.NewValidationError("%s : datatype not found or not supported: %s", datasetURI, gdaldtype.String())
 	}
-	if dataset.DataMapping.DType != geocube.DTypeUNDEFINED && dtype != dataset.DataMapping.DType {
+	if dataset.DataMapping.DType != bitmap.DTypeUNDEFINED && dtype != dataset.DataMapping.DType {
 		fmt.Printf("Warning: overwrite dtype (%s->%s) of %s\n", dataset.DataMapping.DType, dtype, datasetURI)
 	}
 	if err := dataset.SetDataType(dtype); err != nil {

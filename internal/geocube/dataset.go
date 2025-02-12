@@ -12,6 +12,7 @@ import (
 	pb "github.com/airbusgeo/geocube/internal/pb"
 	"github.com/airbusgeo/geocube/internal/utils"
 	"github.com/airbusgeo/geocube/internal/utils/affine"
+	"github.com/airbusgeo/geocube/internal/utils/bitmap"
 	"github.com/airbusgeo/geocube/internal/utils/proj"
 	"github.com/airbusgeo/godal"
 )
@@ -174,7 +175,7 @@ func (d *Dataset) SetOverviews(hasOverviews bool) error {
 }
 
 // SetDataType sets the datatype flag of a new dataset
-func (d *Dataset) SetDataType(dtype DType) error {
+func (d *Dataset) SetDataType(dtype bitmap.DType) error {
 	if !d.IsNew() {
 		return NewValidationError("Set DataType of a dataset that is not new is forbidden")
 	}

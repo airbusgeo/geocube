@@ -2,6 +2,7 @@ package image_test
 
 import (
 	"github.com/airbusgeo/geocube/internal/geocube"
+	"github.com/airbusgeo/geocube/internal/utils/bitmap"
 	"github.com/airbusgeo/mucog"
 )
 
@@ -21,7 +22,7 @@ var (
 						Overviews: false,
 						DatasetFormat: geocube.DataMapping{
 							DataFormat: geocube.DataFormat{
-								DType:  geocube.DTypeFLOAT32,
+								DType:  bitmap.DTypeFLOAT32,
 								Range:  geocube.Range{Min: 0, Max: 1},
 								NoData: 0,
 							},
@@ -36,7 +37,7 @@ var (
 			URI: "file://test_data/mucog.tif",
 			DatasetFormat: geocube.DataMapping{
 				DataFormat: geocube.DataFormat{
-					DType:  geocube.DTypeFLOAT32,
+					DType:  bitmap.DTypeFLOAT32,
 					Range:  geocube.Range{Min: 0, Max: 1},
 					NoData: 0,
 				},
@@ -73,7 +74,7 @@ var (
 						Overviews: false,
 						DatasetFormat: geocube.DataMapping{
 							DataFormat: geocube.DataFormat{
-								DType:  geocube.DTypeUINT8,
+								DType:  bitmap.DTypeUINT8,
 								Range:  geocube.Range{Min: 0, Max: 255},
 								NoData: 0,
 							},
@@ -88,7 +89,7 @@ var (
 			URI: "file://test_data/mucog.tif",
 			DatasetFormat: geocube.DataMapping{
 				DataFormat: geocube.DataFormat{
-					DType:  geocube.DTypeUINT8,
+					DType:  bitmap.DTypeUINT8,
 					Range:  geocube.Range{Min: 0, Max: 255},
 					NoData: 0,
 				},
@@ -126,7 +127,7 @@ var (
 						Overviews: false,
 						DatasetFormat: geocube.DataMapping{
 							DataFormat: geocube.DataFormat{
-								DType:  geocube.DTypeFLOAT32,
+								DType:  bitmap.DTypeFLOAT32,
 								Range:  geocube.Range{Min: 0, Max: 1},
 								NoData: 0,
 							},
@@ -140,7 +141,7 @@ var (
 						Overviews: false,
 						DatasetFormat: geocube.DataMapping{
 							DataFormat: geocube.DataFormat{
-								DType:  geocube.DTypeFLOAT32,
+								DType:  bitmap.DTypeFLOAT32,
 								Range:  geocube.Range{Min: 0, Max: 1},
 								NoData: -1,
 							},
@@ -155,7 +156,7 @@ var (
 			URI: "file://test_data/mucog.tif",
 			DatasetFormat: geocube.DataMapping{
 				DataFormat: geocube.DataFormat{
-					DType:  geocube.DTypeFLOAT32,
+					DType:  bitmap.DTypeFLOAT32,
 					Range:  geocube.Range{Min: 0, Max: 1},
 					NoData: 0,
 				},
@@ -193,7 +194,7 @@ var (
 						Overviews: false,
 						DatasetFormat: geocube.DataMapping{
 							DataFormat: geocube.DataFormat{
-								DType:  geocube.DTypeFLOAT32,
+								DType:  bitmap.DTypeFLOAT32,
 								Range:  geocube.Range{Min: 0, Max: 1},
 								NoData: 0,
 							},
@@ -213,7 +214,7 @@ var (
 						Overviews: false,
 						DatasetFormat: geocube.DataMapping{
 							DataFormat: geocube.DataFormat{
-								DType:  geocube.DTypeFLOAT32,
+								DType:  bitmap.DTypeFLOAT32,
 								Range:  geocube.Range{Min: 0, Max: 1},
 								NoData: 0,
 							},
@@ -228,7 +229,7 @@ var (
 			URI: "file://test_data/mucog.tif",
 			DatasetFormat: geocube.DataMapping{
 				DataFormat: geocube.DataFormat{
-					DType:  geocube.DTypeFLOAT32,
+					DType:  bitmap.DTypeFLOAT32,
 					Range:  geocube.Range{Min: 0, Max: 1},
 					NoData: 0,
 				},
@@ -266,7 +267,7 @@ var (
 						Overviews: false,
 						DatasetFormat: geocube.DataMapping{
 							DataFormat: geocube.DataFormat{
-								DType:  geocube.DTypeFLOAT32,
+								DType:  bitmap.DTypeFLOAT32,
 								Range:  geocube.Range{Min: 0, Max: 1},
 								NoData: 0,
 							},
@@ -281,7 +282,7 @@ var (
 			URI: "file://test_data/mucog.tif",
 			DatasetFormat: geocube.DataMapping{
 				DataFormat: geocube.DataFormat{
-					DType:  geocube.DTypeFLOAT64,
+					DType:  bitmap.DTypeFLOAT64,
 					Range:  geocube.Range{Min: 0, Max: 1},
 					NoData: 0,
 				},
@@ -319,7 +320,7 @@ var (
 						Overviews: false,
 						DatasetFormat: geocube.DataMapping{
 							DataFormat: geocube.DataFormat{
-								DType:  geocube.DTypeFLOAT32,
+								DType:  bitmap.DTypeFLOAT32,
 								Range:  geocube.Range{Min: 0, Max: 1},
 								NoData: 0,
 							},
@@ -334,7 +335,7 @@ var (
 			URI: "file://test_data/mucog.tif",
 			DatasetFormat: geocube.DataMapping{
 				DataFormat: geocube.DataFormat{
-					DType:  geocube.DTypeFLOAT32,
+					DType:  bitmap.DTypeFLOAT32,
 					Range:  geocube.Range{Min: 0, Max: 1},
 					NoData: 0,
 				},

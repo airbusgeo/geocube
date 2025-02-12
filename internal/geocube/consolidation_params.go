@@ -2,6 +2,7 @@ package geocube
 
 import (
 	pb "github.com/airbusgeo/geocube/internal/pb"
+	"github.com/airbusgeo/geocube/internal/utils/bitmap"
 )
 
 //go:generate go run github.com/dmarkham/enumer -json -sql -type Compression -trimprefix Compression
@@ -97,20 +98,20 @@ func (c ConsolidationParams) validateCompression() error {
 		return nil
 	case CompressionLOSSY:
 		switch c.DFormat.DType {
-		case DTypeUINT8, DTypeINT8, DTypeINT16, DTypeUINT16, DTypeINT32, DTypeUINT32, DTypeFLOAT32:
+		case bitmap.DTypeUINT8, bitmap.DTypeINT8, bitmap.DTypeINT16, bitmap.DTypeUINT16, bitmap.DTypeINT32, bitmap.DTypeUINT32, bitmap.DTypeFLOAT32:
 			c.addCreationParams(map[string]string{"COMPRESS": "LERC", "COMPRESS_OVERVIEW": "LERC", "MAX_Z_ERROR": "0.01", "MAX_Z_ERROR_OVERVIEW": "0.01"})
 			return nil
-		case DTypeFLOAT64:
+		case bitmap.DTypeFLOAT64:
 			c.addCreationParams(map[string]string{"COMPRESS": "LERC_ZSTD", "COMPRESS_OVERVIEW": "LERC_ZSTD", "MAX_Z_ERROR": "0.01", "MAX_Z_ERROR_OVERVIEW": "0.01"})
 			return nil
 		}
 
 	case CompressionLOSSLESS:
 		switch c.DFormat.DType {
-		case DTypeUINT8, DTypeINT8, DTypeINT16, DTypeUINT16, DTypeINT32, DTypeUINT32, DTypeFLOAT32:
+		case bitmap.DTypeUINT8, bitmap.DTypeINT8, bitmap.DTypeINT16, bitmap.DTypeUINT16, bitmap.DTypeINT32, bitmap.DTypeUINT32, bitmap.DTypeFLOAT32:
 			c.addCreationParams(map[string]string{"COMPRESS": "ZSTD", "COMPRESS_OVERVIEW": "ZSTD", "PREDICTOR": "2", "PREDICTOR_OVERVIEW": "2", "ZSTD_LEVEL": "0.01", "ZSTD_LEVEL_OVERVIEW": "0.01"})
 			return nil
-		case DTypeFLOAT64:
+		case bitmap.DTypeFLOAT64:
 			c.addCreationParams(map[string]string{"COMPRESS": "LERC_ZSTD", "COMPRESS_OVERVIEW": "LERC_ZSTD", "MAX_Z_ERROR": "0", "MAX_Z_ERROR_OVERVIEW": "0"})
 			return nil
 		}
@@ -120,7 +121,7 @@ func (c ConsolidationParams) validateCompression() error {
 			return NewValidationError("compression is CUSTOM, but creation_params COMPRESS is not defined")
 		}
 		if compress == "JPEG" {
-			if c.DFormat.DType == DTypeUINT8 || c.DFormat.DType == DTypeINT8 {
+			if c.DFormat.DType == bitmap.DTypeUINT8 || c.DFormat.DType == bitmap.DTypeINT8 {
 				return nil
 			}
 		}

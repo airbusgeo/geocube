@@ -13,6 +13,7 @@ import (
 	pb "github.com/airbusgeo/geocube/internal/pb"
 	"github.com/airbusgeo/geocube/internal/utils"
 	"github.com/airbusgeo/geocube/internal/utils/affine"
+	"github.com/airbusgeo/geocube/internal/utils/bitmap"
 	"github.com/airbusgeo/geocube/internal/utils/proj"
 	"github.com/airbusgeo/godal"
 )
@@ -28,7 +29,7 @@ type GetCubeOptions struct {
 
 // CubeSlice is a slice of a cube, an image corresponding to a group of record
 type CubeSlice struct {
-	Image        *geocube.Bitmap
+	Image        *bitmap.Bitmap
 	Err          error
 	Records      []*geocube.Record
 	Metadata     map[string]string
@@ -327,7 +328,7 @@ func (svc *Service) getCubeStream(ctx context.Context, datasetsByRecord []SliceM
 		headersOut := make(chan CubeSlice, len(grecords))
 		for i, records := range grecords {
 			headersOut <- CubeSlice{
-				Image:        geocube.NewBitmapHeader(image.Rect(0, 0, outDesc.Width, outDesc.Height), outDesc.DataMapping.DType, outDesc.Bands),
+				Image:        bitmap.NewBitmapHeader(image.Rect(0, 0, outDesc.Width, outDesc.Height), outDesc.DataMapping.DType, outDesc.Bands),
 				Err:          nil,
 				Records:      records,
 				Metadata:     map[string]string{},
@@ -581,7 +582,7 @@ func mergeDatasetsWorker(ctx context.Context, jobs <-chan mergeDatasetJob) {
 
 			// Run mergeDatasets
 			start := time.Now()
-			var bitmap *geocube.Bitmap
+			var bmp *bitmap.Bitmap
 			ds, err := internalImage.MergeDatasets(ctx, job.Slice.Datasets, job.OutDesc)
 			// Acq downloaded images
 			for _, ack := range acks {
@@ -594,13 +595,13 @@ func mergeDatasetsWorker(ctx context.Context, jobs <-chan mergeDatasetJob) {
 				switch job.OutDesc.Format {
 				case "GTiff":
 					tags := mergeTags(job.Records)
-					bitmap = geocube.NewBitmapHeader(image.Rect(0, 0, job.OutDesc.Width, job.OutDesc.Height), job.OutDesc.DataMapping.DType, job.OutDesc.Bands)
+					bmp = bitmap.NewBitmapHeader(image.Rect(0, 0, job.OutDesc.Width, job.OutDesc.Height), job.OutDesc.DataMapping.DType, job.OutDesc.Bands)
 					var bytes []byte
 					bytes, err = internalImage.DatasetToTiffAsBytes(ds, job.OutDesc.DataMapping, tags, nil)
-					bitmap.Chunks = &geocube.ByteArray{Bytes: bytes}
+					bmp.Chunks = &bitmap.ByteArray{Bytes: bytes}
 
 				default:
-					bitmap, err = geocube.NewBitmapFromDataset(ds)
+					bmp, err = bitmap.NewBitmapFromDataset(ds)
 				}
 				ds.Close()
 			}
@@ -612,7 +613,7 @@ func mergeDatasetsWorker(ctx context.Context, jobs <-chan mergeDatasetJob) {
 			case <-ctx.Done():
 				return
 			case job.ResultChan <- CubeSlice{
-				Image:        bitmap,
+				Image:        bmp,
 				Err:          err,
 				Records:      job.Records,
 				Metadata:     metadata,

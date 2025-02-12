@@ -1,4 +1,4 @@
-package geocube
+package bitmap
 
 //go:generate go run github.com/dmarkham/enumer -json -sql -type DType -trimprefix DType
 
@@ -32,15 +32,15 @@ var minValues = [...]float64{-math.MaxFloat64, 0, 0, 0, math.MinInt8, math.MinIn
 var maxValues = [...]float64{math.MaxFloat64, math.MaxUint8, math.MaxUint16, math.MaxUint32, math.MaxInt8, math.MaxInt16, math.MaxInt32,
 	math.MaxFloat32, math.MaxFloat64, math.MaxFloat64}
 
-func (dtype DType) minValue() float64 {
+func (dtype DType) MinValue() float64 {
 	return minValues[dtype]
 }
 
-func (dtype DType) maxValue() float64 {
+func (dtype DType) MaxValue() float64 {
 	return maxValues[dtype]
 }
 
-func (dtype DType) canCastTo(dtypeTo DType) bool {
+func (dtype DType) CanCastTo(dtypeTo DType) bool {
 	if dtype == dtypeTo {
 		return true
 	}

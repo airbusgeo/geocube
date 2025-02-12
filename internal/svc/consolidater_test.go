@@ -20,6 +20,7 @@ import (
 	"github.com/airbusgeo/geocube/internal/geocube"
 	"github.com/airbusgeo/geocube/internal/log"
 	"github.com/airbusgeo/geocube/internal/svc"
+	"github.com/airbusgeo/geocube/internal/utils/bitmap"
 	"github.com/airbusgeo/godal"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -202,7 +203,7 @@ var _ = Describe("Consolidater", func() {
 				ID:   "var1",
 				Name: "var1",
 				DFormat: geocube.DataFormat{
-					DType:  geocube.DTypeFromString("uint16"),
+					DType:  bitmap.DTypeFromString("uint16"),
 					NoData: 0,
 					Range: geocube.Range{
 						Min: 0,
@@ -211,7 +212,7 @@ var _ = Describe("Consolidater", func() {
 				},
 				ConsolidationParams: geocube.ConsolidationParams{
 					DFormat: geocube.DataFormat{
-						DType:  geocube.DTypeFromString("uint8"),
+						DType:  bitmap.DTypeFromString("uint8"),
 						NoData: 0,
 						Range: geocube.Range{
 							Min: 0,
@@ -228,7 +229,7 @@ var _ = Describe("Consolidater", func() {
 
 			consolidationParamReturned = &geocube.ConsolidationParams{
 				DFormat: geocube.DataFormat{
-					DType:  geocube.DTypeFromString("uint8"),
+					DType:  bitmap.DTypeFromString("uint8"),
 					NoData: 0,
 					Range: geocube.Range{
 						Min: 0,

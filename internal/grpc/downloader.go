@@ -11,6 +11,7 @@ import (
 	pb "github.com/airbusgeo/geocube/internal/pb"
 	internal "github.com/airbusgeo/geocube/internal/svc"
 	"github.com/airbusgeo/geocube/internal/utils/affine"
+	"github.com/airbusgeo/geocube/internal/utils/bitmap"
 	"github.com/airbusgeo/geocube/internal/utils/proj"
 	"github.com/airbusgeo/godal"
 )
@@ -100,7 +101,7 @@ func (svc *DownloaderService) DownloadCube(req *pb.GetCubeMetadataRequest, strea
 	info, slicesQueue, err := svc.gdsvc.GetCubeFromMetadatas(ctx,
 		sliceMetas,
 		grecords,
-		geocube.DataFormat{DType: geocube.DType(req.GetRefDformat().Dtype),
+		geocube.DataFormat{DType: bitmap.DType(req.GetRefDformat().Dtype),
 			NoData: req.GetRefDformat().NoData,
 			Range: geocube.Range{Min: req.GetRefDformat().GetMinValue(),
 				Max: req.GetRefDformat().GetMaxValue()},

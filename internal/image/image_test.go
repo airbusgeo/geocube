@@ -9,6 +9,7 @@ import (
 	"github.com/airbusgeo/geocube/internal/geocube"
 	"github.com/airbusgeo/geocube/internal/image"
 	"github.com/airbusgeo/geocube/internal/utils/affine"
+	"github.com/airbusgeo/geocube/internal/utils/bitmap"
 
 	"github.com/airbusgeo/godal"
 	. "github.com/onsi/ginkgo"
@@ -42,9 +43,9 @@ var DatasetEquals = func(ds *godal.Dataset, wantedDsPath string) {
 	Expect(geo).To(Equal(wantedGeo))
 	Expect(ds.Projection()).To(Equal(wantedDs.Projection()))
 	// read content
-	returnedBmp, err := geocube.NewBitmapFromDataset(ds)
+	returnedBmp, err := bitmap.NewBitmapFromDataset(ds)
 	Expect(err).To(BeNil())
-	wantedBmp, err := geocube.NewBitmapFromDataset(wantedDs)
+	wantedBmp, err := bitmap.NewBitmapFromDataset(wantedDs)
 	Expect(err).To(BeNil())
 	returnedAllBytes, err := returnedBmp.ReadAllBytes()
 	Expect(err).To(BeNil())
