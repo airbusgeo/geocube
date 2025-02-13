@@ -5,17 +5,14 @@ import (
 	"fmt"
 	"image"
 	"io"
+	"math"
+	"runtime"
+	"sync"
 	"unsafe"
 
 	"github.com/airbusgeo/geocube/internal/utils"
 	"github.com/airbusgeo/godal"
 )
-
-type ChunkReader interface {
-	Next(chunkSize int) ([]byte, error) // may return io.EOF
-	Len() int
-	Reset() error
-}
 
 // Bitmap decribes any image as a bitmap of bytes
 type Bitmap struct {
@@ -39,6 +36,46 @@ func NewBitmapHeader(r image.Rectangle, dtype DType, bands int) *Bitmap {
 		DType:     dtype,
 		ByteOrder: nativeEndianness(),
 	}
+}
+
+// NewStreamableBitmapFromDataset creates a new bitmap from the dataset, takes the ownership of the dataset and streams the memory
+func NewStreamableBitmapFromDataset(ds *godal.Dataset) (*Bitmap, error) {
+	var err error
+	xSize := ds.Structure().SizeX
+	ySize := ds.Structure().SizeY
+	bands := ds.Structure().NBands
+	dtype := DTypeFromGDal(ds.Structure().DataType)
+
+	if bands < 1 {
+		return nil, fmt.Errorf("unsupported band count %d", bands)
+	}
+
+	r := image.Rect(0, 0, xSize, ySize)
+	image := NewBitmapHeader(r, dtype, bands)
+
+	dr := &datasetReader{ds: ds}
+	runtime.SetFinalizer(dr, _datasetReader_Close)
+
+	image.Chunks = &ImageReader{image: dr, xSize: xSize, ySize: ySize, bands: bands, dtype: dtype}
+	return image, err
+}
+
+// NewStreamableBitmapFromBand creates a new bitmap from the band and streams the memory
+func NewStreamableBitmapFromBand(band *godal.Band) (*Bitmap, error) {
+	xSize := band.Structure().SizeX
+	ySize := band.Structure().SizeY
+	bands := 1
+	dtype := DTypeFromGDal(band.Structure().DataType)
+
+	if bands < 1 {
+		return nil, fmt.Errorf("unsupported band count %d", bands)
+	}
+
+	r := image.Rect(0, 0, xSize, ySize)
+	image := NewBitmapHeader(r, dtype, bands)
+	image.Chunks = &ImageReader{image: &bandReader{band: band}, xSize: xSize, ySize: ySize, bands: 1, dtype: dtype}
+
+	return image, nil
 }
 
 // NewBitmapFromDataset creates a new bitmap from the dataset, copying the memory
@@ -90,6 +127,7 @@ func (i *Bitmap) Len() int {
 	return 0
 }
 func (i *Bitmap) ReadAllBytes() ([]byte, error) {
+	defer i.Chunks.Restart()
 	if i.Chunks == nil {
 		return nil, nil
 	}
@@ -97,7 +135,6 @@ func (i *Bitmap) ReadAllBytes() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	i.Chunks.Reset()
 	return bytes, nil
 }
 
@@ -114,7 +151,7 @@ func nativeEndianness() binary.ByteOrder {
 
 // IsValid returns true if <minValidPix> pixels != nodata are found in the image
 func (i *Bitmap) IsValid(nodata float64, minValidPix int) bool {
-	defer i.Chunks.Reset()
+	defer i.Chunks.Restart()
 	minValidPix *= i.Bands
 	chunkSize := max(minValidPix, 1024*1024)
 	for {
@@ -167,7 +204,94 @@ func decreaseValid[T comparable](pix []T, nodata T, minValidPix int) int {
 	return minValidPix
 }
 
-// ByteArray is an array of Byte implementing ChunkReader
+// //////////////////////////////////////////////////////////////////////
+// ChunkReader to read bytes by chunk
+type ChunkReader interface {
+	Next(chunkSize int) ([]byte, error) // Return the next <chunkSize> bytes. Returns err=io.EOF if there is no chunk anymore
+	Len() int                           // Return the total number of bytes
+	Restart() error                     // Restart at the first chunk
+}
+
+// /////////////////////////////////////////////////////////////////////
+// imageScanner to read <lineCount> lines of an image, starting with <line>
+type imageScanner interface {
+	ReadLines(buffer any, line, lineCount int) error
+}
+
+// datasetReader owns a dataset and implements imageScanner for a dataset
+type datasetReader struct {
+	ds         *godal.Dataset
+	closeMutex sync.Mutex
+}
+
+func _datasetReader_Close(ba *datasetReader) {
+	ba.closeMutex.Lock()
+	if ba.ds != nil {
+		ba.ds.Close()
+		ba.ds = nil
+	}
+	ba.closeMutex.Unlock()
+}
+
+func (dr *datasetReader) ReadLines(buffer any, line, lineCount int) error {
+	return dr.ds.Read(0, line, buffer, dr.ds.Structure().SizeX, lineCount)
+}
+
+// bandReader implements imageScanner for a dataset
+type bandReader struct {
+	band *godal.Band
+}
+
+func (br *bandReader) ReadLines(buffer any, line, lineCount int) error {
+	return br.band.Read(0, line, buffer, br.band.Structure().SizeX, lineCount)
+}
+
+// /////////////////////////////////////////////////////////////////////
+// ImageReader implements ChunkReader for an imageScanner
+type ImageReader struct {
+	image               imageScanner
+	buffer              FIFOBuffer
+	xSize, ySize, bands int
+	dtype               DType
+	yCur                int
+}
+
+func (dr *ImageReader) Next(chunkSize int) ([]byte, error) {
+	oldBufSize := dr.buffer.Len()
+	if dr.yCur >= dr.ySize {
+		if oldBufSize == 0 {
+			return nil, io.EOF
+		}
+		return dr.buffer.Pop(chunkSize), nil
+	}
+	stride := dr.bands * dr.xSize * dr.dtype.Size()
+
+	lineCount := int(math.Ceil(float64(chunkSize-oldBufSize) / float64(stride)))
+	if dr.yCur+lineCount > dr.ySize {
+		lineCount = dr.ySize - dr.yCur
+	}
+	if lineCount > 0 {
+		buf := dr.buffer.Push(lineCount * stride)
+		if err := dr.image.ReadLines(getPix(buf, dr.dtype), dr.yCur, lineCount); err != nil {
+			return nil, fmt.Errorf("dataset.IO: %w", err)
+		}
+		dr.yCur += lineCount
+	}
+	return dr.buffer.Pop(chunkSize), nil
+}
+
+func (dr *ImageReader) Len() int {
+	return dr.bands * dr.xSize * dr.ySize * dr.dtype.Size()
+}
+
+func (dr *ImageReader) Restart() error {
+	dr.yCur = 0
+	dr.buffer.Reset()
+	return nil
+}
+
+// /////////////////////////////////////////////////////////////////////
+// ByteArray implements ChunkReader for an array of Byte
 type ByteArray struct {
 	Bytes  []byte
 	offset int
@@ -178,19 +302,19 @@ func NewByteArrayFromDataset(ds *godal.Dataset, bands, xSize, ySize int, dtype D
 		return NewByteArrayFromBand(&ds.Bands()[0], xSize, ySize, dtype)
 	}
 
-	bytes := ByteArray{Bytes: make([]byte, bands*xSize*ySize*dtype.Size())}
-	if err := ds.Read(0, 0, bytes.getPix(dtype), xSize, ySize); err != nil {
+	ba := ByteArray{Bytes: make([]byte, bands*xSize*ySize*dtype.Size())}
+	if err := ds.Read(0, 0, getPix(ba.Bytes, dtype), xSize, ySize); err != nil {
 		return nil, fmt.Errorf("dataset.IO: %w", err)
 	}
-	return &bytes, nil
+	return &ba, nil
 }
 
 func NewByteArrayFromBand(band *godal.Band, xSize, ySize int, dtype DType) (*ByteArray, error) {
-	bytes := ByteArray{Bytes: make([]byte, dtype.Size()*xSize*ySize)}
-	if err := band.Read(0, 0, bytes.getPix(dtype), xSize, ySize); err != nil {
+	ba := ByteArray{Bytes: make([]byte, dtype.Size()*xSize*ySize)}
+	if err := band.Read(0, 0, getPix(ba.Bytes, dtype), xSize, ySize); err != nil {
 		return nil, fmt.Errorf("band.IO: %w", err)
 	}
-	return &bytes, nil
+	return &ba, nil
 }
 
 func (ba *ByteArray) Next(chunkSize int) ([]byte, error) {
@@ -206,33 +330,33 @@ func (ba *ByteArray) Len() int {
 	return len(ba.Bytes)
 }
 
-func (ba *ByteArray) Reset() error {
+func (ba *ByteArray) Restart() error {
 	ba.offset = 0
 	return nil
 }
 
-func (ba ByteArray) getPix(dtype DType) interface{} {
+func getPix(bytes []byte, dtype DType) interface{} {
 	// Convert up to a slice of the right type
 	var pix interface{}
 	switch dtype {
 	case DTypeUINT8:
-		pix = ba.Bytes
+		pix = bytes
 	case DTypeUINT16:
-		pix = utils.SliceByteToGeneric[uint16](ba.Bytes)
+		pix = utils.SliceByteToGeneric[uint16](bytes)
 	case DTypeUINT32:
-		pix = utils.SliceByteToGeneric[uint32](ba.Bytes)
+		pix = utils.SliceByteToGeneric[uint32](bytes)
 	case DTypeINT8:
-		pix = utils.SliceByteToGeneric[int8](ba.Bytes)
+		pix = utils.SliceByteToGeneric[int8](bytes)
 	case DTypeINT16:
-		pix = utils.SliceByteToGeneric[int16](ba.Bytes)
+		pix = utils.SliceByteToGeneric[int16](bytes)
 	case DTypeINT32:
-		pix = utils.SliceByteToGeneric[int32](ba.Bytes)
+		pix = utils.SliceByteToGeneric[int32](bytes)
 	case DTypeFLOAT32:
-		pix = utils.SliceByteToGeneric[float32](ba.Bytes)
+		pix = utils.SliceByteToGeneric[float32](bytes)
 	case DTypeFLOAT64:
-		pix = utils.SliceByteToGeneric[float64](ba.Bytes)
+		pix = utils.SliceByteToGeneric[float64](bytes)
 	case DTypeCOMPLEX64:
-		pix = utils.SliceByteToGeneric[complex64](ba.Bytes)
+		pix = utils.SliceByteToGeneric[complex64](bytes)
 	}
 	return pix
 }

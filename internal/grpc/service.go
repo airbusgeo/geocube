@@ -170,7 +170,7 @@ func formatError(format string, err error) error {
 		return status.Error(codes.Unavailable, _limit_size(err.Error(), msg_size_limit))
 	}
 	format = strings.ReplaceAll(format, "%w", "%v")
-	return fmt.Errorf(_limit_size(fmt.Sprintf(format, err), msg_size_limit))
+	return fmt.Errorf("%s", _limit_size(fmt.Sprintf(format, err), msg_size_limit))
 }
 
 // CreateAOI creates an aoi
@@ -1027,7 +1027,7 @@ func (cc ChunkChan) Len() int {
 	return cc.length
 }
 
-func (cc ChunkChan) Reset() error {
+func (cc ChunkChan) Restart() error {
 	return fmt.Errorf("cannot reset a ChunkChan, it can only be read once")
 }
 

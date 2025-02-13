@@ -482,7 +482,7 @@ func isValid(band *godal.Band, validPix int) (bool, error) {
 	if !ok {
 		return true, nil
 	}
-	image, err := bitmap.NewBitmapFromBand(band)
+	image, err := bitmap.NewStreamableBitmapFromBand(band)
 	if err != nil {
 		return false, fmt.Errorf("countValidPix: %w", err)
 	}

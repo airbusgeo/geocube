@@ -599,11 +599,12 @@ func mergeDatasetsWorker(ctx context.Context, jobs <-chan mergeDatasetJob) {
 					var bytes []byte
 					bytes, err = internalImage.DatasetToTiffAsBytes(ds, job.OutDesc.DataMapping, tags, nil)
 					bmp.Chunks = &bitmap.ByteArray{Bytes: bytes}
+					ds.Close()
 
 				default:
-					bmp, err = bitmap.NewBitmapFromDataset(ds)
+					bmp, err = bitmap.NewStreamableBitmapFromDataset(ds)
+					// ds is closed by "bmp"
 				}
-				ds.Close()
 			}
 
 			metadata[fmt.Sprintf("Merge %d", len(job.Slice.Datasets))] = fmt.Sprintf("%v", time.Since(start))

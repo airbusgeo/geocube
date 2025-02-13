@@ -10,6 +10,7 @@
 ### Bug fixes
 
 ### Others
+- optimization GetCube: reduce memory usage using StreamableBitmap
 
 
 ## 1.0.3
