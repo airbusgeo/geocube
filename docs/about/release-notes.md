@@ -1,6 +1,6 @@
 # Release notes
 
-## 1.0.3beta
+## 1.0.3
 
 ### Functionalities
 - apiserver/downloader/consolidater: add --gdalNumThreads to change the -wo options of gdal.warp. 1 by default, -1 means ALL_CPUS. gdalNumThreads+workers should be lower than the number of CPUS.
