@@ -177,13 +177,13 @@ func (u DefaultUri) UploadFile(ctx context.Context, data io.ReadCloser) error {
 	return strategy.UploadFile(ctx, u.String(), data)
 }
 
-func (u DefaultUri) Delete(ctx context.Context) error {
+func (u DefaultUri) Delete(ctx context.Context, options ...storage.Option) error {
 	strategy, err := u.getStrategy(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get storage strategy: %w", err)
 	}
 
-	return strategy.Delete(ctx, u.String())
+	return strategy.Delete(ctx, u.String(), options...)
 }
 
 func (u DefaultUri) GetAttrs(ctx context.Context) (storage.Attrs, error) {

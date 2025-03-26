@@ -89,13 +89,14 @@ func (c *Client) StreamAt(key string, off int64, n int64) (io.ReadCloser, int64,
 type Option func(o *option)
 
 type option struct {
-	MaxTries     int
-	Delay        time.Duration
-	StorageClass string
-	Offset       int64
-	Length       int64
-	Exclude      ExcludeFunc
-	Concurrency  int
+	MaxTries       int
+	Delay          time.Duration
+	StorageClass   string
+	Offset         int64
+	Length         int64
+	Exclude        ExcludeFunc
+	Concurrency    int
+	IgnoreNotFound bool
 }
 
 type ExcludeFunc func(objectName string) bool
@@ -158,6 +159,12 @@ func Concurrency(c int) Option {
 	}
 	return func(o *option) {
 		o.Concurrency = c
+	}
+}
+
+func IgnoreNotFound() Option {
+	return func(o *option) {
+		o.IgnoreNotFound = true
 	}
 }
 

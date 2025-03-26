@@ -66,6 +66,21 @@ func Retriable(err error) bool {
 }
 
 // ErrWaitGroup is a collection of goroutines working on subtasks that are part of the same overall task.
+// Exemple:
+// wg := ErrWaitGroup{}
+//
+//	for _, task := range tasks {
+//		wg.Go(func() error {
+//			err := doTask(task)
+//			return err
+//		})
+//	}
+//
+// var errs error
+//
+//	for _, err := range wg.Wait() {
+//		errs = MergeErrors(true, errs, err)
+//	}
 type ErrWaitGroup struct {
 	wg sync.WaitGroup
 

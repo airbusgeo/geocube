@@ -2,7 +2,6 @@ package svc
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -438,7 +437,7 @@ func (svc *Service) opSubFncDeleteContainer(ctx context.Context, containerURI st
 	if err != nil {
 		return fmt.Errorf("opSubFncDeleteContainer.%w", err)
 	}
-	if err := URI.Delete(ctx); err != nil && !errors.Is(err, storage.ErrFileNotFound) {
+	if err := URI.Delete(ctx, storage.IgnoreNotFound()); err != nil {
 		return fmt.Errorf("opSubFncDeleteContainer[%s].%w", containerURI, err)
 	}
 	return nil

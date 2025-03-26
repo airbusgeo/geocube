@@ -393,6 +393,9 @@ func (s gsStrategy) deleteObject(ctx context.Context, bucket, object string, opt
 		if err == nil {
 			return nil
 		}
+		if op.IgnoreNotFound && errors.Is(err, geocubeStorage.ErrFileNotFound) {
+			return nil
+		}
 		if !utils.Retriable(err) {
 			return fmt.Errorf("gs.deleteObject[%s/%s]: %w", bucket, object, err)
 		}

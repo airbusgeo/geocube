@@ -10,8 +10,10 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 
 	geocubeStorage "github.com/airbusgeo/geocube/interface/storage"
+	"github.com/airbusgeo/geocube/internal/utils"
 )
 
 type fileSystemStrategy struct {
@@ -110,11 +112,50 @@ func (s fileSystemStrategy) UploadFile(ctx context.Context, uri string, data io.
 }
 
 func (s fileSystemStrategy) Delete(ctx context.Context, uri string, options ...geocubeStorage.Option) error {
+	opts := geocubeStorage.Apply(options...)
+
 	if err := os.Remove(uri); err != nil {
-		return fmt.Errorf("failed to remove file: %w", err)
+		if !opts.IgnoreNotFound || !os.IsNotExist(err) {
+			return fmt.Errorf("failed to remove file: %w", err)
+		}
 	}
 
 	return nil
+}
+
+func (s fileSystemStrategy) BulkDelete(ctx context.Context, uris []string, options ...geocubeStorage.Option) error {
+	workers := 20
+	maxErrors := int64(100)
+	if len(uris) < workers {
+		workers = len(uris)
+	}
+	tasks := make(chan string)
+	wg := utils.ErrWaitGroup{}
+
+	nbErrors := atomic.Int64{}
+	for range workers {
+		wg.Go(func() error {
+			for uri := range tasks {
+				if err := s.Delete(ctx, uri, options...); err != nil {
+					if nbErrors.Add(1) < maxErrors {
+						wg.AppendError(err)
+					}
+				}
+			}
+			return nil
+		})
+	}
+	for _, uri := range uris {
+		tasks <- uri
+	}
+	close(tasks)
+
+	errs := utils.MergeErrors(true, nil, wg.Wait()...)
+	if nbErrors.Load() >= maxErrors {
+		errs = utils.MergeErrors(true, errs, utils.MakeTemporary(fmt.Errorf("[...] total: %d errors", nbErrors.Load())))
+	}
+
+	return errs
 }
 
 func (s fileSystemStrategy) Exist(ctx context.Context, uri string) (bool, error) {
@@ -122,6 +163,7 @@ func (s fileSystemStrategy) Exist(ctx context.Context, uri string) (bool, error)
 		if os.IsNotExist(err) {
 			return false, geocubeStorage.ErrFileNotFound
 		}
+		return false, err
 	}
 	return true, nil
 }
