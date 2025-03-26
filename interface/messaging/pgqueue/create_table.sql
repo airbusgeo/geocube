@@ -18,4 +18,7 @@ CREATE TABLE pgq_jobs (
 CREATE INDEX idx_pgq_jobs_fetch
 	ON pgq_jobs (queue_name, run_after)
 	WHERE ran_at IS NULL;
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE pgq_jobs TO apiserver;
+
 COMMIT;
