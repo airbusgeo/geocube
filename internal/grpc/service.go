@@ -1044,6 +1044,7 @@ func compressChunksSlicesQueue(ctx context.Context, sliceQueue <-chan internal.C
 
 		select {
 		case <-ctx.Done():
+			return
 		case compressedSliceQueue <- res:
 		}
 	}
