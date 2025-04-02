@@ -146,7 +146,7 @@ func (c *Consumer) Pull(ctx context.Context, cb messaging.Callback) error {
 	for {
 		select {
 		case <-c.worker.StopChan:
-			return nil
+			return messaging.ConnectionStopped
 		default:
 			if attemptedJob, err := c.worker.PerformNextJob(); err != nil {
 				return errorx.Decorate(err, "exiting job runner")

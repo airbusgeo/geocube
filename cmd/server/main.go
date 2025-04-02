@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -120,8 +121,8 @@ func run(ctx context.Context) error {
 			db, w, err := pgqueue.SqlConnect(ctx, serverConfig.PgqDbConnection)
 			if err != nil {
 				return fmt.Errorf("pgqueue.Open: %w", err)
-
 			}
+			defer db.Close()
 			if serverConfig.EventsQueue != "" {
 				eventPublisher = pgqueue.NewPublisher(w, serverConfig.EventsQueue)
 				consumer := pgqueue.NewConsumer(db, serverConfig.EventsQueue)
@@ -239,7 +240,7 @@ func run(ctx context.Context) error {
 	go func() {
 		if eventConsumer != nil {
 			for {
-				if err := eventConsumer.Pull(ctx, eventHandler); err != nil {
+				if err := eventConsumer.Pull(ctx, eventHandler); err != nil && !errors.Is(err, messaging.ConnectionStopped) {
 					log.Logger(ctx).Fatal("eventConsumer.Pull", zap.Error(err))
 				}
 			}

@@ -48,10 +48,11 @@ Currently, the geocube code supports three storage systems: AWS-S3, GCS and file
 The messaging interface is available here : `interface/messaging/`.
 It is used to communicate between the ApiServer and the Consolidater, and it can be used as a metric by the Autoscaler to autoscale the ressources for the consolidater. It's a parameter of the constructor of the Service Class and it is configured in the following files: `cmd/apiserver/main.go` and `cmd/consolidater/main.go`.
 
-### Pgqueue implementation
+### Postgre-based implementation
 
 A messaging interface based on postgres is implemented using the [btubbs/pgq](https://github.com/btubbs/pgq) library: `interface/messaging/pgqueue`. This implementation has autoscaling capabilities.
 
+>The postgreqsl database must be configured to accept as many connections as the number of workers, because pgqueue keeps the connection open during the whole processing.
 
 ### Pubsub implementation
 

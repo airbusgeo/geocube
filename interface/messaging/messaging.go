@@ -4,9 +4,12 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"time"
 )
+
+var ConnectionStopped = errors.New("connection stopped")
 
 // Publisher is an interface to publish messages
 type Publisher interface {

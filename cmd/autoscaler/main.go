@@ -57,6 +57,7 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
+		defer db.Close()
 		queue = pgqueue.NewConsumer(db, *argsub)
 		logMessage += " from pgqueue:" + *argsub
 	} else if *argproject != "" {

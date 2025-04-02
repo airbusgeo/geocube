@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"math"
@@ -67,6 +68,7 @@ func run(ctx context.Context) error {
 			if err != nil {
 				return fmt.Errorf("pgqMessaging: %w", err)
 			}
+			defer db.Close()
 			if consolidaterConfig.ConsolidationsQueue != "" {
 				logMessaging += fmt.Sprintf(" pulling on pgqueue:%s", consolidaterConfig.ConsolidationsQueue)
 				consumer := pgqueue.NewConsumer(db, consolidaterConfig.ConsolidationsQueue)
@@ -165,7 +167,10 @@ func run(ctx context.Context) error {
 			return nil
 		})
 		if err != nil {
-			return fmt.Errorf("cl.process: %w", err)
+			if !errors.Is(err, messaging.ConnectionStopped) {
+				return fmt.Errorf("cl.process: %w", err)
+			}
+			return nil
 		}
 	}
 }
