@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://github.com/airbusgeo/geocube/user-guide/consolidation/" />
+      <link rel="shortcut icon" href="../../img/favicon.ico" />
+    <title>Consolidation - Geocube Server</title>
+    <link rel="stylesheet" href="../../css/theme.css" />
+    <link rel="stylesheet" href="../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Consolidation";
+        var mkdocs_page_input_path = "user-guide/consolidation.md";
+        var mkdocs_page_url = "/airbusgeo/geocube/user-guide/consolidation/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../.." class="icon icon-home"> Geocube Server
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../quickstart/">Getting started</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Architecture</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../architecture/solution/">Ecosystem</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../architecture/services/">Geocube services</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../architecture/interfaces/">Interfaces</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../architecture/mucog/">MuCOG</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../grpc/">GRPC documentation</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Installation</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../installation/prerequisite/">Prerequisite</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../installation/local-install/">Local environment</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../installation/docker-install/">Docker</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../installation/k8s-install/">Deploying with Kubernetes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../installation/others/">Customize environment</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../installation/upgrade/">Upgrade</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">User guide</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../tutorials/">Tutorials</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../entities/">Entities</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../indexation/">Indexation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../access/">Access</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Consolidation</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#why">Why ?</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#consolidation-parameters">Consolidation parameters</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#layout">Layout</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#consolidation_1">Consolidation</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#new">NEW</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#created">CREATED</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#consolidation-in-progress">CONSOLIDATION IN PROGRESS</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#consolidation-done">CONSOLIDATION DONE</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#consolidation-indexed">CONSOLIDATION INDEXED</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#consolidation-effective">CONSOLIDATION EFFECTIVE</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#done">DONE</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#initialisation-failed">INITIALISATION FAILED</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#consolidation-failed">CONSOLIDATION FAILED</a>
+    </li>
+        </ul>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../deletion/">Deletion</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../scaleup/">Scaling-up</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">About</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../about/help/">Getting help</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../about/CONTRIBUTING/">Contributing</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../about/license/">License</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../about/release-notes/">Release Notes</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../..">Geocube Server</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">User guide</li>
+      <li class="breadcrumb-item active">Consolidation</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h2 id="consolidation">Consolidation</h2>
+<h3 id="why">Why ?</h3>
+<p>Consolidation is the process of optimizing the data format, the projection and the tiling of the datasets to fit with the needs of the project.
+Depending on the depth of the timeseries that is usually needed, the size of the tiles requested, the memory requirements, etc, the datasets can be optimized to improve the speed of access to the data or the memory impact.</p>
+<p><strong>Consolidation is not mandatory</strong>, but some applications, especially those requiring massive data and deep timeseries, may suffer from poorly formatted images.</p>
+<p>For instance, consolidation may be a game changer in the following cases (all the more, if the images are retrieved more than once - reprocessing, visualisation):</p>
+<ul>
+<li>if the image format is not cloud-optimized (jpeg2000, GeoTiff, ...)</li>
+<li>if the images are retrieved as timeseries</li>
+<li>if the storage has a high latency per object.</li>
+<li>if the datasets are not in the right projection or resolution</li>
+<li>if the images are retrieved with low resolutions (creation of overviews)</li>
+<li>if the processing requires small tiles (e.g. deep learning)</li>
+</ul>
+<p>During the consolidation, the datasets will be tiled, reprojected, casted and merged into files optimized for the needs of the user.</p>
+<h3 id="consolidation-parameters">Consolidation parameters</h3>
+<p>The <a href="../grpc/#consolidationparams">consolidation parameters</a> that describe the data format of the optimized datasets are linked to a variable:</p>
+<ul>
+<li>Internal <code>Dataformat</code> </li>
+<li><code>Exponent</code> for the mapping between internal dataformat and <code>variable.dformat</code> (see formula below)</li>
+<li><code>Resampling algorithm</code> used for reprojection and overviews</li>
+<li><code>Compression</code> of the data</li>
+</ul>
+<p>NB: regarding the <a href="../entities/#dataformat-and-mapping">mapping of the dataformat</a>, for the consolidation process, the MinOut/MaxOut are the Min/Max of the variable.</p>
+<p>The consolidation parameters of a variable are configured with <a href="../grpc/#configconsolidationrequest">ConfigConsolidation()</a>. A call to <code>ConfigConsolidation()</code> will update the consolidation parameters of the variable and it will only affect the future consolidations.</p>
+<h3 id="layout">Layout</h3>
+<p>The datasets will be tiled, reprojected and stacked on a grid defined by a <a href="../entities/#layout">Layout</a>.
+The <a href="../grpc/#layout">layout</a> has <em>external parameters</em> that define the grid:
+- <code>grid_parameters</code> : dict of parameters, containing at least a grid type (actually only <code>singlecell</code> and <code>regular</code> are available)
+- <code>grid_flags</code> : list of flags</p>
+<p>and <em>internal parameters</em> that define the internal tiling and the depth of the stacking:
+- <code>block_shape</code>
+- <code>max_records</code> per file
+- Creation of <code>Overviews</code>
+- <code>interlacing_pattern</code> that describes how to interlace the Records, the Bands, the Zooms level/overview and the Tiles (geotiff blocks). See <a href="../grpc/#geocub#geocube-Layout">Layout()</a></p>
+<p>The layout must be carefully defined depending on the performance expected in terms of access.
+The size of the cell of the grid multiplied by the maximum number of the records and the datatype will give the maximum size of the final files.</p>
+<p>The grid can be a single-cell grid : at the beginning of the consolidation, the aoi of all the datasets will be projected and merged in the given crs. The bounds of this aoi give the size of the cell. Single-cell grid can be used to consolidate a bunch of already aligned records, like Sentinel-2 granules.</p>
+<p><em>Be careful with Single-cell Layout as the merged aoi may be very large and caused memory errors.</em></p>
+<h3 id="consolidation_1">Consolidation</h3>
+<p>As a <a href="../access/#get-images">GetCube</a> request, the <a href="../grpc/#consolidaterequest">Consolidation</a> request requires a list of <code>records</code> and an <code>instance</code> of a <code>variable</code> to select the datasets that will be consolidated.</p>
+<p>Then, the consolidater defines the containers that will be created from the layout : each cell of the grid of the layout intersecting at least one dataset will result in a new file/container.</p>
+<p>Finally, the <code>Consolidation Parameters</code> that are linked to the <code>variable</code> is used to define how to create the container from the datasets (dataformat, overviews...).</p>
+<p>The <a href="../grpc/#consolidaterequest">Consolidate()</a> function will create an asynchronous consolidation <a href="../entities/#job">job</a>.</p>
+<p><img alt="Consolidation state machine" src="../../images/GeocubeConsolidationStateMachine.png" /></p>
+<p>Below are described all the state of the consolidation.</p>
+<h4 id="new">NEW</h4>
+<p>During this step, the <code>datasets</code> are selected, regarding the <code>records</code> and the <code>instance</code>, and locked to prevent an other job from modifying them. The job is created in the database.</p>
+<table>
+<thead>
+<tr>
+<th>Action</th>
+<th>Effect</th>
+<th>NewStatus</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ForceRetry</td>
+<td></td>
+<td>NEW</td>
+</tr>
+<tr>
+<td>Cancel</td>
+<td>Only if job is waiting (STEP_BY_STEP_ALL)</td>
+<td>ABORTED</td>
+</tr>
+<tr>
+<td>ForceCancel</td>
+<td>Rollback</td>
+<td>ABORTED</td>
+</tr>
+</tbody>
+</table>
+<h4 id="created">CREATED</h4>
+<p>For each cell of the grid of the layout, the list of the datasets intersecting the cell is retrieved. This list is inspected to determine whether or not a consolidation is required (the dataset might already be consolidated on the same layout). </p>
+<p>If a consolidation is needed, a consolidation task is created.</p>
+<table>
+<thead>
+<tr>
+<th>Action</th>
+<th>Effect</th>
+<th>NewStatus</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ForceRetry</td>
+<td></td>
+<td>CREATED</td>
+</tr>
+<tr>
+<td>Cancel</td>
+<td>If job is waiting (STEP_BY_STEP_ALL)</td>
+<td>ABORTED</td>
+</tr>
+<tr>
+<td>ForceCancel</td>
+<td>Rollback</td>
+<td>ABORTED</td>
+</tr>
+</tbody>
+</table>
+<h4 id="consolidation-in-progress">CONSOLIDATION IN PROGRESS</h4>
+<p>The consolidation tasks are sent to the consolidation workers, that get the cube of data intersecting the cell and format it in a new MuCOG.</p>
+<table>
+<thead>
+<tr>
+<th>Action</th>
+<th>Effect</th>
+<th>NewStatus</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Retry</td>
+<td>Retry the FAILED tasks (the tasks that finish during the retrying may be ignored. Use with cautious.</td>
+<td>CONSOLIDATIONRETRYING</td>
+</tr>
+<tr>
+<td>ForceRetry</td>
+<td>Retry the FAILED and the PENDING tasks (should only be used if the processing is stuck and consolidation workers are deleted)</td>
+<td>CONSOLIDATIONFORCERETRYING</td>
+</tr>
+<tr>
+<td>Cancel, ForceCancel</td>
+<td>Cancel the PENDING tasks and the job (the workers will automatically stop as soon as possible)</td>
+<td>CONSOLIDATIONCANCELLING</td>
+</tr>
+</tbody>
+</table>
+<h4 id="consolidation-done">CONSOLIDATION DONE</h4>
+<p>The new datasets are indexed in the Geocube, but there are still inactive (they cannot be retrieved by the user)</p>
+<table>
+<thead>
+<tr>
+<th>Action</th>
+<th>Effect</th>
+<th>NewStatus</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ForceRetry</td>
+<td></td>
+<td>CONSOLIDATIONDONE</td>
+</tr>
+<tr>
+<td>Cancel</td>
+<td>If job is waiting</td>
+<td>ABORTED</td>
+</tr>
+<tr>
+<td>ForceCancel</td>
+<td>Rollback</td>
+<td>ABORTED</td>
+</tr>
+</tbody>
+</table>
+<h4 id="consolidation-indexed">CONSOLIDATION INDEXED</h4>
+<p>The old datasets are inactivated and the new datasets are activated (they can be retrieved by the user with no loss of service).</p>
+<table>
+<thead>
+<tr>
+<th>Action</th>
+<th>Effect</th>
+<th>NewStatus</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ForceRetry</td>
+<td></td>
+<td>CONSOLIDATIONINDEXED</td>
+</tr>
+<tr>
+<td>Cancel</td>
+<td>If job is waiting</td>
+<td>ABORTED</td>
+</tr>
+<tr>
+<td>ForceCancel</td>
+<td>Rollback</td>
+<td>ABORTED</td>
+</tr>
+</tbody>
+</table>
+<h4 id="consolidation-effective">CONSOLIDATION EFFECTIVE</h4>
+<p>The old datasets are removed from the database and if necessary, a deletion job is created to physically delete the containers.</p>
+<table>
+<thead>
+<tr>
+<th>Action</th>
+<th>Effect</th>
+<th>NewStatus</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ForceRetry</td>
+<td></td>
+<td>CONSOLIDATIONEFFECTIVE</td>
+</tr>
+</tbody>
+</table>
+<h4 id="done">DONE</h4>
+<p>Consolidation is finished with success.</p>
+<h4 id="initialisation-failed">INITIALISATION FAILED</h4>
+<p>Something goes wrong with the initialisation. The job is aborted</p>
+<table>
+<thead>
+<tr>
+<th>Action</th>
+<th>Effect</th>
+<th>NewStatus</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Retry, ForceRetry</td>
+<td></td>
+<td>CREATED</td>
+</tr>
+<tr>
+<td>Cancel, ForceCancel</td>
+<td>Rollback</td>
+<td>ABORTED</td>
+</tr>
+</tbody>
+</table>
+<h4 id="consolidation-failed">CONSOLIDATION FAILED</h4>
+<p>At least one consolidation tasks failed. The job can be retried or cancelled.</p>
+<table>
+<thead>
+<tr>
+<th>Action</th>
+<th>Effect</th>
+<th>NewStatus</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Retry, ForceRetry</td>
+<td>Restart FAILED tasks</td>
+<td>CONSOLIDATINRETRYING</td>
+</tr>
+<tr>
+<td>Cancel, ForceCancel</td>
+<td>Rollback</td>
+<td>ABORTED</td>
+</tr>
+</tbody>
+</table>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../access/" class="btn btn-neutral float-left" title="Access"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../deletion/" class="btn btn-neutral float-right" title="Deletion">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../access/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../deletion/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../..";</script>
+    <script src="../../js/theme_extra.js"></script>
+    <script src="../../js/theme.js"></script>
+      <script src="../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

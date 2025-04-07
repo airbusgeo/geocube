@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://github.com/airbusgeo/geocube/about/release-notes/" />
+      <link rel="shortcut icon" href="../../img/favicon.ico" />
+    <title>Release Notes - Geocube Server</title>
+    <link rel="stylesheet" href="../../css/theme.css" />
+    <link rel="stylesheet" href="../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Release Notes";
+        var mkdocs_page_input_path = "about/release-notes.md";
+        var mkdocs_page_url = "/airbusgeo/geocube/about/release-notes/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../.." class="icon icon-home"> Geocube Server
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../quickstart/">Getting started</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Architecture</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../architecture/solution/">Ecosystem</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../architecture/services/">Geocube services</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../architecture/interfaces/">Interfaces</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../architecture/mucog/">MuCOG</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../user-guide/grpc/">GRPC documentation</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Installation</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../installation/prerequisite/">Prerequisite</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../installation/local-install/">Local environment</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../installation/docker-install/">Docker</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../installation/k8s-install/">Deploying with Kubernetes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../installation/others/">Customize environment</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../installation/upgrade/">Upgrade</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">User guide</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../user-guide/tutorials/">Tutorials</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../user-guide/entities/">Entities</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../user-guide/indexation/">Indexation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../user-guide/access/">Access</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../user-guide/consolidation/">Consolidation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../user-guide/deletion/">Deletion</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../user-guide/scaleup/">Scaling-up</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">About</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../help/">Getting help</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../CONTRIBUTING/">Contributing</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../license/">License</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Release Notes</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#110">1.1.0</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#functionalities">Functionalities</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#api">API</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#bug-fixes">Bug fixes</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#others">Others</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#103">1.0.3</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#functionalities_1">Functionalities</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#api_1">API</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#bug-fixes_1">Bug fixes</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#others_1">Others</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#102">1.0.2</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#functionalities_2">Functionalities</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#bug-fixes_2">Bug fixes</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#101">1.0.1</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#functionalities_3">Functionalities</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#bug-fixes_3">Bug fixes</a>
+    </li>
+        </ul>
+    </li>
+    </ul>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../..">Geocube Server</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">About</li>
+      <li class="breadcrumb-item active">Release Notes</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h2 id="release-notes">Release notes</h2>
+<h3 id="110">1.1.0</h3>
+<h4 id="functionalities">Functionalities</h4>
+<ul>
+<li>Consolidater: add --local-download-max-mb to limit the size of the files downloaded by the consolidater (--local-download is deprecated)</li>
+</ul>
+<h4 id="api">API</h4>
+<h4 id="bug-fixes">Bug fixes</h4>
+<h4 id="others">Others</h4>
+<ul>
+<li>optimization GetCube: reduce memory usage using StreamableBitmap</li>
+</ul>
+<h3 id="103">1.0.3</h3>
+<h4 id="functionalities_1">Functionalities</h4>
+<ul>
+<li>apiserver/downloader/consolidater: add --gdalNumThreads to change the -wo options of gdal.warp. 1 by default, -1 means ALL_CPUS. gdalNumThreads+workers should be lower than the number of CPUS.</li>
+<li>downloader: add --chunkSize (1Mbytes by default)</li>
+<li>gdalwarp uses wm=500 instead of 2047 and -multi option</li>
+<li>Min/Max to GetXYZTile to scale tile values between min and max.</li>
+<li>Add index on pg.records.datetime (execute interface/database/pg/update_X.X.X.sql)</li>
+<li>GCS: automatically retry or mark as temporary some errors </li>
+</ul>
+<h4 id="api_1">API</h4>
+<ul>
+<li>DeleteRecords: add NoFail to delete all the pending records and let the others</li>
+<li>GetCube: add CompressionLevel=-3 to disable the compression</li>
+<li>GetCube: add Predownload option to download file before warping to save time. It is efficient when gdal needs the whole image to compute the Cube requested, but its not when a small part of the image is required. Be careful when the data has been consolidated.</li>
+<li>Consolidation: add collapse_on_record_id: to consolidate by collapsing all datasets on the given record (data is copied)</li>
+<li>Get information on containers from their uris</li>
+<li>FindJobs: add page/limit</li>
+<li>GetXYZTile support filters: records.tags, records.from_date and records.to_date (e.g. ?filters.from_time=YYYY-MM-DD&amp;filters.to_time=YYYY-MM-DD&amp;filters.tags[key1]=value1&amp;filter.tags[key2]=value2...)</li>
+<li>Records: ? and * are not supported anymore for the record tags</li>
+<li>Support Int8 datatype</li>
+<li>DeleteDatasets is moved from Admin to Client (retrocompatibility is ensured for previous clients)</li>
+<li>ListDatasets(records, instance): to list the datasets indexed with the given records and instances</li>
+</ul>
+<h4 id="bug-fixes_1">Bug fixes</h4>
+<ul>
+<li>CleanJobs: remove DONEBUTUNTIDY</li>
+<li>Remove redondant logs</li>
+<li>maxConnectionAge: default = 15min</li>
+<li>storage: operations retry when context is cancelled: Add utils.Retriable to test weither an error is retriable.</li>
+<li>Panic during dataset deletion when status is DeletionNotReady</li>
+<li>Consolidation used GTIFF_SUBDIR when there was no subdir</li>
+<li>Consolidation failed because of invalid geometry in ComputeValidShapeFromCell</li>
+<li>Update postGis to 3.1 to fix a bug with geography intersection (GetCube does not return all datasets)</li>
+<li>Docker Consolidater use uuidgen instead of ossp-uuid</li>
+<li>slow FindRecords</li>
+<li>float32 is compressed with ZSTD instead of LERC_ZSTD</li>
+<li>Container deletion ignores FileNotFound error</li>
+<li>Handling of extents that crosses dateline</li>
+<li>Handling of extents wider than 180° of longitude</li>
+<li>reindex dataset crossing antemeridian</li>
+<li>Not empty image are returned as empty</li>
+<li>Consolidation: BuildOverviews fails if GDAL raises a warning</li>
+<li>Consolidation: NoData=Nan does not work as expected</li>
+<li>generate with enumer</li>
+<li>AdminUpdateDataset with RecordIds</li>
+<li>Better handling of consolidation cancellation</li>
+<li>CleanJobs does not return all errors</li>
+<li>Index a dataset with the status INACTIVE or TO_DELETE</li>
+<li>If nodata != none and lossy compression: use alpha band</li>
+</ul>
+<h4 id="others_1">Others</h4>
+<ul>
+<li>Update golang-mod</li>
+<li>Use google-cloud-go instead of go-genproto package</li>
+<li>Memory optimisation</li>
+<li>GetCube &amp; Consolidater: optimisation of the speed (x3 on large datasets)</li>
+<li>Refacto MergeDataset, using vrt.</li>
+<li>Dockerfile uses alpine3.21, golang:alpine3.21</li>
+</ul>
+<h3 id="102">1.0.2</h3>
+<h4 id="functionalities_2">Functionalities</h4>
+<h4 id="bug-fixes_2">Bug fixes</h4>
+<ul>
+<li>countValidPix with gdal &gt;= 3.6.0</li>
+<li>Deprecated api cloud.google.com/go/secretmanager/apiv1beta1 =&gt; cloud.google.com/go/secretmanager/apiv1</li>
+</ul>
+<h3 id="101">1.0.1</h3>
+<h4 id="functionalities_3">Functionalities</h4>
+<ul>
+<li>Consolidater: add option <code>--local-download</code> (default=<code>true</code>) to download datasets locally before starting the consolidation. Usually, it's faster to download first, but in some case, it's not (or
+consume a lot of local storage)</li>
+<li>API: add GetRecords(List IDs)</li>
+<li>API: GetCube: add ResamplingAlg (override variable.ResamplingAlg)</li>
+</ul>
+<h4 id="bug-fixes_3">Bug fixes</h4>
+<ul>
+<li>Cancel consolidation tasks took to much time (due to job being saved at every task)</li>
+<li>Update mod airbusgeo/cogger to fix a crash with overviews</li>
+<li>If a deletion task failed, the job must be in "DONEBUTUNTIDY" state</li>
+<li>Dockerfile uses alpine3.17, golang:alpine3.17</li>
+<li>GRPC message errors are limited to 3Kb</li>
+<li>Dataset bands were not taken into account during warping</li>
+</ul>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../license/" class="btn btn-neutral float-left" title="License"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../license/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+  </span>
+</div>
+    <script src="../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../..";</script>
+    <script src="../../js/theme_extra.js"></script>
+    <script src="../../js/theme.js"></script>
+      <script src="../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="description" content="None" /><link rel="canonical" href="https://github.com/airbusgeo/geocube/" />
+      <link rel="shortcut icon" href="img/favicon.ico" />
+    <title>Geocube Server</title>
+    <link rel="stylesheet" href="css/theme.css" />
+    <link rel="stylesheet" href="css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Home";
+        var mkdocs_page_input_path = "index.md";
+        var mkdocs_page_url = "/airbusgeo/geocube/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="." class="icon icon-home"> Geocube Server
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="./search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="#">Home</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#credits">Credits</a>
+    </li>
+    </ul>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="quickstart/">Getting started</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Architecture</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="architecture/solution/">Ecosystem</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="architecture/services/">Geocube services</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="architecture/interfaces/">Interfaces</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="architecture/mucog/">MuCOG</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="user-guide/grpc/">GRPC documentation</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Installation</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="installation/prerequisite/">Prerequisite</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="installation/local-install/">Local environment</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="installation/docker-install/">Docker</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="installation/k8s-install/">Deploying with Kubernetes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="installation/others/">Customize environment</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="installation/upgrade/">Upgrade</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">User guide</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="user-guide/tutorials/">Tutorials</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="user-guide/entities/">Entities</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="user-guide/indexation/">Indexation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="user-guide/access/">Access</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="user-guide/consolidation/">Consolidation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="user-guide/deletion/">Deletion</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="user-guide/scaleup/">Scaling-up</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">About</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="about/help/">Getting help</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="about/CONTRIBUTING/">Contributing</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="about/license/">License</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="about/release-notes/">Release Notes</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href=".">Geocube Server</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Home</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h2 id="welcome-to-geocube-server">Welcome to Geocube-Server</h2>
+<p>Geocube is a geo-spatial imagery database designed as a serverless service to serve processing pipelines of satellite images at large scale.</p>
+<p>The GeoCube is a multi-sensor spatio-temporal database, fully cloud-native, designed to provide a storage infrastructure that is scalable, distributed, able to ingest pre-processed information from a variety of earth-observation systems or external data, and to deliver consolidated, fully aligned time series at pixel or tile scale.</p>
+<p>In order to optimize the access time to information stored into the tiles data chunks, a new format ‘Multi-dataset Cloud Optimized GeoTiff’ (MUCOG), based on the well-known COG and GeoTIFF, has been defined. The ‘Consolidation’ operation, which consists into reorganizing ingested data for optimal storage and access, is manually triggered depending on the needs of the project.</p>
+<p>When retrieving the data, the GeoCube provides convenient on-the-fly functions such as automatic resampling, reprojection, mosaicking from the individual tiles and data type change and rescaling.</p>
+<p>The GeoCube is designed to answer multiple needs, from global applications to more regional/local services, and is basically sensor agnostic. </p>
+<p><img alt="EcoSystem" src="images/GeocubeEcoSystem.png" /></p>
+<h3 id="credits">Credits</h3>
+<p>Geocube is a project under development by <a href="http://www.intelligence-airbusds.com">Airbus DS Geo SA</a> with the support of <a href="http://www.cnes.fr">CNES</a>.</p>
+<p>Geocube is licensed under the Apache License, Version 2.0. See <a href="https://github.com/airbusgeo/geocube/blob/main/LICENSE">LICENSE</a> for the full license text.</p>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="quickstart/" class="btn btn-neutral float-right" title="Getting started">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+    
+      <span><a href="quickstart/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = ".";</script>
+    <script src="js/theme_extra.js"></script>
+    <script src="js/theme.js"></script>
+      <script src="search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
+
+<!--
+MkDocs version : 1.6.1
+Build Date UTC : 2025-04-07 10:18:30.068932+00:00
+-->

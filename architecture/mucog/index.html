@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://github.com/airbusgeo/geocube/architecture/mucog/" />
+      <link rel="shortcut icon" href="../../img/favicon.ico" />
+    <title>MuCOG - Geocube Server</title>
+    <link rel="stylesheet" href="../../css/theme.css" />
+    <link rel="stylesheet" href="../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "MuCOG";
+        var mkdocs_page_input_path = "architecture/mucog.md";
+        var mkdocs_page_url = "/airbusgeo/geocube/architecture/mucog/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../.." class="icon icon-home"> Geocube Server
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../quickstart/">Getting started</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Architecture</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../solution/">Ecosystem</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../services/">Geocube services</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../interfaces/">Interfaces</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">MuCOG</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#multidataset-cog-mucog">Multidataset COG (MuCOG)</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#performance">Performance</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#consolidation">Consolidation</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../user-guide/grpc/">GRPC documentation</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Installation</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../installation/prerequisite/">Prerequisite</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../installation/local-install/">Local environment</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../installation/docker-install/">Docker</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../installation/k8s-install/">Deploying with Kubernetes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../installation/others/">Customize environment</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../installation/upgrade/">Upgrade</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">User guide</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../user-guide/tutorials/">Tutorials</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../user-guide/entities/">Entities</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../user-guide/indexation/">Indexation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../user-guide/access/">Access</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../user-guide/consolidation/">Consolidation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../user-guide/deletion/">Deletion</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../user-guide/scaleup/">Scaling-up</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">About</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../about/help/">Getting help</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../about/CONTRIBUTING/">Contributing</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../about/license/">License</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../about/release-notes/">Release Notes</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../..">Geocube Server</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Architecture</li>
+      <li class="breadcrumb-item active">MuCOG</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h2 id="_1"></h2>
+<h3 id="multidataset-cog-mucog">Multidataset COG (MuCOG)</h3>
+<p>The Geocube can refactor the data to store several images in an optimized version of the COG.</p>
+<p>The COG is already an optimized Geotiff for the cloud, thanks to its internal organization of the file. The data is split into tiles and the index are grouped together.</p>
+<p>The Multidataset COG, the MuCOG, goes one step further. It interlaces the full resolution blocks of several cogs, enabling a fast access to the whole timeserie of a given block. As in the COG, this interlacing preserves sparsity. Overviews can be stored spatially contiguously or interlaced, depending on the use case. This MuCOG respects the GeoTIFF standard that makes it readable by GDAL.</p>
+<p><img alt="COG vs MUCOG" src="../../images/GeocubeCOGMuCOG.png" /></p>
+<h3 id="performance">Performance</h3>
+<p>The MuCOG is not mandatory, but it gives very good performance when it comes to reading a timeseries on a cloud storage.
+The MuCOG minimizes the latency, by drastically decreasing the number of calls to the storage, it reduces bandwidth usage, by decreasing the volume of data read and it results in a reduction of costs, with a lower computing requirement. With a MuCOG, you can retrieve a block of one hundred images in less than a second, which is 10 to 20 times faster than with COGs.</p>
+<p><img alt="Image retrieval" src="../../images/GeocubeImageRetrieval.png" /></p>
+<p><strong>Read a timeseries on a cloud storage – 100 datasets, 256x256 pixels</strong></p>
+<p>Test condition :</p>
+<ul>
+<li>Virtual machine on GCP (16CPU/64Gb RAM)</li>
+<li>Storage on GCS</li>
+<li>Request of 100 blocks (256px*256px)</li>
+</ul>
+<p align="center">
+  <img src="../../images/GeocubePerfoCallToTheStorage.png" alt="Call to the storage" width="300px"/>
+  <img src="../../images/GeocubePerfoVolumeData.png" alt="Volume of data" width="300px"/>
+  <img src="../../images/GeocubePerfoProcessingTime.png" alt="Processing time" width="300px"/>
+</p>
+
+<h3 id="consolidation">Consolidation</h3>
+<p>Consolidation is the process (called <code>job</code>) consisting in translating, warping, splitting, merging multiple files into COGs or MuCOGs, given a grid layout.</p>
+<p>It's a long process (from a couple of minutes to an hour) that requires a rigorous management of the life-cycle of the files. It can fail, be restarted or cancelled. The consolidation steps are handled by a state machine and as far as possible, the states can be retried, cancelled or revert.</p>
+<p>More information on how to consolidate <a href="../../user-guide/consolidation/">here</a>.</p>
+<p><img alt="Consolidation state machine" src="../../images/GeocubeConsolidationStateMachine.png" /></p>
+<p>The <code>API Server</code> handles the life-cycle of the <code>job</code> but the creation of the MuCOGs is done by the <code>Consolidation workers</code> in parallel, autoscaled by the <code>Autoscaler</code>.</p>
+<p align="center">
+  <img src="../../images/GeocubeConsolidationService.png" alt="Consolidation service" width="300px"/>
+</p>
+
+<p>The consolidation worker first creates a COG for each record from the images linked to the record being processed, then it creates a MuCOG, merging the COGs together in a unique file.</p>
+<p>At the end of the consolidation, original files are removed from the index and deleted by another state machine:  </p>
+<p align="center">
+  <img src="../../images/GeocubeDeletionStateMachine.png" alt="Deletion state machine" width="500px"/>
+</p>
+
+<p>More information on deletion <a href="../../user-guide/deletion/">here</a>.</p>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../interfaces/" class="btn btn-neutral float-left" title="Interfaces"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../../user-guide/grpc/" class="btn btn-neutral float-right" title="GRPC documentation">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../interfaces/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../../user-guide/grpc/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../..";</script>
+    <script src="../../js/theme_extra.js"></script>
+    <script src="../../js/theme.js"></script>
+      <script src="../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,5395 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://github.com/airbusgeo/geocube/user-guide/grpc/" />
+      <link rel="shortcut icon" href="../../img/favicon.ico" />
+    <title>GRPC documentation - Geocube Server</title>
+    <link rel="stylesheet" href="../../css/theme.css" />
+    <link rel="stylesheet" href="../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "GRPC documentation";
+        var mkdocs_page_input_path = "user-guide/grpc.md";
+        var mkdocs_page_url = "/airbusgeo/geocube/user-guide/grpc/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../.." class="icon icon-home"> Geocube Server
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../quickstart/">Getting started</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Architecture</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../../architecture/solution/">Ecosystem</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../architecture/services/">Geocube services</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../architecture/interfaces/">Interfaces</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../architecture/mucog/">MuCOG</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">GRPC documentation</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#table-of-contents">Table of Contents</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#pbgeocubeproto">pb/geocube.proto</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#geocube">Geocube</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#pbgeocubedownloaderproto">pb/geocubeDownloader.proto</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#geocubedownloader">GeocubeDownloader</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#pbadminproto">pb/admin.proto</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#tidydbrequest">TidyDBRequest</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#tidydbresponse">TidyDBResponse</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#updatedatasetsrequest">UpdateDatasetsRequest</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#updatedatasetsresponse">UpdateDatasetsResponse</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#updatedatasetsresponseresultsentry">UpdateDatasetsResponse.ResultsEntry</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#admin">Admin</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#pbrecordsproto">pb/records.proto</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#aoi">AOI</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#addrecordstagsrequest">AddRecordsTagsRequest</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#addrecordstagsrequesttagsentry">AddRecordsTagsRequest.TagsEntry</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#addrecordstagsresponse">AddRecordsTagsResponse</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#coord">Coord</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#createaoirequest">CreateAOIRequest</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#createaoiresponse">CreateAOIResponse</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#createrecordsrequest">CreateRecordsRequest</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#createrecordsresponse">CreateRecordsResponse</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#deleterecordsrequest">DeleteRecordsRequest</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#deleterecordsresponse">DeleteRecordsResponse</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#getaoirequest">GetAOIRequest</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#getaoiresponse">GetAOIResponse</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#getrecordsrequest">GetRecordsRequest</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#getrecordsresponseitem">GetRecordsResponseItem</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#groupedrecordids">GroupedRecordIds</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#groupedrecordidslist">GroupedRecordIdsList</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#groupedrecords">GroupedRecords</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#linearring">LinearRing</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#listrecordsrequest">ListRecordsRequest</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#listrecordsrequesttagsentry">ListRecordsRequest.TagsEntry</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#listrecordsresponseitem">ListRecordsResponseItem</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#newrecord">NewRecord</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#newrecordtagsentry">NewRecord.TagsEntry</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#polygon">Polygon</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#record">Record</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#recordtagsentry">Record.TagsEntry</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#recordfilters">RecordFilters</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#recordfilterstagsentry">RecordFilters.TagsEntry</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#recordfilterswithaoi">RecordFiltersWithAOI</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#recordidlist">RecordIdList</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#removerecordstagsrequest">RemoveRecordsTagsRequest</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#removerecordstagsresponse">RemoveRecordsTagsResponse</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#pbvariablesproto">pb/variables.proto</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#createpaletterequest">CreatePaletteRequest</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#createpaletteresponse">CreatePaletteResponse</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#createvariablerequest">CreateVariableRequest</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#createvariableresponse">CreateVariableResponse</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#deleteinstancerequest">DeleteInstanceRequest</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#deleteinstanceresponse">DeleteInstanceResponse</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#deletevariablerequest">DeleteVariableRequest</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#deletevariableresponse">DeleteVariableResponse</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#getvariablerequest">GetVariableRequest</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#getvariableresponse">GetVariableResponse</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#instance">Instance</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#instancemetadataentry">Instance.MetadataEntry</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#instantiatevariablerequest">InstantiateVariableRequest</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#instantiatevariablerequestinstancemetadataentry">InstantiateVariableRequest.InstanceMetadataEntry</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#instantiatevariableresponse">InstantiateVariableResponse</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#listvariablesrequest">ListVariablesRequest</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#listvariablesresponseitem">ListVariablesResponseItem</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#palette">Palette</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#updateinstancerequest">UpdateInstanceRequest</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#updateinstancerequestaddmetadataentry">UpdateInstanceRequest.AddMetadataEntry</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#updateinstanceresponse">UpdateInstanceResponse</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#updatevariablerequest">UpdateVariableRequest</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#updatevariableresponse">UpdateVariableResponse</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#variable">Variable</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#colorpoint">colorPoint</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#resampling">Resampling</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#pbdataformatproto">pb/dataformat.proto</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#dataformat">DataFormat</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#dataformatdtype">DataFormat.Dtype</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#pbcatalogproto">pb/catalog.proto</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#getcubemetadatarequest">GetCubeMetadataRequest</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#getcubemetadataresponse">GetCubeMetadataResponse</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#getcuberequest">GetCubeRequest</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#getcuberesponse">GetCubeResponse</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#getcuberesponseheader">GetCubeResponseHeader</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#gettilerequest">GetTileRequest</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#gettileresponse">GetTileResponse</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#imagechunk">ImageChunk</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#imagefile">ImageFile</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#imageheader">ImageHeader</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#listdatasetsrequest">ListDatasetsRequest</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#listdatasetsresponse">ListDatasetsResponse</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#shape">Shape</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#byteorder">ByteOrder</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#fileformat">FileFormat</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#pblayoutsproto">pb/layouts.proto</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#cell">Cell</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#creategridrequest">CreateGridRequest</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#creategridresponse">CreateGridResponse</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#createlayoutrequest">CreateLayoutRequest</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#createlayoutresponse">CreateLayoutResponse</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#deletegridrequest">DeleteGridRequest</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#deletegridresponse">DeleteGridResponse</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#deletelayoutrequest">DeleteLayoutRequest</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#deletelayoutresponse">DeleteLayoutResponse</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#findcontainerlayoutsrequest">FindContainerLayoutsRequest</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#findcontainerlayoutsresponse">FindContainerLayoutsResponse</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#geotransform">GeoTransform</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#grid">Grid</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#layout">Layout</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#layoutgridparametersentry">Layout.GridParametersEntry</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#listgridsrequest">ListGridsRequest</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#listgridsresponse">ListGridsResponse</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#listlayoutsrequest">ListLayoutsRequest</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#listlayoutsresponse">ListLayoutsResponse</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#size">Size</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#tile">Tile</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#tileaoirequest">TileAOIRequest</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#tileaoiresponse">TileAOIResponse</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#pboperationsproto">pb/operations.proto</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#canceljobrequest">CancelJobRequest</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#canceljobresponse">CancelJobResponse</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#cleanjobsrequest">CleanJobsRequest</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#cleanjobsresponse">CleanJobsResponse</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#configconsolidationrequest">ConfigConsolidationRequest</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#configconsolidationresponse">ConfigConsolidationResponse</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#consolidaterequest">ConsolidateRequest</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#consolidateresponse">ConsolidateResponse</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#consolidationparams">ConsolidationParams</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#consolidationparamscreationparamsentry">ConsolidationParams.CreationParamsEntry</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#container">Container</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#continuejobrequest">ContinueJobRequest</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#continuejobresponse">ContinueJobResponse</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#dataset">Dataset</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#deletedatasetsrequest">DeleteDatasetsRequest</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#deletedatasetsresponse">DeleteDatasetsResponse</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#getconsolidationparamsrequest">GetConsolidationParamsRequest</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#getconsolidationparamsresponse">GetConsolidationParamsResponse</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#getcontainersrequest">GetContainersRequest</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#getcontainersresponse">GetContainersResponse</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#getjobrequest">GetJobRequest</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#getjobresponse">GetJobResponse</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#indexdatasetsrequest">IndexDatasetsRequest</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#indexdatasetsresponse">IndexDatasetsResponse</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#job">Job</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#listjobsrequest">ListJobsRequest</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#listjobsresponse">ListJobsResponse</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#retryjobrequest">RetryJobRequest</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#retryjobresponse">RetryJobResponse</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#consolidationparamscompression">ConsolidationParams.Compression</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#executionlevel">ExecutionLevel</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#storageclass">StorageClass</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#pbdatasetmetaproto">pb/datasetMeta.proto</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#datasetmeta">DatasetMeta</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#internalmeta">InternalMeta</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#pbversionproto">pb/version.proto</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#getversionrequest">GetVersionRequest</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#getversionresponse">GetVersionResponse</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#scalar-value-types">Scalar Value Types</a>
+    </li>
+    </ul>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Installation</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../installation/prerequisite/">Prerequisite</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../installation/local-install/">Local environment</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../installation/docker-install/">Docker</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../installation/k8s-install/">Deploying with Kubernetes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../installation/others/">Customize environment</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../installation/upgrade/">Upgrade</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">User guide</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../tutorials/">Tutorials</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../entities/">Entities</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../indexation/">Indexation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../access/">Access</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../consolidation/">Consolidation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../deletion/">Deletion</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../scaleup/">Scaling-up</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">About</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../about/help/">Getting help</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../about/CONTRIBUTING/">Contributing</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../about/license/">License</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../about/release-notes/">Release Notes</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../..">Geocube Server</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Architecture</li>
+      <li class="breadcrumb-item active">GRPC documentation</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h2 id="protocol-documentation">Protocol Documentation</h2>
+<p><a name="top"></a></p>
+<h3 id="table-of-contents">Table of Contents</h3>
+<ul>
+<li>
+<p><a href="#pb_geocube-proto">pb/geocube.proto</a></p>
+<ul>
+<li><a href="#geocube-Geocube">Geocube</a></li>
+</ul>
+</li>
+<li>
+<p><a href="#pb_geocubeDownloader-proto">pb/geocubeDownloader.proto</a></p>
+<ul>
+<li><a href="#geocube-GeocubeDownloader">GeocubeDownloader</a></li>
+</ul>
+</li>
+<li>
+<p><a href="#pb_admin-proto">pb/admin.proto</a></p>
+<ul>
+<li><a href="#geocube-TidyDBRequest">TidyDBRequest</a></li>
+<li><a href="#geocube-TidyDBResponse">TidyDBResponse</a></li>
+<li><a href="#geocube-UpdateDatasetsRequest">UpdateDatasetsRequest</a></li>
+<li><a href="#geocube-UpdateDatasetsResponse">UpdateDatasetsResponse</a></li>
+<li>
+<p><a href="#geocube-UpdateDatasetsResponse-ResultsEntry">UpdateDatasetsResponse.ResultsEntry</a></p>
+</li>
+<li>
+<p><a href="#geocube-Admin">Admin</a></p>
+</li>
+</ul>
+</li>
+<li>
+<p><a href="#pb_records-proto">pb/records.proto</a></p>
+<ul>
+<li><a href="#geocube-AOI">AOI</a></li>
+<li><a href="#geocube-AddRecordsTagsRequest">AddRecordsTagsRequest</a></li>
+<li><a href="#geocube-AddRecordsTagsRequest-TagsEntry">AddRecordsTagsRequest.TagsEntry</a></li>
+<li><a href="#geocube-AddRecordsTagsResponse">AddRecordsTagsResponse</a></li>
+<li><a href="#geocube-Coord">Coord</a></li>
+<li><a href="#geocube-CreateAOIRequest">CreateAOIRequest</a></li>
+<li><a href="#geocube-CreateAOIResponse">CreateAOIResponse</a></li>
+<li><a href="#geocube-CreateRecordsRequest">CreateRecordsRequest</a></li>
+<li><a href="#geocube-CreateRecordsResponse">CreateRecordsResponse</a></li>
+<li><a href="#geocube-DeleteRecordsRequest">DeleteRecordsRequest</a></li>
+<li><a href="#geocube-DeleteRecordsResponse">DeleteRecordsResponse</a></li>
+<li><a href="#geocube-GetAOIRequest">GetAOIRequest</a></li>
+<li><a href="#geocube-GetAOIResponse">GetAOIResponse</a></li>
+<li><a href="#geocube-GetRecordsRequest">GetRecordsRequest</a></li>
+<li><a href="#geocube-GetRecordsResponseItem">GetRecordsResponseItem</a></li>
+<li><a href="#geocube-GroupedRecordIds">GroupedRecordIds</a></li>
+<li><a href="#geocube-GroupedRecordIdsList">GroupedRecordIdsList</a></li>
+<li><a href="#geocube-GroupedRecords">GroupedRecords</a></li>
+<li><a href="#geocube-LinearRing">LinearRing</a></li>
+<li><a href="#geocube-ListRecordsRequest">ListRecordsRequest</a></li>
+<li><a href="#geocube-ListRecordsRequest-TagsEntry">ListRecordsRequest.TagsEntry</a></li>
+<li><a href="#geocube-ListRecordsResponseItem">ListRecordsResponseItem</a></li>
+<li><a href="#geocube-NewRecord">NewRecord</a></li>
+<li><a href="#geocube-NewRecord-TagsEntry">NewRecord.TagsEntry</a></li>
+<li><a href="#geocube-Polygon">Polygon</a></li>
+<li><a href="#geocube-Record">Record</a></li>
+<li><a href="#geocube-Record-TagsEntry">Record.TagsEntry</a></li>
+<li><a href="#geocube-RecordFilters">RecordFilters</a></li>
+<li><a href="#geocube-RecordFilters-TagsEntry">RecordFilters.TagsEntry</a></li>
+<li><a href="#geocube-RecordFiltersWithAOI">RecordFiltersWithAOI</a></li>
+<li><a href="#geocube-RecordIdList">RecordIdList</a></li>
+<li><a href="#geocube-RemoveRecordsTagsRequest">RemoveRecordsTagsRequest</a></li>
+<li><a href="#geocube-RemoveRecordsTagsResponse">RemoveRecordsTagsResponse</a></li>
+</ul>
+</li>
+<li>
+<p><a href="#pb_variables-proto">pb/variables.proto</a></p>
+<ul>
+<li><a href="#geocube-CreatePaletteRequest">CreatePaletteRequest</a></li>
+<li><a href="#geocube-CreatePaletteResponse">CreatePaletteResponse</a></li>
+<li><a href="#geocube-CreateVariableRequest">CreateVariableRequest</a></li>
+<li><a href="#geocube-CreateVariableResponse">CreateVariableResponse</a></li>
+<li><a href="#geocube-DeleteInstanceRequest">DeleteInstanceRequest</a></li>
+<li><a href="#geocube-DeleteInstanceResponse">DeleteInstanceResponse</a></li>
+<li><a href="#geocube-DeleteVariableRequest">DeleteVariableRequest</a></li>
+<li><a href="#geocube-DeleteVariableResponse">DeleteVariableResponse</a></li>
+<li><a href="#geocube-GetVariableRequest">GetVariableRequest</a></li>
+<li><a href="#geocube-GetVariableResponse">GetVariableResponse</a></li>
+<li><a href="#geocube-Instance">Instance</a></li>
+<li><a href="#geocube-Instance-MetadataEntry">Instance.MetadataEntry</a></li>
+<li><a href="#geocube-InstantiateVariableRequest">InstantiateVariableRequest</a></li>
+<li><a href="#geocube-InstantiateVariableRequest-InstanceMetadataEntry">InstantiateVariableRequest.InstanceMetadataEntry</a></li>
+<li><a href="#geocube-InstantiateVariableResponse">InstantiateVariableResponse</a></li>
+<li><a href="#geocube-ListVariablesRequest">ListVariablesRequest</a></li>
+<li><a href="#geocube-ListVariablesResponseItem">ListVariablesResponseItem</a></li>
+<li><a href="#geocube-Palette">Palette</a></li>
+<li><a href="#geocube-UpdateInstanceRequest">UpdateInstanceRequest</a></li>
+<li><a href="#geocube-UpdateInstanceRequest-AddMetadataEntry">UpdateInstanceRequest.AddMetadataEntry</a></li>
+<li><a href="#geocube-UpdateInstanceResponse">UpdateInstanceResponse</a></li>
+<li><a href="#geocube-UpdateVariableRequest">UpdateVariableRequest</a></li>
+<li><a href="#geocube-UpdateVariableResponse">UpdateVariableResponse</a></li>
+<li><a href="#geocube-Variable">Variable</a></li>
+<li>
+<p><a href="#geocube-colorPoint">colorPoint</a></p>
+</li>
+<li>
+<p><a href="#geocube-Resampling">Resampling</a></p>
+</li>
+</ul>
+</li>
+<li>
+<p><a href="#pb_dataformat-proto">pb/dataformat.proto</a></p>
+<ul>
+<li>
+<p><a href="#geocube-DataFormat">DataFormat</a></p>
+</li>
+<li>
+<p><a href="#geocube-DataFormat-Dtype">DataFormat.Dtype</a></p>
+</li>
+</ul>
+</li>
+<li>
+<p><a href="#pb_catalog-proto">pb/catalog.proto</a></p>
+<ul>
+<li><a href="#geocube-GetCubeMetadataRequest">GetCubeMetadataRequest</a></li>
+<li><a href="#geocube-GetCubeMetadataResponse">GetCubeMetadataResponse</a></li>
+<li><a href="#geocube-GetCubeRequest">GetCubeRequest</a></li>
+<li><a href="#geocube-GetCubeResponse">GetCubeResponse</a></li>
+<li><a href="#geocube-GetCubeResponseHeader">GetCubeResponseHeader</a></li>
+<li><a href="#geocube-GetTileRequest">GetTileRequest</a></li>
+<li><a href="#geocube-GetTileResponse">GetTileResponse</a></li>
+<li><a href="#geocube-ImageChunk">ImageChunk</a></li>
+<li><a href="#geocube-ImageFile">ImageFile</a></li>
+<li><a href="#geocube-ImageHeader">ImageHeader</a></li>
+<li><a href="#geocube-ListDatasetsRequest">ListDatasetsRequest</a></li>
+<li><a href="#geocube-ListDatasetsResponse">ListDatasetsResponse</a></li>
+<li>
+<p><a href="#geocube-Shape">Shape</a></p>
+</li>
+<li>
+<p><a href="#geocube-ByteOrder">ByteOrder</a></p>
+</li>
+<li><a href="#geocube-FileFormat">FileFormat</a></li>
+</ul>
+</li>
+<li>
+<p><a href="#pb_layouts-proto">pb/layouts.proto</a></p>
+<ul>
+<li><a href="#geocube-Cell">Cell</a></li>
+<li><a href="#geocube-CreateGridRequest">CreateGridRequest</a></li>
+<li><a href="#geocube-CreateGridResponse">CreateGridResponse</a></li>
+<li><a href="#geocube-CreateLayoutRequest">CreateLayoutRequest</a></li>
+<li><a href="#geocube-CreateLayoutResponse">CreateLayoutResponse</a></li>
+<li><a href="#geocube-DeleteGridRequest">DeleteGridRequest</a></li>
+<li><a href="#geocube-DeleteGridResponse">DeleteGridResponse</a></li>
+<li><a href="#geocube-DeleteLayoutRequest">DeleteLayoutRequest</a></li>
+<li><a href="#geocube-DeleteLayoutResponse">DeleteLayoutResponse</a></li>
+<li><a href="#geocube-FindContainerLayoutsRequest">FindContainerLayoutsRequest</a></li>
+<li><a href="#geocube-FindContainerLayoutsResponse">FindContainerLayoutsResponse</a></li>
+<li><a href="#geocube-GeoTransform">GeoTransform</a></li>
+<li><a href="#geocube-Grid">Grid</a></li>
+<li><a href="#geocube-Layout">Layout</a></li>
+<li><a href="#geocube-Layout-GridParametersEntry">Layout.GridParametersEntry</a></li>
+<li><a href="#geocube-ListGridsRequest">ListGridsRequest</a></li>
+<li><a href="#geocube-ListGridsResponse">ListGridsResponse</a></li>
+<li><a href="#geocube-ListLayoutsRequest">ListLayoutsRequest</a></li>
+<li><a href="#geocube-ListLayoutsResponse">ListLayoutsResponse</a></li>
+<li><a href="#geocube-Size">Size</a></li>
+<li><a href="#geocube-Tile">Tile</a></li>
+<li><a href="#geocube-TileAOIRequest">TileAOIRequest</a></li>
+<li><a href="#geocube-TileAOIResponse">TileAOIResponse</a></li>
+</ul>
+</li>
+<li>
+<p><a href="#pb_operations-proto">pb/operations.proto</a></p>
+<ul>
+<li><a href="#geocube-CancelJobRequest">CancelJobRequest</a></li>
+<li><a href="#geocube-CancelJobResponse">CancelJobResponse</a></li>
+<li><a href="#geocube-CleanJobsRequest">CleanJobsRequest</a></li>
+<li><a href="#geocube-CleanJobsResponse">CleanJobsResponse</a></li>
+<li><a href="#geocube-ConfigConsolidationRequest">ConfigConsolidationRequest</a></li>
+<li><a href="#geocube-ConfigConsolidationResponse">ConfigConsolidationResponse</a></li>
+<li><a href="#geocube-ConsolidateRequest">ConsolidateRequest</a></li>
+<li><a href="#geocube-ConsolidateResponse">ConsolidateResponse</a></li>
+<li><a href="#geocube-ConsolidationParams">ConsolidationParams</a></li>
+<li><a href="#geocube-ConsolidationParams-CreationParamsEntry">ConsolidationParams.CreationParamsEntry</a></li>
+<li><a href="#geocube-Container">Container</a></li>
+<li><a href="#geocube-ContinueJobRequest">ContinueJobRequest</a></li>
+<li><a href="#geocube-ContinueJobResponse">ContinueJobResponse</a></li>
+<li><a href="#geocube-Dataset">Dataset</a></li>
+<li><a href="#geocube-DeleteDatasetsRequest">DeleteDatasetsRequest</a></li>
+<li><a href="#geocube-DeleteDatasetsResponse">DeleteDatasetsResponse</a></li>
+<li><a href="#geocube-GetConsolidationParamsRequest">GetConsolidationParamsRequest</a></li>
+<li><a href="#geocube-GetConsolidationParamsResponse">GetConsolidationParamsResponse</a></li>
+<li><a href="#geocube-GetContainersRequest">GetContainersRequest</a></li>
+<li><a href="#geocube-GetContainersResponse">GetContainersResponse</a></li>
+<li><a href="#geocube-GetJobRequest">GetJobRequest</a></li>
+<li><a href="#geocube-GetJobResponse">GetJobResponse</a></li>
+<li><a href="#geocube-IndexDatasetsRequest">IndexDatasetsRequest</a></li>
+<li><a href="#geocube-IndexDatasetsResponse">IndexDatasetsResponse</a></li>
+<li><a href="#geocube-Job">Job</a></li>
+<li><a href="#geocube-ListJobsRequest">ListJobsRequest</a></li>
+<li><a href="#geocube-ListJobsResponse">ListJobsResponse</a></li>
+<li><a href="#geocube-RetryJobRequest">RetryJobRequest</a></li>
+<li>
+<p><a href="#geocube-RetryJobResponse">RetryJobResponse</a></p>
+</li>
+<li>
+<p><a href="#geocube-ConsolidationParams-Compression">ConsolidationParams.Compression</a></p>
+</li>
+<li><a href="#geocube-ExecutionLevel">ExecutionLevel</a></li>
+<li><a href="#geocube-StorageClass">StorageClass</a></li>
+</ul>
+</li>
+<li>
+<p><a href="#pb_datasetMeta-proto">pb/datasetMeta.proto</a></p>
+<ul>
+<li><a href="#geocube-DatasetMeta">DatasetMeta</a></li>
+<li><a href="#geocube-InternalMeta">InternalMeta</a></li>
+</ul>
+</li>
+<li>
+<p><a href="#pb_version-proto">pb/version.proto</a></p>
+<ul>
+<li><a href="#geocube-GetVersionRequest">GetVersionRequest</a></li>
+<li><a href="#geocube-GetVersionResponse">GetVersionResponse</a></li>
+</ul>
+</li>
+<li>
+<p><a href="#scalar-value-types">Scalar Value Types</a></p>
+</li>
+</ul>
+<p><a name="pb_geocube-proto"></a></p>
+<p align="right"><a href="#top">Top</a></p>
+
+<h3 id="pbgeocubeproto">pb/geocube.proto</h3>
+<p><a name="geocube-Geocube"></a></p>
+<h4 id="geocube">Geocube</h4>
+<p>API
+Documentation may be detailed in Request/Response sections.</p>
+<table>
+<thead>
+<tr>
+<th>Method Name</th>
+<th>Request Type</th>
+<th>Response Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CreateRecords</td>
+<td><a href="#geocube-CreateRecordsRequest">CreateRecordsRequest</a></td>
+<td><a href="#geocube-CreateRecordsResponse">CreateRecordsResponse</a></td>
+<td>Create one or a list of records</td>
+</tr>
+<tr>
+<td>GetRecords</td>
+<td><a href="#geocube-GetRecordsRequest">GetRecordsRequest</a></td>
+<td><a href="#geocube-GetRecordsResponseItem">GetRecordsResponseItem</a> stream</td>
+<td>Get records from their ID</td>
+</tr>
+<tr>
+<td>ListRecords</td>
+<td><a href="#geocube-ListRecordsRequest">ListRecordsRequest</a></td>
+<td><a href="#geocube-ListRecordsResponseItem">ListRecordsResponseItem</a> stream</td>
+<td>List records given criterias</td>
+</tr>
+<tr>
+<td>AddRecordsTags</td>
+<td><a href="#geocube-AddRecordsTagsRequest">AddRecordsTagsRequest</a></td>
+<td><a href="#geocube-AddRecordsTagsResponse">AddRecordsTagsResponse</a></td>
+<td>Update records, adding or updating tags</td>
+</tr>
+<tr>
+<td>RemoveRecordsTags</td>
+<td><a href="#geocube-RemoveRecordsTagsRequest">RemoveRecordsTagsRequest</a></td>
+<td><a href="#geocube-RemoveRecordsTagsResponse">RemoveRecordsTagsResponse</a></td>
+<td>Update records, removing tags</td>
+</tr>
+<tr>
+<td>DeleteRecords</td>
+<td><a href="#geocube-DeleteRecordsRequest">DeleteRecordsRequest</a></td>
+<td><a href="#geocube-DeleteRecordsResponse">DeleteRecordsResponse</a></td>
+<td>Delete records</td>
+</tr>
+<tr>
+<td>CreateAOI</td>
+<td><a href="#geocube-CreateAOIRequest">CreateAOIRequest</a></td>
+<td><a href="#geocube-CreateAOIResponse">CreateAOIResponse</a></td>
+<td>Create an AOI if not exists or returns the aoi id of the aoi.</td>
+</tr>
+<tr>
+<td>GetAOI</td>
+<td><a href="#geocube-GetAOIRequest">GetAOIRequest</a></td>
+<td><a href="#geocube-GetAOIResponse">GetAOIResponse</a></td>
+<td>Get an AOI from its ID</td>
+</tr>
+<tr>
+<td>CreateVariable</td>
+<td><a href="#geocube-CreateVariableRequest">CreateVariableRequest</a></td>
+<td><a href="#geocube-CreateVariableResponse">CreateVariableResponse</a></td>
+<td>Create a variable</td>
+</tr>
+<tr>
+<td>GetVariable</td>
+<td><a href="#geocube-GetVariableRequest">GetVariableRequest</a></td>
+<td><a href="#geocube-GetVariableResponse">GetVariableResponse</a></td>
+<td>Get a variable given its id, name or one of its instance id</td>
+</tr>
+<tr>
+<td>UpdateVariable</td>
+<td><a href="#geocube-UpdateVariableRequest">UpdateVariableRequest</a></td>
+<td><a href="#geocube-UpdateVariableResponse">UpdateVariableResponse</a></td>
+<td>Update some fields of a variable</td>
+</tr>
+<tr>
+<td>DeleteVariable</td>
+<td><a href="#geocube-DeleteVariableRequest">DeleteVariableRequest</a></td>
+<td><a href="#geocube-DeleteVariableResponse">DeleteVariableResponse</a></td>
+<td>Delete a variable iif no dataset has a reference on</td>
+</tr>
+<tr>
+<td>ListVariables</td>
+<td><a href="#geocube-ListVariablesRequest">ListVariablesRequest</a></td>
+<td><a href="#geocube-ListVariablesResponseItem">ListVariablesResponseItem</a> stream</td>
+<td>List variables given a name pattern</td>
+</tr>
+<tr>
+<td>InstantiateVariable</td>
+<td><a href="#geocube-InstantiateVariableRequest">InstantiateVariableRequest</a></td>
+<td><a href="#geocube-InstantiateVariableResponse">InstantiateVariableResponse</a></td>
+<td>Instantiate a variable</td>
+</tr>
+<tr>
+<td>UpdateInstance</td>
+<td><a href="#geocube-UpdateInstanceRequest">UpdateInstanceRequest</a></td>
+<td><a href="#geocube-UpdateInstanceResponse">UpdateInstanceResponse</a></td>
+<td>Update metadata of an instance</td>
+</tr>
+<tr>
+<td>DeleteInstance</td>
+<td><a href="#geocube-DeleteInstanceRequest">DeleteInstanceRequest</a></td>
+<td><a href="#geocube-DeleteInstanceResponse">DeleteInstanceResponse</a></td>
+<td>Delete an instance iif no dataset has a reference on</td>
+</tr>
+<tr>
+<td>CreatePalette</td>
+<td><a href="#geocube-CreatePaletteRequest">CreatePaletteRequest</a></td>
+<td><a href="#geocube-CreatePaletteResponse">CreatePaletteResponse</a></td>
+<td>Create or update a palette that can be used to create a display of a dataset</td>
+</tr>
+<tr>
+<td>GetContainers</td>
+<td><a href="#geocube-GetContainersRequest">GetContainersRequest</a></td>
+<td><a href="#geocube-GetContainersResponse">GetContainersResponse</a></td>
+<td>GetInfo on containers</td>
+</tr>
+<tr>
+<td>IndexDatasets</td>
+<td><a href="#geocube-IndexDatasetsRequest">IndexDatasetsRequest</a></td>
+<td><a href="#geocube-IndexDatasetsResponse">IndexDatasetsResponse</a></td>
+<td>Index new datasets in the Geocube</td>
+</tr>
+<tr>
+<td>ListDatasets</td>
+<td><a href="#geocube-ListDatasetsRequest">ListDatasetsRequest</a></td>
+<td><a href="#geocube-ListDatasetsResponse">ListDatasetsResponse</a></td>
+<td>List datasets from the Geocube</td>
+</tr>
+<tr>
+<td>DeleteDatasets</td>
+<td><a href="#geocube-DeleteDatasetsRequest">DeleteDatasetsRequest</a></td>
+<td><a href="#geocube-DeleteDatasetsResponse">DeleteDatasetsResponse</a></td>
+<td>Delete datasets using records, instances and/or filepath</td>
+</tr>
+<tr>
+<td>ConfigConsolidation</td>
+<td><a href="#geocube-ConfigConsolidationRequest">ConfigConsolidationRequest</a></td>
+<td><a href="#geocube-ConfigConsolidationResponse">ConfigConsolidationResponse</a></td>
+<td>Configurate a consolidation process</td>
+</tr>
+<tr>
+<td>GetConsolidationParams</td>
+<td><a href="#geocube-GetConsolidationParamsRequest">GetConsolidationParamsRequest</a></td>
+<td><a href="#geocube-GetConsolidationParamsResponse">GetConsolidationParamsResponse</a></td>
+<td>Get the configuration of a consolidation</td>
+</tr>
+<tr>
+<td>Consolidate</td>
+<td><a href="#geocube-ConsolidateRequest">ConsolidateRequest</a></td>
+<td><a href="#geocube-ConsolidateResponse">ConsolidateResponse</a></td>
+<td>Start a consolidation job</td>
+</tr>
+<tr>
+<td>ListJobs</td>
+<td><a href="#geocube-ListJobsRequest">ListJobsRequest</a></td>
+<td><a href="#geocube-ListJobsResponse">ListJobsResponse</a></td>
+<td>List the jobs given a name pattern</td>
+</tr>
+<tr>
+<td>GetJob</td>
+<td><a href="#geocube-GetJobRequest">GetJobRequest</a></td>
+<td><a href="#geocube-GetJobResponse">GetJobResponse</a></td>
+<td>Get a job given its name</td>
+</tr>
+<tr>
+<td>CleanJobs</td>
+<td><a href="#geocube-CleanJobsRequest">CleanJobsRequest</a></td>
+<td><a href="#geocube-CleanJobsResponse">CleanJobsResponse</a></td>
+<td>Delete jobs given their status</td>
+</tr>
+<tr>
+<td>RetryJob</td>
+<td><a href="#geocube-RetryJobRequest">RetryJobRequest</a></td>
+<td><a href="#geocube-RetryJobResponse">RetryJobResponse</a></td>
+<td>Retry a job</td>
+</tr>
+<tr>
+<td>CancelJob</td>
+<td><a href="#geocube-CancelJobRequest">CancelJobRequest</a></td>
+<td><a href="#geocube-CancelJobResponse">CancelJobResponse</a></td>
+<td>Cancel a job</td>
+</tr>
+<tr>
+<td>ContinueJob</td>
+<td><a href="#geocube-ContinueJobRequest">ContinueJobRequest</a></td>
+<td><a href="#geocube-ContinueJobResponse">ContinueJobResponse</a></td>
+<td>Continue a job that is in waiting state</td>
+</tr>
+<tr>
+<td>GetCube</td>
+<td><a href="#geocube-GetCubeRequest">GetCubeRequest</a></td>
+<td><a href="#geocube-GetCubeResponse">GetCubeResponse</a> stream</td>
+<td>Get a cube of data given a CubeParams</td>
+</tr>
+<tr>
+<td>GetXYZTile</td>
+<td><a href="#geocube-GetTileRequest">GetTileRequest</a></td>
+<td><a href="#geocube-GetTileResponse">GetTileResponse</a></td>
+<td>Get a XYZTile (can be used with a TileServer, provided a GRPCGateway is up)</td>
+</tr>
+<tr>
+<td>CreateLayout</td>
+<td><a href="#geocube-CreateLayoutRequest">CreateLayoutRequest</a></td>
+<td><a href="#geocube-CreateLayoutResponse">CreateLayoutResponse</a></td>
+<td>Create a layout to be used for tiling or consolidation</td>
+</tr>
+<tr>
+<td>DeleteLayout</td>
+<td><a href="#geocube-DeleteLayoutRequest">DeleteLayoutRequest</a></td>
+<td><a href="#geocube-DeleteLayoutResponse">DeleteLayoutResponse</a></td>
+<td>Delete a layout given its name</td>
+</tr>
+<tr>
+<td>ListLayouts</td>
+<td><a href="#geocube-ListLayoutsRequest">ListLayoutsRequest</a></td>
+<td><a href="#geocube-ListLayoutsResponse">ListLayoutsResponse</a></td>
+<td>List layouts given a name pattern</td>
+</tr>
+<tr>
+<td>FindContainerLayouts</td>
+<td><a href="#geocube-FindContainerLayoutsRequest">FindContainerLayoutsRequest</a></td>
+<td><a href="#geocube-FindContainerLayoutsResponse">FindContainerLayoutsResponse</a> stream</td>
+<td>Find all the layouts known for a set of containers</td>
+</tr>
+<tr>
+<td>TileAOI</td>
+<td><a href="#geocube-TileAOIRequest">TileAOIRequest</a></td>
+<td><a href="#geocube-TileAOIResponse">TileAOIResponse</a> stream</td>
+<td>Tile an AOI given a layout</td>
+</tr>
+<tr>
+<td>CreateGrid</td>
+<td><a href="#geocube-CreateGridRequest">CreateGridRequest</a> stream</td>
+<td><a href="#geocube-CreateGridResponse">CreateGridResponse</a></td>
+<td>Create a grid that can be used to tile an AOI</td>
+</tr>
+<tr>
+<td>DeleteGrid</td>
+<td><a href="#geocube-DeleteGridRequest">DeleteGridRequest</a></td>
+<td><a href="#geocube-DeleteGridResponse">DeleteGridResponse</a></td>
+<td>Delete a grid</td>
+</tr>
+<tr>
+<td>ListGrids</td>
+<td><a href="#geocube-ListGridsRequest">ListGridsRequest</a></td>
+<td><a href="#geocube-ListGridsResponse">ListGridsResponse</a></td>
+<td>List grids given a name pattern</td>
+</tr>
+<tr>
+<td>Version</td>
+<td><a href="#geocube-GetVersionRequest">GetVersionRequest</a></td>
+<td><a href="#geocube-GetVersionResponse">GetVersionResponse</a></td>
+<td>Version of the GeocubeServer</td>
+</tr>
+</tbody>
+</table>
+<p><a name="pb_geocubeDownloader-proto"></a></p>
+<p align="right"><a href="#top">Top</a></p>
+
+<h3 id="pbgeocubedownloaderproto">pb/geocubeDownloader.proto</h3>
+<p><a name="geocube-GeocubeDownloader"></a></p>
+<h4 id="geocubedownloader">GeocubeDownloader</h4>
+<p>API GeocubeDownloader to download a cube from metadata</p>
+<table>
+<thead>
+<tr>
+<th>Method Name</th>
+<th>Request Type</th>
+<th>Response Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>DownloadCube</td>
+<td><a href="#geocube-GetCubeMetadataRequest">GetCubeMetadataRequest</a></td>
+<td><a href="#geocube-GetCubeMetadataResponse">GetCubeMetadataResponse</a> stream</td>
+<td>Request cube using metadatas returned by a call to Geocube.GetCube()</td>
+</tr>
+<tr>
+<td>Version</td>
+<td><a href="#geocube-GetVersionRequest">GetVersionRequest</a></td>
+<td><a href="#geocube-GetVersionResponse">GetVersionResponse</a></td>
+<td>Version of the GeocubeDownloader</td>
+</tr>
+</tbody>
+</table>
+<p><a name="pb_admin-proto"></a></p>
+<p align="right"><a href="#top">Top</a></p>
+
+<h3 id="pbadminproto">pb/admin.proto</h3>
+<p><a name="geocube-TidyDBRequest"></a></p>
+<h4 id="tidydbrequest">TidyDBRequest</h4>
+<p>Request to remove from the database all the pending entities (entities that are not linked to any dataset)</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Simulate</td>
+<td><a href="#bool">bool</a></td>
+<td></td>
+<td>If true, a simulation is done, nothing is actually deleted</td>
+</tr>
+<tr>
+<td>PendingAOIs</td>
+<td><a href="#bool">bool</a></td>
+<td></td>
+<td>Remove AOIs that are not linked to any Records</td>
+</tr>
+<tr>
+<td>PendingRecords</td>
+<td><a href="#bool">bool</a></td>
+<td></td>
+<td>Remove Records that do not reference any Datasets</td>
+</tr>
+<tr>
+<td>PendingVariables</td>
+<td><a href="#bool">bool</a></td>
+<td></td>
+<td>Remove Variables that have not any instances</td>
+</tr>
+<tr>
+<td>PendingInstances</td>
+<td><a href="#bool">bool</a></td>
+<td></td>
+<td>Remove Instances that do not reference any Datasets</td>
+</tr>
+<tr>
+<td>PendingContainers</td>
+<td><a href="#bool">bool</a></td>
+<td></td>
+<td>Remove Containers that do not contain any Datasets</td>
+</tr>
+<tr>
+<td>PendingParams</td>
+<td><a href="#bool">bool</a></td>
+<td></td>
+<td>Remove ConsolidationParams that are not linked to any Variable or Job</td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-TidyDBResponse"></a></p>
+<h4 id="tidydbresponse">TidyDBResponse</h4>
+<p>Return the number of entities that were deleted (or should have been deleted if Simulate=True)</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>NbAOIs</td>
+<td><a href="#int64">int64</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>NbRecords</td>
+<td><a href="#int64">int64</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>NbVariables</td>
+<td><a href="#int64">int64</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>NbInstances</td>
+<td><a href="#int64">int64</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>NbContainers</td>
+<td><a href="#int64">int64</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>NbParams</td>
+<td><a href="#int64">int64</a></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-UpdateDatasetsRequest"></a></p>
+<h4 id="updatedatasetsrequest">UpdateDatasetsRequest</h4>
+<p>Update fields of datasets that can be tricky</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>simulate</td>
+<td><a href="#bool">bool</a></td>
+<td></td>
+<td>If true, a simulation is done, nothing is actually updated</td>
+</tr>
+<tr>
+<td>instance_id</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td>Instance id that references the datasets to be updated</td>
+</tr>
+<tr>
+<td>record_ids</td>
+<td><a href="#string">string</a></td>
+<td>repeated</td>
+<td>Record ids that reference the datasets to be updated</td>
+</tr>
+<tr>
+<td>dformat</td>
+<td><a href="#geocube-DataFormat">DataFormat</a></td>
+<td></td>
+<td>Internal data format (DType can be Undefined)</td>
+</tr>
+<tr>
+<td>real_min_value</td>
+<td><a href="#double">double</a></td>
+<td></td>
+<td>Real min value (dformat.min_value maps to real_min_value)</td>
+</tr>
+<tr>
+<td>real_max_value</td>
+<td><a href="#double">double</a></td>
+<td></td>
+<td>Real max value (dformat.max_value maps to real_max_value)</td>
+</tr>
+<tr>
+<td>exponent</td>
+<td><a href="#double">double</a></td>
+<td></td>
+<td>1: linear scaling (RealMax - RealMin) * pow( (Value - Min) / (Max - Min), Exponent) &#43; RealMin</td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-UpdateDatasetsResponse"></a></p>
+<h4 id="updatedatasetsresponse">UpdateDatasetsResponse</h4>
+<p>Return the number of modifications per kind of modification</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>results</td>
+<td><a href="#geocube-UpdateDatasetsResponse-ResultsEntry">UpdateDatasetsResponse.ResultsEntry</a></td>
+<td>repeated</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-UpdateDatasetsResponse-ResultsEntry"></a></p>
+<h4 id="updatedatasetsresponseresultsentry">UpdateDatasetsResponse.ResultsEntry</h4>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>key</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>value</td>
+<td><a href="#int64">int64</a></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-Admin"></a></p>
+<h4 id="admin">Admin</h4>
+<p>Service providing some functions to update or clean the database
+Must be used cautiously because there is no control neither possible rollback</p>
+<table>
+<thead>
+<tr>
+<th>Method Name</th>
+<th>Request Type</th>
+<th>Response Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>TidyDB</td>
+<td><a href="#geocube-TidyDBRequest">TidyDBRequest</a></td>
+<td><a href="#geocube-TidyDBResponse">TidyDBResponse</a></td>
+<td></td>
+</tr>
+<tr>
+<td>UpdateDatasets</td>
+<td><a href="#geocube-UpdateDatasetsRequest">UpdateDatasetsRequest</a></td>
+<td><a href="#geocube-UpdateDatasetsResponse">UpdateDatasetsResponse</a></td>
+<td></td>
+</tr>
+<tr>
+<td>DeleteDatasets</td>
+<td><a href="#geocube-DeleteDatasetsRequest">DeleteDatasetsRequest</a></td>
+<td><a href="#geocube-DeleteDatasetsResponse">DeleteDatasetsResponse</a></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="pb_records-proto"></a></p>
+<p align="right"><a href="#top">Top</a></p>
+
+<h3 id="pbrecordsproto">pb/records.proto</h3>
+<p><a name="geocube-AOI"></a></p>
+<h4 id="aoi">AOI</h4>
+<p>Geographic AOI</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>polygons</td>
+<td><a href="#geocube-Polygon">Polygon</a></td>
+<td>repeated</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-AddRecordsTagsRequest"></a></p>
+<h4 id="addrecordstagsrequest">AddRecordsTagsRequest</h4>
+<p>Add the given tags to a set of records</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ids</td>
+<td><a href="#string">string</a></td>
+<td>repeated</td>
+<td></td>
+</tr>
+<tr>
+<td>tags</td>
+<td><a href="#geocube-AddRecordsTagsRequest-TagsEntry">AddRecordsTagsRequest.TagsEntry</a></td>
+<td>repeated</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-AddRecordsTagsRequest-TagsEntry"></a></p>
+<h4 id="addrecordstagsrequesttagsentry">AddRecordsTagsRequest.TagsEntry</h4>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>key</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>value</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-AddRecordsTagsResponse"></a></p>
+<h4 id="addrecordstagsresponse">AddRecordsTagsResponse</h4>
+<p>Returns the number of records impacted by the addition</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>nb</td>
+<td><a href="#int64">int64</a></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-Coord"></a></p>
+<h4 id="coord">Coord</h4>
+<p>Geographic coordinates (4326)</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>lon</td>
+<td><a href="#float">float</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>lat</td>
+<td><a href="#float">float</a></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-CreateAOIRequest"></a></p>
+<h4 id="createaoirequest">CreateAOIRequest</h4>
+<p>Create a new AOI</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>aoi</td>
+<td><a href="#geocube-AOI">AOI</a></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-CreateAOIResponse"></a></p>
+<h4 id="createaoiresponse">CreateAOIResponse</h4>
+<p>Returns the ID of the AOI</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-CreateRecordsRequest"></a></p>
+<h4 id="createrecordsrequest">CreateRecordsRequest</h4>
+<p>Create new records</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>records</td>
+<td><a href="#geocube-NewRecord">NewRecord</a></td>
+<td>repeated</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-CreateRecordsResponse"></a></p>
+<h4 id="createrecordsresponse">CreateRecordsResponse</h4>
+<p>Returns the ID of the created records</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ids</td>
+<td><a href="#string">string</a></td>
+<td>repeated</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-DeleteRecordsRequest"></a></p>
+<h4 id="deleterecordsrequest">DeleteRecordsRequest</h4>
+<p>Delete records by ID</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ids</td>
+<td><a href="#string">string</a></td>
+<td>repeated</td>
+<td></td>
+</tr>
+<tr>
+<td>no_fail</td>
+<td><a href="#bool">bool</a></td>
+<td></td>
+<td>If true, do not fail if some records still have datasets that refer to them and delete the others.</td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-DeleteRecordsResponse"></a></p>
+<h4 id="deleterecordsresponse">DeleteRecordsResponse</h4>
+<p>Return the number of deleted records</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>nb</td>
+<td><a href="#int64">int64</a></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-GetAOIRequest"></a></p>
+<h4 id="getaoirequest">GetAOIRequest</h4>
+<p>Request the AOI given its ID</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-GetAOIResponse"></a></p>
+<h4 id="getaoiresponse">GetAOIResponse</h4>
+<p>Returns a geometric AOI</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>aoi</td>
+<td><a href="#geocube-AOI">AOI</a></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-GetRecordsRequest"></a></p>
+<h4 id="getrecordsrequest">GetRecordsRequest</h4>
+<p>Get record from its id</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ids</td>
+<td><a href="#string">string</a></td>
+<td>repeated</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-GetRecordsResponseItem"></a></p>
+<h4 id="getrecordsresponseitem">GetRecordsResponseItem</h4>
+<p>Return a record</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>record</td>
+<td><a href="#geocube-Record">Record</a></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-GroupedRecordIds"></a></p>
+<h4 id="groupedrecordids">GroupedRecordIds</h4>
+<p>Record ids that are considered as a unique, merged record (e.g. all records of a given date, whatever the time of the day)</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ids</td>
+<td><a href="#string">string</a></td>
+<td>repeated</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-GroupedRecordIdsList"></a></p>
+<h4 id="groupedrecordidslist">GroupedRecordIdsList</h4>
+<p>List of groupedRecordIds</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>records</td>
+<td><a href="#geocube-GroupedRecordIds">GroupedRecordIds</a></td>
+<td>repeated</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-GroupedRecords"></a></p>
+<h4 id="groupedrecords">GroupedRecords</h4>
+<p>Records that are considered as a unique, merged record (e.g. all records of a given date, whatever the time of the day)</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>records</td>
+<td><a href="#geocube-Record">Record</a></td>
+<td>repeated</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-LinearRing"></a></p>
+<h4 id="linearring">LinearRing</h4>
+<p>Geographic linear ring</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>points</td>
+<td><a href="#geocube-Coord">Coord</a></td>
+<td>repeated</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-ListRecordsRequest"></a></p>
+<h4 id="listrecordsrequest">ListRecordsRequest</h4>
+<p>Request to find the list of records corresponding to multiple filters (inclusive)</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>name</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td>Name pattern (support * and ? for all or any characters and trailing (?i) for case-insensitiveness)</td>
+</tr>
+<tr>
+<td>tags</td>
+<td><a href="#geocube-ListRecordsRequest-TagsEntry">ListRecordsRequest.TagsEntry</a></td>
+<td>repeated</td>
+<td>cf RecordFilters</td>
+</tr>
+<tr>
+<td>from_time</td>
+<td><a href="#google-protobuf-Timestamp">google.protobuf.Timestamp</a></td>
+<td></td>
+<td>cf RecordFilters</td>
+</tr>
+<tr>
+<td>to_time</td>
+<td><a href="#google-protobuf-Timestamp">google.protobuf.Timestamp</a></td>
+<td></td>
+<td>cf RecordFilters</td>
+</tr>
+<tr>
+<td>aoi</td>
+<td><a href="#geocube-AOI">AOI</a></td>
+<td></td>
+<td>cf RecordFiltersWithAOI</td>
+</tr>
+<tr>
+<td>limit</td>
+<td><a href="#int32">int32</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>page</td>
+<td><a href="#int32">int32</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>with_aoi</td>
+<td><a href="#bool">bool</a></td>
+<td></td>
+<td>Also returns the AOI (may be big)</td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-ListRecordsRequest-TagsEntry"></a></p>
+<h4 id="listrecordsrequesttagsentry">ListRecordsRequest.TagsEntry</h4>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>key</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>value</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-ListRecordsResponseItem"></a></p>
+<h4 id="listrecordsresponseitem">ListRecordsResponseItem</h4>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>record</td>
+<td><a href="#geocube-Record">Record</a></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-NewRecord"></a></p>
+<h4 id="newrecord">NewRecord</h4>
+<p>Structure to create a new record</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>name</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>time</td>
+<td><a href="#google-protobuf-Timestamp">google.protobuf.Timestamp</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>tags</td>
+<td><a href="#geocube-NewRecord-TagsEntry">NewRecord.TagsEntry</a></td>
+<td>repeated</td>
+<td></td>
+</tr>
+<tr>
+<td>aoi_id</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-NewRecord-TagsEntry"></a></p>
+<h4 id="newrecordtagsentry">NewRecord.TagsEntry</h4>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>key</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>value</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-Polygon"></a></p>
+<h4 id="polygon">Polygon</h4>
+<p>Geographic polygon</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>linearrings</td>
+<td><a href="#geocube-LinearRing">LinearRing</a></td>
+<td>repeated</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-Record"></a></p>
+<h4 id="record">Record</h4>
+<p>Record</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>name</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>time</td>
+<td><a href="#google-protobuf-Timestamp">google.protobuf.Timestamp</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>tags</td>
+<td><a href="#geocube-Record-TagsEntry">Record.TagsEntry</a></td>
+<td>repeated</td>
+<td></td>
+</tr>
+<tr>
+<td>aoi_id</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>aoi</td>
+<td><a href="#geocube-AOI">AOI</a></td>
+<td></td>
+<td>optional</td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-Record-TagsEntry"></a></p>
+<h4 id="recordtagsentry">Record.TagsEntry</h4>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>key</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>value</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-RecordFilters"></a></p>
+<h4 id="recordfilters">RecordFilters</h4>
+<p>RecordFilters defines some filters to identify records</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>tags</td>
+<td><a href="#geocube-RecordFilters-TagsEntry">RecordFilters.TagsEntry</a></td>
+<td>repeated</td>
+<td>Tags of the records</td>
+</tr>
+<tr>
+<td>from_time</td>
+<td><a href="#google-protobuf-Timestamp">google.protobuf.Timestamp</a></td>
+<td></td>
+<td>Minimum date of the records</td>
+</tr>
+<tr>
+<td>to_time</td>
+<td><a href="#google-protobuf-Timestamp">google.protobuf.Timestamp</a></td>
+<td></td>
+<td>Maximum date of the records</td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-RecordFilters-TagsEntry"></a></p>
+<h4 id="recordfilterstagsentry">RecordFilters.TagsEntry</h4>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>key</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>value</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-RecordFiltersWithAOI"></a></p>
+<h4 id="recordfilterswithaoi">RecordFiltersWithAOI</h4>
+<p>RecordFiltersWithAOI defines some filters to identify records, including an AOI in geometric coordinates</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>filters</td>
+<td><a href="#geocube-RecordFilters">RecordFilters</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>aoi</td>
+<td><a href="#geocube-AOI">AOI</a></td>
+<td></td>
+<td>Geometric coordinates of an AOI that intersects the AOI of the records</td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-RecordIdList"></a></p>
+<h4 id="recordidlist">RecordIdList</h4>
+<p>List of record ids that are considered separately</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ids</td>
+<td><a href="#string">string</a></td>
+<td>repeated</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-RemoveRecordsTagsRequest"></a></p>
+<h4 id="removerecordstagsrequest">RemoveRecordsTagsRequest</h4>
+<p>Remove the given tags for a set of records</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ids</td>
+<td><a href="#string">string</a></td>
+<td>repeated</td>
+<td></td>
+</tr>
+<tr>
+<td>tagsKey</td>
+<td><a href="#string">string</a></td>
+<td>repeated</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-RemoveRecordsTagsResponse"></a></p>
+<h4 id="removerecordstagsresponse">RemoveRecordsTagsResponse</h4>
+<p>Returns the number of records impacted by the removal</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>nb</td>
+<td><a href="#int64">int64</a></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="pb_variables-proto"></a></p>
+<p align="right"><a href="#top">Top</a></p>
+
+<h3 id="pbvariablesproto">pb/variables.proto</h3>
+<p><a name="geocube-CreatePaletteRequest"></a></p>
+<h4 id="createpaletterequest">CreatePaletteRequest</h4>
+<p>Create a new palette or update it if already exists (provided replace=True)</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>palette</td>
+<td><a href="#geocube-Palette">Palette</a></td>
+<td></td>
+<td>Palette to be created</td>
+</tr>
+<tr>
+<td>replace</td>
+<td><a href="#bool">bool</a></td>
+<td></td>
+<td>Replace the current existing palette if exists</td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-CreatePaletteResponse"></a></p>
+<h4 id="createpaletteresponse">CreatePaletteResponse</h4>
+<p>Return nothing.</p>
+<p><a name="geocube-CreateVariableRequest"></a></p>
+<h4 id="createvariablerequest">CreateVariableRequest</h4>
+<p>Define a new variable.
+Return an error if the name already exists.</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>variable</td>
+<td><a href="#geocube-Variable">Variable</a></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-CreateVariableResponse"></a></p>
+<h4 id="createvariableresponse">CreateVariableResponse</h4>
+<p>Return the id of the new variable.</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-DeleteInstanceRequest"></a></p>
+<h4 id="deleteinstancerequest">DeleteInstanceRequest</h4>
+<p>Delete an instance
+Return an error if the instance is linked to datasets.</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td>UUID-4 of the instance to delete</td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-DeleteInstanceResponse"></a></p>
+<h4 id="deleteinstanceresponse">DeleteInstanceResponse</h4>
+<p>Return nothing</p>
+<p><a name="geocube-DeleteVariableRequest"></a></p>
+<h4 id="deletevariablerequest">DeleteVariableRequest</h4>
+<p>Delete a variable
+Return an error if the variable has still instances</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td>UUID-4 of the variable to delete</td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-DeleteVariableResponse"></a></p>
+<h4 id="deletevariableresponse">DeleteVariableResponse</h4>
+<p>Return nothing</p>
+<p><a name="geocube-GetVariableRequest"></a></p>
+<h4 id="getvariablerequest">GetVariableRequest</h4>
+<p>Read a variable given either its id, its name or the id of one of its instance</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td>UUID-4 of the variable</td>
+</tr>
+<tr>
+<td>name</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td>Name of the variable</td>
+</tr>
+<tr>
+<td>instance_id</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td>UUID-4 of an instance</td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-GetVariableResponse"></a></p>
+<h4 id="getvariableresponse">GetVariableResponse</h4>
+<p>Return the variable and its instances</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>variable</td>
+<td><a href="#geocube-Variable">Variable</a></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-Instance"></a></p>
+<h4 id="instance">Instance</h4>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td>Null at creation</td>
+</tr>
+<tr>
+<td>name</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>metadata</td>
+<td><a href="#geocube-Instance-MetadataEntry">Instance.MetadataEntry</a></td>
+<td>repeated</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-Instance-MetadataEntry"></a></p>
+<h4 id="instancemetadataentry">Instance.MetadataEntry</h4>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>key</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>value</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-InstantiateVariableRequest"></a></p>
+<h4 id="instantiatevariablerequest">InstantiateVariableRequest</h4>
+<p>Instantiate a variable.
+Return an error if the instance_name already exists for this variable.</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>variable_id</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>instance_name</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>instance_metadata</td>
+<td><a href="#geocube-InstantiateVariableRequest-InstanceMetadataEntry">InstantiateVariableRequest.InstanceMetadataEntry</a></td>
+<td>repeated</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-InstantiateVariableRequest-InstanceMetadataEntry"></a></p>
+<h4 id="instantiatevariablerequestinstancemetadataentry">InstantiateVariableRequest.InstanceMetadataEntry</h4>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>key</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>value</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-InstantiateVariableResponse"></a></p>
+<h4 id="instantiatevariableresponse">InstantiateVariableResponse</h4>
+<p>Return the new instance (its id, name and metadata)</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>instance</td>
+<td><a href="#geocube-Instance">Instance</a></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-ListVariablesRequest"></a></p>
+<h4 id="listvariablesrequest">ListVariablesRequest</h4>
+<p>List variables given a name pattern</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>name</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td>Pattern of the name of the variable (support * and ? for all or any characters, (?i) suffix for case-insensitiveness)</td>
+</tr>
+<tr>
+<td>limit</td>
+<td><a href="#int32">int32</a></td>
+<td></td>
+<td>Limit the number of variables returned</td>
+</tr>
+<tr>
+<td>page</td>
+<td><a href="#int32">int32</a></td>
+<td></td>
+<td>Navigate through results (start at 0)</td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-ListVariablesResponseItem"></a></p>
+<h4 id="listvariablesresponseitem">ListVariablesResponseItem</h4>
+<p>Return a stream of variables</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>variable</td>
+<td><a href="#geocube-Variable">Variable</a></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-Palette"></a></p>
+<h4 id="palette">Palette</h4>
+<p>Define a palette with a name and a set of colorPoint.
+Maps all values in [0,1] to an RGBA value, using piecewise curve defined by colorPoints.
+All intermediate values are linearly interpolated.</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>name</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td>Name of the palette (Alpha-numerics characters, dots, dashes and underscores are supported)</td>
+</tr>
+<tr>
+<td>colors</td>
+<td><a href="#geocube-colorPoint">colorPoint</a></td>
+<td>repeated</td>
+<td>Set of colorPoints. At least two points must be defined, corresponding to value=0 and value=1.</td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-UpdateInstanceRequest"></a></p>
+<h4 id="updateinstancerequest">UpdateInstanceRequest</h4>
+<p>Update an instance
+Return an error if the name is to be updated but the new name already exists.</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td>UUID-4 of the instance to update</td>
+</tr>
+<tr>
+<td>name</td>
+<td><a href="#google-protobuf-StringValue">google.protobuf.StringValue</a></td>
+<td></td>
+<td>[Optional] New name of the variable. Empty to ignore</td>
+</tr>
+<tr>
+<td>add_metadata</td>
+<td><a href="#geocube-UpdateInstanceRequest-AddMetadataEntry">UpdateInstanceRequest.AddMetadataEntry</a></td>
+<td>repeated</td>
+<td>Pairs of metadata (key, values) to be inserted or updated</td>
+</tr>
+<tr>
+<td>del_metadata_keys</td>
+<td><a href="#string">string</a></td>
+<td>repeated</td>
+<td>Metadata keys to be deleted</td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-UpdateInstanceRequest-AddMetadataEntry"></a></p>
+<h4 id="updateinstancerequestaddmetadataentry">UpdateInstanceRequest.AddMetadataEntry</h4>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>key</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>value</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-UpdateInstanceResponse"></a></p>
+<h4 id="updateinstanceresponse">UpdateInstanceResponse</h4>
+<p>Return nothing</p>
+<p><a name="geocube-UpdateVariableRequest"></a></p>
+<h4 id="updatevariablerequest">UpdateVariableRequest</h4>
+<p>Update the non-critical fields of a variable
+Return an error if the name is to be updated but the new name already exists.</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td>UUID-4 of the variable to update</td>
+</tr>
+<tr>
+<td>name</td>
+<td><a href="#google-protobuf-StringValue">google.protobuf.StringValue</a></td>
+<td></td>
+<td>[Optional] New name of the variable. Empty to ignore</td>
+</tr>
+<tr>
+<td>unit</td>
+<td><a href="#google-protobuf-StringValue">google.protobuf.StringValue</a></td>
+<td></td>
+<td>[Optional] New unit of the variable. Empty to ignore</td>
+</tr>
+<tr>
+<td>description</td>
+<td><a href="#google-protobuf-StringValue">google.protobuf.StringValue</a></td>
+<td></td>
+<td>[Optional] New description of the variable. Empty to ignore</td>
+</tr>
+<tr>
+<td>palette</td>
+<td><a href="#google-protobuf-StringValue">google.protobuf.StringValue</a></td>
+<td></td>
+<td>[Optional] New default palette of the variable. Empty to ignore</td>
+</tr>
+<tr>
+<td>resampling_alg</td>
+<td><a href="#geocube-Resampling">Resampling</a></td>
+<td></td>
+<td>[Optional] New default resampling algorithm of the variable. UNDEFINED to ignore</td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-UpdateVariableResponse"></a></p>
+<h4 id="updatevariableresponse">UpdateVariableResponse</h4>
+<p>Return nothing</p>
+<p><a name="geocube-Variable"></a></p>
+<h4 id="variable">Variable</h4>
+<p>Variable</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td>Internal UUID-4 of the variable (ignored at creation)</td>
+</tr>
+<tr>
+<td>name</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td>Name of the variable (Alpha-numerics characters, dashs, dots and underscores)</td>
+</tr>
+<tr>
+<td>unit</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td>Unit of the variable (for user information only)</td>
+</tr>
+<tr>
+<td>description</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td>Description of the variable (for user information only)</td>
+</tr>
+<tr>
+<td>dformat</td>
+<td><a href="#geocube-DataFormat">DataFormat</a></td>
+<td></td>
+<td>Format of the data. Range.Min and Range.Max are used for data mapping from internal data format of a dataset (See IndexDatasets for more details), DType and NoData are used for the outputs of GetCube.</td>
+</tr>
+<tr>
+<td>bands</td>
+<td><a href="#string">string</a></td>
+<td>repeated</td>
+<td>Name of each band. Can be empty when the variable refers to only one band, must be unique otherwise.</td>
+</tr>
+<tr>
+<td>palette</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td>Name of the default palette for color rendering.</td>
+</tr>
+<tr>
+<td>resampling_alg</td>
+<td><a href="#geocube-Resampling">Resampling</a></td>
+<td></td>
+<td>Default resampling algorithm in case of reprojection.</td>
+</tr>
+<tr>
+<td>instances</td>
+<td><a href="#geocube-Instance">Instance</a></td>
+<td>repeated</td>
+<td>List of instances of the variable (ignored at creation)</td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-colorPoint"></a></p>
+<h4 id="colorpoint">colorPoint</h4>
+<p>Define a color mapping from a value [0-1] to a RGBA value.</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>value</td>
+<td><a href="#float">float</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>r</td>
+<td><a href="#uint32">uint32</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>g</td>
+<td><a href="#uint32">uint32</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>b</td>
+<td><a href="#uint32">uint32</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>a</td>
+<td><a href="#uint32">uint32</a></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-Resampling"></a></p>
+<h4 id="resampling">Resampling</h4>
+<p>Resampling algorithms (supported by GDAL)</p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Number</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>UNDEFINED</td>
+<td>0</td>
+<td></td>
+</tr>
+<tr>
+<td>NEAR</td>
+<td>1</td>
+<td></td>
+</tr>
+<tr>
+<td>BILINEAR</td>
+<td>2</td>
+<td></td>
+</tr>
+<tr>
+<td>CUBIC</td>
+<td>3</td>
+<td></td>
+</tr>
+<tr>
+<td>CUBICSPLINE</td>
+<td>4</td>
+<td></td>
+</tr>
+<tr>
+<td>LANCZOS</td>
+<td>5</td>
+<td></td>
+</tr>
+<tr>
+<td>AVERAGE</td>
+<td>6</td>
+<td></td>
+</tr>
+<tr>
+<td>MODE</td>
+<td>7</td>
+<td></td>
+</tr>
+<tr>
+<td>MAX</td>
+<td>8</td>
+<td></td>
+</tr>
+<tr>
+<td>MIN</td>
+<td>9</td>
+<td></td>
+</tr>
+<tr>
+<td>MED</td>
+<td>10</td>
+<td></td>
+</tr>
+<tr>
+<td>Q1</td>
+<td>11</td>
+<td></td>
+</tr>
+<tr>
+<td>Q3</td>
+<td>12</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="pb_dataformat-proto"></a></p>
+<p align="right"><a href="#top">Top</a></p>
+
+<h3 id="pbdataformatproto">pb/dataformat.proto</h3>
+<p><a name="geocube-DataFormat"></a></p>
+<h4 id="dataformat">DataFormat</h4>
+<p>Format of the data of a dataset.
+Format is defined by the type of the data, its no-data value and the range of values (its interpretation depends on the use)</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>dtype</td>
+<td><a href="#geocube-DataFormat-Dtype">DataFormat.Dtype</a></td>
+<td></td>
+<td>Type of the data</td>
+</tr>
+<tr>
+<td>no_data</td>
+<td><a href="#double">double</a></td>
+<td></td>
+<td>No-data value (supports any float values, including NaN)</td>
+</tr>
+<tr>
+<td>min_value</td>
+<td><a href="#double">double</a></td>
+<td></td>
+<td>Min value (usually used to map from one min value to another)</td>
+</tr>
+<tr>
+<td>max_value</td>
+<td><a href="#double">double</a></td>
+<td></td>
+<td>Max value (usually used to map from one min value to another)</td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-DataFormat-Dtype"></a></p>
+<h4 id="dataformatdtype">DataFormat.Dtype</h4>
+<p>Type of data supported by the Geocube &amp; GDAL</p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Number</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>UNDEFINED</td>
+<td>0</td>
+<td></td>
+</tr>
+<tr>
+<td>UInt8</td>
+<td>1</td>
+<td></td>
+</tr>
+<tr>
+<td>UInt16</td>
+<td>2</td>
+<td></td>
+</tr>
+<tr>
+<td>UInt32</td>
+<td>3</td>
+<td></td>
+</tr>
+<tr>
+<td>Int8</td>
+<td>4</td>
+<td></td>
+</tr>
+<tr>
+<td>Int16</td>
+<td>5</td>
+<td></td>
+</tr>
+<tr>
+<td>Int32</td>
+<td>6</td>
+<td></td>
+</tr>
+<tr>
+<td>Float32</td>
+<td>7</td>
+<td></td>
+</tr>
+<tr>
+<td>Float64</td>
+<td>8</td>
+<td></td>
+</tr>
+<tr>
+<td>Complex64</td>
+<td>9</td>
+<td>Pair of float32</td>
+</tr>
+</tbody>
+</table>
+<p><a name="pb_catalog-proto"></a></p>
+<p align="right"><a href="#top">Top</a></p>
+
+<h3 id="pbcatalogproto">pb/catalog.proto</h3>
+<p><a name="geocube-GetCubeMetadataRequest"></a></p>
+<h4 id="getcubemetadatarequest">GetCubeMetadataRequest</h4>
+<p>Request a cube from metadatas (provided by Geocube.GetCube())</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>datasets_meta</td>
+<td><a href="#geocube-DatasetMeta">DatasetMeta</a></td>
+<td>repeated</td>
+<td>List of Metadatas needed to download and generate the slices of the cube</td>
+</tr>
+<tr>
+<td>grouped_records</td>
+<td><a href="#geocube-GroupedRecords">GroupedRecords</a></td>
+<td>repeated</td>
+<td>List of GroupedRecords describing the slices of the cube</td>
+</tr>
+<tr>
+<td>ref_dformat</td>
+<td><a href="#geocube-DataFormat">DataFormat</a></td>
+<td></td>
+<td>Output dataformat</td>
+</tr>
+<tr>
+<td>resampling_alg</td>
+<td><a href="#geocube-Resampling">Resampling</a></td>
+<td></td>
+<td>Resampling algorithm to use for reprojection</td>
+</tr>
+<tr>
+<td>pix_to_crs</td>
+<td><a href="#geocube-GeoTransform">GeoTransform</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>crs</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>size</td>
+<td><a href="#geocube-Size">Size</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>format</td>
+<td><a href="#geocube-FileFormat">FileFormat</a></td>
+<td></td>
+<td>Format of the output data</td>
+</tr>
+<tr>
+<td>predownload</td>
+<td><a href="#bool">bool</a></td>
+<td></td>
+<td>Predownload the datasets before merging them. When the dataset is remote and all the dataset is required, it is more efficient to predownload it.</td>
+</tr>
+<tr>
+<td>protocol_v11x</td>
+<td><a href="#bool">bool</a></td>
+<td></td>
+<td>For compatibility with older clients. Clients with version above 1.1.0 must set this field to true.</td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-GetCubeMetadataResponse"></a></p>
+<h4 id="getcubemetadataresponse">GetCubeMetadataResponse</h4>
+<p>Return either information on the cube, information on an image or a chunk of an image</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>global_header</td>
+<td><a href="#geocube-GetCubeResponseHeader">GetCubeResponseHeader</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>header</td>
+<td><a href="#geocube-ImageHeader">ImageHeader</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>chunk</td>
+<td><a href="#geocube-ImageChunk">ImageChunk</a></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-GetCubeRequest"></a></p>
+<h4 id="getcuberequest">GetCubeRequest</h4>
+<p>Request a cube of data</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>records</td>
+<td><a href="#geocube-RecordIdList">RecordIdList</a></td>
+<td></td>
+<td>List of record ids requested. At least one. One image will be returned by record (if not empty)</td>
+</tr>
+<tr>
+<td>filters</td>
+<td><a href="#geocube-RecordFilters">RecordFilters</a></td>
+<td></td>
+<td>Filters to list the records that will be used to create the cube</td>
+</tr>
+<tr>
+<td>grouped_records</td>
+<td><a href="#geocube-GroupedRecordIdsList">GroupedRecordIdsList</a></td>
+<td></td>
+<td>List of groups of record ids requested. At least one. One image will be returned by group of records (if not empty). All the datasets of a group of records will be merged together using the latest first.</td>
+</tr>
+<tr>
+<td>instances_id</td>
+<td><a href="#string">string</a></td>
+<td>repeated</td>
+<td>Instances of a variable defining the kind of images requested. At least one, and all must be instance of the same variable. Only one is actually supported</td>
+</tr>
+<tr>
+<td>crs</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td>Coordinates Reference System of the output images (images will be reprojected on the fly if necessary)</td>
+</tr>
+<tr>
+<td>pix_to_crs</td>
+<td><a href="#geocube-GeoTransform">GeoTransform</a></td>
+<td></td>
+<td>GeoTransform of the requested cube (images will be rescaled on the fly if necessary)</td>
+</tr>
+<tr>
+<td>size</td>
+<td><a href="#geocube-Size">Size</a></td>
+<td></td>
+<td>Shape of the output images</td>
+</tr>
+<tr>
+<td>compression_level</td>
+<td><a href="#int32">int32</a></td>
+<td></td>
+<td>Define a level of compression to speed up the transfer, values: -3 to 9 (-2: Huffman only, -1:default, 0-&gt;9: level of compression from the fastest to the best compression, -3: disable the compression). The data is compressed by the server and decompressed by the Client. Use -3 or -2 if the bandwidth is not limited. 0 is level 0 of DEFLATE (thus, it must be decompressed by DEFLATE even though the data is not compressed). If the client can support -3, 0 is useless.</td>
+</tr>
+<tr>
+<td>headers_only</td>
+<td><a href="#bool">bool</a></td>
+<td></td>
+<td>Only returns headers (including all metadatas on datasets)</td>
+</tr>
+<tr>
+<td>format</td>
+<td><a href="#geocube-FileFormat">FileFormat</a></td>
+<td></td>
+<td>Format of the output images</td>
+</tr>
+<tr>
+<td>resampling_alg</td>
+<td><a href="#geocube-Resampling">Resampling</a></td>
+<td></td>
+<td>Resampling algorithm used for reprojecion. If undefined, the default resampling algorithm associated to the variable is used.</td>
+</tr>
+<tr>
+<td>protocol_v11x</td>
+<td><a href="#bool">bool</a></td>
+<td></td>
+<td>For compatibility with older clients. Clients with version above 1.1.0 must set this field to true.</td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-GetCubeResponse"></a></p>
+<h4 id="getcuberesponse">GetCubeResponse</h4>
+<p>Return either information on the cube, information on an image or a chunk of an image</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>global_header</td>
+<td><a href="#geocube-GetCubeResponseHeader">GetCubeResponseHeader</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>header</td>
+<td><a href="#geocube-ImageHeader">ImageHeader</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>chunk</td>
+<td><a href="#geocube-ImageChunk">ImageChunk</a></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-GetCubeResponseHeader"></a></p>
+<h4 id="getcuberesponseheader">GetCubeResponseHeader</h4>
+<p>Return global information on the requested cube</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>count</td>
+<td><a href="#int64">int64</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>nb_datasets</td>
+<td><a href="#int64">int64</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>ref_dformat</td>
+<td><a href="#geocube-DataFormat">DataFormat</a></td>
+<td></td>
+<td>Output dataformat</td>
+</tr>
+<tr>
+<td>resampling_alg</td>
+<td><a href="#geocube-Resampling">Resampling</a></td>
+<td></td>
+<td>Resampling algorithm to use for reprojection</td>
+</tr>
+<tr>
+<td>geotransform</td>
+<td><a href="#geocube-GeoTransform">GeoTransform</a></td>
+<td></td>
+<td>Geotransform used for mapping</td>
+</tr>
+<tr>
+<td>crs</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-GetTileRequest"></a></p>
+<h4 id="gettilerequest">GetTileRequest</h4>
+<p>Request a web-mercator tile, given a variable and a group of records</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>instance_id</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>x</td>
+<td><a href="#int32">int32</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>y</td>
+<td><a href="#int32">int32</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>z</td>
+<td><a href="#int32">int32</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>min</td>
+<td><a href="#float">float</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>max</td>
+<td><a href="#float">float</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>records</td>
+<td><a href="#geocube-GroupedRecordIds">GroupedRecordIds</a></td>
+<td></td>
+<td>Group of record ids. At least one. All the datasets of the group of records will be merged together using the latest first.</td>
+</tr>
+<tr>
+<td>filters</td>
+<td><a href="#geocube-RecordFilters">RecordFilters</a></td>
+<td></td>
+<td>All the datasets whose records have RecordTags and time between from_time and to_time</td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-GetTileResponse"></a></p>
+<h4 id="gettileresponse">GetTileResponse</h4>
+<p>Return a 256x256 png image</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>image</td>
+<td><a href="#geocube-ImageFile">ImageFile</a></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-ImageChunk"></a></p>
+<h4 id="imagechunk">ImageChunk</h4>
+<p>Chunk of the full image, to handle the GRPC limit of 4Mbytes/message</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>part</td>
+<td><a href="#int32">int32</a></td>
+<td></td>
+<td>Index of the chunk (from 1 to ImageHeader.nb_parts-1). The first part (=0) is ImageHeader.data</td>
+</tr>
+<tr>
+<td>data</td>
+<td><a href="#bytes">bytes</a></td>
+<td></td>
+<td>Chunk of the full array of bytes</td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-ImageFile"></a></p>
+<h4 id="imagefile">ImageFile</h4>
+<p>ByteArray of a PNG image 256x256pixels</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>data</td>
+<td><a href="#bytes">bytes</a></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-ImageHeader"></a></p>
+<h4 id="imageheader">ImageHeader</h4>
+<p>Header of an image (slice of the cube)
+It describes the image, the underlying datasets and the way to recreate it from the array of byte :
+1. Append ImageHeader.data and ImageChunk.data from part=0 to part=nb_parts-1
+2. If compression=True, decompress the array of bytes using deflate
+3. Cast the result to the dtype using byteOrder
+4. Reshape the result</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>shape</td>
+<td><a href="#geocube-Shape">Shape</a></td>
+<td></td>
+<td>Shape of the image (widthxheight)</td>
+</tr>
+<tr>
+<td>dtype</td>
+<td><a href="#geocube-DataFormat-Dtype">DataFormat.Dtype</a></td>
+<td></td>
+<td>Type of the data (to interprete &#34;ImageHeader.data &#43; ImageChunk.data&#34;)</td>
+</tr>
+<tr>
+<td>nb_parts</td>
+<td><a href="#int32">int32</a></td>
+<td></td>
+<td>Number of parts the image is splitted into</td>
+</tr>
+<tr>
+<td>data</td>
+<td><a href="#bytes">bytes</a></td>
+<td></td>
+<td>First part of the image as an array of bytes</td>
+</tr>
+<tr>
+<td>size</td>
+<td><a href="#int64">int64</a></td>
+<td></td>
+<td>Size of the full array of bytes</td>
+</tr>
+<tr>
+<td>order</td>
+<td><a href="#geocube-ByteOrder">ByteOrder</a></td>
+<td></td>
+<td>ByteOrder of the datatype</td>
+</tr>
+<tr>
+<td>compression</td>
+<td><a href="#bool">bool</a></td>
+<td></td>
+<td>Deflate compressed data format, described in RFC 1951</td>
+</tr>
+<tr>
+<td>grouped_records</td>
+<td><a href="#geocube-GroupedRecords">GroupedRecords</a></td>
+<td></td>
+<td>Group of records used to generate this image</td>
+</tr>
+<tr>
+<td>dataset_meta</td>
+<td><a href="#geocube-DatasetMeta">DatasetMeta</a></td>
+<td></td>
+<td>All information on the underlying datasets that composed the image</td>
+</tr>
+<tr>
+<td>error</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td>If not empty, an error occured and the image was not retrieved.</td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-ListDatasetsRequest"></a></p>
+<h4 id="listdatasetsrequest">ListDatasetsRequest</h4>
+<p>List Datasets</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>instance_id</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td>Instance of a variable defining the kind of datasets requested.</td>
+</tr>
+<tr>
+<td>records</td>
+<td><a href="#geocube-RecordIdList">RecordIdList</a></td>
+<td></td>
+<td>List of record ids requested.</td>
+</tr>
+<tr>
+<td>filters</td>
+<td><a href="#geocube-RecordFilters">RecordFilters</a></td>
+<td></td>
+<td>Filters to list the records that will be used to create the cube</td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-ListDatasetsResponse"></a></p>
+<h4 id="listdatasetsresponse">ListDatasetsResponse</h4>
+<p>Returns metadata on datasets that match records x instance</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>records</td>
+<td><a href="#geocube-Record">Record</a></td>
+<td>repeated</td>
+<td>List of records</td>
+</tr>
+<tr>
+<td>dataset_metas</td>
+<td><a href="#geocube-DatasetMeta">DatasetMeta</a></td>
+<td>repeated</td>
+<td>For each record, list of the datasets</td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-Shape"></a></p>
+<h4 id="shape">Shape</h4>
+<p>Shape of an image width x height x channels</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>dim1</td>
+<td><a href="#int32">int32</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>dim2</td>
+<td><a href="#int32">int32</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>dim3</td>
+<td><a href="#int32">int32</a></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-ByteOrder"></a></p>
+<h4 id="byteorder">ByteOrder</h4>
+<p>ByteOrder for the conversion between data type and byte.</p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Number</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>LittleEndian</td>
+<td>0</td>
+<td></td>
+</tr>
+<tr>
+<td>BigEndian</td>
+<td>1</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-FileFormat"></a></p>
+<h4 id="fileformat">FileFormat</h4>
+<p>Available file formats</p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Number</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Raw</td>
+<td>0</td>
+<td>raw bitmap</td>
+</tr>
+<tr>
+<td>GTiff</td>
+<td>1</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="pb_layouts-proto"></a></p>
+<p align="right"><a href="#top">Top</a></p>
+
+<h3 id="pblayoutsproto">pb/layouts.proto</h3>
+<p><a name="geocube-Cell"></a></p>
+<h4 id="cell">Cell</h4>
+<p>Define a cell of a grid</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td>Cell identifier</td>
+</tr>
+<tr>
+<td>crs</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td>Coordinate reference system used in the cell</td>
+</tr>
+<tr>
+<td>coordinates</td>
+<td><a href="#geocube-LinearRing">LinearRing</a></td>
+<td></td>
+<td>Geographic coordinates</td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-CreateGridRequest"></a></p>
+<h4 id="creategridrequest">CreateGridRequest</h4>
+<p>Create a new grid.</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>grid</td>
+<td><a href="#geocube-Grid">Grid</a></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-CreateGridResponse"></a></p>
+<h4 id="creategridresponse">CreateGridResponse</h4>
+<p><a name="geocube-CreateLayoutRequest"></a></p>
+<h4 id="createlayoutrequest">CreateLayoutRequest</h4>
+<p>Create a new layout
+Return an error if the name already exists</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>layout</td>
+<td><a href="#geocube-Layout">Layout</a></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-CreateLayoutResponse"></a></p>
+<h4 id="createlayoutresponse">CreateLayoutResponse</h4>
+<p><a name="geocube-DeleteGridRequest"></a></p>
+<h4 id="deletegridrequest">DeleteGridRequest</h4>
+<p>Delete a grid</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>name</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-DeleteGridResponse"></a></p>
+<h4 id="deletegridresponse">DeleteGridResponse</h4>
+<p><a name="geocube-DeleteLayoutRequest"></a></p>
+<h4 id="deletelayoutrequest">DeleteLayoutRequest</h4>
+<p>Delete a layout by name</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>name</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-DeleteLayoutResponse"></a></p>
+<h4 id="deletelayoutresponse">DeleteLayoutResponse</h4>
+<p><a name="geocube-FindContainerLayoutsRequest"></a></p>
+<h4 id="findcontainerlayoutsrequest">FindContainerLayoutsRequest</h4>
+<p>Find all the layouts used by the datasets on an AOI or a set of records
+It can be used to tile the AOI with an optimal layout.</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>instance_id</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>records</td>
+<td><a href="#geocube-RecordIdList">RecordIdList</a></td>
+<td></td>
+<td>List of record ids</td>
+</tr>
+<tr>
+<td>filters</td>
+<td><a href="#geocube-RecordFiltersWithAOI">RecordFiltersWithAOI</a></td>
+<td></td>
+<td>Filters to select records</td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-FindContainerLayoutsResponse"></a></p>
+<h4 id="findcontainerlayoutsresponse">FindContainerLayoutsResponse</h4>
+<p>Stream the name of the layout and the associated containers</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>layout_name</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td>Name of the layout</td>
+</tr>
+<tr>
+<td>container_uris</td>
+<td><a href="#string">string</a></td>
+<td>repeated</td>
+<td>List of containers having the layout</td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-GeoTransform"></a></p>
+<h4 id="geotransform">GeoTransform</h4>
+<p>GDAL GeoTransform</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>a</td>
+<td><a href="#double">double</a></td>
+<td></td>
+<td>x offset</td>
+</tr>
+<tr>
+<td>b</td>
+<td><a href="#double">double</a></td>
+<td></td>
+<td>x resolution</td>
+</tr>
+<tr>
+<td>c</td>
+<td><a href="#double">double</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>d</td>
+<td><a href="#double">double</a></td>
+<td></td>
+<td>y offset</td>
+</tr>
+<tr>
+<td>e</td>
+<td><a href="#double">double</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>f</td>
+<td><a href="#double">double</a></td>
+<td></td>
+<td>y resolution</td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-Grid"></a></p>
+<h4 id="grid">Grid</h4>
+<p>Define a grid</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>name</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td>Unique name of the grid</td>
+</tr>
+<tr>
+<td>description</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td>Description of the grid</td>
+</tr>
+<tr>
+<td>cells</td>
+<td><a href="#geocube-Cell">Cell</a></td>
+<td>repeated</td>
+<td>Cells of the grid</td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-Layout"></a></p>
+<h4 id="layout">Layout</h4>
+<p>Define a layout for consolidation. A layout is composed of an external and an internal layout.
+External layout is a grid that is used to cover any area with tiles.
+TODO Internal layout defines the internal structure of a dataset</p>
+<p>Interlacing_pattern defines how to interlace the [R]ecords, the [B]ands, the [Z]ooms level/overview and the [T]iles (geotiff blocks).
+The four levels of interlacing must be prioritized in the following way L1&gt;L2&gt;L3&gt;L4 where each L is in [R, B, Z, T]. This order should be understood as:
+for each L1:
+  for each L2:
+    for each L3:
+      for each L4:
+        addBlock(L1, L2, L3, L4)
+In other words, all L4 for a given (L1, L2, L3) will be contiguous in memory.
+For example:
+- To optimize the access to geographical information of all the bands (such as in COG) : R&gt;Z&gt;T&gt;B  =&gt; For a given record, zoom level and block, all the bands will be contiguous.
+- To optimize the access to geographical information of one band at a time : B&gt;R&gt;Z&gt;T =&gt; For a given band, record and zoom, all the blocks will be contiguous.
+- To optimize the access to timeseries of all the bands (such as in MUCOG): Z&gt;T&gt;R&gt;B =&gt; For a given zoom level and block, all the records will be contiguous.</p>
+<p>Interlacing pattern can be specialized to only select a list or a range for each level (except Tile level).
+- By values: L=0,2,3 will only select the value 0, 2 and 3 of the level L. For example B=0,2,3 to select the corresponding band level.
+- By range: L=0:3 will only select the values from 0 to 3 (not included) of the level L. For example B=0:3 to select the three firsts bands. 
+First and last values of the range can be omitted to define 0 or last element of the level. e.g B=2: means all the bands from the second.
+Z=0 is the full resolution, Z=1 is the overview with zoom factor 2, Z=2 is the zoom factor 4, and so on.</p>
+<p>To chain interlacing patterns, use &#34;;&#34; separator.</p>
+<p>For example:
+- MUCOG optimizes access to timeseries for full resolution (Z=0), but geographic for overviews (Z=1:). Z=0&gt;T&gt;R&gt;B;Z=1:&gt;R&gt;T&gt;B
+- Same example, but the bands are separated: B&gt;Z=0&gt;T&gt;R;B&gt;Z=1:&gt;R&gt;T
+- To optimize access to geographic information of the three first bands together, but timeseries of the others: Z&gt;T&gt;R&gt;B=0:3;B=3:&gt;Z&gt;R&gt;T</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>name</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>grid_flags</td>
+<td><a href="#string">string</a></td>
+<td>repeated</td>
+<td>External layout: Grid:Cell (CRS)</td>
+</tr>
+<tr>
+<td>grid_parameters</td>
+<td><a href="#geocube-Layout-GridParametersEntry">Layout.GridParametersEntry</a></td>
+<td>repeated</td>
+<td></td>
+</tr>
+<tr>
+<td>block_x_size</td>
+<td><a href="#int64">int64</a></td>
+<td></td>
+<td>Internal layout: Cell, Tile</td>
+</tr>
+<tr>
+<td>block_y_size</td>
+<td><a href="#int64">int64</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>max_records</td>
+<td><a href="#int64">int64</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>overviews_min_size</td>
+<td><a href="#int64">int64</a></td>
+<td></td>
+<td>Maximum width or height of the smallest overview level. 0: No overview, -1: default=256.</td>
+</tr>
+<tr>
+<td>interlacing_pattern</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td>Define how to interlace the [R]ecords, the [B]ands, the [Z]ooms level/overview and the [T]iles (geotiff blocks).</td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-Layout-GridParametersEntry"></a></p>
+<h4 id="layoutgridparametersentry">Layout.GridParametersEntry</h4>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>key</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>value</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-ListGridsRequest"></a></p>
+<h4 id="listgridsrequest">ListGridsRequest</h4>
+<p>List all the grids given a name pattern (does not retrieve the cells)</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>name_like</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td>Name pattern (support * and ? for all or any characters and trailing (?i) for case-insensitiveness)</td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-ListGridsResponse"></a></p>
+<h4 id="listgridsresponse">ListGridsResponse</h4>
+<p>Return a list of grids</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>grids</td>
+<td><a href="#geocube-Grid">Grid</a></td>
+<td>repeated</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-ListLayoutsRequest"></a></p>
+<h4 id="listlayoutsrequest">ListLayoutsRequest</h4>
+<p>List all the layouts given a name pattern</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>name_like</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td>Name pattern (support * and ? for all or any characters and trailing (?i) for case-insensitiveness)</td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-ListLayoutsResponse"></a></p>
+<h4 id="listlayoutsresponse">ListLayoutsResponse</h4>
+<p>Return a list of layouts</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>layouts</td>
+<td><a href="#geocube-Layout">Layout</a></td>
+<td>repeated</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-Size"></a></p>
+<h4 id="size">Size</h4>
+<p>Define a size</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>width</td>
+<td><a href="#int32">int32</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>height</td>
+<td><a href="#int32">int32</a></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-Tile"></a></p>
+<h4 id="tile">Tile</h4>
+<p>Define a rectangular tile in a given coordinate system (CRS).</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>transform</td>
+<td><a href="#geocube-GeoTransform">GeoTransform</a></td>
+<td></td>
+<td>Transform to map from pixel coordinates to CRS</td>
+</tr>
+<tr>
+<td>size_px</td>
+<td><a href="#geocube-Size">Size</a></td>
+<td></td>
+<td>Size of the tile in pixel</td>
+</tr>
+<tr>
+<td>crs</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td>Coordinate reference system</td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-TileAOIRequest"></a></p>
+<h4 id="tileaoirequest">TileAOIRequest</h4>
+<p>Tile an AOI, covering it with cells defined by a grid.
+In the future, it will be able to find the best tiling given the internal layout of datasets.</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>aoi</td>
+<td><a href="#geocube-AOI">AOI</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>layout_name</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td>Name of an existing layout</td>
+</tr>
+<tr>
+<td>layout</td>
+<td><a href="#geocube-Layout">Layout</a></td>
+<td></td>
+<td>User-defined layout</td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-TileAOIResponse"></a></p>
+<h4 id="tileaoiresponse">TileAOIResponse</h4>
+<p>Return tiles, thousand by thousand.</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>tiles</td>
+<td><a href="#geocube-Tile">Tile</a></td>
+<td>repeated</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="pb_operations-proto"></a></p>
+<p align="right"><a href="#top">Top</a></p>
+
+<h3 id="pboperationsproto">pb/operations.proto</h3>
+<p><a name="geocube-CancelJobRequest"></a></p>
+<h4 id="canceljobrequest">CancelJobRequest</h4>
+<p>Cancel a job (e.g. during consolidation)</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>force_any_state</td>
+<td><a href="#bool">bool</a></td>
+<td></td>
+<td>Force cancel even when the job is not in a failed state or consolidation step (could corrupt the data)</td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-CancelJobResponse"></a></p>
+<h4 id="canceljobresponse">CancelJobResponse</h4>
+<p><a name="geocube-CleanJobsRequest"></a></p>
+<h4 id="cleanjobsrequest">CleanJobsRequest</h4>
+<p>Clean terminated jobs</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>name_like</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td>Filter by name (support *, ? and (?i)-suffix for case-insensitivity)</td>
+</tr>
+<tr>
+<td>state</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td>Filter by terminated state (DONE, FAILED)</td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-CleanJobsResponse"></a></p>
+<h4 id="cleanjobsresponse">CleanJobsResponse</h4>
+<p>Return the number of jobs that have been deleted</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>count</td>
+<td><a href="#int32">int32</a></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-ConfigConsolidationRequest"></a></p>
+<h4 id="configconsolidationrequest">ConfigConsolidationRequest</h4>
+<p>Configure the parameters of the consolidation attached to the variable</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>variable_id</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>consolidation_params</td>
+<td><a href="#geocube-ConsolidationParams">ConsolidationParams</a></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-ConfigConsolidationResponse"></a></p>
+<h4 id="configconsolidationresponse">ConfigConsolidationResponse</h4>
+<p><a name="geocube-ConsolidateRequest"></a></p>
+<h4 id="consolidaterequest">ConsolidateRequest</h4>
+<p>Create and start a consolidation job given a list of records and an instance_id to be consolidated on a layout
+Optionnaly, the job can be done step by step, pausing and waiting for user action, with three levels:
+- 1: after each critical steps
+- 2: after each major steps
+- 3: after all steps</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>job_name</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>instance_id</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>layout_name</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>execution_level</td>
+<td><a href="#geocube-ExecutionLevel">ExecutionLevel</a></td>
+<td></td>
+<td>Execution level of a job. A consolidation job cannot be executed synchronously</td>
+</tr>
+<tr>
+<td>collapse_on_record_id</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td>[Optional] Collapse all records on this record (in this case only, original datasets are kept, data is duplicated)</td>
+</tr>
+<tr>
+<td>records</td>
+<td><a href="#geocube-RecordIdList">RecordIdList</a></td>
+<td></td>
+<td>At least one</td>
+</tr>
+<tr>
+<td>filters</td>
+<td><a href="#geocube-RecordFilters">RecordFilters</a></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-ConsolidateResponse"></a></p>
+<h4 id="consolidateresponse">ConsolidateResponse</h4>
+<p>Return the id of the job created</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>job_id</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-ConsolidationParams"></a></p>
+<h4 id="consolidationparams">ConsolidationParams</h4>
+<p>Parameters of consolidation that are linked to a variable, to define:
+- how to resample the data during consolidation
+- how to store the data:
+  - Compression
+  - CreationParams (supported: see GDAL drivers: PHOTOMETRIC, COMPRESS, PREDICTOR, ZLEVEL, ZSTDLEVEL, MAX_Z_ERROR, JPEGTABLESMODE and with _OVERVIEW suffix if exists)</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>dformat</td>
+<td><a href="#geocube-DataFormat">DataFormat</a></td>
+<td></td>
+<td>dataformat of the data. See exponent for the mapping formula.</td>
+</tr>
+<tr>
+<td>exponent</td>
+<td><a href="#double">double</a></td>
+<td></td>
+<td>1: linear scaling (RealMax - RealMin) * pow( (Value - Min) / (Max - Min), Exponent) &#43; RealMin</td>
+</tr>
+<tr>
+<td>create_overviews</td>
+<td><a href="#bool">bool</a></td>
+<td></td>
+<td><strong>Deprecated.</strong> Use Layout.overviews_min_size instead</td>
+</tr>
+<tr>
+<td>resampling_alg</td>
+<td><a href="#geocube-Resampling">Resampling</a></td>
+<td></td>
+<td>Define how to resample the data during the consolidation (if a reprojection is needed or if the overviews are created)</td>
+</tr>
+<tr>
+<td>compression</td>
+<td><a href="#geocube-ConsolidationParams-Compression">ConsolidationParams.Compression</a></td>
+<td></td>
+<td>Define how the data is compressed at block level</td>
+</tr>
+<tr>
+<td>creation_params</td>
+<td><a href="#geocube-ConsolidationParams-CreationParamsEntry">ConsolidationParams.CreationParamsEntry</a></td>
+<td>repeated</td>
+<td>map of params:value to configure the creation of the file. See Compression to list the supported params</td>
+</tr>
+<tr>
+<td>bands_interleave</td>
+<td><a href="#bool">bool</a></td>
+<td></td>
+<td><strong>Deprecated.</strong> If the variable is multibands, define whether the bands are interleaved. Use Layout.interlacing_pattern instead</td>
+</tr>
+<tr>
+<td>storage_class</td>
+<td><a href="#geocube-StorageClass">StorageClass</a></td>
+<td></td>
+<td>Define the storage class of the created file (support only GCS)</td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-ConsolidationParams-CreationParamsEntry"></a></p>
+<h4 id="consolidationparamscreationparamsentry">ConsolidationParams.CreationParamsEntry</h4>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>key</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>value</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-Container"></a></p>
+<h4 id="container">Container</h4>
+<p>Define a container of datasets.
+Usually a container is a file containing one dataset.
+But after a consolidation or if the container has several bands, it can contain several datasets.</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>uri</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td>URI of the file</td>
+</tr>
+<tr>
+<td>managed</td>
+<td><a href="#bool">bool</a></td>
+<td></td>
+<td>True if the Geocube is responsible for the lifecycle of this file</td>
+</tr>
+<tr>
+<td>datasets</td>
+<td><a href="#geocube-Dataset">Dataset</a></td>
+<td>repeated</td>
+<td>List of datasets of the container</td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-ContinueJobRequest"></a></p>
+<h4 id="continuejobrequest">ContinueJobRequest</h4>
+<p>Proceed the next step of a step-by-step job</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-ContinueJobResponse"></a></p>
+<h4 id="continuejobresponse">ContinueJobResponse</h4>
+<p><a name="geocube-Dataset"></a></p>
+<h4 id="dataset">Dataset</h4>
+<p>Define a dataset. A dataset is the metadata to retrieve an image from a file.
+It is defined by a record and the instance of a variable.</p>
+<p>A dataset defines:
+- Which band(s) are indexed (usually all the bands, but it can be a subset)
+- How to map the value of its pixels to the dataformat of the variable. In more details:
+   . the dataformat of the dataset (dformat.[no_data, min, max]) that describes the pixel of the image
+   . the mapping from each pixel to the data format of the variable (variable.dformat). This mapping is defined as [MinOut, MaxOut, Exponent].</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>record_id</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>instance_id</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>container_subdir</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>bands</td>
+<td><a href="#int64">int64</a></td>
+<td>repeated</td>
+<td></td>
+</tr>
+<tr>
+<td>dformat</td>
+<td><a href="#geocube-DataFormat">DataFormat</a></td>
+<td></td>
+<td>Internal data format (DType can be Undefined)</td>
+</tr>
+<tr>
+<td>real_min_value</td>
+<td><a href="#double">double</a></td>
+<td></td>
+<td>Real min value (dformat.min_value maps to real_min_value)</td>
+</tr>
+<tr>
+<td>real_max_value</td>
+<td><a href="#double">double</a></td>
+<td></td>
+<td>Real max value (dformat.max_value maps to real_max_value)</td>
+</tr>
+<tr>
+<td>exponent</td>
+<td><a href="#double">double</a></td>
+<td></td>
+<td>1: linear scaling (RealMax - RealMin) * pow( (Value - Min) / (Max - Min), Exponent) &#43; RealMin</td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-DeleteDatasetsRequest"></a></p>
+<h4 id="deletedatasetsrequest">DeleteDatasetsRequest</h4>
+<p>Remove the datasets referenced by instances and records without any control
+The containers (if empty) are not deleted</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>record_ids</td>
+<td><a href="#string">string</a></td>
+<td>repeated</td>
+<td>Instance id that references the datasets to be deleted</td>
+</tr>
+<tr>
+<td>instance_ids</td>
+<td><a href="#string">string</a></td>
+<td>repeated</td>
+<td>Record ids that reference the datasets to be deleted</td>
+</tr>
+<tr>
+<td>dataset_patterns</td>
+<td><a href="#string">string</a></td>
+<td>repeated</td>
+<td>Dataset file patterns (support * and ? for all or any characters and trailing (?i) for case-insensitiveness) (or empty to ignore)</td>
+</tr>
+<tr>
+<td>execution_level</td>
+<td><a href="#geocube-ExecutionLevel">ExecutionLevel</a></td>
+<td></td>
+<td>Execution level (see enum)</td>
+</tr>
+<tr>
+<td>job_name</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td>Name of the job (if empty, a name will be generated)</td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-DeleteDatasetsResponse"></a></p>
+<h4 id="deletedatasetsresponse">DeleteDatasetsResponse</h4>
+<p>Return the number of deleted datasets</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>job</td>
+<td><a href="#geocube-Job">Job</a></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-GetConsolidationParamsRequest"></a></p>
+<h4 id="getconsolidationparamsrequest">GetConsolidationParamsRequest</h4>
+<p>Retrieve the consolidation parameters attached to the given variable</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>variable_id</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-GetConsolidationParamsResponse"></a></p>
+<h4 id="getconsolidationparamsresponse">GetConsolidationParamsResponse</h4>
+<p>Return consolidation parameters</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>consolidation_params</td>
+<td><a href="#geocube-ConsolidationParams">ConsolidationParams</a></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-GetContainersRequest"></a></p>
+<h4 id="getcontainersrequest">GetContainersRequest</h4>
+<p>Request info on containers</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>uris</td>
+<td><a href="#string">string</a></td>
+<td>repeated</td>
+<td>List of container uris</td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-GetContainersResponse"></a></p>
+<h4 id="getcontainersresponse">GetContainersResponse</h4>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>containers</td>
+<td><a href="#geocube-Container">Container</a></td>
+<td>repeated</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-GetJobRequest"></a></p>
+<h4 id="getjobrequest">GetJobRequest</h4>
+<p>Retrieve a job given its id</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>log_page</td>
+<td><a href="#int32">int32</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>log_limit</td>
+<td><a href="#int32">int32</a></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-GetJobResponse"></a></p>
+<h4 id="getjobresponse">GetJobResponse</h4>
+<p>Return a job with the requested id</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>job</td>
+<td><a href="#geocube-Job">Job</a></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-IndexDatasetsRequest"></a></p>
+<h4 id="indexdatasetsrequest">IndexDatasetsRequest</h4>
+<p>Request to index all the datasets of a container</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>container</td>
+<td><a href="#geocube-Container">Container</a></td>
+<td></td>
+<td>TODO Index several containers: repeated ?</td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-IndexDatasetsResponse"></a></p>
+<h4 id="indexdatasetsresponse">IndexDatasetsResponse</h4>
+<p><a name="geocube-Job"></a></p>
+<h4 id="job">Job</h4>
+<p>Job to modify datasets (consolidation, deletion, ingestion...)
+Some lifecycle operations are required to be done cautiously, in order to garantee the integrity of the database.
+Such operations are defined by a job and are done asynchronously.
+A job is a state-machine that can be rollbacked anytime during the operation until it ends.</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td>Id of the job</td>
+</tr>
+<tr>
+<td>name</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td>Name of the job (must be unique)</td>
+</tr>
+<tr>
+<td>type</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td>Type of the job (consolidation, deletion...)</td>
+</tr>
+<tr>
+<td>state</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td>Current state of the state machine</td>
+</tr>
+<tr>
+<td>creation_time</td>
+<td><a href="#google-protobuf-Timestamp">google.protobuf.Timestamp</a></td>
+<td></td>
+<td>Time of creation of the job</td>
+</tr>
+<tr>
+<td>last_update_time</td>
+<td><a href="#google-protobuf-Timestamp">google.protobuf.Timestamp</a></td>
+<td></td>
+<td>Time of the last update</td>
+</tr>
+<tr>
+<td>logs</td>
+<td><a href="#string">string</a></td>
+<td>repeated</td>
+<td>Job logs: if logs are too big to fit in a grpc response, logs will only be a subset (by default, the latest)</td>
+</tr>
+<tr>
+<td>active_tasks</td>
+<td><a href="#int32">int32</a></td>
+<td></td>
+<td>If the job is divided into sub tasks, number of pending tasks</td>
+</tr>
+<tr>
+<td>failed_tasks</td>
+<td><a href="#int32">int32</a></td>
+<td></td>
+<td>If the job is divided into sub tasks, number of failed tasks</td>
+</tr>
+<tr>
+<td>execution_level</td>
+<td><a href="#geocube-ExecutionLevel">ExecutionLevel</a></td>
+<td></td>
+<td>Execution level of a job (see ExecutionLevel)</td>
+</tr>
+<tr>
+<td>waiting</td>
+<td><a href="#bool">bool</a></td>
+<td></td>
+<td>If true, the job is waiting for user to continue</td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-ListJobsRequest"></a></p>
+<h4 id="listjobsrequest">ListJobsRequest</h4>
+<p>List jobs given a name pattern</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>name_like</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>page</td>
+<td><a href="#int32">int32</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>limit</td>
+<td><a href="#int32">int32</a></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-ListJobsResponse"></a></p>
+<h4 id="listjobsresponse">ListJobsResponse</h4>
+<p>Return a list of the job whose name matchs the pattern</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>jobs</td>
+<td><a href="#geocube-Job">Job</a></td>
+<td>repeated</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-RetryJobRequest"></a></p>
+<h4 id="retryjobrequest">RetryJobRequest</h4>
+<p>Retry a job that failed or is stuck (e.g. during consolidation)</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>force_any_state</td>
+<td><a href="#bool">bool</a></td>
+<td></td>
+<td>Force retry even when the job is not in a failed state (could corrupt the data)</td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-RetryJobResponse"></a></p>
+<h4 id="retryjobresponse">RetryJobResponse</h4>
+<p><a name="geocube-ConsolidationParams-Compression"></a></p>
+<h4 id="consolidationparamscompression">ConsolidationParams.Compression</h4>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Number</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>NO</td>
+<td>0</td>
+<td></td>
+</tr>
+<tr>
+<td>LOSSLESS</td>
+<td>1</td>
+<td></td>
+</tr>
+<tr>
+<td>LOSSY</td>
+<td>2</td>
+<td></td>
+</tr>
+<tr>
+<td>CUSTOM</td>
+<td>3</td>
+<td>configured by creation_params</td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-ExecutionLevel"></a></p>
+<h4 id="executionlevel">ExecutionLevel</h4>
+<p>Execution level of a job</p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Number</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ExecutionSynchronous</td>
+<td>0</td>
+<td>Job is done synchronously</td>
+</tr>
+<tr>
+<td>ExecutionAsynchronous</td>
+<td>1</td>
+<td>Job is done asynchronously, but without any pause</td>
+</tr>
+<tr>
+<td>StepByStepCritical</td>
+<td>2</td>
+<td>Job is done asynchronously, step-by-step, pausing at every critical steps</td>
+</tr>
+<tr>
+<td>StepByStepMajor</td>
+<td>3</td>
+<td>Job is done asynchronously, step-by-step, pausing at every major steps</td>
+</tr>
+<tr>
+<td>StepByStepAll</td>
+<td>4</td>
+<td>Job is done asynchronously, step-by-step, pausing at every steps</td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-StorageClass"></a></p>
+<h4 id="storageclass">StorageClass</h4>
+<p>Storage class of a container. Depends on the storage</p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Number</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>STANDARD</td>
+<td>0</td>
+<td></td>
+</tr>
+<tr>
+<td>INFREQUENT</td>
+<td>1</td>
+<td></td>
+</tr>
+<tr>
+<td>ARCHIVE</td>
+<td>2</td>
+<td></td>
+</tr>
+<tr>
+<td>DEEPARCHIVE</td>
+<td>3</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><a name="pb_datasetMeta-proto"></a></p>
+<p align="right"><a href="#top">Top</a></p>
+
+<h3 id="pbdatasetmetaproto">pb/datasetMeta.proto</h3>
+<p><a name="geocube-DatasetMeta"></a></p>
+<h4 id="datasetmeta">DatasetMeta</h4>
+<p>DatasetMeta contains all the metadata on files and fileformats to download and generate a slice of a cube</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>internalsMeta</td>
+<td><a href="#geocube-InternalMeta">InternalMeta</a></td>
+<td>repeated</td>
+<td>Information on the images composing the slice</td>
+</tr>
+</tbody>
+</table>
+<p><a name="geocube-InternalMeta"></a></p>
+<h4 id="internalmeta">InternalMeta</h4>
+<p>InternalMeta contains all the metadata on a file to download it and to map its internal values to the external range.</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>container_uri</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td>URI of the file storing the data</td>
+</tr>
+<tr>
+<td>container_subdir</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td>Subdir of the file storing the data</td>
+</tr>
+<tr>
+<td>bands</td>
+<td><a href="#int64">int64</a></td>
+<td>repeated</td>
+<td>Subbands of the file requested</td>
+</tr>
+<tr>
+<td>dformat</td>
+<td><a href="#geocube-DataFormat">DataFormat</a></td>
+<td></td>
+<td>Internal dataformat of the data</td>
+</tr>
+<tr>
+<td>range_min</td>
+<td><a href="#double">double</a></td>
+<td></td>
+<td>dformat.RangeMin will be mapped to this value</td>
+</tr>
+<tr>
+<td>range_max</td>
+<td><a href="#double">double</a></td>
+<td></td>
+<td>dformat.RangeMax will be mapped to this value</td>
+</tr>
+<tr>
+<td>exponent</td>
+<td><a href="#double">double</a></td>
+<td></td>
+<td>Exponent used to map the value from dformat to [RangeMin, RangeMax]</td>
+</tr>
+</tbody>
+</table>
+<p><a name="pb_version-proto"></a></p>
+<p align="right"><a href="#top">Top</a></p>
+
+<h3 id="pbversionproto">pb/version.proto</h3>
+<p><a name="geocube-GetVersionRequest"></a></p>
+<h4 id="getversionrequest">GetVersionRequest</h4>
+<p>Request the version of the Geocube</p>
+<p><a name="geocube-GetVersionResponse"></a></p>
+<h4 id="getversionresponse">GetVersionResponse</h4>
+<p>Return the version of the Geocube</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Label</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Version</td>
+<td><a href="#string">string</a></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="scalar-value-types">Scalar Value Types</h3>
+<table>
+<thead>
+<tr>
+<th>.proto Type</th>
+<th>Notes</th>
+<th>C++</th>
+<th>Java</th>
+<th>Python</th>
+<th>Go</th>
+<th>C#</th>
+<th>PHP</th>
+<th>Ruby</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a name="double" /> double</td>
+<td></td>
+<td>double</td>
+<td>double</td>
+<td>float</td>
+<td>float64</td>
+<td>double</td>
+<td>float</td>
+<td>Float</td>
+</tr>
+<tr>
+<td><a name="float" /> float</td>
+<td></td>
+<td>float</td>
+<td>float</td>
+<td>float</td>
+<td>float32</td>
+<td>float</td>
+<td>float</td>
+<td>Float</td>
+</tr>
+<tr>
+<td><a name="int32" /> int32</td>
+<td>Uses variable-length encoding. Inefficient for encoding negative numbers – if your field is likely to have negative values, use sint32 instead.</td>
+<td>int32</td>
+<td>int</td>
+<td>int</td>
+<td>int32</td>
+<td>int</td>
+<td>integer</td>
+<td>Bignum or Fixnum (as required)</td>
+</tr>
+<tr>
+<td><a name="int64" /> int64</td>
+<td>Uses variable-length encoding. Inefficient for encoding negative numbers – if your field is likely to have negative values, use sint64 instead.</td>
+<td>int64</td>
+<td>long</td>
+<td>int/long</td>
+<td>int64</td>
+<td>long</td>
+<td>integer/string</td>
+<td>Bignum</td>
+</tr>
+<tr>
+<td><a name="uint32" /> uint32</td>
+<td>Uses variable-length encoding.</td>
+<td>uint32</td>
+<td>int</td>
+<td>int/long</td>
+<td>uint32</td>
+<td>uint</td>
+<td>integer</td>
+<td>Bignum or Fixnum (as required)</td>
+</tr>
+<tr>
+<td><a name="uint64" /> uint64</td>
+<td>Uses variable-length encoding.</td>
+<td>uint64</td>
+<td>long</td>
+<td>int/long</td>
+<td>uint64</td>
+<td>ulong</td>
+<td>integer/string</td>
+<td>Bignum or Fixnum (as required)</td>
+</tr>
+<tr>
+<td><a name="sint32" /> sint32</td>
+<td>Uses variable-length encoding. Signed int value. These more efficiently encode negative numbers than regular int32s.</td>
+<td>int32</td>
+<td>int</td>
+<td>int</td>
+<td>int32</td>
+<td>int</td>
+<td>integer</td>
+<td>Bignum or Fixnum (as required)</td>
+</tr>
+<tr>
+<td><a name="sint64" /> sint64</td>
+<td>Uses variable-length encoding. Signed int value. These more efficiently encode negative numbers than regular int64s.</td>
+<td>int64</td>
+<td>long</td>
+<td>int/long</td>
+<td>int64</td>
+<td>long</td>
+<td>integer/string</td>
+<td>Bignum</td>
+</tr>
+<tr>
+<td><a name="fixed32" /> fixed32</td>
+<td>Always four bytes. More efficient than uint32 if values are often greater than 2^28.</td>
+<td>uint32</td>
+<td>int</td>
+<td>int</td>
+<td>uint32</td>
+<td>uint</td>
+<td>integer</td>
+<td>Bignum or Fixnum (as required)</td>
+</tr>
+<tr>
+<td><a name="fixed64" /> fixed64</td>
+<td>Always eight bytes. More efficient than uint64 if values are often greater than 2^56.</td>
+<td>uint64</td>
+<td>long</td>
+<td>int/long</td>
+<td>uint64</td>
+<td>ulong</td>
+<td>integer/string</td>
+<td>Bignum</td>
+</tr>
+<tr>
+<td><a name="sfixed32" /> sfixed32</td>
+<td>Always four bytes.</td>
+<td>int32</td>
+<td>int</td>
+<td>int</td>
+<td>int32</td>
+<td>int</td>
+<td>integer</td>
+<td>Bignum or Fixnum (as required)</td>
+</tr>
+<tr>
+<td><a name="sfixed64" /> sfixed64</td>
+<td>Always eight bytes.</td>
+<td>int64</td>
+<td>long</td>
+<td>int/long</td>
+<td>int64</td>
+<td>long</td>
+<td>integer/string</td>
+<td>Bignum</td>
+</tr>
+<tr>
+<td><a name="bool" /> bool</td>
+<td></td>
+<td>bool</td>
+<td>boolean</td>
+<td>boolean</td>
+<td>bool</td>
+<td>bool</td>
+<td>boolean</td>
+<td>TrueClass/FalseClass</td>
+</tr>
+<tr>
+<td><a name="string" /> string</td>
+<td>A string must always contain UTF-8 encoded or 7-bit ASCII text.</td>
+<td>string</td>
+<td>String</td>
+<td>str/unicode</td>
+<td>string</td>
+<td>string</td>
+<td>string</td>
+<td>String (UTF-8)</td>
+</tr>
+<tr>
+<td><a name="bytes" /> bytes</td>
+<td>May contain any arbitrary sequence of bytes.</td>
+<td>string</td>
+<td>ByteString</td>
+<td>str</td>
+<td>[]byte</td>
+<td>ByteString</td>
+<td>string</td>
+<td>String (ASCII-8BIT)</td>
+</tr>
+</tbody>
+</table>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../../architecture/mucog/" class="btn btn-neutral float-left" title="MuCOG"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../../installation/prerequisite/" class="btn btn-neutral float-right" title="Prerequisite">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../../architecture/mucog/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../../installation/prerequisite/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../..";</script>
+    <script src="../../js/theme_extra.js"></script>
+    <script src="../../js/theme.js"></script>
+      <script src="../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

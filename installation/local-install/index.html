@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://github.com/airbusgeo/geocube/installation/local-install/" />
+      <link rel="shortcut icon" href="../../img/favicon.ico" />
+    <title>Local environment - Geocube Server</title>
+    <link rel="stylesheet" href="../../css/theme.css" />
+    <link rel="stylesheet" href="../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Local environment";
+        var mkdocs_page_input_path = "installation/local-install.md";
+        var mkdocs_page_url = "/airbusgeo/geocube/installation/local-install/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../.." class="icon icon-home"> Geocube Server
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../quickstart/">Getting started</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Architecture</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../architecture/solution/">Ecosystem</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../architecture/services/">Geocube services</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../architecture/interfaces/">Interfaces</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../architecture/mucog/">MuCOG</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../user-guide/grpc/">GRPC documentation</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Installation</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../prerequisite/">Prerequisite</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Local environment</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#environment-of-development">Environment of development</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#clone-repository">Clone repository</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#build-and-run">Build and run</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#apiserver">Apiserver</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#consolidater">Consolidater</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#downloader">Downloader</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#autoscaler">Autoscaler</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#messaging-broker">Messaging Broker</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#pgqueue">PGQueue</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#pubsub-emulator">Pub/Sub (Emulator)</a>
+    </li>
+        </ul>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../docker-install/">Docker</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../k8s-install/">Deploying with Kubernetes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../others/">Customize environment</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../upgrade/">Upgrade</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">User guide</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../user-guide/tutorials/">Tutorials</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../user-guide/entities/">Entities</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../user-guide/indexation/">Indexation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../user-guide/access/">Access</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../user-guide/consolidation/">Consolidation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../user-guide/deletion/">Deletion</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../user-guide/scaleup/">Scaling-up</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">About</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../about/help/">Getting help</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../about/CONTRIBUTING/">Contributing</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../about/license/">License</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../about/release-notes/">Release Notes</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../..">Geocube Server</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Installation</li>
+      <li class="breadcrumb-item active">Local environment</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h2 id="installation-local-environment">Installation - Local environment</h2>
+<h3 id="environment-of-development">Environment of development</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: center;">Name</th>
+<th style="text-align: center;">Version</th>
+<th style="text-align: center;">link</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;">Golang</td>
+<td style="text-align: center;">&gt;= 1.16</td>
+<td style="text-align: center;">https://golang.org/doc/install</td>
+</tr>
+<tr>
+<td style="text-align: center;">GDAL</td>
+<td style="text-align: center;">&gt;= 3.3</td>
+<td style="text-align: center;">https://gdal.org</td>
+</tr>
+<tr>
+<td style="text-align: center;">Python</td>
+<td style="text-align: center;">&gt;= 3.7</td>
+<td style="text-align: center;">https://www.python.org/downloads/</td>
+</tr>
+<tr>
+<td style="text-align: center;">PostgreSQL</td>
+<td style="text-align: center;">&gt;= 11</td>
+<td style="text-align: center;">https://www.postgresql.org/download/</td>
+</tr>
+<tr>
+<td style="text-align: center;">PostGIS</td>
+<td style="text-align: center;">&gt;= 3.1</td>
+<td style="text-align: center;">https://postgis.net/install/</td>
+</tr>
+<tr>
+<td style="text-align: center;">Docker</td>
+<td style="text-align: center;">NC</td>
+<td style="text-align: center;">https://docs.docker.com/engine/install/</td>
+</tr>
+</tbody>
+</table>
+<h3 id="clone-repository">Clone repository</h3>
+<p>Clone <code>https://github.com/airbusgeo/geocube.git</code> repository.</p>
+<h3 id="build-and-run">Build and run</h3>
+<h4 id="apiserver">Apiserver</h4>
+<p>For more information concerning build and run go application, see: Build and run Go Application
+https://golang.org/cmd/go/#hdr-Compile_packages_and_dependencies</p>
+<p>In the geocube repository, <code>cmd/server</code>, run <code>go build</code> command in order to generate executable file:</p>
+<pre><code class="language-bash">$ cd cmd/server &amp;&amp; go build
+</code></pre>
+<p>It creates the executable <code>server</code>. Some arguments are required in order to start the server.</p>
+<pre><code class="language-bash">$ ./server --help
+Usage of ./server:
+  -aws-endpoint string
+        define aws_endpoint for GDAL to use s3 storage (--with-s3)
+  -aws-region string
+        define aws_region for GDAL to use s3 storage (--with-s3)
+  -aws-shared-credentials-file string
+        define aws_shared_credentials_file for GDAL to use s3 storage (--with-s3)
+  -baSecretName string
+        name of the secret that stores the bearer authentication (admin &amp; user) (gcp only)
+  -cancelledJobs string
+        storage where cancelled jobs are referenced. Must be reachable by the Consolidation Workers and the Geocube with read/write permissions
+  -consolidationsQueue string
+        name of the pgqueue or the pubsub topic to send the consolidation orders
+  -dbConnection string
+        database connection (ex: postgresql://user:password@localhost:5432/geocube)
+  -dbHost string
+        database host (see dbName)
+  -dbName string
+        database name (to connect with User, Host &amp; Password)
+  -dbPassword string
+        database password (see dbName)
+  -dbSecretName string
+        name of the secret that stores credentials to connect to the database (gcp only)
+  -dbUser string
+        database user (see dbName)
+  -eventsQueue string
+        name of the pgqueue or the pubsub topic to send the asynchronous job events
+  -gdalBlockSize string
+        gdal blocksize value (default 1Mb) (default &quot;1Mb&quot;)
+  -gdalNumCachedBlocks int
+        gdal blockcache value (default 500) (default 500)
+  -gdalStorageDebug
+        enable storage debug to use custom gdal storage strategy
+  -ingestionStorage string
+        path to the storage where ingested and consolidated datasets will be stored. Must be reachable with read/write/delete permissions. (local/gs)
+  -maxConnectionAge int
+        grpc max age connection
+  -pgqConnection string
+        url of the postgres database to enable pgqueue messaging system (pgqueue only)
+  -port string
+        geocube port to use (default &quot;8080&quot;)
+  -project string
+        project name (gcp only/not required in local usage)
+  -tls
+        enable TLS protocol (certificate and key must be /tls/tls.crt and /tls/tls.key)
+  -with-gcs
+        configure GDAL to use gcs storage (may need authentication)
+  -with-s3
+        configure GDAL to use s3 storage (may need authentication)
+  -workers int
+        number of parallel workers per catalog request (default 1)
+</code></pre>
+<p>Example (run):</p>
+<pre><code class="language-bash">$  ./server -ingestionStorage=/geocube-datasets -dbConnection=postgresql://user:password@localhost:5432/geocube -eventsQueue events -consolidationsQueue consolidations -cancelledJobs /tmp
+{&quot;severity&quot;:&quot;info&quot;,&quot;timestamp&quot;:&quot;2021-05-24T15:10:57.621+0200&quot;,&quot;message&quot;:&quot;Geocube v0.3.0&quot;}
+
+</code></pre>
+<h4 id="consolidater">Consolidater</h4>
+<p>In the geocube repository, <code>cmd/consolidater</code>, run <code>go build</code> command in order to generate executable file:</p>
+<pre><code class="language-bash">$ cd cmd/consolidater &amp;&amp; go build
+</code></pre>
+<p>It creates the executable <code>consolidater</code>. Some arguments are required in order to start a consolidation worker.</p>
+<pre><code class="language-bash">$ ./consolidater --help
+Usage of ./consolidater:
+  -aws-endpoint string
+        define aws_endpoint for GDAL to use s3 storage (--with-s3)
+  -aws-region string
+        define aws_region for GDAL to use s3 storage (--with-s3)
+  -aws-shared-credentials-file string
+        define aws_shared_credentials_file for GDAL to use s3 storage (--with-s3)
+  -cancelledJobs string
+        storage where cancelled jobs are referenced
+  -consolidationsQueue string
+        name of the messaging queue for consolidation jobs (pgqueue or pubsub subscription)
+  -eventsQueue string
+        name of the messaging queue for job events (pgquue or pubsub topic)
+  -gdalBlockSize string
+        gdal blocksize value (default 1Mb) (default &quot;1Mb&quot;)
+  -gdalNumCachedBlocks int
+        gdal blockcache value (default 500) (default 500)
+  -gdalStorageDebug
+        enable storage debug to use custom gdal storage strategy
+  -local-download
+        locally download the datasets before starting the consolidation (generally faster than letting GDAL to download them tile by tile) (default true)
+  -pgqConnection string
+        url of the postgres database to enable pgqueue messaging system (pgqueue only)
+  -psProject string
+        subscription project (gcp pubSub only)
+  -retryCount int
+        number of retries when consolidation job failed with a temporary error (default 1)
+  -with-gcs
+        configure GDAL to use gcs storage (may need authentication)
+  -with-s3
+        configure GDAL to use s3 storage (may need authentication)
+  -workdir string
+        scratch work directory
+  -workers int
+        number of workers for parallel tasks (default 1)
+</code></pre>
+<p>Example (run):</p>
+<pre><code class="language-bash">$  ./consolidater -workdir=/tmp -psProject geocube-emulator -eventsQueue events -consolidationsQueue consolidations -cancelledJobs /tmp
+</code></pre>
+<h4 id="downloader">Downloader</h4>
+<p>Downloader service is useful if the server runs in a distant environment, and the local environment has an efficient access to the storage.</p>
+<p>In the geocube repository, <code>cmd/downloader</code>, run <code>go build</code> command in order to generate executable file:</p>
+<pre><code class="language-bash">$ cd cmd/downloader &amp;&amp; go build
+</code></pre>
+<p>It creates the executable <code>downloader</code>. Some arguments are required in order to start a downloader service.</p>
+<p>Downloader available options:</p>
+<pre><code class="language-bash">$ ./downloader --help
+Usage of ./downloader:
+  -aws-endpoint string
+        define aws_endpoint for GDAL to use s3 storage (--with-s3)
+  -aws-region string
+        define aws_region for GDAL to use s3 storage (--with-s3)
+  -aws-shared-credentials-file string
+        define aws_shared_credentials_file for GDAL to use s3 storage (--with-s3)
+  -gdalBlockSize string
+        gdal blocksize value (default 1Mb) (default &quot;1Mb&quot;)
+  -gdalNumCachedBlocks int
+        gdal blockcache value (default 500) (default 500)
+  -gdalStorageDebug
+        enable storage debug to use custom gdal storage strategy
+  -maxConnectionAge int
+        grpc max age connection
+  -port string
+        geocube downloader port to use (default &quot;8080&quot;)
+  -tls
+        enable TLS protocol
+  -with-gcs
+        configure GDAL to use gcs storage (may need authentication)
+  -with-s3
+        configure GDAL to use s3 storage (may need authentication)
+  -workers int
+        number of parallel workers per catalog request (default 1)
+</code></pre>
+<p>Basic example:</p>
+<pre><code class="language-shell">./downloader -port 8081 -workers 4
+</code></pre>
+<p>Example with GCS support:</p>
+<pre><code class="language-bash">./downloader -port 8081 -with-gcs -workers 4 -gdalBlockSize 2Mb
+</code></pre>
+<p>Storage Debug (GCP only):</p>
+<p>It's possible to monitor storage metrics with <code>--gdalStorageDebug</code> argument.</p>
+<p>You will retrieve storage metrics into logs as:</p>
+<pre><code class="language-shell">{&quot;severity&quot;:&quot;debug&quot;,&quot;timestamp&quot;:&quot;2022-01-14T11:29:15.618+0100&quot;,&quot;message&quot;:&quot;GCS Metrics: gs://myBucket/32523_20m/2/-89/myLayout/myFile.tif - 2 calls - 2097152 octets&quot;}
+{&quot;severity&quot;:&quot;debug&quot;,&quot;timestamp&quot;:&quot;2022-01-14T11:29:15.618+0100&quot;,&quot;message&quot;:&quot;GCS Metrics: gs://myBucket/32523_20m/4/-90/myLayout/myFile.tif - 2 calls - 2097152 octets&quot;}
+{&quot;severity&quot;:&quot;debug&quot;,&quot;timestamp&quot;:&quot;2022-01-14T11:29:15.618+0100&quot;,&quot;message&quot;:&quot;GCS Metrics: gs://myBucket/32523_20m/5/-91/myLayout/myFile.tif - 2 calls - 2097152 octets&quot;}
+{&quot;severity&quot;:&quot;debug&quot;,&quot;timestamp&quot;:&quot;2022-01-14T11:29:15.618+0100&quot;,&quot;message&quot;:&quot;GCS Metrics: gs://myBucket/32523_20m/4/-91/myLayout/myFile.tif - 3 calls - 3145728 octets&quot;}
+{&quot;severity&quot;:&quot;debug&quot;,&quot;timestamp&quot;:&quot;2022-01-14T11:29:15.618+0100&quot;,&quot;message&quot;:&quot;GCS Metrics: gs://myBucket/32523_20m/5/-90/myLayout/myFile.tif - 2 calls - 2097152 octets&quot;}
+{&quot;severity&quot;:&quot;debug&quot;,&quot;timestamp&quot;:&quot;2022-01-14T11:29:15.618+0100&quot;,&quot;message&quot;:&quot;GCS Metrics: gs://myBucket/32523_20m/3/-89/myLayout/myFile.tif - 2 calls - 3145728 octets&quot;}
+{&quot;severity&quot;:&quot;debug&quot;,&quot;timestamp&quot;:&quot;2022-01-14T11:29:15.618+0100&quot;,&quot;message&quot;:&quot;GCS Metrics: gs://myBucket/32523_20m/2/-90/myLayout/myFile.tif - 2 calls - 2097152 octets&quot;}
+{&quot;severity&quot;:&quot;debug&quot;,&quot;timestamp&quot;:&quot;2022-01-14T11:29:15.618+0100&quot;,&quot;message&quot;:&quot;GCS Metrics: gs://myBucket/32523_20m/3/-90/myLayout/myFile.tif - 2 calls - 3145728 octets&quot;}
+{&quot;severity&quot;:&quot;debug&quot;,&quot;timestamp&quot;:&quot;2022-01-14T11:29:15.618+0100&quot;,&quot;message&quot;:&quot;GCS Metrics: gs://myBucket/32523_20m/6/-90/myLayout/myFile.tif - 2 calls - 2097152 octets&quot;}
+{&quot;severity&quot;:&quot;debug&quot;,&quot;timestamp&quot;:&quot;2022-01-14T11:29:15.618+0100&quot;,&quot;message&quot;:&quot;GCS Metrics: gs://myBucket/32523_20m/6/-91/myLayout/myFile.tif - 2 calls - 2097152 octets&quot;}
+{&quot;severity&quot;:&quot;debug&quot;,&quot;timestamp&quot;:&quot;2022-01-14T11:29:15.618+0100&quot;,&quot;message&quot;:&quot;GCS Metrics: gs://myBucket/32523_20m/3/-91/myLayout/myFile.tif - 3 calls - 3145728 octets&quot;}
+
+</code></pre>
+<p>Logs: <code>https://docs.docker.com/engine/reference/commandline/logs/#examples</code></p>
+<h4 id="autoscaler">Autoscaler</h4>
+<p>Autoscaling is not available in a local environment. See <a href="../k8s-install/#Autoscaler">K8S - Autoscaler</a> for more information.</p>
+<h3 id="messaging-broker">Messaging Broker</h3>
+<h4 id="pgqueue">PGQueue</h4>
+<p>To use this messaging broker, create the <code>pgq_jobs</code> table in your postgres database using the following script <code>interface/messaging/pgqueue/create_table.sql</code>.</p>
+<pre><code class="language-bash">$ psql -h &lt;database_host&gt; -d &lt;database_name&gt; -f interface/messaging/pgqueue/create_table.sql
+</code></pre>
+<p>Then, start the apiserver and the consolidater with the corresponding arguments:
+- <code>--pgqConnection</code>: connection uri to the postgres database (e.g. <code>postgresql://user:password@localhost:5432/geocube</code>)
+- <code>--consolidationQueue consolidations</code>
+- <code>--eventsQueue events</code>
+And the Autoscaler, with:
+- <code>--pgq-connection</code>: connection uri to the postgres database (e.g. <code>postgresql://user:password@localhost:5432/geocube</code>)
+- <code>--queue consolidations</code></p>
+<h4 id="pubsub-emulator">Pub/Sub (Emulator)</h4>
+<p>For more information, see: https://cloud.google.com/pubsub/docs/emulator</p>
+<p>You can launch a local emulator with this command:</p>
+<pre><code class="language-bash">$ gcloud beta emulators pubsub start --project=geocube-emulator
+Executing: /usr/lib/google-cloud-sdk/platform/pubsub-emulator/bin/cloud-pubsub-emulator --host=localhost --port=8085
+[pubsub] This is the Google Pub/Sub fake.
+[pubsub] Implementation may be incomplete or differ from the real system.
+[pubsub] Jun 30, 2021 3:04:05 PM com.google.cloud.pubsub.testing.v1.Main main
+[pubsub] INFO: IAM integration is disabled. IAM policy methods and ACL checks are not supported
+[pubsub] SLF4J: Failed to load class &quot;org.slf4j.impl.StaticLoggerBinder&quot;.
+[pubsub] SLF4J: Defaulting to no-operation (NOP) logger implementation
+[pubsub] SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.
+[pubsub] Jun 30, 2021 3:04:06 PM com.google.cloud.pubsub.testing.v1.Main main
+[pubsub] INFO: Server started, listening on 8085
+</code></pre>
+<p>Topics and subscription which are necessary for the proper functioning of the geocube, can be created by running the following script (replace <code>$GEOCUBE_SERVER</code> by the appropriate value):</p>
+<pre><code class="language-bash">$ go run tools/pubsub_emulator/main.go --project-id geocube-emulator --geocube-server https://$GEOCUBE_SERVER
+2021/06/30 14:56:48 New client for project-id geocube-emulator
+2021/06/30 14:56:48 Create Topic : consolidations
+2021/06/30 14:56:48 Create Topic : consolidations-worker
+2021/06/30 14:56:48 Create Topic : events
+2021/06/30 14:56:48 Create Subscription : consolidations
+2021/06/30 14:56:48 Create Subscription : consolidations-worker
+2021/06/30 14:56:48 Create Subscription : events pushing to https://$GEOCUBE_SERVER/push
+2021/06/30 14:56:48 Done!
+</code></pre>
+<p>In order to run geocube with the PubSub emulator, you must define the <code>PUBSUB_EMULATOR_HOST</code> environment variable (by default <code>localhost:8085</code>) <strong>before</strong> starting services.</p>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../prerequisite/" class="btn btn-neutral float-left" title="Prerequisite"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../docker-install/" class="btn btn-neutral float-right" title="Docker">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../prerequisite/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../docker-install/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../..";</script>
+    <script src="../../js/theme_extra.js"></script>
+    <script src="../../js/theme.js"></script>
+      <script src="../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
