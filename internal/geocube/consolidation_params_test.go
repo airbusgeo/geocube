@@ -61,7 +61,7 @@ var _ = Describe("ConsolidationParams", func() {
 					Dformat:     &pb.DataFormat{Dtype: pb.DataFormat_Float32},
 					Compression: pb.ConsolidationParams_LOSSLESS,
 				}
-				expectedCreationParams = map[string]string{"COMPRESS": "ZSTD", "COMPRESS_OVERVIEW": "ZSTD", "PREDICTOR": "2", "PREDICTOR_OVERVIEW": "2", "ZSTD_LEVEL": "0.01", "ZSTD_LEVEL_OVERVIEW": "0.01"}
+				expectedCreationParams = map[string]string{"COMPRESS": "ZSTD", "COMPRESS_OVERVIEW": "ZSTD", "PREDICTOR": "2", "PREDICTOR_OVERVIEW": "2", "ZSTD_LEVEL": "1", "ZSTD_LEVEL_OVERVIEW": "1"}
 			})
 			itShouldNotReturnAnError()
 			itShouldCreateConsolidationParams()

@@ -109,7 +109,7 @@ func (c ConsolidationParams) validateCompression() error {
 	case CompressionLOSSLESS:
 		switch c.DFormat.DType {
 		case bitmap.DTypeUINT8, bitmap.DTypeINT8, bitmap.DTypeINT16, bitmap.DTypeUINT16, bitmap.DTypeINT32, bitmap.DTypeUINT32, bitmap.DTypeFLOAT32:
-			c.addCreationParams(map[string]string{"COMPRESS": "ZSTD", "COMPRESS_OVERVIEW": "ZSTD", "PREDICTOR": "2", "PREDICTOR_OVERVIEW": "2", "ZSTD_LEVEL": "0.01", "ZSTD_LEVEL_OVERVIEW": "0.01"})
+			c.addCreationParams(map[string]string{"COMPRESS": "ZSTD", "COMPRESS_OVERVIEW": "ZSTD", "PREDICTOR": "2", "PREDICTOR_OVERVIEW": "2", "ZSTD_LEVEL": "1", "ZSTD_LEVEL_OVERVIEW": "1"})
 			return nil
 		case bitmap.DTypeFLOAT64:
 			c.addCreationParams(map[string]string{"COMPRESS": "LERC_ZSTD", "COMPRESS_OVERVIEW": "LERC_ZSTD", "MAX_Z_ERROR": "0", "MAX_Z_ERROR_OVERVIEW": "0"})

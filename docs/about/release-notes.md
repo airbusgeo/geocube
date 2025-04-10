@@ -11,6 +11,7 @@
 - Non-deterministic pagination of list_records
 - Concurrent access when downloading dataset during consolidation
 - GetCube uses an adaptative accuracy to find the datasets
+- Consolidation: default ZSTD_LEVEL was wrong 
 
 ### Others
 - optimization GetCube: reduce memory usage using StreamableBitmap
