@@ -7,18 +7,16 @@ import (
 	"os"
 	"path"
 	"strings"
-	"sync"
-	"sync/atomic"
 
 	"github.com/airbusgeo/geocube/interface/storage"
 	"github.com/airbusgeo/godal"
-	"github.com/google/uuid"
 
 	"github.com/airbusgeo/geocube/interface/storage/uri"
 	"github.com/airbusgeo/geocube/internal/geocube"
 	"github.com/airbusgeo/geocube/internal/log"
 	"github.com/airbusgeo/geocube/internal/utils"
 	"github.com/airbusgeo/geocube/internal/utils/affine"
+	"github.com/airbusgeo/geocube/internal/utils/downloader"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -63,8 +61,7 @@ func (h *handlerConsolidation) Consolidate(ctx context.Context, cEvent *geocube.
 	}
 	defer h.cleanWorkspace(ctx, workDir)
 
-	var tmpFileMutex sync.Mutex
-	datasetsByRecords, tmpFileCounter, err := h.getLocalDatasetsByRecord(ctx, cEvent, workDir)
+	datasetsByRecords, localDownloader, err := h.getLocalDatasetsByRecord(ctx, cEvent, workDir)
 	if err != nil {
 		return fmt.Errorf("failed to get local records datasets: %w", err)
 	}
@@ -105,84 +102,84 @@ func (h *handlerConsolidation) Consolidate(ctx context.Context, cEvent *geocube.
 				if h.isCancelled(gCtx, cEvent) {
 					return fmt.Errorf("consolidation event is cancelled")
 				}
-				recordID, recordIdx := record.string, record.int
-				localDatasets := datasetsByRecords[recordID]
+				if err := func() error {
+					recordID, recordIdx := record.string, record.int
+					localDatasets := datasetsByRecords[recordID]
+					var toRelease []string
+					for _, dataset := range localDatasets {
+						toRelease = append(toRelease, dataset.URI)
+						dataset.URI = localDownloader.GetURI(dataset.URI)
+					}
+					defer func() {
+						for _, uri := range toRelease {
+							localDownloader.ReleaseURI(ctx, uri)
+						}
+					}()
 
-				gCtx := log.With(gCtx, "Record", recordID)
-				log.Logger(gCtx).Sugar().Debugf("start cog generation: from %d datasets for record: %s (%d/%d)", len(localDatasets), recordID, recordIdx+1, len(cEvent.Records))
-				if cogFile, ok := h.isAlreadyUsableCOG(gCtx, localDatasets, cEvent.Container); ok {
-					log.Logger(gCtx).Sugar().Debugf("skip record (already a cog): %s (%d/%d)", recordID, recordIdx+1, len(cEvent.Records))
-					cogListFile[recordIdx] = cogFile
-					continue
-				}
+					gCtx := log.With(gCtx, "Record", recordID)
+					log.Logger(gCtx).Sugar().Debugf("start cog generation: from %d datasets for record: %s (%d/%d)", len(localDatasets), recordID, recordIdx+1, len(cEvent.Records))
+					if cogFile, ok := h.isAlreadyUsableCOG(gCtx, localDatasets, cEvent.Container); ok {
+						log.Logger(gCtx).Sugar().Debugf("skip record (already a cog): %s (%d/%d)", recordID, recordIdx+1, len(cEvent.Records))
+						cogListFile[recordIdx] = cogFile
+						return nil
+					}
 
-				pixToCRS := affine.NewAffine(
-					cEvent.Container.Transform[0],
-					cEvent.Container.Transform[1],
-					cEvent.Container.Transform[2],
-					cEvent.Container.Transform[3],
-					cEvent.Container.Transform[4],
-					cEvent.Container.Transform[5],
-				)
+					pixToCRS := affine.NewAffine(
+						cEvent.Container.Transform[0],
+						cEvent.Container.Transform[1],
+						cEvent.Container.Transform[2],
+						cEvent.Container.Transform[3],
+						cEvent.Container.Transform[4],
+						cEvent.Container.Transform[5],
+					)
 
-				// Get the optimized extent, regarding blocksize using warpVRT
-				width, height := cEvent.Container.Width, cEvent.Container.Height
-				if cEvent.Container.OptimizeExtent {
-					pixToCRS, width, height, err = optimizeTransform(gCtx, localDatasets, cEvent.Container.CRS, pixToCRS, cEvent.Container.Width, cEvent.Container.Height, cEvent.Container.BlockXSize, cEvent.Container.BlockYSize)
+					// Get the optimized extent, regarding blocksize using warpVRT
+					width, height := cEvent.Container.Width, cEvent.Container.Height
+					if cEvent.Container.OptimizeExtent {
+						pixToCRS, width, height, err = optimizeTransform(gCtx, localDatasets, cEvent.Container.CRS, pixToCRS, cEvent.Container.Width, cEvent.Container.Height, cEvent.Container.BlockXSize, cEvent.Container.BlockYSize)
+						if err != nil {
+							return fmt.Errorf("Consolidate.%w", err)
+						}
+					}
+
+					tiffPath := fmt.Sprintf("tiff_%s.tif", recordID)
+					if width*height*cEvent.Container.BandsCount < 200*1024*1024 {
+						tiffPath = path.Join("/vsimem", tiffPath)
+					} else {
+						tiffPath = path.Join(workDir, tiffPath)
+					}
+
+					mergeDataset, err := MergeDatasets(gCtx, localDatasets, &GdalDatasetDescriptor{
+						Height:         int(height),
+						Width:          int(width),
+						Bands:          cEvent.Container.BandsCount,
+						DataMapping:    cEvent.Container.DatasetFormat,
+						WktCRS:         cEvent.Container.CRS,
+						ValidPixPc:     -1,
+						Resampling:     cEvent.Container.ResamplingAlg,
+						PixToCRS:       pixToCRS,
+						FileOut:        tiffPath,
+						BlockXSize:     cEvent.Container.BlockXSize,
+						BlockYSize:     cEvent.Container.BlockYSize,
+						CreationParams: cEvent.Container.CreationParams,
+					})
 					if err != nil {
 						return fmt.Errorf("Consolidate.%w", err)
 					}
-				}
+					defer godal.VSIUnlink(tiffPath)
 
-				tiffPath := fmt.Sprintf("tiff_%s.tif", recordID)
-				if width*height*cEvent.Container.BandsCount < 200*1024*1024 {
-					tiffPath = path.Join("/vsimem", tiffPath)
-				} else {
-					tiffPath = path.Join(workDir, tiffPath)
-				}
-
-				mergeDataset, err := MergeDatasets(gCtx, localDatasets, &GdalDatasetDescriptor{
-					Height:         int(height),
-					Width:          int(width),
-					Bands:          cEvent.Container.BandsCount,
-					DataMapping:    cEvent.Container.DatasetFormat,
-					WktCRS:         cEvent.Container.CRS,
-					ValidPixPc:     -1,
-					Resampling:     cEvent.Container.ResamplingAlg,
-					PixToCRS:       pixToCRS,
-					FileOut:        tiffPath,
-					BlockXSize:     cEvent.Container.BlockXSize,
-					BlockYSize:     cEvent.Container.BlockYSize,
-					CreationParams: cEvent.Container.CreationParams,
-				})
-				if err != nil {
-					return fmt.Errorf("Consolidate.%w", err)
-				}
-				defer godal.VSIUnlink(tiffPath)
-
-				cogDatasetPath, err := h.cog.Create(mergeDataset, cEvent.Container, tiffPath, workDir)
-				if err != nil {
-					return fmt.Errorf("Consolidate.%w", err)
-				}
-				toDelete = append(toDelete, cogDatasetPath)
-
-				// Delete tmpFile if possible to free memory
-				tmpFileMutex.Lock()
-				for _, dataset := range localDatasets {
-					if _, ok := tmpFileCounter[dataset.URI]; ok {
-						tmpFileCounter[dataset.URI]--
-						if tmpFileCounter[dataset.URI] == 0 {
-							uri := dataset.URI
-							go func() {
-								os.Remove(uri)
-							}()
-						}
+					cogDatasetPath, err := h.cog.Create(mergeDataset, cEvent.Container, tiffPath, workDir)
+					if err != nil {
+						return fmt.Errorf("Consolidate.%w", err)
 					}
-				}
-				tmpFileMutex.Unlock()
+					toDelete = append(toDelete, cogDatasetPath)
 
-				log.Logger(gCtx).Sugar().Debugf("add cog %s for record: %s (%d/%d)", cogDatasetPath, recordID, recordIdx+1, len(cEvent.Records))
-				cogListFile[recordIdx] = cogDatasetPath
+					log.Logger(gCtx).Sugar().Debugf("add cog %s for record: %s (%d/%d)", cogDatasetPath, recordID, recordIdx+1, len(cEvent.Records))
+					cogListFile[recordIdx] = cogDatasetPath
+					return nil
+				}(); err != nil {
+					return err
+				}
 			}
 			return nil
 		})
@@ -239,12 +236,11 @@ type FileToDownload struct {
 }
 
 // getLocalDatasetsByRecord references all datasets and download them in local filesystem.
-func (h *handlerConsolidation) getLocalDatasetsByRecord(ctx context.Context, cEvent *geocube.ConsolidationEvent, workDir string) (map[string][]*Dataset, map[string]int, error) {
+func (h *handlerConsolidation) getLocalDatasetsByRecord(ctx context.Context, cEvent *geocube.ConsolidationEvent, workDir string) (map[string][]*Dataset, *downloader.LocalDownloader, error) {
 	// Prepare local dataset and list files to download
 	datasetsByRecord := map[string][]*Dataset{}
-	filesToDownload := map[uri.DefaultUri]string{}
+	filesToDownload := map[string]*downloader.LocalFileInfo{}
 
-	tmpFileCounter := map[string]int{}
 	for _, record := range cEvent.Records {
 		var datasets []*Dataset
 		for _, dataset := range record.Datasets {
@@ -254,12 +250,17 @@ func (h *handlerConsolidation) getLocalDatasetsByRecord(ctx context.Context, cEv
 					return nil, nil, fmt.Errorf("getLocalDatasetsByRecord: %w", err)
 				}
 				if sourceUri.Protocol() != "" {
-					if localUri, ok := filesToDownload[sourceUri]; !ok {
-						localUri = path.Join(workDir, uuid.New().String())
-						filesToDownload[sourceUri] = localUri
-						tmpFileCounter[localUri] = 1
+					if _, ok := filesToDownload[dataset.URI]; !ok {
+						attrs, err := sourceUri.GetAttrs(ctx)
+						if err != nil {
+							return nil, nil, fmt.Errorf("getLocalDatasetsByRecord: %w", err)
+						}
+						filesToDownload[dataset.URI] = &downloader.LocalFileInfo{
+							ReferenceNb: 1,
+							Size:        attrs.Size,
+						}
 					} else {
-						tmpFileCounter[localUri] += 1
+						filesToDownload[dataset.URI].ReferenceNb += 1
 					}
 				}
 			}
@@ -274,73 +275,11 @@ func (h *handlerConsolidation) getLocalDatasetsByRecord(ctx context.Context, cEv
 		datasetsByRecord[record.ID] = datasets
 	}
 
-	// Push download jobs
-	remainingSize := int64(h.localDownloadMaxMb * 1024 * 1024)
-	var filesToDownloadMutex sync.Mutex
-	if len(filesToDownload) > 0 {
-		log.Logger(ctx).Sugar().Debugf("downloading %d files", len(filesToDownload))
-		files := make(chan FileToDownload, len(filesToDownload))
-		for uri, localUri := range filesToDownload {
-			files <- FileToDownload{URI: uri, LocalURI: localUri}
-		}
-		close(files)
+	availableSize := int64(h.localDownloadMaxMb * 1024 * 1024)
 
-		// Start download workers
-		g, gCtx := errgroup.WithContext(ctx)
-		for i := 0; i < 10; i++ {
-			g.Go(func() error {
-				var err error
-				for file := range files {
-					if err != nil {
-						continue
-					}
-					err = func() error {
-						if utils.IsCancelled(ctx) {
-							return ctx.Err()
-						}
-						attr, err := file.URI.GetAttrs(ctx)
-						if err != nil {
-							return err
-						}
-						if atomic.AddInt64(&remainingSize, -attr.Size) < 0 {
-							filesToDownloadMutex.Lock()
-							filesToDownload[file.URI] = "" // max quota reached: cancel downloading
-							filesToDownloadMutex.Unlock()
-						} else {
-							log.Logger(ctx).Sugar().Debugf("download %s to %s", file.URI.String(), file.LocalURI)
-							if err := file.URI.DownloadToFile(gCtx, file.LocalURI); err != nil {
-								return fmt.Errorf("%s: %w", file.URI.String(), err)
-							}
-						}
-						return nil
-					}()
-				}
-				return err
-			})
-		}
+	localDownloader := downloader.NewLocalDownloader(ctx, filesToDownload, workDir, availableSize, 10)
 
-		if err := g.Wait(); err != nil {
-			return nil, nil, fmt.Errorf("failed to download one of the sources: %w", err)
-		}
-
-		// Update datasetsByRecord with the downloaded files
-		downloadedFiles := map[string]string{}
-		for uri, localUri := range filesToDownload {
-			if localUri != "" {
-				downloadedFiles[uri.String()] = localUri
-			}
-		}
-		for _, datasets := range datasetsByRecord {
-			for _, dataset := range datasets {
-				if localUri, ok := downloadedFiles[dataset.URI]; ok {
-					dataset.URI = localUri
-				}
-			}
-		}
-
-	}
-
-	return datasetsByRecord, tmpFileCounter, nil
+	return datasetsByRecord, localDownloader, nil
 }
 
 // uploadFile upload content from local file to storage file (URI) destination.

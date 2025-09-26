@@ -14,6 +14,7 @@
 
 ### Others
 - optimization GetCube: reduce memory usage using StreamableBitmap
+- optimization Consolidation: optimize download to reduce storage usage 
 
 
 ## 1.0.3
