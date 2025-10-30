@@ -22,6 +22,32 @@ const (
 	DegToRad float64 = math.Pi / 180
 )
 
+// Densify options
+type DensifyOption func(*densifyOptions)
+
+func WithAccuracyPc(accuracy float64) DensifyOption {
+	return func(o *densifyOptions) {
+		o.accuracyPc = accuracy
+	}
+}
+func WithMinAccuracyInMeter(accuracy float64) DensifyOption {
+	return func(o *densifyOptions) {
+		o.minAccuracyInMeter = accuracy
+	}
+}
+func WithMaxRecursion(recursion int) DensifyOption {
+	return func(o *densifyOptions) {
+		o.maxRecursion = recursion
+	}
+}
+
+// densifyOpt
+type densifyOptions struct {
+	accuracyPc         float64 // default 0.01
+	minAccuracyInMeter float64 // default -1
+	maxRecursion       int     // default 10
+}
+
 // CreateLonLatProj create a CoordinateTransform from/to the geographic lon/lat coordinates
 func CreateLonLatProj(crs *godal.SpatialRef, inverse bool) (*godal.Transform, error) {
 	lonlatCRS, err := CRSFromEPSG(4326)
@@ -209,8 +235,8 @@ func (shape *Shape) Equal(shape2 *Shape) bool {
 }
 
 // NewGeometricShapeFromShape creates a shape in 4326 lon/lat coordinates that covers the shape in planar crs
-func NewGeometricShapeFromShape(shape Shape, crs *godal.SpatialRef) (g GeometricShape, err error) {
-	p, err := shape.cloneTo4326(crs, false)
+func NewGeometricShapeFromShape(shape Shape, crs *godal.SpatialRef, options ...DensifyOption) (g GeometricShape, err error) {
+	p, err := shape.cloneTo4326(crs, false, options...)
 	if err != nil {
 		return GeometricShape{}, fmt.Errorf("NewGeometricShapeFromShape.%w", err)
 	}
@@ -218,8 +244,8 @@ func NewGeometricShapeFromShape(shape Shape, crs *godal.SpatialRef) (g Geometric
 }
 
 // NewGeographicShapeFromShape creates a shape in geographic coordinates that covers the shape in planar crs
-func NewGeographicShapeFromShape(shape Shape, crs *godal.SpatialRef) (GeographicShape, error) {
-	p, err := shape.cloneTo4326(crs, true)
+func NewGeographicShapeFromShape(shape Shape, crs *godal.SpatialRef, options ...DensifyOption) (GeographicShape, error) {
+	p, err := shape.cloneTo4326(crs, true, options...)
 	if err != nil {
 		return GeographicShape{}, fmt.Errorf("NewGeographicShapeFromShape.%w", err)
 	}
@@ -284,8 +310,8 @@ func (ring *Ring) Scan(src interface{}) error {
 }
 
 // NewGeographicRingFromExtent creates a ring in geographic coordinates that covers the geometric extent in planar crs
-func NewGeographicRingFromExtent(pixToCrs *affine.Affine, width, height int, crs *godal.SpatialRef) (GeographicRing, error) {
-	ring, err := NewRingFromExtent(pixToCrs, width, height, 0).cloneTo4326(crs, true)
+func NewGeographicRingFromExtent(pixToCrs *affine.Affine, width, height int, crs *godal.SpatialRef, options ...DensifyOption) (GeographicRing, error) {
+	ring, err := NewRingFromExtent(pixToCrs, width, height, 0).cloneTo4326(crs, true, options...)
 	if err != nil {
 		return GeographicRing{}, fmt.Errorf("NewGeographicRingFromExtent.%w", err)
 	}
@@ -314,14 +340,14 @@ func NewPolygonFromExtent(pixToCrs *affine.Affine, width, height int) *geom.Poly
 
 // cloneTo4326 creates a multipolygon in 4326 coordinates that covers the shape in planar crs
 // geodetic: output either geographicCoordinates (edges follow geodetic lines) or geometricCoordinates
-func (s Shape) cloneTo4326(crs *godal.SpatialRef, geodetic bool) (*Shape, error) {
+func (s Shape) cloneTo4326(crs *godal.SpatialRef, geodetic bool, options ...DensifyOption) (*Shape, error) {
 	g := geom.NewMultiPolygon(geom.XY)
 
 	for i := 0; i < s.NumPolygons(); i++ {
 		p := s.Polygon(i)
 		gp := geom.NewPolygon(geom.XY)
 		for j := 0; j < p.NumLinearRings(); j++ {
-			r, err := Ring{*p.LinearRing(j)}.cloneTo4326(crs, geodetic)
+			r, err := Ring{*p.LinearRing(j)}.cloneTo4326(crs, geodetic, options...)
 			if err != nil {
 				return nil, fmt.Errorf("cloneTo4326.%w", err)
 			}
@@ -353,7 +379,7 @@ func computeDeltaOffset(lon1, lat1, lon2, lat2, lonm, latm, x1, y1, x2, y2 float
 	return 0
 }
 
-func relativeAccuracy(project *godal.Transform, x, y, lon, lat []float64) []float64 {
+func relativeAccuracy(project *godal.Transform, x, y, lon, lat []float64, accuracyPc float64) []float64 {
 	// Create the midpoints
 	n := len(x) - 1
 	lonm, latm, acc := make([]float64, n), make([]float64, n), make([]float64, n)
@@ -375,7 +401,16 @@ func relativeAccuracy(project *godal.Transform, x, y, lon, lat []float64) []floa
 
 // cloneTo4326 creates a ring in 4326 coordinates that covers the ring in planar crs
 // geodetic: output either geographicCoordinates (edges follow geodetic lines) or geometricCoordinates
-func (r Ring) cloneTo4326(crs *godal.SpatialRef, geodetic bool) (*Ring, error) {
+func (r Ring) cloneTo4326(crs *godal.SpatialRef, geodetic bool, options ...DensifyOption) (*Ring, error) {
+	opts := densifyOptions{
+		accuracyPc:         0.01,
+		minAccuracyInMeter: -1,
+		maxRecursion:       10,
+	}
+	for _, opt := range options {
+		opt(&opts)
+	}
+
 	// Create the 4326 projection
 	crsToLonLat, err := CreateLonLatProj(crs, true)
 	if err != nil {
@@ -392,14 +427,17 @@ func (r Ring) cloneTo4326(crs *godal.SpatialRef, geodetic bool) (*Ring, error) {
 
 	// Estimate accuracy and fix the dateline crossing
 	x, y := FlatCoordToXY(r.FlatCoords())
-	accuracyInMeter := relativeAccuracy(crsToLonLat, x, y, lon, lat)
+	accuracyInMeter := relativeAccuracy(crsToLonLat, x, y, lon, lat, opts.accuracyPc)
 
 	// Densify projection
 	pts := make([]float64, 0, len(lon))
-	for i := 0; i < len(accuracyInMeter); i++ {
+	for i, accuracy := range accuracyInMeter {
+		if opts.minAccuracyInMeter > 0 && opts.minAccuracyInMeter < accuracy {
+			accuracy = opts.minAccuracyInMeter
+		}
 		pts = append(pts, lon[i], lat[i])
 		pts = append(pts, densifyEdge(&projCrsToLonLat, geodetic,
-			x[i], y[i], x[i+1], y[i+1], lon[i], lat[i], lon[i+1], lat[i+1], accuracyInMeter[i], densifyMaxRecursion)...)
+			x[i], y[i], x[i+1], y[i+1], lon[i], lat[i], lon[i+1], lat[i+1], accuracy, opts.maxRecursion)...)
 	}
 	pts = append(pts, lon[0], lat[0])
 
@@ -467,11 +505,6 @@ func projFromTransform(t *godal.Transform) projection {
 		return tx[0], ty[0]
 	}
 }
-
-const (
-	accuracyPc          = 0.01
-	densifyMaxRecursion = 5
-)
 
 // densifyEdge returns an array of flat lon/lat points so that the difference between
 // the segment ([x1, y1], [x2, y2]) and the polyline (lon1, lat1], []returnedValue, lon2, lat2]) is lower than accuracy

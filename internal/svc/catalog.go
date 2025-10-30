@@ -265,7 +265,7 @@ func (svc *Service) getCubePrepare(ctx context.Context, instancesID []string, cr
 	}
 
 	// Get the extent
-	geogExtent, err := proj.NewGeographicRingFromExtent(pixToCRS, width, height, crs)
+	geogExtent, err := proj.NewGeographicRingFromExtent(pixToCRS, width, height, crs, proj.WithMinAccuracyInMeter(pixToCRS.Rx()))
 	if err != nil {
 		return internalImage.GdalDatasetDescriptor{}, nil, fmt.Errorf("getCubePrepare.%w", err)
 	}
@@ -404,7 +404,7 @@ func (svc *Service) infoFromTile(a, b, z int) (*proj.GeographicRing, internalIma
 	outDesc.PixToCRS = outDesc.PixToCRS.Multiply(affine.Translation(float64(outDesc.Width*a), float64(outDesc.Height*b)))
 
 	// Create the geographic bbox
-	geogExtent, err := proj.NewGeographicRingFromExtent(outDesc.PixToCRS, outDesc.Width, outDesc.Height, crs)
+	geogExtent, err := proj.NewGeographicRingFromExtent(outDesc.PixToCRS, outDesc.Width, outDesc.Height, crs, proj.WithMinAccuracyInMeter(outDesc.PixToCRS.Rx()))
 	if err != nil {
 		return nil, outDesc, fmt.Errorf("infoFromTile: %w", err)
 	}

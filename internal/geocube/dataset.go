@@ -154,11 +154,11 @@ func (d *Dataset) SetShape(shape *geom.MultiPolygon, crsS string) error {
 
 // SetShape sets the shape in a given CRS and bounding boxes of a new dataset
 func (d *Dataset) setGeomGeogShape(crs *godal.SpatialRef) (err error) {
-	d.GeomShape, err = proj.NewGeometricShapeFromShape(d.Shape, crs)
+	d.GeomShape, err = proj.NewGeometricShapeFromShape(d.Shape, crs, proj.WithMinAccuracyInMeter(10))
 	if err != nil {
 		return NewValidationError("Invalid crs or bbox: %v", err)
 	}
-	d.GeogShape, err = proj.NewGeographicShapeFromShape(d.Shape, crs)
+	d.GeogShape, err = proj.NewGeographicShapeFromShape(d.Shape, crs, proj.WithMinAccuracyInMeter(10))
 	if err != nil {
 		return NewValidationError("Invalid crs or bbox: %v", err)
 	}
