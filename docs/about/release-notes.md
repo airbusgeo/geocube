@@ -1,6 +1,9 @@
 # Release notes
 
 ## 1.1.0
+
+> GDAL >= 3.9
+
 ### Functionalities 
 - Consolidater: add --local-download-max-mb to limit the size of the files downloaded by the consolidater (--local-download is deprecated)
 
@@ -11,11 +14,12 @@
 - Non-deterministic pagination of list_records
 - Concurrent access when downloading dataset during consolidation
 - GetCube uses an adaptative accuracy to find the datasets
-- Consolidation: default ZSTD_LEVEL was wrong 
+- Consolidation: default ZSTD_LEVEL was wrong
 
 ### Others
 - optimization GetCube: reduce memory usage using StreamableBitmap
 - optimization Consolidation: optimize download to reduce storage usage 
+- optimization Consolidation: wrap in COG instead of GTIFF+overviews
 
 
 ## 1.0.3

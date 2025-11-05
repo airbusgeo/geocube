@@ -50,6 +50,7 @@ type GdalDatasetDescriptor struct {
 	ValidPixPc     int // Minimum percentage of valid pixels (or image not found is returned)
 	Format         string
 	Palette        *geocube.Palette
+	OutputFormat   string // Optional output type if FileOut is not None
 	FileOut        string
 	BlockXSize     int
 	BlockYSize     int
@@ -245,7 +246,7 @@ func CastDataset(ctx context.Context, ds *godal.Dataset, bands []int64, fromDFor
 	if dstDS == "" {
 		options = append(options, "-of", "MEM")
 	}
-	outDs, err := ds.Translate(dstDS, options)
+	outDs, err := ds.Translate(dstDS, options, ErrLogger)
 	if err != nil {
 		return nil, fmt.Errorf("castDataset.Translate: %w", err)
 	}
@@ -356,10 +357,19 @@ func MergeDatasets(ctx context.Context, datasets []*Dataset, outDesc *GdalDatase
 	warpOptions := warpDatasetOptions(outDesc.WktCRS, outDesc.PixToCRS, float64(outDesc.Width), float64(outDesc.Height), outDesc.Resampling, outDesc.DataMapping.DataFormat)
 	if outDesc.FileOut == "" {
 		warpOptions = append(warpOptions, "-of", "MEM")
-	} else if strings.ToLower(filepath.Ext(outDesc.FileOut)) == ".tif" {
+	} else if strings.ToLower(outDesc.OutputFormat) == "cog" {
+		if outDesc.BlockXSize != outDesc.BlockYSize {
+			return nil, fmt.Errorf("warpDataset: request COG dataformat, but BlockXSize is different from BlockYSize")
+		}
+		gtiffOpts := cogOptions(outDesc.BlockXSize, outDesc.CreationParams, outDesc.Width*outDesc.Height*outDesc.Bands > 10000*10000)
+		warpOptions = append(warpOptions, gtiffOpts...)
+	} else if strings.ToLower(filepath.Ext(outDesc.FileOut)) == ".tif" || strings.ToLower(outDesc.OutputFormat) == "gtiff" {
 		gtiffOpts := gtiffOptions(outDesc.BlockXSize, outDesc.BlockYSize, outDesc.CreationParams, outDesc.Width*outDesc.Height*outDesc.Bands > 10000*10000)
 		warpOptions = append(warpOptions, gtiffOpts...)
+	} else if outDesc.OutputFormat != "" {
+		warpOptions = append(warpOptions, "-ot", outDesc.OutputFormat)
 	}
+
 	// test if a mask is needed
 	if needAlpha {
 		warpOptions = append(warpOptions, "-dstAlpha")
@@ -429,6 +439,22 @@ func creationOptions(creationParams map[string]string, overview bool) []string {
 		}
 	}
 	return options
+}
+
+func cogOptions(blockSize int, creationParams map[string]string, bigtiff bool) []string {
+	options := []string{
+		"-co", "SPARSE_OK=TRUE",
+		"-co", "OVERVIEWS=IGNORE_EXISTING",
+		"-of", "COG",
+	}
+	if blockSize != 0 {
+		options = append(options, "-co", fmt.Sprintf("BLOCKSIZE=%d", blockSize))
+	}
+	if bigtiff {
+		options = append(options, "-co", "BIGTIFF=YES")
+	}
+
+	return append(options, creationOptions(creationParams, false)...)
 }
 
 func gtiffOptions(blockSizeX, blockSizeY int, creationParams map[string]string, bigtiff bool) []string {
@@ -595,7 +621,7 @@ func DatasetToTiffAsBytes(ds *godal.Dataset, fromDFormat geocube.DataMapping, ta
 
 	// Translate to Tiff
 	virtualname := "/vsimem/" + uuid.New().String() + ".tif"
-	tifDs, err := ds.Translate(virtualname, options)
+	tifDs, err := ds.Translate(virtualname, options, ErrLogger)
 	if err != nil {
 		return nil, fmt.Errorf("datasetToTiff.Translate: %w", err)
 	}

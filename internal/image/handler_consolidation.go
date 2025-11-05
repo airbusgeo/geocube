@@ -142,12 +142,7 @@ func (h *handlerConsolidation) Consolidate(ctx context.Context, cEvent *geocube.
 						}
 					}
 
-					tiffPath := fmt.Sprintf("tiff_%s.tif", recordID)
-					if width*height*cEvent.Container.BandsCount < 200*1024*1024 {
-						tiffPath = path.Join("/vsimem", tiffPath)
-					} else {
-						tiffPath = path.Join(workDir, tiffPath)
-					}
+					cogDatasetPath := path.Join(workDir, fmt.Sprintf("tiff_%s.tif", recordID))
 
 					mergeDataset, err := MergeDatasets(gCtx, localDatasets, &GdalDatasetDescriptor{
 						Height:         int(height),
@@ -158,20 +153,16 @@ func (h *handlerConsolidation) Consolidate(ctx context.Context, cEvent *geocube.
 						ValidPixPc:     -1,
 						Resampling:     cEvent.Container.ResamplingAlg,
 						PixToCRS:       pixToCRS,
-						FileOut:        tiffPath,
+						FileOut:        cogDatasetPath,
 						BlockXSize:     cEvent.Container.BlockXSize,
 						BlockYSize:     cEvent.Container.BlockYSize,
 						CreationParams: cEvent.Container.CreationParams,
+						OutputFormat:   "COG",
 					})
 					if err != nil {
 						return fmt.Errorf("Consolidate.%w", err)
 					}
-					defer godal.VSIUnlink(tiffPath)
-
-					cogDatasetPath, err := h.cog.Create(mergeDataset, cEvent.Container, tiffPath, workDir)
-					if err != nil {
-						return fmt.Errorf("Consolidate.%w", err)
-					}
+					mergeDataset.Close()
 					toDelete = append(toDelete, cogDatasetPath)
 
 					log.Logger(gCtx).Sugar().Debugf("add cog %s for record: %s (%d/%d)", cogDatasetPath, recordID, recordIdx+1, len(cEvent.Records))

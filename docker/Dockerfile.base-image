@@ -22,7 +22,7 @@ RUN apk update && \
 
 WORKDIR /build
 
-ARG GDALVERSION=3.8.2
+ARG GDALVERSION=3.11.3
 RUN mkdir gdal && cd gdal &&\
     curl -sL https://github.com/OSGeo/gdal/releases/download/v$GDALVERSION/gdal-$GDALVERSION.tar.gz -o gdal.tar.gz &&\
 	mkdir -p gdal/build && \

@@ -43,7 +43,7 @@ var _ = Describe("HandleConsolidation", func() {
 			})
 		}
 
-		itShouldCreateMucog = func(withAlphaBand bool) {
+		itShouldCreateMucog = func() {
 			It("it should create mucog", func() {
 
 				fileInfo, _ := os.Stat("test_data/mucog.tif")
@@ -54,9 +54,6 @@ var _ = Describe("HandleConsolidation", func() {
 
 				defer dataset.Close()
 				bandsCount := consolidationEventToUse.Container.BandsCount
-				if withAlphaBand {
-					bandsCount++
-				}
 				Expect(dataset.GeoTransform()).To(Equal(consolidationEventToUse.Container.Transform))
 				Expect(dataset.Projection()).To(Equal(consolidationEventToUse.Container.CRS))
 				Expect(dataset.Structure()).To(Equal(godal.DatasetStructure{
@@ -102,7 +99,7 @@ var _ = Describe("HandleConsolidation", func() {
 				consolidationEventToUse = ConsolidationEvent1Record
 			})
 			itShouldNotReturnAnError()
-			itShouldCreateMucog(false)
+			itShouldCreateMucog()
 		})
 
 		Context("default with 1 record and 1 dataset RGB to JPEG", func() {
@@ -110,7 +107,7 @@ var _ = Describe("HandleConsolidation", func() {
 				consolidationEventToUse = ConsolidationEvent1RecordRGB
 			})
 			itShouldNotReturnAnError()
-			itShouldCreateMucog(true)
+			itShouldCreateMucog()
 		})
 
 		Context("default with 1 record and 2 datasets", func() {
@@ -118,7 +115,7 @@ var _ = Describe("HandleConsolidation", func() {
 				consolidationEventToUse = ConsolidationEvent1Record2dataset
 			})
 			itShouldNotReturnAnError()
-			itShouldCreateMucog(false)
+			itShouldCreateMucog()
 		})
 
 		Context("default with 2 records", func() {
@@ -126,7 +123,7 @@ var _ = Describe("HandleConsolidation", func() {
 				consolidationEventToUse = ConsolidationEvent2Record
 			})
 			itShouldNotReturnAnError()
-			itShouldCreateMucog(false)
+			itShouldCreateMucog()
 		})
 
 		Context("default with other data format output", func() {
@@ -134,7 +131,7 @@ var _ = Describe("HandleConsolidation", func() {
 				consolidationEventToUse = ConsolidationEvent1RecordOtherDataFormat
 			})
 			itShouldNotReturnAnError()
-			itShouldCreateMucog(false)
+			itShouldCreateMucog()
 		})
 
 		Context("when container URI is wrong", func() {
@@ -171,7 +168,7 @@ var _ = Describe("HandleConsolidation", func() {
 				consolidationEventToUse = ConsolidationEvent
 			})
 			itShouldNotReturnAnError()
-			itShouldCreateMucog(false)
+			itShouldCreateMucog()
 		})
 	})
 

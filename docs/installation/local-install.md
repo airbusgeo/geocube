@@ -6,7 +6,7 @@
 |   Name    	| Version 	|     link                               	  |
 |:----------:	|:-------:	|:-----------------------------------------:|
 |   Golang   	| >= 1.16 	|      https://golang.org/doc/install     	|
-|    GDAL    	|  >= 3.3 	|             https://gdal.org            	|
+|    GDAL    	|  >= 3.9  	|             https://gdal.org            	|
 |   Python   	|  >= 3.7 	|    https://www.python.org/downloads/    	|
 | PostgreSQL 	|  >= 11  	|   https://www.postgresql.org/download/  	|
 |   PostGIS  	|  >= 3.1 	|       https://postgis.net/install/      	|
