@@ -453,6 +453,22 @@ func cogOptions(blockSize int, creationParams map[string]string, bigtiff bool) [
 	if bigtiff {
 		options = append(options, "-co", "BIGTIFF=YES")
 	}
+	mapKeys := map[string]string{
+		"ZSTD_LEVEL":            "LEVEL",
+		"ZSTD_LEVEL_OVERVIEW":   "LEVEL_OVERVIEW",
+		"WEBP_LEVEL":            "QUALITY",
+		"WEBP_LEVEL_OVERVIEW":   "QUALITY_OVERVIEW",
+		"ZLEVEL":                "LEVEL",
+		"ZLEVEL_OVERVIEW":       "LEVEL_OVERVIEW",
+		"JPEG_QUALITY":          "QUALITY",
+		"JPEG_QUALITY_OVERVIEW": "QUALITY_OVERVIEW",
+	}
+	for mapkey, key := range mapKeys {
+		if v, ok := creationParams[mapkey]; ok {
+			creationParams[key] = v
+			delete(creationParams, mapkey)
+		}
+	}
 
 	return append(options, creationOptions(creationParams, false)...)
 }
