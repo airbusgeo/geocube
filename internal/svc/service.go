@@ -14,7 +14,6 @@ import (
 
 	"github.com/airbusgeo/geocube/interface/database"
 	"github.com/airbusgeo/geocube/internal/geocube"
-	"github.com/airbusgeo/geocube/internal/image"
 	"github.com/airbusgeo/geocube/internal/log"
 	"github.com/airbusgeo/geocube/internal/utils"
 	"github.com/airbusgeo/geocube/internal/utils/bitmap"
@@ -269,7 +268,7 @@ func (svc *Service) validateRemoteContainer(ctx context.Context, container *geoc
 // validateAndSetRemoteDataset validates and completes Dataset
 func (svc *Service) validateAndSetRemoteDataset(_ context.Context, dataset *geocube.Dataset) error {
 	datasetURI := dataset.GDALURI()
-	ds, err := godal.Open(datasetURI, image.ErrLogger)
+	ds, err := godal.Open(datasetURI, godal.SkipWarnings)
 	if err != nil {
 		return geocube.NewValidationError("%s cannot be opened: %v", datasetURI, err)
 	}

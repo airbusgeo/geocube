@@ -33,13 +33,6 @@ func (d Dataset) GDALURI() string {
 	return geocube.GDALURI(d.URI, d.SubDir)
 }
 
-var ErrLogger = godal.ErrLogger(func(ec godal.ErrorCategory, code int, msg string) error {
-	if ec <= godal.CE_Warning {
-		return nil
-	}
-	return fmt.Errorf("GDAL %d: %s", code, msg)
-})
-
 type GdalDatasetDescriptor struct {
 	WktCRS         string
 	PixToCRS       *affine.Affine
@@ -246,7 +239,7 @@ func CastDataset(ctx context.Context, ds *godal.Dataset, bands []int64, fromDFor
 	if dstDS == "" {
 		options = append(options, "-of", "MEM")
 	}
-	outDs, err := ds.Translate(dstDS, options, ErrLogger)
+	outDs, err := ds.Translate(dstDS, options, godal.SkipWarnings)
 	if err != nil {
 		return nil, fmt.Errorf("castDataset.Translate: %w", err)
 	}
@@ -259,7 +252,7 @@ func CastDataset(ctx context.Context, ds *godal.Dataset, bands []int64, fromDFor
 // fromDFormat: NoData is ignored
 // bands: if not nil, extracts the bands
 func CastFile(ctx context.Context, uri string, bands []int64, fromDFormat, toDFormat geocube.DataMapping) (*EphemeralDataset, error) {
-	ds, err := godal.Open(uri, ErrLogger, godal.Shared())
+	ds, err := godal.Open(uri, godal.SkipWarnings, godal.Shared())
 	if err != nil {
 		return nil, fmt.Errorf("CastFile[%s]: %w", uri, err)
 	}
@@ -278,7 +271,7 @@ func CastFile(ctx context.Context, uri string, bands []int64, fromDFormat, toDFo
 	}
 
 	turi := "/vsimem/" + uuid.New().String() + ".vrt"
-	tds, err := ds.Translate(turi, options, ErrLogger)
+	tds, err := ds.Translate(turi, options, godal.SkipWarnings)
 	ds.Close()
 	if err != nil {
 		return nil, fmt.Errorf("CastFile.Translate[%s] with options [%v]: %w", uri, options, err)
@@ -374,7 +367,7 @@ func MergeDatasets(ctx context.Context, datasets []*Dataset, outDesc *GdalDatase
 	if needAlpha {
 		warpOptions = append(warpOptions, "-dstAlpha")
 	}
-	mergedDs, err := godal.Warp(outDesc.FileOut, gdatasets, warpOptions, ErrLogger)
+	mergedDs, err := godal.Warp(outDesc.FileOut, gdatasets, warpOptions, godal.SkipWarnings)
 	if err != nil {
 		return nil, fmt.Errorf("mergeDatasets.Warp[%v]: %w", warpOptions, err)
 	}
@@ -497,7 +490,7 @@ func WarpedExtent(ctx context.Context, datasets []*Dataset, wktCRS string, resx,
 	for i, dataset := range datasets {
 		var err error
 		uri := dataset.GDALURI()
-		if gdatasets[i], err = godal.Open(uri, ErrLogger); err != nil {
+		if gdatasets[i], err = godal.Open(uri, godal.SkipWarnings); err != nil {
 			return [4]float64{}, fmt.Errorf("while opening %s: %w", uri, err)
 		}
 		defer gdatasets[i].Close()
@@ -509,7 +502,7 @@ func WarpedExtent(ctx context.Context, datasets []*Dataset, wktCRS string, resx,
 	}
 
 	virtualname := "/vsimem/" + uuid.New().String() + ".vrt"
-	ds, err := godal.Warp(virtualname, gdatasets, options, godal.VRT, ErrLogger)
+	ds, err := godal.Warp(virtualname, gdatasets, options, godal.VRT, godal.SkipWarnings)
 	if err != nil {
 		return [4]float64{}, fmt.Errorf("failed to warp dataset: %w", err)
 	}
@@ -637,7 +630,7 @@ func DatasetToTiffAsBytes(ds *godal.Dataset, fromDFormat geocube.DataMapping, ta
 
 	// Translate to Tiff
 	virtualname := "/vsimem/" + uuid.New().String() + ".tif"
-	tifDs, err := ds.Translate(virtualname, options, ErrLogger)
+	tifDs, err := ds.Translate(virtualname, options, godal.SkipWarnings)
 	if err != nil {
 		return nil, fmt.Errorf("datasetToTiff.Translate: %w", err)
 	}
