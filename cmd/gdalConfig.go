@@ -74,13 +74,6 @@ func InitGDAL(ctx context.Context, gdalConfig *GDALConfig) error {
 		os.Setenv("GODAL_NUMBLOCKS", strconv.Itoa(gdalConfig.NumCachedBlocks))
 	}
 
-	godal.RegisterAll()
-	if gdalConfig.RegisterPNG {
-		if err := godal.RegisterRaster("PNG"); err != nil {
-			return err
-		}
-	}
-
 	var adapter interface {
 		StreamAt(key string, off int64, n int64) (io.ReadCloser, int64, error)
 	}
@@ -155,6 +148,13 @@ func InitGDAL(ctx context.Context, gdalConfig *GDALConfig) error {
 			// TODO configuration with filesystem strategy
 		}*/
 		// Else no debug > Nothing to do
+	}
+
+	godal.RegisterAll()
+	if gdalConfig.RegisterPNG {
+		if err := godal.RegisterRaster("PNG"); err != nil {
+			return err
+		}
 	}
 
 	return nil
