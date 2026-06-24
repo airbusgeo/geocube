@@ -26,12 +26,11 @@ Geocube is under development. The API might evolve in backwards incompatible way
 
 ## Contributing
 
-Contributions are welcome. Please read the [contributing guidelines](https://airbusgeo.github.io/geocube/about/CONTRIBUTING.md) before submitting fixes or enhancements.
+Contributions are welcome. Please read the [contributing guidelines](https://airbusgeo.github.io/geocube/about/CONTRIBUTING/) before submitting fixes or enhancements.
 
 ## Licensing
 
 Geocube is licensed under the Apache License, Version 2.0. See [LICENSE](https://github.com/airbusgeo/geocube/blob/main/LICENSE) for the full license text.
-
 
 ## Credits
 
