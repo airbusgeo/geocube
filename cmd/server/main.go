@@ -76,15 +76,13 @@ func handleError(ctx context.Context, w http.ResponseWriter, req *http.Request, 
 
 	if utils.Temporary(err) {
 		log.Logger(ctx).Warn("temporary error: "+err.Error(), zap.Error(err))
-		w.WriteHeader(code)
 	} else {
 		log.Logger(ctx).Error("error: "+err.Error(), zap.Error(err))
 		if isFromPubsub(req) {
-			w.WriteHeader(200)
-		} else {
-			w.WriteHeader(code)
+			code = http.StatusOK
 		}
 	}
+	w.WriteHeader(code)
 	fmt.Fprint(w, err.Error())
 }
 
@@ -180,7 +178,7 @@ func run(ctx context.Context) error {
 
 		if strings.HasPrefix(r.URL.Path, "/push") {
 			if err := authenticate([]string{eventTokenKey}, []string{r.Header.Get(utils.AuthorizationHeader)}); err != nil {
-				w.WriteHeader(401)
+				w.WriteHeader(http.StatusUnauthorized)
 				fmt.Fprint(w, err.Error())
 				return
 			}
@@ -197,11 +195,11 @@ func run(ctx context.Context) error {
 			if r.Method == "OPTIONS" {
 				w.Header().Add("Access-Control-Allow-Methods", "OPTIONS, GET")
 				w.Header().Add("Access-Control-Allow-Headers", utils.AuthorizationHeader+","+utils.ESRIAuthorizationHeader)
-				w.WriteHeader(200)
+				w.WriteHeader(http.StatusOK)
 				return
 			}
 			if err := authenticate([]string{userTokenKey}, []string{r.Header.Get(utils.AuthorizationHeader), r.Header.Get(utils.ESRIAuthorizationHeader)}); err != nil {
-				w.WriteHeader(401)
+				w.WriteHeader(http.StatusUnauthorized)
 				fmt.Fprint(w, err.Error())
 				return
 			}
