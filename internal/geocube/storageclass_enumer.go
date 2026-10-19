@@ -36,15 +36,18 @@ func _StorageClassNoOp() {
 var _StorageClassValues = []StorageClass{StorageClassSTANDARD, StorageClassINFREQUENT, StorageClassARCHIVE, StorageClassDEEPARCHIVE, StorageClassUNDEFINED}
 
 var _StorageClassNameToValueMap = map[string]StorageClass{
-	_StorageClassName[0:8]:        StorageClassSTANDARD,
+	_StorageClassName[0:8]:   StorageClassSTANDARD,
+	_StorageClassName[8:18]:  StorageClassINFREQUENT,
+	_StorageClassName[18:25]: StorageClassARCHIVE,
+	_StorageClassName[25:36]: StorageClassDEEPARCHIVE,
+	_StorageClassName[36:45]: StorageClassUNDEFINED,
+}
+
+var _StorageClassLowerNameToValueMap = map[string]StorageClass{
 	_StorageClassLowerName[0:8]:   StorageClassSTANDARD,
-	_StorageClassName[8:18]:       StorageClassINFREQUENT,
 	_StorageClassLowerName[8:18]:  StorageClassINFREQUENT,
-	_StorageClassName[18:25]:      StorageClassARCHIVE,
 	_StorageClassLowerName[18:25]: StorageClassARCHIVE,
-	_StorageClassName[25:36]:      StorageClassDEEPARCHIVE,
 	_StorageClassLowerName[25:36]: StorageClassDEEPARCHIVE,
-	_StorageClassName[36:45]:      StorageClassUNDEFINED,
 	_StorageClassLowerName[36:45]: StorageClassUNDEFINED,
 }
 
@@ -63,7 +66,7 @@ func StorageClassString(s string) (StorageClass, error) {
 		return val, nil
 	}
 
-	if val, ok := _StorageClassNameToValueMap[strings.ToLower(s)]; ok {
+	if val, ok := _StorageClassLowerNameToValueMap[strings.ToLower(s)]; ok {
 		return val, nil
 	}
 	return 0, fmt.Errorf("%s does not belong to StorageClass values", s)

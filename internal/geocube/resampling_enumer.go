@@ -44,29 +44,32 @@ func _ResamplingNoOp() {
 var _ResamplingValues = []Resampling{ResamplingNEAR, ResamplingBILINEAR, ResamplingCUBIC, ResamplingCUBICSPLINE, ResamplingLANCZOS, ResamplingAVERAGE, ResamplingMODE, ResamplingMAX, ResamplingMIN, ResamplingMED, ResamplingQ1, ResamplingQ3}
 
 var _ResamplingNameToValueMap = map[string]Resampling{
-	_ResamplingName[0:4]:        ResamplingNEAR,
+	_ResamplingName[0:4]:   ResamplingNEAR,
+	_ResamplingName[4:12]:  ResamplingBILINEAR,
+	_ResamplingName[12:17]: ResamplingCUBIC,
+	_ResamplingName[17:28]: ResamplingCUBICSPLINE,
+	_ResamplingName[28:35]: ResamplingLANCZOS,
+	_ResamplingName[35:42]: ResamplingAVERAGE,
+	_ResamplingName[42:46]: ResamplingMODE,
+	_ResamplingName[46:49]: ResamplingMAX,
+	_ResamplingName[49:52]: ResamplingMIN,
+	_ResamplingName[52:55]: ResamplingMED,
+	_ResamplingName[55:57]: ResamplingQ1,
+	_ResamplingName[57:59]: ResamplingQ3,
+}
+
+var _ResamplingLowerNameToValueMap = map[string]Resampling{
 	_ResamplingLowerName[0:4]:   ResamplingNEAR,
-	_ResamplingName[4:12]:       ResamplingBILINEAR,
 	_ResamplingLowerName[4:12]:  ResamplingBILINEAR,
-	_ResamplingName[12:17]:      ResamplingCUBIC,
 	_ResamplingLowerName[12:17]: ResamplingCUBIC,
-	_ResamplingName[17:28]:      ResamplingCUBICSPLINE,
 	_ResamplingLowerName[17:28]: ResamplingCUBICSPLINE,
-	_ResamplingName[28:35]:      ResamplingLANCZOS,
 	_ResamplingLowerName[28:35]: ResamplingLANCZOS,
-	_ResamplingName[35:42]:      ResamplingAVERAGE,
 	_ResamplingLowerName[35:42]: ResamplingAVERAGE,
-	_ResamplingName[42:46]:      ResamplingMODE,
 	_ResamplingLowerName[42:46]: ResamplingMODE,
-	_ResamplingName[46:49]:      ResamplingMAX,
 	_ResamplingLowerName[46:49]: ResamplingMAX,
-	_ResamplingName[49:52]:      ResamplingMIN,
 	_ResamplingLowerName[49:52]: ResamplingMIN,
-	_ResamplingName[52:55]:      ResamplingMED,
 	_ResamplingLowerName[52:55]: ResamplingMED,
-	_ResamplingName[55:57]:      ResamplingQ1,
 	_ResamplingLowerName[55:57]: ResamplingQ1,
-	_ResamplingName[57:59]:      ResamplingQ3,
 	_ResamplingLowerName[57:59]: ResamplingQ3,
 }
 
@@ -92,7 +95,7 @@ func ResamplingString(s string) (Resampling, error) {
 		return val, nil
 	}
 
-	if val, ok := _ResamplingNameToValueMap[strings.ToLower(s)]; ok {
+	if val, ok := _ResamplingLowerNameToValueMap[strings.ToLower(s)]; ok {
 		return val, nil
 	}
 	return 0, fmt.Errorf("%s does not belong to Resampling values", s)

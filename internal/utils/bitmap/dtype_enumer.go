@@ -41,25 +41,28 @@ func _DTypeNoOp() {
 var _DTypeValues = []DType{DTypeUNDEFINED, DTypeUINT8, DTypeUINT16, DTypeUINT32, DTypeINT8, DTypeINT16, DTypeINT32, DTypeFLOAT32, DTypeFLOAT64, DTypeCOMPLEX64}
 
 var _DTypeNameToValueMap = map[string]DType{
-	_DTypeName[0:9]:        DTypeUNDEFINED,
+	_DTypeName[0:9]:   DTypeUNDEFINED,
+	_DTypeName[9:14]:  DTypeUINT8,
+	_DTypeName[14:20]: DTypeUINT16,
+	_DTypeName[20:26]: DTypeUINT32,
+	_DTypeName[26:30]: DTypeINT8,
+	_DTypeName[30:35]: DTypeINT16,
+	_DTypeName[35:40]: DTypeINT32,
+	_DTypeName[40:47]: DTypeFLOAT32,
+	_DTypeName[47:54]: DTypeFLOAT64,
+	_DTypeName[54:63]: DTypeCOMPLEX64,
+}
+
+var _DTypeLowerNameToValueMap = map[string]DType{
 	_DTypeLowerName[0:9]:   DTypeUNDEFINED,
-	_DTypeName[9:14]:       DTypeUINT8,
 	_DTypeLowerName[9:14]:  DTypeUINT8,
-	_DTypeName[14:20]:      DTypeUINT16,
 	_DTypeLowerName[14:20]: DTypeUINT16,
-	_DTypeName[20:26]:      DTypeUINT32,
 	_DTypeLowerName[20:26]: DTypeUINT32,
-	_DTypeName[26:30]:      DTypeINT8,
 	_DTypeLowerName[26:30]: DTypeINT8,
-	_DTypeName[30:35]:      DTypeINT16,
 	_DTypeLowerName[30:35]: DTypeINT16,
-	_DTypeName[35:40]:      DTypeINT32,
 	_DTypeLowerName[35:40]: DTypeINT32,
-	_DTypeName[40:47]:      DTypeFLOAT32,
 	_DTypeLowerName[40:47]: DTypeFLOAT32,
-	_DTypeName[47:54]:      DTypeFLOAT64,
 	_DTypeLowerName[47:54]: DTypeFLOAT64,
-	_DTypeName[54:63]:      DTypeCOMPLEX64,
 	_DTypeLowerName[54:63]: DTypeCOMPLEX64,
 }
 
@@ -83,7 +86,7 @@ func DTypeString(s string) (DType, error) {
 		return val, nil
 	}
 
-	if val, ok := _DTypeNameToValueMap[strings.ToLower(s)]; ok {
+	if val, ok := _DTypeLowerNameToValueMap[strings.ToLower(s)]; ok {
 		return val, nil
 	}
 	return 0, fmt.Errorf("%s does not belong to DType values", s)

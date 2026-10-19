@@ -18,7 +18,7 @@ type UnsupportedGridErr struct {
 }
 
 func (err UnsupportedGridErr) Error() string {
-	return fmt.Sprintf("unsupported grid type: " + err.GridName)
+	return fmt.Sprintf("unsupported grid type: %s", err.GridName)
 }
 
 var ReservedNames = []string{"regular", "singlecell"}

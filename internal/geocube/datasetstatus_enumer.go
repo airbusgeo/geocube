@@ -34,11 +34,14 @@ func _DatasetStatusNoOp() {
 var _DatasetStatusValues = []DatasetStatus{DatasetStatusACTIVE, DatasetStatusTODELETE, DatasetStatusINACTIVE}
 
 var _DatasetStatusNameToValueMap = map[string]DatasetStatus{
-	_DatasetStatusName[0:6]:        DatasetStatusACTIVE,
+	_DatasetStatusName[0:6]:   DatasetStatusACTIVE,
+	_DatasetStatusName[6:14]:  DatasetStatusTODELETE,
+	_DatasetStatusName[14:22]: DatasetStatusINACTIVE,
+}
+
+var _DatasetStatusLowerNameToValueMap = map[string]DatasetStatus{
 	_DatasetStatusLowerName[0:6]:   DatasetStatusACTIVE,
-	_DatasetStatusName[6:14]:       DatasetStatusTODELETE,
 	_DatasetStatusLowerName[6:14]:  DatasetStatusTODELETE,
-	_DatasetStatusName[14:22]:      DatasetStatusINACTIVE,
 	_DatasetStatusLowerName[14:22]: DatasetStatusINACTIVE,
 }
 
@@ -55,7 +58,7 @@ func DatasetStatusString(s string) (DatasetStatus, error) {
 		return val, nil
 	}
 
-	if val, ok := _DatasetStatusNameToValueMap[strings.ToLower(s)]; ok {
+	if val, ok := _DatasetStatusLowerNameToValueMap[strings.ToLower(s)]; ok {
 		return val, nil
 	}
 	return 0, fmt.Errorf("%s does not belong to DatasetStatus values", s)

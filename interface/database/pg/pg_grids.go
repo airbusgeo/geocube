@@ -40,7 +40,7 @@ func (b Backend) CreateGrid(ctx context.Context, grid *geocube.Grid) (err error)
 				err = geocube.NewEntityAlreadyExists("", "", "", "Cell: "+err.Error()) // TODO how to properly handle error?
 			}
 		case checkViolation:
-			err = geocube.NewValidationError(err.Error())
+			err = geocube.NewValidationError("%v", err)
 		default:
 			err = pqErrorFormat("CreateGrid: %w", err)
 		}

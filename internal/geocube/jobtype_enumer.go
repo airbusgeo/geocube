@@ -34,11 +34,14 @@ func _JobTypeNoOp() {
 var _JobTypeValues = []JobType{JobTypeCONSOLIDATION, JobTypeINGESTION, JobTypeDELETION}
 
 var _JobTypeNameToValueMap = map[string]JobType{
-	_JobTypeName[0:13]:       JobTypeCONSOLIDATION,
+	_JobTypeName[0:13]:  JobTypeCONSOLIDATION,
+	_JobTypeName[13:22]: JobTypeINGESTION,
+	_JobTypeName[22:30]: JobTypeDELETION,
+}
+
+var _JobTypeLowerNameToValueMap = map[string]JobType{
 	_JobTypeLowerName[0:13]:  JobTypeCONSOLIDATION,
-	_JobTypeName[13:22]:      JobTypeINGESTION,
 	_JobTypeLowerName[13:22]: JobTypeINGESTION,
-	_JobTypeName[22:30]:      JobTypeDELETION,
 	_JobTypeLowerName[22:30]: JobTypeDELETION,
 }
 
@@ -55,7 +58,7 @@ func JobTypeString(s string) (JobType, error) {
 		return val, nil
 	}
 
-	if val, ok := _JobTypeNameToValueMap[strings.ToLower(s)]; ok {
+	if val, ok := _JobTypeLowerNameToValueMap[strings.ToLower(s)]; ok {
 		return val, nil
 	}
 	return 0, fmt.Errorf("%s does not belong to JobType values", s)

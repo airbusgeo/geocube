@@ -51,45 +51,48 @@ func _JobStateNoOp() {
 var _JobStateValues = []JobState{JobStateNEW, JobStateCREATED, JobStateCONSOLIDATIONINPROGRESS, JobStateCONSOLIDATIONDONE, JobStateCONSOLIDATIONINDEXED, JobStateCONSOLIDATIONEFFECTIVE, JobStateCONSOLIDATIONFAILED, JobStateCONSOLIDATIONRETRYING, JobStateCONSOLIDATIONFORCERETRYING, JobStateCONSOLIDATIONCANCELLING, JobStateDELETIONINPROGRESS, JobStateDELETIONEFFECTIVE, JobStateDELETIONFAILED, JobStateDONE, JobStateFAILED, JobStateINITIALISATIONFAILED, JobStateCANCELLATIONFAILED, JobStateABORTED, JobStateROLLBACKFAILED, JobStateDONEBUTUNTIDY}
 
 var _JobStateNameToValueMap = map[string]JobState{
-	_JobStateName[0:3]:          JobStateNEW,
+	_JobStateName[0:3]:     JobStateNEW,
+	_JobStateName[3:10]:    JobStateCREATED,
+	_JobStateName[10:33]:   JobStateCONSOLIDATIONINPROGRESS,
+	_JobStateName[33:50]:   JobStateCONSOLIDATIONDONE,
+	_JobStateName[50:70]:   JobStateCONSOLIDATIONINDEXED,
+	_JobStateName[70:92]:   JobStateCONSOLIDATIONEFFECTIVE,
+	_JobStateName[92:111]:  JobStateCONSOLIDATIONFAILED,
+	_JobStateName[111:132]: JobStateCONSOLIDATIONRETRYING,
+	_JobStateName[132:158]: JobStateCONSOLIDATIONFORCERETRYING,
+	_JobStateName[158:181]: JobStateCONSOLIDATIONCANCELLING,
+	_JobStateName[181:199]: JobStateDELETIONINPROGRESS,
+	_JobStateName[199:216]: JobStateDELETIONEFFECTIVE,
+	_JobStateName[216:230]: JobStateDELETIONFAILED,
+	_JobStateName[230:234]: JobStateDONE,
+	_JobStateName[234:240]: JobStateFAILED,
+	_JobStateName[240:260]: JobStateINITIALISATIONFAILED,
+	_JobStateName[260:278]: JobStateCANCELLATIONFAILED,
+	_JobStateName[278:285]: JobStateABORTED,
+	_JobStateName[285:299]: JobStateROLLBACKFAILED,
+	_JobStateName[299:312]: JobStateDONEBUTUNTIDY,
+}
+
+var _JobStateLowerNameToValueMap = map[string]JobState{
 	_JobStateLowerName[0:3]:     JobStateNEW,
-	_JobStateName[3:10]:         JobStateCREATED,
 	_JobStateLowerName[3:10]:    JobStateCREATED,
-	_JobStateName[10:33]:        JobStateCONSOLIDATIONINPROGRESS,
 	_JobStateLowerName[10:33]:   JobStateCONSOLIDATIONINPROGRESS,
-	_JobStateName[33:50]:        JobStateCONSOLIDATIONDONE,
 	_JobStateLowerName[33:50]:   JobStateCONSOLIDATIONDONE,
-	_JobStateName[50:70]:        JobStateCONSOLIDATIONINDEXED,
 	_JobStateLowerName[50:70]:   JobStateCONSOLIDATIONINDEXED,
-	_JobStateName[70:92]:        JobStateCONSOLIDATIONEFFECTIVE,
 	_JobStateLowerName[70:92]:   JobStateCONSOLIDATIONEFFECTIVE,
-	_JobStateName[92:111]:       JobStateCONSOLIDATIONFAILED,
 	_JobStateLowerName[92:111]:  JobStateCONSOLIDATIONFAILED,
-	_JobStateName[111:132]:      JobStateCONSOLIDATIONRETRYING,
 	_JobStateLowerName[111:132]: JobStateCONSOLIDATIONRETRYING,
-	_JobStateName[132:158]:      JobStateCONSOLIDATIONFORCERETRYING,
 	_JobStateLowerName[132:158]: JobStateCONSOLIDATIONFORCERETRYING,
-	_JobStateName[158:181]:      JobStateCONSOLIDATIONCANCELLING,
 	_JobStateLowerName[158:181]: JobStateCONSOLIDATIONCANCELLING,
-	_JobStateName[181:199]:      JobStateDELETIONINPROGRESS,
 	_JobStateLowerName[181:199]: JobStateDELETIONINPROGRESS,
-	_JobStateName[199:216]:      JobStateDELETIONEFFECTIVE,
 	_JobStateLowerName[199:216]: JobStateDELETIONEFFECTIVE,
-	_JobStateName[216:230]:      JobStateDELETIONFAILED,
 	_JobStateLowerName[216:230]: JobStateDELETIONFAILED,
-	_JobStateName[230:234]:      JobStateDONE,
 	_JobStateLowerName[230:234]: JobStateDONE,
-	_JobStateName[234:240]:      JobStateFAILED,
 	_JobStateLowerName[234:240]: JobStateFAILED,
-	_JobStateName[240:260]:      JobStateINITIALISATIONFAILED,
 	_JobStateLowerName[240:260]: JobStateINITIALISATIONFAILED,
-	_JobStateName[260:278]:      JobStateCANCELLATIONFAILED,
 	_JobStateLowerName[260:278]: JobStateCANCELLATIONFAILED,
-	_JobStateName[278:285]:      JobStateABORTED,
 	_JobStateLowerName[278:285]: JobStateABORTED,
-	_JobStateName[285:299]:      JobStateROLLBACKFAILED,
 	_JobStateLowerName[285:299]: JobStateROLLBACKFAILED,
-	_JobStateName[299:312]:      JobStateDONEBUTUNTIDY,
 	_JobStateLowerName[299:312]: JobStateDONEBUTUNTIDY,
 }
 
@@ -123,7 +126,7 @@ func JobStateString(s string) (JobState, error) {
 		return val, nil
 	}
 
-	if val, ok := _JobStateNameToValueMap[strings.ToLower(s)]; ok {
+	if val, ok := _JobStateLowerNameToValueMap[strings.ToLower(s)]; ok {
 		return val, nil
 	}
 	return 0, fmt.Errorf("%s does not belong to JobState values", s)

@@ -36,15 +36,18 @@ func _TaskStateNoOp() {
 var _TaskStateValues = []TaskState{TaskStateFAILED, TaskStateCANCELLED, TaskStateDONE, TaskStatePENDING, TaskStateNEW}
 
 var _TaskStateNameToValueMap = map[string]TaskState{
-	_TaskStateName[0:6]:        TaskStateFAILED,
+	_TaskStateName[0:6]:   TaskStateFAILED,
+	_TaskStateName[6:15]:  TaskStateCANCELLED,
+	_TaskStateName[15:19]: TaskStateDONE,
+	_TaskStateName[19:26]: TaskStatePENDING,
+	_TaskStateName[26:29]: TaskStateNEW,
+}
+
+var _TaskStateLowerNameToValueMap = map[string]TaskState{
 	_TaskStateLowerName[0:6]:   TaskStateFAILED,
-	_TaskStateName[6:15]:       TaskStateCANCELLED,
 	_TaskStateLowerName[6:15]:  TaskStateCANCELLED,
-	_TaskStateName[15:19]:      TaskStateDONE,
 	_TaskStateLowerName[15:19]: TaskStateDONE,
-	_TaskStateName[19:26]:      TaskStatePENDING,
 	_TaskStateLowerName[19:26]: TaskStatePENDING,
-	_TaskStateName[26:29]:      TaskStateNEW,
 	_TaskStateLowerName[26:29]: TaskStateNEW,
 }
 
@@ -63,7 +66,7 @@ func TaskStateString(s string) (TaskState, error) {
 		return val, nil
 	}
 
-	if val, ok := _TaskStateNameToValueMap[strings.ToLower(s)]; ok {
+	if val, ok := _TaskStateLowerNameToValueMap[strings.ToLower(s)]; ok {
 		return val, nil
 	}
 	return 0, fmt.Errorf("%s does not belong to TaskState values", s)
