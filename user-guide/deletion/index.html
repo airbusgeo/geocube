@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://github.com/airbusgeo/geocube/user-guide/deletion/" />
+      <link rel="shortcut icon" href="../../img/favicon.ico" />
+    <title>Deletion - Geocube Server</title>
+    <link rel="stylesheet" href="../../css/theme.css" />
+    <link rel="stylesheet" href="../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Deletion";
+        var mkdocs_page_input_path = "user-guide/deletion.md";
+        var mkdocs_page_url = "/airbusgeo/geocube/user-guide/deletion/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../.." class="icon icon-home"> Geocube Server
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../quickstart/">Getting started</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Architecture</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../architecture/solution/">Ecosystem</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../architecture/services/">Geocube services</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../architecture/interfaces/">Interfaces</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../architecture/mucog/">MuCOG</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../grpc/">GRPC documentation</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Installation</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../installation/prerequisite/">Prerequisite</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../installation/local-install/">Local environment</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../installation/docker-install/">Docker</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../installation/k8s-install/">Deploying with Kubernetes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../installation/others/">Customize environment</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../installation/upgrade/">Upgrade</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">User guide</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../tutorials/">Tutorials</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../entities/">Entities</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../indexation/">Indexation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../access/">Access</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../consolidation/">Consolidation</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Deletion</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#new">NEW</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#created">CREATED</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#deletion-in-progress">DELETION IN PROGRESS</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#deletion-effective">DELETION EFFECTIVE</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#done">DONE</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#done-but-untidy">DONE BUT UNTIDY</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../scaleup/">Scaling-up</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">About</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../about/help/">Getting help</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../about/CONTRIBUTING/">Contributing</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../about/license/">License</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../about/release-notes/">Release Notes</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../..">Geocube Server</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">User guide</li>
+      <li class="breadcrumb-item active">Deletion</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h2 id="deletion">Deletion</h2>
+<p>Datasets, and underlying files (if they are marked as "managed" by the Geocube), can be deleted from the Geocube.</p>
+<p>Datasets to be deleted are selected by <strong>records</strong>, <strong>instances</strong> and/or <strong>container</strong> uri/filename.</p>
+<p>The <a href="../grpc/#deletedatasetsrequest">DeleteDatasets()</a> function will create a deletion <a href="../entities/#job">job</a> that can be asynchronous or synchronous.</p>
+<p><img alt="Deletion state machine" src="../../images/GeocubeDeletionStateMachine.png" /></p>
+<p>Below are described all the state of the deletion.</p>
+<h4 id="new">NEW</h4>
+<p>During this step, the <code>datasets</code> are selected, regarding the <code>records</code> and the <code>instances</code>, and locked to prevent an other job from modifying them. The job is created in the database.</p>
+<table>
+<thead>
+<tr>
+<th>Action</th>
+<th>Effect</th>
+<th>NewStatus</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ForceRetry</td>
+<td></td>
+<td>NEW</td>
+</tr>
+<tr>
+<td>Cancel</td>
+<td>Only if job is waiting (STEP_BY_STEP_ALL)</td>
+<td>ABORTED</td>
+</tr>
+<tr>
+<td>ForceCancel</td>
+<td>Rollback</td>
+<td>ABORTED</td>
+</tr>
+</tbody>
+</table>
+<h4 id="created">CREATED</h4>
+<p>The datasets are inactivated: they cannot be returned by GetCube/GetMetadata calls.</p>
+<table>
+<thead>
+<tr>
+<th>Action</th>
+<th>Effect</th>
+<th>NewStatus</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ForceRetry</td>
+<td></td>
+<td>CREATED</td>
+</tr>
+<tr>
+<td>Cancel</td>
+<td>If job is waiting (STEP_BY_STEP_ALL)</td>
+<td>ABORTED</td>
+</tr>
+<tr>
+<td>ForceCancel</td>
+<td>Rollback</td>
+<td>ABORTED</td>
+</tr>
+</tbody>
+</table>
+<h4 id="deletion-in-progress">DELETION IN PROGRESS</h4>
+<p>The dataset are removed from the database. The containers that are not referenced by at least one dataset in the Geocube are also removed and if they were managed by the Geocube (meaning: the Geocube is responsible for their lifecycle), a <strong>deletion task</strong> is created.</p>
+<table>
+<thead>
+<tr>
+<th>Action</th>
+<th>Effect</th>
+<th>NewStatus</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ForceRetry</td>
+<td></td>
+<td>DELETIONINPROGRESS</td>
+</tr>
+<tr>
+<td>Cancel</td>
+<td>If job is waiting (STEP_BY_STEP_ALL)</td>
+<td>ABORTED</td>
+</tr>
+<tr>
+<td>ForceCancel</td>
+<td>Rollback</td>
+<td>ABORTED</td>
+</tr>
+</tbody>
+</table>
+<h4 id="deletion-effective">DELETION EFFECTIVE</h4>
+<p>The <strong>deletion tasks</strong> are processed : the Geocube deletes the file referenced by the container for each deletion task. It may be a long process and has many reasons to fail. The tasks that are successful are removed from the job, remaining the failed tasks, so that they can be retried.</p>
+<table>
+<thead>
+<tr>
+<th>Action</th>
+<th>Effect</th>
+<th>NewStatus</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ForceRetry</td>
+<td>Retry the failed tasks</td>
+<td>DELETIONEFFECTIVE</td>
+</tr>
+<tr>
+<td>ForceCancel</td>
+<td>Mark the job as cancelled, but do not stop the pending deletion tasks. The files already deleted are not restored and some files can be deleted after the job is cancelled</td>
+<td>ABORTED</td>
+</tr>
+</tbody>
+</table>
+<h4 id="done">DONE</h4>
+<p>Deletion is finished with success.</p>
+<h4 id="done-but-untidy">DONE BUT UNTIDY</h4>
+<p>Something goes wrong with the deletion (usually, at least one task has failed). The Geocube is clean, but there are some files that the Geocube is responsible for that still exist, but should be deleted. </p>
+<table>
+<thead>
+<tr>
+<th>Action</th>
+<th>Effect</th>
+<th>NewStatus</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ForceRetry</td>
+<td>Retry all the deletion tasks that are not sucessful</td>
+<td>DELETIONEFFECTIVE</td>
+</tr>
+</tbody>
+</table>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../consolidation/" class="btn btn-neutral float-left" title="Consolidation"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../scaleup/" class="btn btn-neutral float-right" title="Scaling-up">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../consolidation/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../scaleup/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../..";</script>
+    <script src="../../js/theme_extra.js"></script>
+    <script src="../../js/theme.js"></script>
+      <script src="../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

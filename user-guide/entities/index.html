@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://github.com/airbusgeo/geocube/user-guide/entities/" />
+      <link rel="shortcut icon" href="../../img/favicon.ico" />
+    <title>Entities - Geocube Server</title>
+    <link rel="stylesheet" href="../../css/theme.css" />
+    <link rel="stylesheet" href="../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Entities";
+        var mkdocs_page_input_path = "user-guide/entities.md";
+        var mkdocs_page_url = "/airbusgeo/geocube/user-guide/entities/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../.." class="icon icon-home"> Geocube Server
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../quickstart/">Getting started</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Architecture</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../architecture/solution/">Ecosystem</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../architecture/services/">Geocube services</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../architecture/interfaces/">Interfaces</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../architecture/mucog/">MuCOG</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../grpc/">GRPC documentation</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Installation</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../installation/prerequisite/">Prerequisite</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../installation/local-install/">Local environment</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../installation/docker-install/">Docker</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../installation/k8s-install/">Deploying with Kubernetes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../installation/others/">Customize environment</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../installation/upgrade/">Upgrade</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">User guide</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../tutorials/">Tutorials</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Entities</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#record">Record</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#aoi">AOI</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#variable">Variable</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#instance">Instance</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#palette">Palette</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#container">Container</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#dataset">Dataset</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#dataformat-and-mapping">Dataformat and mapping</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#job">Job</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#layout">Layout</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#grid">Grid</a>
+    </li>
+        </ul>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../indexation/">Indexation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../access/">Access</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../consolidation/">Consolidation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../deletion/">Deletion</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../scaleup/">Scaling-up</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">About</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../about/help/">Getting help</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../about/CONTRIBUTING/">Contributing</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../about/license/">License</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../about/release-notes/">Release Notes</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../..">Geocube Server</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">User guide</li>
+      <li class="breadcrumb-item active">Entities</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h2 id="entities">Entities</h2>
+<p>In the Geocube, an image (a <a href="#dataset">dataset</a>) is indexed by a <a href="#record">record</a> and an <a href="#instance">instance</a> of a <a href="#variable">variable</a>. In short, a record defines the data-take and the variable defines the kind of data.</p>
+<p><img alt="Dataset described by a record and an instance" src="../../images/GetImage.png" /></p>
+<h3 id="record">Record</h3>
+<p>A record defines a data-take by its geometry, its sensing time and user-defined tags that describe the context in more detail. A record is usually linked to an image of a satellite. For example, the image taken by Sentinel-2A over the 31TDL MGRS tile on the 1st of April 2018 is described by the record:</p>
+<ul>
+<li><strong>Name</strong>: S2A_MSIL1C_20180401T105031_N0206_R051_T31TDL_20180401T144530</li>
+<li><strong>AOI</strong> : 31TDL tile <em>(POLYGON ((2.6859855651855 45.680294036865, 2.811126708984324 45.680294036865, 2.811126708984324 45.59909820556617, 2.6859855651855 45.59909820556617, 2.6859855651855 45.680294036865)))</em></li>
+<li><strong>DateTime</strong> : 2018-04-01 10:50:31</li>
+<li><strong>Tags</strong> :<ul>
+<li>[<strong>CONSTELLATION</strong>: "SENTINEL2"]</li>
+<li>[...]</li>
+</ul>
+</li>
+</ul>
+<p>But a record can describe any product like a mosaic over a country, a classification map... :</p>
+<ul>
+<li><strong>Name</strong>: Mosaic of France January 2020</li>
+<li><strong>AOI</strong> : France</li>
+<li><strong>DateTime</strong> : 2020-01-31 00:00:00</li>
+<li><strong>Tags</strong>:<ul>
+<li>[<strong>PROCESSOR</strong>: Software used to process the mosaic]</li>
+<li>[...]</li>
+</ul>
+</li>
+</ul>
+<p>Records are uniquely defined by :</p>
+<ul>
+<li>its name</li>
+<li>its tags : user-defined depending on the project (currently, no standard is implemented).</li>
+<li>its date</li>
+</ul>
+<p>So, it's possible to have two records with the same name, but with different tags.</p>
+<h4 id="aoi">AOI</h4>
+<p>A record is linked to an AOI in geographic coordinates. The AOI can be shared between several records. It is used to filter records by localisation.</p>
+<h3 id="variable">Variable</h3>
+<p>A variable describes the kind of data stored in a product, for example <em>a spectral band, NDVI, RGB, backscatter, classification</em>...</p>
+<p>It stores the information needed to <strong>describe</strong>, <strong>process</strong> and <strong>visualize</strong> the product.</p>
+<p>In particular, the variable describes a data format with:</p>
+<ul>
+<li>a data-type (<code>int</code>, <code>float</code>, <code>complex</code>, <code>byte</code>...): what type of data this variable describes ?</li>
+<li>a minimum value, or if the variable is unbound, a lower reference (see )</li>
+<li>a maximum value, or if the variable is unbound, a upper reference</li>
+<li>a no-data value</li>
+</ul>
+<p>This dataformat is used to render images. A request of images will cast the data according to this format (see <a href="#dataformat">Dataset dataformat</a>)</p>
+<h4 id="instance">Instance</h4>
+<p>An instance is a declination of a variable with different processing parameters.</p>
+<p>For example, an RGB variable can be defined with different spectral bands (RGB bands of Sentinel-2 are not the same as LANDSAT's), a Label variable can have a different mapping, the SAR products can be processed with different processing graphs or software, but, in each example, the declination belongs to the same variable.</p>
+<p>Instances have user-defined metadata that can be used to describe them. For example, the metadata can describe:</p>
+<ul>
+<li>The processing parameters used to compute the images indexed with this instance</li>
+<li>A description of the classes or the number of the classes for a Label variable.</li>
+<li>The resolution</li>
+<li>...</li>
+</ul>
+<pre><code class="language-python">client.variable(&quot;RGB&quot;).instantiate(name=&quot;Sentinel2-Raw-Bands&quot;, metadata={&quot;R&quot;:&quot;664.6&quot;, &quot;G&quot;:...})
+client.variable(&quot;LandUseLabels&quot;).instantiate(name=&quot;v1&quot;, metadata={&quot;0&quot;:&quot;Undefined&quot;,&quot;1&quot;:&quot;Urban&quot;, &quot;2&quot;:...})
+client.variable(&quot;Sigma0VV&quot;).instantiate(name=&quot;terrain-corrected&quot;, metadata={&quot;snap_graph_name&quot;:&quot;mygraph.xml&quot;, ...})
+</code></pre>
+<h4 id="palette">Palette</h4>
+<p>For color rendering, a variable can defined a palette. A palette is described by a set of values in [0, 255] and its corresponding RGB-points. All the values that are not declared are linearly interpolated.</p>
+<h3 id="container">Container</h3>
+<p>A <code>container</code> describes a file image, with its full path, its storage class (when the image is stored in an object storage) and a flag to tell whether the Geocube is responsible for the life-cycle of this file (in other words, should the Geocube delete the file or not if it's dereferenced ?).</p>
+<p>A container can contain one or several <code>dataset</code>.</p>
+<h4 id="dataset">Dataset</h4>
+<p>A dataset is defined by the following information: </p>
+<ul>
+<li>which band(s) of the <code>container</code> are indexed (usually all the bands, but it can be a subset of the bands of the image, e.g. only one band of a 3-bands images)</li>
+<li>the dataformat of the pixels (datatype, min, max and no_data value)</li>
+<li>how to map its pixel values to the dataformat of the variable (min-&gt;minOut, max-&gt;maxOut and exponent)</li>
+</ul>
+<p>A dataset is indexed by a <code>record</code> (to find it semantically, geographically and temporally) and the <code>instance</code> of a <code>variable</code> (to find it by type of data).</p>
+<h4 id="dataformat-and-mapping">Dataformat and mapping</h4>
+<p>In the Geocube Database, the (internal) <code>data format</code> of an <code>dataset</code> can be different from the <code>data format</code> of the <code>variable</code> that describes the image (for example: in order to optimize storage costs, the image may be stored in byte whereas the variable describes a float value between 0 and 1). When the data is retrieved, the Geocube maps the internal format of the dataset to the data format of the variable. This process may map the data below the minimum or above the maximum value. In that case, no crop is performed.</p>
+<p>Usually, the <code>min</code> value of the dataformat of the dataset will be mapped to the <code>min</code> value of the dataformat of the variable, and the same for <code>max</code> (in that case, <code>minout</code> and <code>maxout</code> are equals to <code>min</code> and <code>max</code> of the dataformat of the variable).</p>
+<p>In some cases, it could be useful to map the <code>min/max</code> values of the dataformat of the dataset to other values than the <code>min/max</code> of the variable. In that case, the <code>minout/maxout</code> are defined differently from the <code>min/max</code> of the variable, and <code>min/max</code> value of the dataformat of the dataset will be mapped to the <code>minout/maxout</code>.</p>
+<p>The generic case is described here :</p>
+<p><img alt="DataFormatMapping" src="../../images/InternalDFormatToVariableDFormat.png" /></p>
+<p>NB:</p>
+<ul>
+<li><strong><code>dataset.min</code> and <code>dataset.max</code> are NOT necessarily the minimum and maximum values of the pixels but the values that map the min and max of the variable.</strong></li>
+<li>DataFormat is provided for the interpretation of the image. There is no check during indexation that the min, max and no_data value are the right ones.</li>
+</ul>
+<h3 id="job">Job</h3>
+<p>A modification of the life-cycle of the datasets and the underlying images is a process described by a state-machine, that can be run step-by-step, cancelled, retried, ...</p>
+<p>A <code>job</code> is an entity that describes this running process, and especially the current state in the whole state machine. A <code>job</code> has, in particular :</p>
+<ul>
+<li>a name</li>
+<li>a type of action (Consolidation, Deletion, Moving...)</li>
+<li>a status to decribe the progress, the current state (Initialisation, In progress, Done, Effective, Failed, Cancelled, Aborted...)</li>
+<li>a payload to describe what to do</li>
+<li>a list of datasets that are locked during the process</li>
+<li>a list of subtasks</li>
+<li>logs and other information to monitore the processus</li>
+</ul>
+<p>A job can be executed in many ways:</p>
+<ul>
+<li>Step-by-step: the state-machine will stop after the state changes and before executing the actions linked to this state. It's useful to monitore the job. Three levels exist: stop at all states, only major states or only critical states.</li>
+<li>Synchronous: the state-machine will process all the states in a row (the execution returns when the job is finished)</li>
+<li>Asynchronous: same as Synchronous but in background (the execution returns immediately, the job continue in background)</li>
+</ul>
+<h3 id="layout">Layout</h3>
+<p>A <code>layout</code> describes how the data is spatially organised. It is composed of an external layout (typically a <code>grid</code> of cells) and an internal layout describing the data in each cell (size of the blocks of data and depth).</p>
+<p>A <code>layout</code> is used:</p>
+<ul>
+<li>to optimize the storage of the datasets (see <a href="../consolidation/">Consolidation</a>). Each cell of the grid is a file containing several datasets (max depth) that are tiled according to the block size.</li>
+<li>to tile an AOI and divide a processing into multiple subtasks</li>
+</ul>
+<h4 id="grid">Grid</h4>
+<p>A <code>grid</code> is a set of <code>cells</code> with a name and a description. Each <code>cell</code> is a polygon in a given CRS with a unique ID in a given grid.</p>
+<p>For example,</p>
+<p>Three type of grids are currently available in the Geocube:</p>
+<ul>
+<li>Regular grid: all the cells have the same rectangular size and pave the AOI in a unique CRS.</li>
+<li>Single cell grid: a grid of one rectangular cell in a given CRS. The bounds of this cell is defined on the fly, depending on the usage.</li>
+<li>Customer-defined grid: each cell is defined independently from the others, with a LinearRing and a CRS, and eventually, an internal regular grid. The <a href="https://en.wikipedia.org/wiki/Military_Grid_Reference_System">MGRS</a> can be described by a <code>grid</code>.</li>
+</ul>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../tutorials/" class="btn btn-neutral float-left" title="Tutorials"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../indexation/" class="btn btn-neutral float-right" title="Indexation">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../tutorials/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../indexation/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../..";</script>
+    <script src="../../js/theme_extra.js"></script>
+    <script src="../../js/theme.js"></script>
+      <script src="../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

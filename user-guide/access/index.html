@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://github.com/airbusgeo/geocube/user-guide/access/" />
+      <link rel="shortcut icon" href="../../img/favicon.ico" />
+    <title>Access - Geocube Server</title>
+    <link rel="stylesheet" href="../../css/theme.css" />
+    <link rel="stylesheet" href="../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Access";
+        var mkdocs_page_input_path = "user-guide/access.md";
+        var mkdocs_page_url = "/airbusgeo/geocube/user-guide/access/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../.." class="icon icon-home"> Geocube Server
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../quickstart/">Getting started</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Architecture</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../architecture/solution/">Ecosystem</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../architecture/services/">Geocube services</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../architecture/interfaces/">Interfaces</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../architecture/mucog/">MuCOG</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../grpc/">GRPC documentation</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Installation</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../installation/prerequisite/">Prerequisite</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../installation/local-install/">Local environment</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../installation/docker-install/">Docker</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../installation/k8s-install/">Deploying with Kubernetes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../installation/others/">Customize environment</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../installation/upgrade/">Upgrade</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">User guide</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../tutorials/">Tutorials</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../entities/">Entities</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../indexation/">Indexation</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Access</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#get-images">Get images</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#get-a-cube">Get a cube</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#get-mosaics-from-several-records">Get mosaics from several records</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#get-metadata-only">Get metadata only</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#using-cloud-optimized-file-format">Using Cloud-Optimized File format</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../consolidation/">Consolidation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../deletion/">Deletion</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../scaleup/">Scaling-up</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">About</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../about/help/">Getting help</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../about/CONTRIBUTING/">Contributing</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../about/license/">License</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../about/release-notes/">Release Notes</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../..">Geocube Server</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">User guide</li>
+      <li class="breadcrumb-item active">Access</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h2 id="access">Access</h2>
+<h3 id="get-images">Get images</h3>
+<p>To retrieve data from the Geocube, the <code>datasets</code> or the <code>containers</code> are not explicitly named. The Geocube will find the datasets depending on user-provided criteria (see <a href="../grpc/#getcuberequest">GetCubeRequest</a>):</p>
+<ul>
+<li><strong>geography</strong>:  using either the <code>aoi</code> of the <code>record</code> and the <code>shape</code> of the <code>dataset</code></li>
+<li><strong>semantic</strong>: using the <code>tags</code> of the <code>record</code></li>
+<li><strong>time</strong>: using the <code>datetime</code> of the <code>record</code></li>
+<li><strong>kind of data</strong>: using the <code>instance</code></li>
+</ul>
+<p>These criteria can return several datasets. The Geocube will automatically do a mosaic of the results.</p>
+<p>The geocube only returned 2D rectangular arrays. Once the datasets are filtered by records and instance, the Geocube will extract a rectangular extent using the warp command of GDAL, that automatically deals with reprojection, rescaling and mosaicing . If necessary, a casting of the value is done (see <a href="../entities/#dataformat-and-mapping">Dataformat mapping</a>).</p>
+<p>Finally, the Geocube streams the results through the GRPC interface.</p>
+<p>If the resulting image is only no data (because there is no dataset matching the criteria or the extent does not contain data), the image is skipped and the Geocube returns nothing.</p>
+<p><img alt="Data access" src="../../images/GetImage.png" /></p>
+<h3 id="get-a-cube">Get a cube</h3>
+<p>A cube of data is just a list of 2D arrays from the same <strong>instance</strong>, with the same <strong>extent</strong> in the same <strong>crs</strong>.
+Getting an image or getting a cube is exactly the same except that, in the latter case, the request defines a <strong>collection of records</strong>.</p>
+<p>If the Geocube has been optimized to serve the timeseries as efficiently as possible (see <a href="#consolidation">Consolidation</a>:
+- It is faster to <strong>request a timeseries</strong> than each image one by one.
+- It is better to <strong>request a large area</strong> (bigger or equal to the block size) than a lot of small areas.</p>
+<h3 id="get-mosaics-from-several-records">Get mosaics from several records</h3>
+<p>If several dataset are linked to the same record, the Geocube returns a mosaic of them.</p>
+<p>It's possible to request the Geocube to merge datasets from different records. By passing a <a href="../grpc/#groupedrecords">GroupedRecords</a>, the Geocube automatically groups the dataset as if they belong to the same records, except that the order is preserved (the datasets belonging to the last record of the group will be on the top of the mosaic).</p>
+<p>NB : To be used carefully : the edges are not blended and it may result in visible seams.</p>
+<p>To request a cube of grouped records, the request will contain a <a href="../grpc/#groupedrecordidslist">GroupedRecordsList</a> (actually a list of list of records).</p>
+<h3 id="get-metadata-only">Get metadata only</h3>
+<p>Instead of returning the images, the Geocube can return the metadata that defined how to build the Cube, using the field <code>headers_only</code> of the <a href="../grpc/#getcuberequest">GetCube()</a> function.</p>
+<p>In particular, <a href="../grpc/#internalmeta">Metadata</a> contains:</p>
+<ul>
+<li>URI of datasets, subdir and subbands</li>
+<li>Dataformat of the datasets</li>
+</ul>
+<p>Metadata can be useful to understand which datasets are retrieved and it can be passed to a <a href="../../architecture/services/#downloader">Downloader service</a>, that will download and build the cube as if the cube request is to the Geocube Server.</p>
+<h3 id="using-cloud-optimized-file-format">Using Cloud-Optimized File format</h3>
+<p>GDAL only reads the part of the image it needs. It results in many small reads, but not all the file is read. To optimize the access to files stored in the Cloud, the Geocube uses a LRU cache and range-request to optimize the read of images.
+To make the most of this capacity, the files should be in a file format that allow efficient range request, like tilled GeoTIFF, COG (Cloud-Optimize Geotiff) or <a href="../../architecture/mucog/">MuCOG</a>. Some file format should really be avoided, such as JPEG2000 which requires a full download and decompression to access any part of the image.</p>
+<p>If the indexed images are not in an appropriate format, they can be <a href="../consolidation/">Consolidate</a>.</p>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../indexation/" class="btn btn-neutral float-left" title="Indexation"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../consolidation/" class="btn btn-neutral float-right" title="Consolidation">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../indexation/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../consolidation/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../..";</script>
+    <script src="../../js/theme_extra.js"></script>
+    <script src="../../js/theme.js"></script>
+      <script src="../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
